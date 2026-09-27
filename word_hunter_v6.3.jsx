@@ -223,8 +223,15 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   const dueAll=(opts.dueFirst||opts.dueOnly)?content.words.filter(w=>{const s=mastery[w.word];return known(s)&&s.nextReviewAt&&s.nextReviewAt<=now;}).sort((a,b)=>(mastery[a.word].nextReviewAt||0)-(mastery[b.word].nextReviewAt||0)):[];
   const dueSet=new Set(dueAll.map(w=>w.word));
   const fresh=opts.dueOnly?[]:shuffleCopy(source.filter(w=>!known(mastery[w.word])),rng).slice(0,dueAll.length>=questionsPerRound?0:newWordsPerRound);
-  const old=[...dueAll,...shuffleCopy(source.filter(w=>known(mastery[w.word])&&!dueSet.has(w.word)),rng).sort((a,b)=>priority(a)-priority(b))];
-  function priority(w){const s=mastery[w.word]||{};return s.nextReviewAt&&s.nextReviewAt<=now?0:stage(s)==='Mastered'?3:1;}
+  // Known words are picked in rotation. Due words and words missed last time
+  // come first. A word answered correctly and not yet due goes to the back
+  // of the line (least recently reviewed first), so it doesn't return until
+  // the rest of the pool has had a turn. The old priority treated every
+  // non-Mastered word the same whether or not it was due, so in a small
+  // category the same just-answered words were picked every session.
+  const old=[...dueAll,...shuffleCopy(source.filter(w=>known(mastery[w.word])&&!dueSet.has(w.word)),rng).sort((a,b)=>priority(a)-priority(b)||lastSeen(a)-lastSeen(b))];
+  function priority(w){const s=mastery[w.word]||{};if(s.nextReviewAt&&s.nextReviewAt<=now)return 0;if(s.lastResult&&s.lastResult!=='correct')return 0;return stage(s)==='Mastered'?2:1;}
+  function lastSeen(w){return mastery[w.word]?.lastReviewedAt||0;}
   const oldCount=Math.max(questionsPerRound-newWordsPerRound,questionsPerRound-fresh.length);
   const chosen=[...old.slice(0,oldCount),...fresh];const candidates=[];
   for(const w of chosen){const s=mastery[w.word]||{};const st=stage(s);
