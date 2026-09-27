@@ -31,7 +31,16 @@ function pickPoolVariant(pools,key,seed){
   const candidates=unlocked.length?unlocked:arr;
   return candidates.reduce((a,b)=>(a.attempts<=b.attempts?a:b));
 }
+// Sentence Build was removed from the game: the word field and the
+// buildSentence challenges are dropped wherever content comes in.
+function withoutSentenceBuild(content) {
+  const out = {...content};
+  if (Array.isArray(out.words)) out.words = out.words.map(({sentenceBuild, ...w}) => w);
+  if (Array.isArray(out.challenges)) out.challenges = out.challenges.filter(c => !['buildSentence','build-sentence'].includes(c?.type || c?.mode));
+  return out;
+}
 function mergeContent(old = {}, incoming = {}) {
+  old = withoutSentenceBuild(old); incoming = withoutSentenceBuild(incoming);
   const out = {...old};
   for (const field of fields) {
     const key = field === 'words' ? 'word' : 'id';
@@ -165,7 +174,6 @@ function validateContent(data, existing={}) {
     if(w.hints!==undefined){if(!Array.isArray(w.hints))err(`${p}.hints`,'expected array');else w.hints.forEach((h,j)=>text(h,`${p}.hints[${j}]`));}
     for(const [f,ks] of [['transformExample',['before','after']],['commonMistake',['sentence','correction','why']]])if(w[f]!==undefined){if(!obj(w[f]))err(`${p}.${f}`,'expected object');else ks.forEach(k=>text(w[f][k],`${p}.${f}.${k}`));}
     if(w.transformExample&&!['phrasal','fyi'].includes(w.type))err(`${p}.transformExample`,'only phrasal/fyi');
-    if(w.sentenceBuild!==undefined){const b=w.sentenceBuild;if(!obj(b)){err(`${p}.sentenceBuild`,'expected object');return;}text(b.modelAnswer,`${p}.sentenceBuild.modelAnswer`);if(!Array.isArray(b.tokens)||!b.tokens.length||b.tokens.some(t=>typeof t!=='string'||!t.trim()))err(`${p}.sentenceBuild.tokens`,'expected non-empty string tokens');else if(sentence(b.tokens.join(' '))!==sentence(b.modelAnswer))err(`${p}.sentenceBuild.tokens`,'ordered tokens must match modelAnswer; spaces before punctuation are ignored');if(b.constraints!==undefined && typeof b.constraints!=='string' && !(Array.isArray(b.constraints)&&b.constraints.every(x=>typeof x==='string')))err(`${p}.sentenceBuild.constraints`,'expected text or text array');}
   });
   (data.grammar||[]).forEach((g,i)=>{const p=`grammar[${i}]`;for(const k of ['category','rule','prompt','answer','explanation'])text(g[k],`${p}.${k}`);if(!Array.isArray(g.options)||g.options.length<2||g.options.some(o=>typeof o!=='string'||!o.trim()))err(`${p}.options`,'expected at least two strings');else {if(new Set(g.options.map(norm)).size!==g.options.length)err(`${p}.options`,'duplicate options');if(!g.options.some(o=>norm(o)===norm(g.answer)))err(`${p}.answer`,'answer missing from options');}});
   (data.puns||[]).forEach((g,i)=>['category','word','joke','pair'].forEach(k=>text(g[k],`puns[${i}].${k}`)));
@@ -218,7 +226,6 @@ function makeQuestion(w,mode,words,rng=Math.random,difficulty=1,pools=null,boost
   const pool=poolType&&pools?{poolType,poolItemId:usable?variant.id:'seed'}:{};
   const q={id:`${w.word}:${mode}`,mode,targets:[w.word],hints:w.hints||[],explanation:w.meaning,type:'mcq',answers:[w.word],difficulty,...pool};
   if(mode==='transform')return {...q,type:'typing',prompt:`Use “${w.word}” to rewrite: ${w.transformExample.before}`,answers:[w.transformExample.after],explanation:w.transformExample.after,modelOnly:true};
-  if(mode==='order')return {...q,type:'order',prompt:`Build the sentence using “${w.word}”.`,tokens:shuffleCopy(w.sentenceBuild.tokens.map((text,id)=>({text,id})),rng),answers:[w.sentenceBuild.modelAnswer],constraints:w.sentenceBuild.constraints,explanation:w.sentenceBuild.modelAnswer};
   if(mode==='typing')return {...q,type:'typing',prompt:w.meaning};
   if(mode==='gapTyping')return {...q,type:'typing',prompt:w.gap};
   q.prompt=mode==='meaning'?w.word:mode==='reverse'?w.meaning:mode==='gap'?w.gap:w.situation;
@@ -333,7 +340,7 @@ function sessionEvidence(mastery,session,now=Date.now()){
     const modes={...(s.modes||{})};
     const recent=[...(s.recentResults||[])];
     results.forEach(result=>{
-      const modeId=result.type==='order'?'order':result.mode;
+      const modeId=result.mode;
       const previous=modes[modeId]||{};
       const correct=!!result.correct&&!result.assisted;
       modes[modeId]={...previous,total:(previous.total||0)+1,correct:(previous.correct||0)+(correct?1:0),spellingMisses:(previous.spellingMisses||0)+(result.spelling?1:0),lastResult:correct?'correct':result.spelling?'spelling':result.assisted?'assisted':'wrong',lastDifficulty:result.difficulty||1};
@@ -347,7 +354,7 @@ function sessionEvidence(mastery,session,now=Date.now()){
 }
 function reinforcement(s){if(s.extraAdded||s.kind!=='practice')return s;const wrong=s.queue.filter((q,i)=>s.answers[i]&&!s.answers[i].correct&&!s.answers[i].reported).flatMap(q=>q.targets);const added=[];for(const q of s.reserves||[]){if(added.length>=2)break;if(!q.targets.some(t=>wrong.includes(t)))continue;if([...s.queue,...added].slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))))continue;added.push(q);}return {...s,queue:[...s.queue,...added],extraAdded:true};}
 
-return { norm, sentence, shuffleCopy, topic, fields, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
+return { norm, sentence, shuffleCopy, topic, fields, withoutSentenceBuild, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
 })();
 
 // Pronunciation: two independent sources, tried in order.
@@ -487,10 +494,6 @@ const { grade, sentence, reinforcement } = V2;
 // One answer control for Practice, Stories and Chains. The draft lives in player state.
 function AnswerControl({q,draft={},onChange,disabled,onSubmit}){
   const selected=draft.selected||[];
-  if(q.type==='order'){
-    const ids=draft.tokenIds||[], tokens=q.tokens||[];
-    return <><div className="wh-v2-tokens" aria-label="Your sentence">{ids.map(id=>{const t=tokens.find(t=>t.id===id);return <button disabled={disabled} key={id} onClick={()=>onChange({...draft,tokenIds:ids.filter(x=>x!==id)})}>{t?.text}</button>;})}</div><div className="wh-v2-tokens">{tokens.filter(t=>!ids.includes(t.id)).map(t=><button disabled={disabled} key={t.id} onClick={()=>onChange({...draft,tokenIds:[...ids,t.id]})}>{t.text}</button>)}</div>{q.constraints&&<p>{Array.isArray(q.constraints)?q.constraints.join(' · '):q.constraints}</p>}</>;
-  }
   if(q.type==='typing'&&q.modelOnly)return <textarea autoFocus className="wh-v2-input wh-v2-long-answer" aria-label="Your answer" disabled={disabled} value={draft.text||''} onChange={e=>onChange({...draft,text:e.target.value})} onKeyDown={e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();e.stopPropagation();if(!disabled&&(draft.text||'').trim())onSubmit?.();}}} placeholder="Write your answer… (Ctrl + Enter to submit)"/>;
   if(q.type==='typing')return <input autoFocus className="wh-v2-input" aria-label="Your answer" autoComplete="off" spellCheck={false} disabled={disabled} value={draft.text||''} onChange={e=>onChange({...draft,text:e.target.value})} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();e.stopPropagation();if(!disabled&&(draft.text||'').trim())onSubmit?.();}}} placeholder={`Type your answer… (or "${DONT_KNOW_TOKEN}" if you don't know)`}/>;
   return <div className="wh-options">{(q.options||[]).map((opt,index)=><button type="button" className={`wh-option ${selected.includes(opt)?'picked':''}`} aria-pressed={selected.includes(opt)} key={opt} disabled={disabled} onClick={()=>onChange({...draft,selected:q.type==='multi'?(selected.includes(opt)?selected.filter(x=>x!==opt):selected.length<q.answers.length?[...selected,opt]:selected):[opt]})}><span className="wh-shortcut-key" aria-hidden="true">{index+1}</span>{opt}</button>)}</div>;
@@ -553,7 +556,7 @@ function playCue(kind,combo=0){
   }catch{}
 }
 // Friendly names for the V2-only modes MODE_META doesn't cover.
-const MODE_LABELS_V2={reverse:"Name the Word",grammarCourt:"Grammar Court",multi:"Combo",transform:"Transform",order:"Build the Sentence"};
+const MODE_LABELS_V2={reverse:"Name the Word",grammarCourt:"Grammar Court",multi:"Combo",transform:"Transform"};
 // Correct answers in a row ending at index i (reported/skipped ones don't break it).
 function comboAt(answers,i){let n=0;for(let j=i;j>=0;j--){const a=answers[j];if(!a||a.reported)continue;if(!a.correct)break;n++;}return n;}
 function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onReport,onReviewReport,onWithdrawReport,onUpdateWord,onResult,onAskWord,sound=true,onToggleSound}){
@@ -598,14 +601,14 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
         event.preventDefault();next();return;
       }
       if(result)return;
-      if(/^[1-9]$/.test(event.key)&&q.type!=='typing'&&q.type!=='order'){
+      if(/^[1-9]$/.test(event.key)&&q.type!=='typing'){
         const option=q.options?.[Number(event.key)-1];if(!option)return;
         event.preventDefault();
         const picked=draft.selected||[];
         save({draft:{...draft,selected:q.type==='multi'?(picked.includes(option)?picked.filter(x=>x!==option):picked.length<q.answers.length?[...picked,option]:picked):[option]}});
         return;
       }
-      const readyNow=q.type==='typing'?!!draft.text?.trim():q.type==='order'?(draft.tokenIds||[]).length===q.tokens.length:(draft.selected||[]).length===q.answers.length;
+      const readyNow=q.type==='typing'?!!draft.text?.trim():(draft.selected||[]).length===q.answers.length;
       if(event.key==='Enter'&&readyNow){event.preventDefault();submit();}
       if(event.key==='Escape'){event.preventDefault();onBack();}
     }
@@ -687,7 +690,7 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
   }
   async function submit(){
     if(aiChecking)return;
-    let value=q.type==='typing'?draft.text||'':q.type==='order'?(draft.tokenIds||[]).map(id=>q.tokens.find(t=>t.id===id)?.text).join(' '):draft.selected||[];
+    let value=q.type==='typing'?draft.text||'':draft.selected||[];
     const dontKnow=q.type==='typing'&&String(value).trim()===DONT_KNOW_TOKEN;
     const objectiveCorrect=q.objectiveTerms?.length?q.objectiveTerms.every(term=>sentence(value).includes(sentence(term))):null;
     const base={...(objectiveCorrect===null?grade(q,value,words):{correct:objectiveCorrect,spelling:false,unverified:false}),value,assisted:(draft.hints||0)>0};
@@ -775,7 +778,7 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
     const answers=[...s.answers];answers[index]=prior||undefined;save({answers});
     closeReport();
   }
-  const ready=q.type==='typing'?!!draft.text?.trim():q.type==='order'?(draft.tokenIds||[]).length===q.tokens.length:(draft.selected||[]).length===q.answers.length;
+  const ready=q.type==='typing'?!!draft.text?.trim():(draft.selected||[]).length===q.answers.length;
   const statusClass=result?(s.kind==='story'||result.reported||result.unverified?'':result.aiClose?'close':result.spelling?'close':result.correct?'correct':'wrong'):'';
   const answerText=result?q.answers.join(' + '):'';
   const sameAsExplanation=result&&q.explanation&&answerText.trim().toLowerCase()===q.explanation.trim().toLowerCase();
@@ -1066,13 +1069,13 @@ const TOPIC_ICONS = {
 // Temporarily disabled modes: excluded from mode selection everywhere below
 // (getAllowedModes + pickWeakMode's forced picks). Remove an id here to
 // re-enable it later — no other code needs to change.
-const DISABLED_MODES = new Set(["buildSentence"]);
+const DISABLED_MODES = new Set();
 // Toggled at runtime from the Settings tab (enablePairModes) — kept as a
 // mutable module-level set to match the existing LEVEL_ORDER/WORDS pattern
 // rather than threading a settings object through every mode-selection call.
 let RUNTIME_DISABLED_MODES = new Set();
 
-const WORD_MODES = ["meaning", "gap", "gapTyping", "situation", "story", "typing", "opposite", "whoami", "twopeople", "selecttwo", "impostor", "buildSentence", "phrasalTransform", "idiomDetective"];
+const WORD_MODES = ["meaning", "gap", "gapTyping", "situation", "story", "typing", "opposite", "whoami", "twopeople", "selecttwo", "impostor", "phrasalTransform", "idiomDetective"];
 const MODE_META = {
   meaning: { label: "Meaning Hunter", icon: Search },
   gap: { label: "Fill the Gap", icon: PenLine },
@@ -1085,7 +1088,6 @@ const MODE_META = {
   twopeople: { label: "Two People", icon: Users2 },
   selecttwo: { label: "Select Two", icon: ListChecks },
   impostor: { label: "Word Impostor", icon: Target },
-  buildSentence: { label: "Build the Evidence", icon: PenLine },
   phrasalTransform: { label: "Phrasal Transform", icon: ArrowLeftRight },
   idiomDetective: { label: "Idiom Detective", icon: Search },
 };
@@ -1096,7 +1098,6 @@ const CHALLENGE_MODE_META = {
   reverseIdiomStory: { label: "Reverse Idiom Story", icon: ArrowLeftRight },
   impostor: { label: "Impostor", icon: Target },
   reverseImpostor: { label: "Reverse Impostor", icon: ListChecks },
-  buildSentence: { label: "Build the Sentence", icon: PenLine },
   phrasalTransform: { label: "Phrasal Verb Transform", icon: ArrowLeftRight },
   grammarCourt: { label: "Advanced Grammar Court", icon: Scale },
 };
@@ -1272,7 +1273,6 @@ function challengeType(challenge) {
     advancedIdiomStory: "idiomStory",
     "reverse-idiom-story": "reverseIdiomStory",
     "reverse-impostor": "reverseImpostor",
-    "build-sentence": "buildSentence",
     "phrasal-transform": "phrasalTransform",
     "grammar-court": "grammarCourt",
   };
@@ -1302,6 +1302,14 @@ function authoredChallengesForWord(word, type = null) {
   });
 }
 
+// Many authored situations are just the gap sentence with the word filled
+// in. Any question that shows the situation and asks for the word would
+// print the answer in the prompt, so those styles check this first.
+function situationLeaks(word, text = word?.situation) {
+  const answer = normalizeAnswerText(word?.word);
+  return !!answer && normalizeAnswerText(text).includes(answer);
+}
+
 function isStrongStoryFallback(word) {
   const situation = String(word?.situation || "").trim();
   const sentences = situation.split(/(?<=[.!?])\s+/).filter(Boolean);
@@ -1317,7 +1325,7 @@ function challengeProgressEligible(challenge, mastery = {}) {
     return obj ? MASTERY_STAGE_RANK[getMasteryStage(mastery[word], { kind: "word", obj })] : 0;
   });
   const type = challengeType(challenge);
-  const production = type === "buildSentence" || type === "phrasalTransform";
+  const production = type === "phrasalTransform";
   const threshold = production && Number(challenge.difficulty || 1) >= 3
     ? MASTERY_STAGE_RANK[MASTERY_STAGE.LEARNED]
     : MASTERY_STAGE_RANK[MASTERY_STAGE.FAMILIAR];
@@ -1368,12 +1376,6 @@ function buildChallengeQuestionUnsafe(challenge) {
   }
 
   const interaction = challenge.interaction || challenge.variant;
-  if (interaction === "order" || interaction === "reorder") {
-    const sourceTokens = Array.isArray(challenge.tokens) && challenge.tokens.length
-      ? challenge.tokens
-      : String(answer).split(/\s+/).filter(Boolean);
-    return { ...common, type: "wordOrder", tokens: sourceTokens.map(String) };
-  }
   if (interaction === "selfCheck" || interaction === "freeSentence") {
     return {
       ...common,
@@ -1434,14 +1436,14 @@ function challengeValidationIssues(challenge, wordSource = WORDS) {
 }
 
 function getAllowedModes(word) {
-  const base = ["meaning", "gap", "gapTyping", "situation", "typing", "buildSentence"];
+  const base = ["meaning", "gap", "gapTyping", "situation", "typing"];
   if (isStrongStoryFallback(word)) base.push("story");
   if (word?.opposite || Math.random() < OPPOSITE_TRAP_RATE) base.push("opposite");
   if (canBuildWhoAmI(word)) base.push("whoami");
   if (canBuildTwoPerson(word)) base.push("twopeople", "selecttwo");
   if (isIdiom(word)) base.push("idiomDetective");
   if (["phrasal", "fyi"].includes(word?.type) && word?.transformExample) base.push("phrasalTransform");
-  if (word?.skipTyping) return base.filter((m) => !["typing", "gapTyping", "buildSentence", "phrasalTransform"].includes(m));
+  if (word?.skipTyping) return base.filter((m) => !["typing", "gapTyping", "phrasalTransform"].includes(m));
   return [...new Set(base)].filter((m) => !DISABLED_MODES.has(m) && !RUNTIME_DISABLED_MODES.has(m));
 }
 
@@ -1479,10 +1481,10 @@ function selectAdaptiveMode(word, masteryStats, context = {}) {
     .map(([modeId]) => modeId);
 
   const baseByStage = {
-    New: { meaning: 8, situation: 7, gap: 6, story: 0, whoami: 2, opposite: 1, impostor: 0, typing: 0, gapTyping: 0, buildSentence: 0 },
-    Familiar: { meaning: 4, situation: 5, gap: 5, story: 4, whoami: 3, opposite: 3, impostor: 0, twopeople: 1.5, selecttwo: 1.5, typing: 1.5, gapTyping: 1.5, buildSentence: 0.3 },
-    Learned: { meaning: 1.2, situation: 3, gap: 2, story: 4, whoami: 1.5, opposite: 2, impostor: 4, twopeople: 1, selecttwo: 1, typing: 6, gapTyping: 6, buildSentence: 5 },
-    Mastered: { meaning: 0.4, situation: 1, gap: 0.8, story: 2, opposite: 2, impostor: 5, typing: 2.5, gapTyping: 2.5, buildSentence: 2.5 },
+    New: { meaning: 8, situation: 7, gap: 6, story: 0, whoami: 2, opposite: 1, impostor: 0, typing: 0, gapTyping: 0 },
+    Familiar: { meaning: 4, situation: 5, gap: 5, story: 4, whoami: 3, opposite: 3, impostor: 0, twopeople: 1.5, selecttwo: 1.5, typing: 1.5, gapTyping: 1.5 },
+    Learned: { meaning: 1.2, situation: 3, gap: 2, story: 4, whoami: 1.5, opposite: 2, impostor: 4, twopeople: 1, selecttwo: 1, typing: 6, gapTyping: 6 },
+    Mastered: { meaning: 0.4, situation: 1, gap: 0.8, story: 2, opposite: 2, impostor: 5, typing: 2.5, gapTyping: 2.5 },
   };
   const base = { ...(baseByStage[stage] || baseByStage.New) };
   if (isPhrasal(word)) base.phrasalTransform = stage === MASTERY_STAGE.NEW ? 0.3 : stage === MASTERY_STAGE.FAMILIAR ? 2 : 5;
@@ -1496,7 +1498,6 @@ function selectAdaptiveMode(word, masteryStats, context = {}) {
   if (!hasProduction && (stage === MASTERY_STAGE.LEARNED || stage === MASTERY_STAGE.FAMILIAR)) {
     base.typing = (base.typing || 0) + 4;
     base.gapTyping = (base.gapTyping || 0) + 3;
-    base.buildSentence = (base.buildSentence || 0) + 3;
   }
   if (confusion) {
     base.meaning = (base.meaning || 0) + 4;
@@ -1640,6 +1641,7 @@ function buildOppositeDirect(wordObj) {
 // (already written to imply the word, not its opposite) becomes a two-option
 // choice between the word and its opposite.
 function buildOppositeSentence(wordObj) {
+  if (situationLeaks(wordObj)) return buildOppositeDirect(wordObj);
   const target = { ...wordObj, key: wordObj.word, label: wordObj.word, explanation: `${wordObj.word} ↔ ${wordObj.opposite}` };
   const options = shuffle([wordObj.word, wordObj.opposite]);
   return { target, prompt: wordObj.situation, options, answer: wordObj.word, type: "mcq" };
@@ -1733,6 +1735,7 @@ function pickCompanion(wordObj) {
     w.word !== wordObj.word &&
     w.category === wordObj.category &&
     w.situation &&
+    !situationLeaks(w) &&
     normalizeAnswerText(w.situation) !== sourceSituation &&
     meaningSimilarity(w.meaning, wordObj.meaning) < 0.55
   );
@@ -1740,7 +1743,7 @@ function pickCompanion(wordObj) {
 }
 
 function canBuildTwoPerson(wordObj) {
-  return pickCompanion(wordObj) !== null;
+  return !situationLeaks(wordObj) && pickCompanion(wordObj) !== null;
 }
 
 function fillToFour(base, exclude) {
@@ -1755,7 +1758,7 @@ function fillToFour(base, exclude) {
 }
 
 function buildTwoPeopleQuestion(wordObj) {
-  const companion = pickCompanion(wordObj);
+  const companion = situationLeaks(wordObj) ? null : pickCompanion(wordObj);
   if (!companion) return null;
   const askFirst = Math.random() < 0.5;
   const distractors = sampleDistractors(wordObj, 3).filter((d) => d.word !== companion.word);
@@ -1768,7 +1771,7 @@ function buildTwoPeopleQuestion(wordObj) {
 }
 
 function buildSelectTwoQuestion(wordObj) {
-  const companion = pickCompanion(wordObj);
+  const companion = situationLeaks(wordObj) ? null : pickCompanion(wordObj);
   if (!companion) return null;
   const distractors = sampleDistractors(wordObj, 3).filter((d) => d.word !== companion.word);
   const options = shuffle(fillToFour([wordObj.word, companion.word, ...distractors.map((d) => d.word)], new Set([wordObj.word, companion.word])));
@@ -1872,42 +1875,8 @@ function buildQuestionUnsafe(modeId, wordObj, pools, options = {}) {
   }
 
   const target = { ...wordObj, key: wordObj.word, label: wordObj.word, explanation: wordObj.meaning };
-  if (modeId === "buildSentence" && wordObj.sentenceBuild) {
-    const b = wordObj.sentenceBuild;
-    return { target, modeId: "sentenceOrder", difficulty, type: "wordOrder", prompt: `Build the sentence using “${wordObj.word}”.`, answer: b.modelAnswer, acceptedAnswers: [b.modelAnswer], tokens: [...b.tokens] };
-  }
   if (modeId === "phrasalTransform" && ["phrasal", "fyi"].includes(wordObj.type) && wordObj.transformExample) {
     return { target, modeId, difficulty, type: "typing", prompt: `Use “${wordObj.word}”: ${wordObj.transformExample.before}`, answer: wordObj.transformExample.after, acceptedAnswers: [wordObj.transformExample.after], modelOnly: true, freeformKind: "phrasalTransform" };
-  }
-  if (modeId === "buildSentence") {
-    const rawGap = String(wordObj.gap || "");
-    const gapIndex = rawGap.indexOf("______");
-    const insertWord = gapIndex > 0
-      ? wordObj.word.charAt(0).toLowerCase() + wordObj.word.slice(1)
-      : wordObj.word;
-    const completedGap = gapIndex !== -1 ? rawGap.replace("______", insertWord) : "";
-    if (completedGap) {
-      return {
-        target,
-        modeId,
-        difficulty,
-        type: "wordOrder",
-        prompt: `Reorder the words to build a correct sentence using “${wordObj.word}”.`,
-        answer: completedGap,
-        acceptedAnswers: [completedGap],
-        tokens: completedGap.split(/\s+/).filter(Boolean),
-      };
-    }
-    return {
-      target,
-      modeId,
-      difficulty,
-      type: "selfCheck",
-      prompt: `Write one sentence using “${wordObj.word}”. This check only verifies that the required word is included.`,
-      requiredWords: [wordObj.word],
-      exampleAnswer: wordObj.situation || wordObj.gap || "",
-      answer: wordObj.word,
-    };
   }
   if (modeId === "phrasalTransform") {
     if (!isPhrasal(wordObj)) return buildQuestion("gapTyping", wordObj, pools, options);
@@ -1917,6 +1886,7 @@ function buildQuestionUnsafe(modeId, wordObj, pools, options = {}) {
   if (modeId === "idiomDetective") {
     if (!isIdiom(wordObj)) return buildQuestion("situation", wordObj, pools, options);
     if (difficulty <= 2) {
+      if (situationLeaks(wordObj)) return buildQuestion("gap", wordObj, pools, options);
       const distractors = hardDistractors(wordObj, 3, confusionPartner);
       return { target, modeId, difficulty, type: "mcq", prompt: wordObj.situation, options: shuffle([wordObj.word, ...distractors.map((d) => d.word)]), answer: wordObj.word };
     }
@@ -1927,7 +1897,8 @@ function buildQuestionUnsafe(modeId, wordObj, pools, options = {}) {
   let poolMode = modeId === "gapTyping" ? "gap" : modeId;
   if (!POOL_TYPES.includes(poolMode)) poolMode = "situation";
   poolMode = resolvePoolMode(poolMode, wordObj, wordPools);
-  const activeItem = pickActiveItem(wordPools, poolMode);
+  let activeItem = pickActiveItem(wordPools, poolMode);
+  if (poolMode === "situation" && situationLeaks(wordObj, activeItem.text)) { poolMode = "gap"; activeItem = pickActiveItem(wordPools, "gap"); }
   const common = { target, modeId, difficulty, poolType: poolMode, poolItemId: activeItem.id };
   const distractors = difficulty >= 3 ? hardDistractors(wordObj, 3, confusionPartner) : sampleDistractors(wordObj, 3);
 
@@ -1983,7 +1954,6 @@ function legacyQuestionToV2(question, entry, idSuffix = "0") {
   const base = { id:`v2:${entry.kind}:${entry.obj?.id||entry.wordObj?.word||idSuffix}:${idSuffix}`, mode, targets:linkedWords, progressKeys, prompt:question.prompt, explanation:question.explanation||question.target?.explanation||"", difficulty:question.difficulty||entry.difficulty||1, poolType:question.poolType, poolItemId:question.poolItemId, challengeId:question.challengeId };
   if (question.type === "multiStage") return question.steps.flatMap((step,index)=>legacyQuestionToV2({...question,type:step.type,prompt:step.prompt,options:step.options,answer:step.acceptedAnswers?.[0],acceptedAnswers:step.acceptedAnswers,explanation:step.explanation||question.explanation,steps:undefined},entry,`${idSuffix}-step-${index+1}`));
   if (question.type === "unavailable") return [{...base,type:"mcq",options:["Skip this invalid question"],answers:["Skip this invalid question"],noMastery:true,noTelemetry:true}];
-  if (question.type === "wordOrder") return [{...base,type:"order",tokens:V2.shuffleCopy((question.tokens||[]).map((text,index)=>({text,id:`${index}-${text}`}))),answers:question.acceptedAnswers?.length?question.acceptedAnswers:[question.answer]}];
   if (question.type === "selfCheck") return [{...base,type:"typing",answers:[question.exampleAnswer||question.answer||""],objectiveTerms:question.requiredWords||linkedWords,noMastery:true}];
   if (question.type === "multi") return [{...base,type:"multi",options:question.options||[],answers:question.correctAnswers||question.acceptedAnswers||[]}];
   if (question.type === "freeform" || question.type === "typing") return [{...base,type:"typing",answers:question.acceptedAnswers?.length?question.acceptedAnswers:[question.answer],modelOnly:!!question.modelOnly||question.type==="freeform",freeformKind:question.freeformKind}];
@@ -2251,6 +2221,90 @@ Return ONLY JSON with this exact shape: {"verdict":"flawed|fine|unsure","confide
     changes: fixed && Array.isArray(result.changes) ? result.changes.map(String).slice(0, 10) : [],
     at: Date.now(),
   };
+}
+
+// Two category names are the same topic written differently when they
+// match after dropping case, punctuation, spacing, "&" and "and"
+// ("Food Dining" / "Food-Dining", "Restaurants And Eating Out" /
+// "Restaurants-and-Eating-Out"). Canonical = the name holding more items.
+function categoryKey(name) {
+  return String(name || "").toLowerCase().replace(/&/g, " ").replace(/\band\b/g, " ").replace(/[^a-z]/g, "");
+}
+function findCategoryDuplicates(names, counts) {
+  const groups = new Map();
+  for (const name of new Set(names.filter(Boolean))) {
+    const key = categoryKey(name);
+    if (!key) continue;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(name);
+  }
+  return [...groups.values()].filter((g) => g.length > 1).map((g) => {
+    const sorted = [...g].sort((a, b) => (counts[b] || 0) - (counts[a] || 0) || (/[ &]/.test(b) ? 1 : 0) - (/[ &]/.test(a) ? 1 : 0));
+    return { canonical: sorted[0], duplicates: sorted.slice(1) };
+  });
+}
+
+// ---- Content Health: find weak word entries and fix them with AI ----
+const PARTS_OF_SPEECH = ["noun", "verb", "adjective", "adverb", "noun phrase", "verb phrase", "adjective phrase", "adverbial phrase", "phrasal verb", "idiom", "expression", "binomial phrase", "proper noun", "interjection", "preposition", "conjunction"];
+const HEALTH_CHECKS = {
+  situation: { label: "Situation shows the word", help: "The situation sentence contains the word itself, so questions built on it give the answer away. AI rewrites it as a short scenario that implies the meaning without the word.", field: "situation", test: (w) => !!w.situation && situationLeaks(w) },
+  meaning: { label: "Weak meaning", help: "Very short, \"Opposite of …\", or contains the word. Hard to type the word from. AI writes one clear B1 definition.", field: "meaning", test: (w) => { const m = String(w.meaning || "").trim(); return !m || m.split(/\s+/).length < 4 || /^opposite of/i.test(m) || normalizeAnswerText(m).includes(normalizeAnswerText(w.word)); } },
+  duplicate: { label: "Same meaning as another word", help: "Two words share the exact same definition, so a question has two right answers. AI rewrites each so they can be told apart.", field: "meaning", test: null },
+  commonMistake: { label: "Missing common mistake", help: "Grammar Court questions need a typical learner mistake, its correction and a short why.", field: "commonMistake", test: (w) => !(w.commonMistake?.sentence && w.commonMistake?.correction && w.commonMistake?.why) },
+  partsOfSpeech: { label: "Missing part of speech", help: "Helps the game and the learning cards describe the word.", field: "partsOfSpeech", test: (w) => !(Array.isArray(w.partsOfSpeech) && w.partsOfSpeech.length) },
+};
+function scanContentHealth(words) {
+  const out = {};
+  for (const [id, check] of Object.entries(HEALTH_CHECKS)) if (check.test) out[id] = words.filter((w) => check.test(w));
+  const byMeaning = new Map();
+  for (const w of words) { const key = normalizeAnswerText(w.meaning).replace(/[^a-z0-9 ]/g, ""); if (!key) continue; if (!byMeaning.has(key)) byMeaning.set(key, []); byMeaning.get(key).push(w); }
+  out.duplicate = [...byMeaning.values()].filter((g) => g.length > 1).flat();
+  return out;
+}
+const HEALTH_INSTRUCTIONS = {
+  situation: `For each word, write a NEW "situation": 1-2 short sentences (B1 English, use a person's name) describing a moment that clearly points to this word's meaning. The word/phrase itself, and any form of it (plural, past tense, -ing), must NOT appear. It must fit this word better than the "siblings" listed. Return {"results":[{"word":"...","value":"the new situation"}]}.`,
+  meaning: `For each word, write a NEW "meaning": ONE clear sentence, B1 English, precise enough that a learner could type the exact word from it. Never use the word/phrase itself or "opposite of". Keep the same sense as the current meaning and situation. If "sameMeaningAs" is given, make the definitions clearly different from those words. Return {"results":[{"word":"...","value":"the new meaning"}]}.`,
+  commonMistake: `For each word, write a typical B1 learner mistake when using it: "sentence" (the wrong sentence), "correction" (the same sentence fixed), "why" (one short simple reason). The mistake must be about using THIS word (form, preposition, collocation or meaning). Return {"results":[{"word":"...","value":{"sentence":"...","correction":"...","why":"..."}}]}.`,
+  partsOfSpeech: `For each word, list its part(s) of speech for the meaning given, using ONLY these values: ${PARTS_OF_SPEECH.join(", ")}. Return {"results":[{"word":"...","value":["noun"]}]}.`,
+};
+async function aiFixWordBatch(kind, words, allWords) {
+  const instructionKind = kind === "duplicate" ? "meaning" : kind;
+  const payload = words.map((w) => ({
+    word: w.word, type: w.type, category: w.category, meaning: w.meaning, situation: w.situation, gap: w.gap,
+    siblings: allWords.filter((x) => x.category === w.category && x.word !== w.word).slice(0, 25).map((x) => x.word),
+    ...(kind === "duplicate" ? { sameMeaningAs: allWords.filter((x) => x.word !== w.word && normalizeAnswerText(x.meaning) === normalizeAnswerText(w.meaning)).map((x) => x.word) } : {}),
+  }));
+  const raw = await callClaudeJson(`You improve content for "Word Hunter", an English vocabulary game for B1 learners. English only. ${HEALTH_INSTRUCTIONS[instructionKind]} Return ONLY that JSON, one result per input word, same order.`, { words: payload }, 2500);
+  const results = Array.isArray(raw?.results) ? raw.results : [];
+  return words.map((w) => {
+    const hit = results.find((r) => normalizeAnswerText(r?.word) === normalizeAnswerText(w.word));
+    const problem = (msg) => ({ word: w.word, ok: false, reason: msg });
+    if (!hit) return problem("AI returned nothing for this word.");
+    const v = hit.value;
+    if (/[\u0600-\u06FF]/.test(JSON.stringify(v ?? ""))) return problem("Contained non-English text.");
+    if (instructionKind === "situation") {
+      const text = String(v || "").trim();
+      if (text.split(/\s+/).length < 6) return problem("Too short.");
+      if (situationLeaks(w, text)) return problem("Still contains the word.");
+      return { word: w.word, ok: true, field: "situation", before: w.situation, after: text };
+    }
+    if (instructionKind === "meaning") {
+      const text = String(v || "").trim();
+      if (text.split(/\s+/).length < 4) return problem("Too short.");
+      if (normalizeAnswerText(text).includes(normalizeAnswerText(w.word))) return problem("Contains the word.");
+      if (/^opposite of/i.test(text)) return problem("Still an \"opposite of\" definition.");
+      return { word: w.word, ok: true, field: "meaning", before: w.meaning, after: text };
+    }
+    if (instructionKind === "commonMistake") {
+      const cm = v && typeof v === "object" ? { sentence: String(v.sentence || "").trim(), correction: String(v.correction || "").trim(), why: String(v.why || "").trim() } : null;
+      if (!cm || !cm.sentence || !cm.correction || !cm.why) return problem("Incomplete mistake.");
+      if (normalizeAnswerText(cm.sentence) === normalizeAnswerText(cm.correction)) return problem("Mistake and correction are identical.");
+      return { word: w.word, ok: true, field: "commonMistake", before: w.commonMistake || null, after: cm };
+    }
+    const pos = [...new Set((Array.isArray(v) ? v : [v]).map((x) => String(x || "").trim().toLowerCase()).filter((x) => PARTS_OF_SPEECH.includes(x)))];
+    if (!pos.length) return problem("No valid part of speech.");
+    return { word: w.word, ok: true, field: "partsOfSpeech", before: w.partsOfSpeech || null, after: pos };
+  });
 }
 
 // Scans every distinct category name in use and proposes groups that are
@@ -2683,12 +2737,7 @@ function pickWeakMode(word, stats, confusions = {}, quarantine = null) {
   const weak = Object.entries(s.modes).filter(([, m]) => m.total >= 2 && (m.correct / m.total) < 0.65).sort((a, b) => (a[1].correct / a[1].total) - (b[1].correct / b[1].total));
   if (weak.length && getAllowedModes(word).includes(weak[0][0]) && !isQuarantined(weak[0][0])) return weak[0][0];
   if (confusion && !isQuarantined("meaning") && !isQuarantined("impostor")) return Math.random() < 0.5 ? "meaning" : "impostor";
-  if (s.sentenceAttempts > s.sentenceSuccesses && !word.skipTyping && !DISABLED_MODES.has("buildSentence") && !isQuarantined("buildSentence")) return "buildSentence";
-  if (getProductionCorrect(s) === 0 && s.correct >= 2 && !word.skipTyping) {
-    const preferGapTyping = Math.random() < 0.5 || DISABLED_MODES.has("buildSentence");
-    if (preferGapTyping && !isQuarantined("gapTyping")) return "gapTyping";
-    if (!preferGapTyping && !isQuarantined("buildSentence")) return "buildSentence";
-  }
+  if (getProductionCorrect(s) === 0 && s.correct >= 2 && !word.skipTyping && !isQuarantined("gapTyping")) return "gapTyping";
   return selectAdaptiveMode(word, s, { sessionType: "weak", confusion, quarantine });
 }
 
@@ -2845,7 +2894,91 @@ function emptyProgressData() {
   return migrateProgressData({ schemaVersion: SCHEMA_VERSION });
 }
 
-function AdminControlCenter({content,mastery,confusions,reports,activeSession,sessionLogs,estimatedStorageBytes,settings,onUpdateSettings,onClearActiveSession,onUpdate,onResolveReport,onReviewReport,onRetireVariant,onDeleteReport,onOpenImport,onExport,onResetProgress,onWipeEverything,onClose}){
+function formatHealthValue(value) {
+  if (value == null || value === "") return "—";
+  if (Array.isArray(value)) return value.join(", ");
+  if (typeof value === "object") return `✗ ${value.sentence}  →  ✓ ${value.correction}  (${value.why})`;
+  return String(value);
+}
+const HEALTH_BATCH = 5, HEALTH_RUN = 20;
+function ContentHealthPanel({ content, onUpdate, onMergeCategories, onRemoveEmptyLevels }) {
+  const words = content.words || [];
+  const issues = useMemo(() => scanContentHealth(words), [words]);
+  const [run, setRun] = useState(null); // {kind, done, total}
+  const [review, setReview] = useState(null); // {kind, items:[{word, ok, field, before, after, reason, selected}]}
+  const [error, setError] = useState(null);
+  const [notice, setNotice] = useState(null);
+  const entityIds = ["words", "grammar", "combos", "challenges", "stories", "puns"];
+  const counts = {};
+  for (const id of entityIds) for (const item of content[id] || []) if (item.category) counts[item.category] = (counts[item.category] || 0) + 1;
+  const levelTitles = (content.levels || []).map((l) => l.title);
+  const duplicates = findCategoryDuplicates([...levelTitles, ...Object.keys(counts)], counts);
+  const emptyLevels = levelTitles.filter((t) => !counts[t]);
+  async function start(kind) {
+    const targets = issues[kind].slice(0, HEALTH_RUN);
+    if (!targets.length || run) return;
+    setError(null); setNotice(null); setReview(null); setRun({ kind, done: 0, total: targets.length });
+    const items = [];
+    for (let i = 0; i < targets.length; i += HEALTH_BATCH) {
+      const batch = targets.slice(i, i + HEALTH_BATCH);
+      try { items.push(...(await aiFixWordBatch(kind, batch, words))); }
+      catch (e) { items.push(...batch.map((w) => ({ word: w.word, ok: false, reason: e.message || "AI request failed." }))); }
+      setRun({ kind, done: Math.min(targets.length, i + HEALTH_BATCH), total: targets.length });
+    }
+    setRun(null);
+    setReview({ kind, items: items.map((it) => ({ ...it, selected: it.ok })) });
+  }
+  function apply() {
+    const chosen = review.items.filter((it) => it.ok && it.selected);
+    if (!chosen.length) { setReview(null); return; }
+    const byWord = new Map(chosen.map((it) => [it.word, it]));
+    onUpdate("words", words.map((w) => (byWord.has(w.word) ? { ...w, [byWord.get(w.word).field]: byWord.get(w.word).after } : w)));
+    setNotice(`Applied ${chosen.length} fix${chosen.length === 1 ? "" : "es"}.`);
+    setReview(null);
+  }
+  const toggle = (index) => setReview((r) => ({ ...r, items: r.items.map((it, i) => (i === index ? { ...it, selected: !it.selected } : it)) }));
+  const selectedCount = review ? review.items.filter((it) => it.ok && it.selected).length : 0;
+  return <div className="wh-admin-grid wh-health">
+    <article className="wh-admin-card wh-health-wide">
+      <h3>Word content</h3>
+      <p>AI fixes up to {HEALTH_RUN} words per run. You review every change and apply only what you tick, so nothing changes by itself.</p>
+      {notice && <p className="wh-import-hint">{notice}</p>}
+      {error && <div className="wh-import-error">{error}</div>}
+      <div className="wh-health-list">{Object.entries(HEALTH_CHECKS).map(([kind, check]) => {
+        const n = issues[kind]?.length || 0;
+        const busy = run?.kind === kind;
+        return <div key={kind} className={`wh-health-row ${n ? "" : "clean"}`}>
+          <div><b>{check.label}</b><small>{check.help}</small></div>
+          <span className="wh-health-count">{n}</span>
+          <button className="wh-import-btn primary" disabled={!n || !!run || !!review} onClick={() => start(kind)}><Sparkles size={13} /> {busy ? `Fixing… ${run.done}/${run.total}` : n ? `Fix ${Math.min(n, HEALTH_RUN)} with AI` : "All good"}</button>
+        </div>;
+      })}</div>
+      {review && <div className="wh-health-review">
+        <h4>Review: {HEALTH_CHECKS[review.kind].label} — {selectedCount} selected</h4>
+        {review.items.map((it, i) => <label key={it.word} className={`wh-health-item ${it.ok ? "" : "failed"}`}>
+          <input type="checkbox" disabled={!it.ok} checked={!!it.selected} onChange={() => toggle(i)} />
+          <div><b>{it.word}</b>{it.ok ? <><p className="before">{formatHealthValue(it.before)}</p><p className="after">{formatHealthValue(it.after)}</p></> : <p className="before">Skipped: {it.reason}</p>}</div>
+        </label>)}
+        <div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={() => setReview(null)}>Discard all</button><button className="wh-import-btn primary" disabled={!selectedCount} onClick={apply}>Apply {selectedCount} selected</button></div>
+      </div>}
+    </article>
+    <article className="wh-admin-card">
+      <h3>Duplicate categories</h3>
+      <p>Same topic written two ways. Merging moves every word, grammar rule, combo, challenge and story to one name and removes the extra level.</p>
+      {!duplicates.length ? <p>No duplicates found.</p> : duplicates.map((d) => <div key={d.canonical} className="wh-health-row">
+        <div><b>{d.canonical}</b> <small>({counts[d.canonical] || 0} items) ← {d.duplicates.map((x) => `${x} (${counts[x] || 0})`).join(", ")}</small></div>
+        <button className="wh-import-btn primary" onClick={() => { onMergeCategories(d.canonical, d.duplicates); setNotice(`Merged into "${d.canonical}".`); }}>Merge</button>
+      </div>)}
+    </article>
+    <article className="wh-admin-card">
+      <h3>Empty levels</h3>
+      <p>Levels with no content at all. They show up in Practice with nothing to practise.</p>
+      {!emptyLevels.length ? <p>No empty levels.</p> : <><p>{emptyLevels.join(", ")}</p><button className="wh-import-btn primary" onClick={() => { const removed = onRemoveEmptyLevels(); setNotice(`Removed ${removed} empty level${removed === 1 ? "" : "s"}.`); }}>Remove {emptyLevels.length} empty level{emptyLevels.length === 1 ? "" : "s"}</button></>}
+    </article>
+  </div>;
+}
+
+function AdminControlCenter({content,mastery,confusions,reports,activeSession,sessionLogs,estimatedStorageBytes,settings,onUpdateSettings,onClearActiveSession,onUpdate,onResolveReport,onReviewReport,onRetireVariant,onDeleteReport,onOpenImport,onExport,onResetProgress,onWipeEverything,onMergeCategories,onRemoveEmptyLevels,onClose}){
   const [tab,setTab]=useState("dashboard");
   const [entity,setEntity]=useState("words");
   const [query,setQuery]=useState("");
@@ -2973,15 +3106,7 @@ function AdminControlCenter({content,mastery,confusions,reports,activeSession,se
   // "Environment-Nature" vs "Environment & Nature") can have members
   // scattered across words, grammar, combos, challenges, stories and puns.
   function applyCategoryMerge(merge){
-    if(!(content.levels||[]).some(level=>level.title===merge.canonical)){
-      onUpdate("levels",[...(content.levels||[]),{id:`cat-${merge.canonical}`,title:merge.canonical}]);
-    }
-    for(const entityId of browsableEntities){
-      const list=content[entityId]||[];
-      if(!list.some(item=>merge.duplicates.includes(item.category)))continue;
-      const next=list.map(item=>merge.duplicates.includes(item.category)?{...item,category:merge.canonical}:item);
-      onUpdate(entityId,next);
-    }
+    onMergeCategories(merge.canonical,merge.duplicates);
     setAppliedMerges(prev=>[...prev,merge.canonical]);
   }
   const stages={New:0,Familiar:0,Learned:0,Mastered:0};
@@ -2990,7 +3115,7 @@ function AdminControlCenter({content,mastery,confusions,reports,activeSession,se
   const correct=Object.values(mastery).reduce((sum,item)=>sum+Number(item?.correct||0),0);
   const weak=[...content.words].map(word=>({word,stats:mastery[word.word]||{}})).filter(x=>x.stats.total>0).sort((a,b)=>(a.stats.correct/Math.max(1,a.stats.total))-(b.stats.correct/Math.max(1,b.stats.total))).slice(0,12);
   const topConfusions=Object.entries(confusions||{}).map(([pair,value])=>({pair,count:confusionCount(value)})).sort((a,b)=>b.count-a.count).slice(0,12);
-  const missing=content.words.filter(word=>!word.meaning||!word.situation||!word.gap||!word.hints?.length||!word.sentenceBuild).length;
+  const missing=content.words.filter(word=>!word.meaning||!word.situation||!word.gap||!word.hints?.length).length;
   function startEdit(item,index){setEditor({index,original:item||null});setDraft(JSON.stringify(item||defaultItem(entity),null,2));setError(null);}
   function defaultItem(type){const id=`${type.slice(0,2)}-${Date.now()}`;if(type==="words")return {word:"",type:"vocab",category:"General",meaning:"",situation:"",gap:"______",hints:[]};if(type==="grammar")return {id,category:"Grammar",rule:"",prompt:"",options:["",""],answer:"",explanation:""};if(type==="levels")return {title:"New Level"};return {id,category:"General"};}
   function saveEdit(){
@@ -3044,11 +3169,12 @@ function AdminControlCenter({content,mastery,confusions,reports,activeSession,se
   function remove(index){const warning=entity==="levels"?"Delete this level and all content assigned to it? Progress records remain in the backup.":`Delete this ${config.label.slice(0,-1).toLowerCase()}? Its learning history will be preserved but detached.`;setDeleteTarget({index,warning});}
   function confirmRemove(){if(!deleteTarget)return;onUpdate(entity,list.filter((_,i)=>i!==deleteTarget.index));setDeleteTarget(null);}
   return <section className="wh-admin-shell">
-    <aside className="wh-admin-side"><div className="wh-admin-brand"><span>WH</span><div><b>CONTROL CENTER</b><small>Content &amp; Learning</small></div></div>{[["dashboard","Dashboard"],["content","Content Manager"],["reports","Question Reports"],["progress","Learning Progress"],["settings","Settings"],["data","Data Center"]].map(([id,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}<button onClick={onClose}>← Play Mode</button></aside>
+    <aside className="wh-admin-side"><div className="wh-admin-brand"><span>WH</span><div><b>CONTROL CENTER</b><small>Content &amp; Learning</small></div></div>{[["dashboard","Dashboard"],["content","Content Manager"],["reports","Question Reports"],["health","Content Health"],["progress","Learning Progress"],["settings","Settings"],["data","Data Center"]].map(([id,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}<button onClick={onClose}>← Play Mode</button></aside>
     <main className="wh-admin-main">
-      <header className="wh-admin-top"><div><small>WORD HUNTER V7</small><h2>{tab==="dashboard"?"Command Dashboard":tab==="content"?"Content Manager":tab==="reports"?"Question Reports":tab==="progress"?"Learning Progress":tab==="settings"?"Settings":"Data Center"}</h2></div><button className="wh-back-btn" onClick={onClose}>Close Admin</button></header>
+      <header className="wh-admin-top"><div><small>WORD HUNTER V7</small><h2>{tab==="dashboard"?"Command Dashboard":tab==="content"?"Content Manager":tab==="reports"?"Question Reports":tab==="health"?"Content Health":tab==="progress"?"Learning Progress":tab==="settings"?"Settings":"Data Center"}</h2></div><button className="wh-back-btn" onClick={onClose}>Close Admin</button></header>
       {tab==="dashboard"&&<><div className="wh-admin-kpis">{[[content.words.length,"Words"],[attempts,"Attempts"],[correct?Math.round(correct/Math.max(1,attempts)*100)+"%":"—","Accuracy"],[reports.filter(x=>!x.resolvedAt).length,"Open reports"],[missing,"Needs content"],[content.words.filter(w=>w._aiAdded).length,"AI-added"]].map(([value,label])=><article key={label}><b>{value}</b><span>{label}</span></article>)}</div><div className="wh-admin-grid"><article className="wh-admin-card"><h3>Mastery distribution</h3>{Object.entries(stages).map(([name,value])=><div className="wh-admin-meter" key={name}><span>{name}</span><i style={{width:`${content.words.length?value/content.words.length*100:0}%`}}/><b>{value}</b></div>)}</article><article className="wh-admin-card"><h3>Library health</h3><p>{content.grammar.length} grammar questions</p><p>{content.stories.length} stories · {content.combos.length} combos</p><p>{content.challenges.length} authored challenges · {content.puns.length} puns</p><p>{new Set(content.words.map(w=>V2.topic(w.category))).size} levels/categories</p></article></div></>}
       {tab==="content"&&<><div className="wh-admin-toolbar"><div className="wh-admin-entities">{Object.entries(entities).map(([id,item])=><button key={id} className={entity===id?"active":""} onClick={()=>{setEntity(id);setEditor(null);setCategoryFilter("");setCategoryBrowse("");setStubOnly(false);}}>{item.label} <span>{content[id]?.length||0}</span></button>)}</div>{categories.length>0&&<select value={categoryFilter} onChange={e=>setCategoryFilter(e.target.value)}><option value="">All categories</option>{categories.map(cat=><option key={cat} value={cat}>{cat}</option>)}</select>}<select value={categoryBrowse} onChange={e=>{setCategoryBrowse(e.target.value);setEditor(null);}} title="Show every word, grammar item, combo, challenge and story for one category, across all types"><option value="">Browse a category (all types)…</option>{allCategories.map(cat=><option key={cat} value={cat}>{cat}</option>)}</select><button className="wh-import-btn primary" disabled={categoryMergeBusy} onClick={handleSuggestCategoryMerges}><Sparkles size={13}/> {categoryMergeBusy?"Analyzing…":"Suggest category cleanup"}</button>{entity!=="levels"&&categoryFilter&&filtered.length>0&&<button onClick={()=>{setMoveTarget({entity,ids:filtered.map(({item})=>item[config.key])});setMoveInput("");}}>Move all {filtered.length} in "{categoryFilter}" to…</button>}{entity==="words"&&stubCount>0&&<label className="wh-admin-stub-toggle"><input type="checkbox" checked={stubOnly} onChange={e=>setStubOnly(e.target.checked)}/> Needs content only ({stubCount})</label>}{entity==="words"&&stubCount>0&&<button className="wh-import-btn primary" disabled={bulkFixBusy} onClick={handleBulkFixStubs}><Sparkles size={13}/> {bulkFixBusy?`Fixing ${bulkFixProgress?.done||0}/${bulkFixProgress?.total||stubCount}…`:`Fill ${stubCount} with AI`}</button>}<input value={query} onChange={e=>setQuery(e.target.value)} placeholder={`Search ${config.label.toLowerCase()}…`}/><button className="primary" onClick={()=>startEdit(null,null)}>+ Add</button></div>{bulkFixReport&&<div className="wh-import-hint"><b>AI content fill: {bulkFixReport.succeeded.length} filled, {bulkFixReport.failed.length} failed.</b>{bulkFixReport.failed.length>0&&<ul>{bulkFixReport.failed.map((f,i)=><li key={i}>{f.word}: {f.message}</li>)}</ul>}<div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={()=>setBulkFixReport(null)}>Dismiss</button></div></div>}{categoryMergeError&&<div className="wh-import-error">{categoryMergeError}</div>}{categoryMergeSuggestions&&<div className="wh-import-hint"><b>Suggested category merges:</b>{!categoryMergeSuggestions.length?<p>No confident duplicates found.</p>:categoryMergeSuggestions.map((m,i)=><div className="wh-admin-browse-row" key={i}><span><b>{m.canonical}</b><small>absorbs: {m.duplicates.join(", ")}</small></span><span>{appliedMerges.includes(m.canonical)?<i>Merged</i>:<button className="wh-import-btn primary" onClick={()=>applyCategoryMerge(m)}>Merge</button>}</span></div>)}<div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={()=>{setCategoryMergeSuggestions(null);setAppliedMerges([]);}}>Dismiss</button></div></div>}{editor?<div className="wh-admin-editor"><div className="wh-admin-editor-head"><h3>{editor.index===null?`Add ${config.label}`:`Edit ${editor.original?.[config.key]}`}</h3><button onClick={()=>setEditor(null)}>Cancel</button></div><p>Edit every supported field as structured JSON. IDs and word labels are stable progress keys.</p><textarea value={draft} onChange={e=>setDraft(e.target.value)} spellCheck={false}/>{error&&<div className="wh-import-error">{error}</div>}<div className="wh-ai-actions"><button className="primary" onClick={saveEdit}>Validate &amp; Save</button>{entity==="words"&&<button disabled={editorBusy} onClick={fillWordWithAi}>{editorBusy?"Generating…":"Fill fields with AI"}</button>}<button onClick={()=>{try{setDraft(JSON.stringify(JSON.parse(draft),null,2));setError(null);}catch{setError("Invalid JSON.");}}}>Format JSON</button></div></div>:categoryBrowse?<div className="wh-admin-category-browse"><div className="wh-admin-category-browse-head"><h3>Everything in "{categoryBrowse}"</h3><button onClick={()=>setCategoryBrowse("")}>✕ Clear</button></div>{!categoryGroups.length?<p>Nothing tagged with this category yet.</p>:categoryGroups.map(group=><div className="wh-admin-card" key={group.id}><h4>{group.label} <span>{group.items.length}</span><button onClick={()=>{setMoveTarget({entity:group.id,ids:group.items.map(({item})=>item[entities[group.id].key])});setMoveInput("");}}>Move all {group.items.length} to…</button></h4>{group.items.map(({item,index})=><div className="wh-admin-browse-row" key={item[entities[group.id].key]||index}><span><b>{item[entities[group.id].key]}</b><small>{item.meaning||item.title||item.rule||item.prompt||""}</small></span><span><button onClick={()=>{setEntity(group.id);setCategoryFilter("");startEdit(item,index);}}>Edit</button><button onClick={()=>{setMoveTarget({entity:group.id,ids:[item[entities[group.id].key]]});setMoveInput("");}}>Move</button></span></div>)}</div>)}</div>:<div className="wh-admin-table"><div className="wh-admin-row head"><span>Item</span><span>Category / Type</span><span>Status</span><span>Actions</span></div>{filtered.map(({item,index})=>{const rec=entity==="words"?mastery[item.word]:null;const modesCount=rec?Object.values(rec.modes||{}).filter(m=>m.correct>0).length:0;return <div className="wh-admin-row" key={item[config.key]||index}><span><b>{item[config.key]}</b><small>{item.meaning||item.title||item.rule||item.prompt||""}</small></span><span>{entity==="levels"?`${content.words.filter(word=>V2.topic(word.category)===V2.topic(item.title)).length} words`:item.category||item.type||"—"}</span><span>{item._autoStub?<span className="wh-stub-badge" title="Auto-created from a missing reference during import — needs real content">⚠ Needs content</span>:entity==="words"?<span className="wh-status-stack"><b>{V2.stage(rec)}</b><small>{rec?.correct||0}/{rec?.total||0} · {modesCount} mode{modesCount===1?"":"s"}{item._aiAdded?" · AI-added":""}</small></span>:"Ready"}</span><span><button onClick={()=>startEdit(item,index)}>Edit</button>{entity!=="levels"&&<button onClick={()=>{setMoveTarget({entity,ids:[item[config.key]]});setMoveInput("");}}>Move</button>}<button className="danger" onClick={()=>remove(index)}>Delete</button></span></div>;})}</div>}</>}
+      {tab==="health"&&<ContentHealthPanel content={content} onUpdate={onUpdate} onMergeCategories={onMergeCategories} onRemoveEmptyLevels={onRemoveEmptyLevels}/>}
       {tab==="reports"&&<div className="wh-admin-card"><h3>Reported questions</h3><p>An open report keeps that exact word + question type out of future sessions automatically. Resolving or retiring it lifts that block. AI checks each report when it's filed and drafts a fix when the question is really flawed.</p>{(()=>{const unreviewed=reports.filter(r=>!r.resolvedAt&&!r.aiReview).length;const busy=reviewAllProgress&&reviewAllProgress.done<reviewAllProgress.total;return (unreviewed>0||reviewAllProgress)&&<div className="wh-import-actions">{unreviewed>0&&<button className="wh-import-btn primary" disabled={busy} onClick={reviewAllOpenReports}><Sparkles size={13}/> {busy?`AI reviewing… ${reviewAllProgress.done}/${reviewAllProgress.total}`:`AI review open reports (${unreviewed})`}</button>}{reviewAllProgress&&!busy&&<small>Reviewed {reviewAllProgress.total-reviewAllProgress.failed}/{reviewAllProgress.total}{reviewAllProgress.failed?` · ${reviewAllProgress.failed} failed — try again`:""}</small>}</div>;})()}{!reports.length?<p>No questions have been reported.</p>:reports.slice().reverse().map((report,index)=>{const key=`${report.sessionId}-${report.questionId}-${index}`;const isOpen=expandedReportKey===key;return <article className="wh-admin-report" key={key}><div><button className="wh-admin-log-row" onClick={()=>{const next=isOpen?null:key;setExpandedReportKey(next);setReportFix(null);setReportFixError(null);}}>{isOpen?<ChevronDown size={14}/>:<ChevronRight size={14}/>}<b>{report.prompt||report.questionId}</b></button><small>{report.mode||"question"} · {(report.targetWords||[]).join(", ")||"no target"} · {new Date(report.at).toLocaleString()}</small>{report.reason&&<small><i>Reason: {report.reason}</i></small>}{report.aiReview&&<small className={`wh-report-ai ${report.aiReview.verdict}`}><Sparkles size={11}/> AI: {report.aiReview.verdict==='flawed'?'real problem':report.aiReview.verdict==='fine'?'question looks OK':'unsure'} ({report.aiReview.confidence}){report.aiReview.fixed?' · fix drafted':''}</small>}{isOpen&&<div className="wh-admin-log-detail"><p><b>Question ID:</b> {report.questionId}</p><p><b>Session:</b> {report.sessionId}</p>{report.options?.length>0&&<p><b>Options shown:</b> {report.options.join(" / ")}</p>}{report.answers?.length>0&&<p><b>Correct answer(s):</b> {report.answers.join(", ")}</p>}{report.poolType&&<p><b>Pool:</b> {report.poolType} / {report.poolItemId}</p>}{report.learnerAnswer!=null&&<p><b>Learner answered:</b> {Array.isArray(report.learnerAnswer)?report.learnerAnswer.join(" + "):String(report.learnerAnswer)}{report.aiReview?.learnerAnswerAcceptable!=null&&` (AI: ${report.aiReview.learnerAnswerAcceptable?'acceptable':'not acceptable'})`}</p>}{report.aiReview&&<div className="wh-import-hint"><b><Sparkles size={12}/> AI review: {report.aiReview.verdict}</b>{report.aiReview.adminNote&&<p>{report.aiReview.adminNote}</p>}{report.aiReview.explanation&&<p><small>Told the learner: {report.aiReview.explanation}</small></p>}</div>}<p>{report.resolvedAt?`Resolved ${new Date(report.resolvedAt).toLocaleString()} — no longer blocked.`:"Currently blocked from future sessions for this word + question type."}</p>{!report.resolvedAt&&<><div className="wh-import-actions">{report.aiReview?.fixed&&<button className="wh-import-btn primary" onClick={()=>openStoredReportFix(report,key)}><Sparkles size={13}/> Review drafted fix</button>}<button className={`wh-import-btn ${report.aiReview?.fixed?"secondary":"primary"}`} disabled={reportFixBusy} onClick={()=>handleSuggestReportFix(report,key)}><Sparkles size={13}/> {reportFixBusy?"Asking AI…":report.aiReview?.fixed?"Ask AI for a new fix":"Suggest fix with AI"}</button></div>{reportFixError&&<div className="wh-import-error">{reportFixError}</div>}{reportFix&&reportFix.key===key&&<div className="wh-import-hint"><b>AI suggests these changes to the {entities[reportFix.entity].label.slice(0,-1).toLowerCase()}:</b><ul>{reportFix.changes.map((c,i)=><li key={i}>{c}</li>)}</ul><textarea className="wh-import-textarea" value={JSON.stringify(reportFix.after,null,2)} readOnly rows={6}/><div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={()=>setReportFix(null)}>Discard</button><button className="wh-import-btn primary" onClick={()=>applyReportFix(report)}>Apply fix &amp; resolve</button></div></div>}</>}</div>}</div><span className={report.resolvedAt?"resolved":"open"}>{report.resolvedAt?"Resolved":"Open"}</span><div>{!report.resolvedAt&&report.poolItemId&&<button onClick={()=>onRetireVariant(report)}>Retire variant</button>}{!report.resolvedAt&&<button onClick={()=>onResolveReport(report)}>Resolve</button>}<button onClick={()=>setConfirmDeleteReport(report)}>Delete</button></div></article>;})}</div>}
       {confirmDeleteReport&&<div className="wh-modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)setConfirmDeleteReport(null);}}><div className="wh-panel wh-confirm-panel" role="alertdialog"><p><b>Delete this report?</b></p><p>This only removes the report record. If it's still open, this also lifts the block on that word + question type — it can be selected again.</p><div className="wh-ai-actions"><button onClick={()=>setConfirmDeleteReport(null)}>Cancel</button><button className="primary" onClick={()=>{onDeleteReport(confirmDeleteReport);setConfirmDeleteReport(null);}}>Yes, delete</button></div></div></div>}
       {moveTarget&&<div className="wh-modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget){setMoveTarget(null);setMoveInput("");}}}><div className="wh-panel wh-confirm-panel" role="alertdialog"><p><b>Move {moveTarget.ids.length>1?`${moveTarget.ids.length} ${entities[moveTarget.entity].label.toLowerCase()}`:`"${moveTarget.ids[0]}"`} to another category</b></p><p>{moveTarget.ids.length>1?"Every item listed keeps its content — only the category changes.":"Only the category changes; nothing else about this item is touched."}</p><input list="wh-category-options" value={moveInput} onChange={e=>setMoveInput(e.target.value)} placeholder="Pick an existing category or type a new one" style={{width:"100%",boxSizing:"border-box",padding:"9px 10px",font:"12px 'IBM Plex Mono',monospace"}}/><datalist id="wh-category-options">{allCategories.map(cat=><option key={cat} value={cat}/>)}</datalist><div className="wh-ai-actions"><button onClick={()=>{setMoveTarget(null);setMoveInput("");}}>Cancel</button><button className="primary" disabled={!moveInput.trim()} onClick={commitMove}>Move</button></div></div></div>}
@@ -3187,6 +3313,8 @@ export default function WordHunter() {
       const built = legacyQuestionToV2(buildQuestion(mode, wordObj, poolsRef.current, { difficulty: 2 }), { kind: "word", wordObj }, mode);
       const q = built.length === 1 ? built[0] : null;
       if (!q || q.noMastery || !q.targets?.length) return null;
+      // Last line of defence: never show a prompt that spells out an answer.
+      if ((q.answers || []).some((a) => String(a).length > 2 && normalizeAnswerText(q.prompt).includes(normalizeAnswerText(a)))) return null;
       return { ...q, id: `${wordObj.word}:${q.mode}` };
     } catch {
       return null;
@@ -3345,6 +3473,27 @@ export default function WordHunter() {
     mergeCustomData(next, customGrammar, customPuns, customChallenges, LEVEL_ORDER);
     setCustomWords(next);
     setDataVersion((v) => v + 1);
+  }
+  // Merge category names in one pass over every content list and the level
+  // order, so no empty duplicate level is left behind (the old per-list
+  // merge moved the items but kept the old level).
+  function mergeCategories(canonical, duplicates){
+    const dup=new Set(duplicates.filter(name=>name!==canonical));
+    if(!dup.size)return;
+    const remap=item=>dup.has(item.category)?{...item,category:canonical}:item;
+    const nextWords=customWords.map(remap),nextGrammar=customGrammar.map(remap),nextPuns=customPuns.map(remap),nextChallenges=customChallenges.map(remap),nextCombos=customCombos.map(remap),nextStories=customStories.map(remap);
+    let order=[...LEVEL_ORDER];
+    if(!order.includes(canonical)){const at=order.findIndex(t=>dup.has(t));order.splice(at<0?order.length:at,0,canonical);}
+    order=order.filter(t=>!dup.has(t));
+    setCustomWords(nextWords);setCustomGrammar(nextGrammar);setCustomPuns(nextPuns);setCustomChallenges(nextChallenges);setCustomCombos(nextCombos);setCustomStories(nextStories);
+    mergeCustomData(nextWords,nextGrammar,nextPuns,nextChallenges,order);setDataVersion(value=>value+1);
+  }
+  function removeEmptyLevels(){
+    const used=new Set([...customWords,...customGrammar,...customPuns,...customChallenges,...customCombos,...customStories].map(item=>item.category).filter(Boolean));
+    const order=LEVEL_ORDER.filter(title=>used.has(title));
+    const removed=LEVEL_ORDER.length-order.length;
+    if(removed){mergeCustomData(customWords,customGrammar,customPuns,customChallenges,order);setDataVersion(value=>value+1);}
+    return removed;
   }
   function updateAdminContent(field,nextList){
     if(field==="levels"){
@@ -3661,7 +3810,7 @@ export default function WordHunter() {
         const customRes = await storage.get(CUSTOM_CONTENT_KEY, false);
         if (customRes && customRes.value) {
           hadAnyData = true;
-          const custom = JSON.parse(customRes.value);
+          const custom = V2.withoutSentenceBuild(JSON.parse(customRes.value));
           setCustomCombos(custom.combos || []); setCustomStories(custom.stories || []); contentNoteRef.current=custom.note||"";
           setCustomWords(custom.words || []);
           setCustomGrammar(custom.grammar || []);
@@ -3900,7 +4049,7 @@ export default function WordHunter() {
       const productionAttempt = isWord && PRODUCTION_MODES.has(modeId);
       const genuineProduction = productionAttempt && masteryCorrect && meta.productionSuccess !== false;
       const streak = isWord ? updateReviewStreak(prev, masteryCorrect, now, { productionNow: genuineProduction }) : { lastReviewedAt: now };
-      const sentenceAttempt = modeId === "buildSentence" || modeId === "finalReport";
+      const sentenceAttempt = modeId === "finalReport";
       const regressionStrikes = prev.everMastered
         ? (masteryCorrect ? Math.max(0, prev.regressionStrikes - 1) : prev.regressionStrikes + 1)
         : prev.regressionStrikes;
@@ -3947,8 +4096,8 @@ export default function WordHunter() {
             },
             productionCorrect: linkedPrev.productionCorrect + (linkedProductionSuccess ? 1 : 0),
             productionAttempts: linkedPrev.productionAttempts + (linkedProductionAttempt ? 1 : 0),
-            sentenceAttempts: linkedPrev.sentenceAttempts + (modeId === "buildSentence" ? 1 : 0),
-            sentenceSuccesses: linkedPrev.sentenceSuccesses + (modeId === "buildSentence" && linkedProductionSuccess ? 1 : 0),
+            sentenceAttempts: linkedPrev.sentenceAttempts,
+            sentenceSuccesses: linkedPrev.sentenceSuccesses,
             lastResult: masteryCorrect ? "correct" : "wrong",
             recentResults: [...linkedPrev.recentResults, { correct: masteryCorrect, modeId, difficulty: Number(question.difficulty || 1), at: now }].slice(-RECENT_RESULT_LIMIT),
             ...updateReviewStreak(linkedPrev, masteryCorrect, now),
@@ -4459,11 +4608,10 @@ export default function WordHunter() {
         @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@500;600&family=Libre+Franklin:wght@400;500;600;700&display=swap');
 
         .wh-v2-nav { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-        .wh-v2-nav button, .wh-v2-tokens button { background:var(--ink-soft);color:var(--paper);border:1px solid var(--gold-soft);border-radius:4px;padding:12px;cursor:pointer; }
+        .wh-v2-nav button { background:var(--ink-soft);color:var(--paper);border:1px solid var(--gold-soft);border-radius:4px;padding:12px;cursor:pointer; }
         .wh-v2-nav button[aria-pressed="true"] {background:var(--gold);color:var(--ink);}
         .wh-v2-learn {border-bottom:1px solid var(--gold-soft);padding:14px 0;overflow-wrap:anywhere;}
         .wh-v2-input {box-sizing:border-box;width:100%;font:inherit;padding:14px;margin:12px 0;}
-        .wh-v2-tokens {display:flex;flex-wrap:wrap;gap:8px;min-height:48px;margin:12px 0;}
         .wh-v2-story {background:var(--ink-soft);border:1px solid var(--gold-soft);padding:14px;margin:12px 0;}
         .wh-v2-story p {white-space:pre-wrap;max-height:35vh;overflow:auto;line-height:1.8;}
         .wh-v2-notice {color:var(--gold);}
@@ -4975,6 +5123,18 @@ export default function WordHunter() {
           transform: rotate(-8deg); opacity: 0.92; pointer-events: none;
         }
 .wh-round-meta { display:flex; align-items:center; gap:10px; }
+        .wh-health-wide { grid-column:1 / -1; }
+        .wh-health-row { display:grid; grid-template-columns:1fr auto auto; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid #e4e8e6; }
+        .wh-health-row small { display:block; color:#72807c; margin-top:3px; }
+        .wh-health-row.clean { opacity:.6; }
+        .wh-health-count { font-weight:700; font-size:18px; min-width:40px; text-align:right; }
+        .wh-health-review { margin-top:16px; }
+        .wh-health-item { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px dashed #e4e8e6; cursor:pointer; }
+        .wh-health-item p { margin:3px 0; font-size:13px; }
+        .wh-health-item .before { color:#8a6f5a; text-decoration:line-through; text-decoration-color:rgba(138,111,90,.45); }
+        .wh-health-item.failed .before { text-decoration:none; }
+        .wh-health-item .after { color:#2f6b4f; }
+        @media (max-width:640px){ .wh-health-row { grid-template-columns:1fr auto; } .wh-health-row button { grid-column:1 / -1; } }
         .wh-daily-goal { border:1px solid rgba(127,127,127,.3); border-radius:8px; padding:12px 14px; margin:10px 0 14px; }
         .wh-daily-goal-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
         .wh-daily-goal-head b { display:inline-flex; align-items:center; gap:6px; }
@@ -5181,7 +5341,7 @@ export default function WordHunter() {
             </article>}
           </aside>
         </div>}
-        {screen==="admin"&&<AdminControlCenter content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onResolveReport={resolveQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} onOpenImport={()=>{setScreen("levels");setContentPanelView("review");setImportOpen(true);}} onExport={mode=>{handleExport(mode);setScreen("levels");setContentPanelView("export");setImportOpen(true);}}/>}
+        {screen==="admin"&&<AdminControlCenter content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onResolveReport={resolveQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} onOpenImport={()=>{setScreen("levels");setContentPanelView("review");setImportOpen(true);}} onExport={mode=>{handleExport(mode);setScreen("levels");setContentPanelView("export");setImportOpen(true);}}/>}
         {confirmAction && (
           <div className="wh-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmAction(null); }}>
           <div className="wh-panel wh-confirm-panel" role="alertdialog">
