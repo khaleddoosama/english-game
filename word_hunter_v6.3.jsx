@@ -6,7 +6,7 @@ import {
   Search, PenLine, Compass, Keyboard, Flame, RotateCcw, Scale, Sparkles,
   Trophy, Award, Lock, X, Play, CheckCircle2, BarChart3, ArrowLeft, BookOpen, Flag,
   Users, Newspaper, ShoppingBag, Target, Angry, Upload, ArrowLeftRight, Download, Copy, ClipboardCheck,
-  HelpCircle, Users2, ListChecks, Zap, Trash2, ChevronDown, ChevronRight, Volume2,
+  HelpCircle, Users2, ListChecks, Zap, Trash2, ChevronDown, ChevronRight, Volume2, VolumeX,
 } from "lucide-react";
 
 // Embedded offline engine; isolated names preserve the existing game.
@@ -190,8 +190,33 @@ function questionDifficulty(s={}){
   if(recent.length>=2&&recent.filter(r=>r.correct).length<=1)d=Math.max(1,d-1);
   return Math.min(4,d);
 }
-function makeQuestion(w,mode,words,rng=Math.random,difficulty=1) {
-  const q={id:`${w.word}:${mode}`,mode,targets:[w.word],hints:w.hints||[],explanation:w.meaning,type:'mcq',answers:[w.word],difficulty};
+// Which content pool a practice mode draws its text from. Pools hold the
+// authored text (the "seed") plus AI-written variants, so the same word
+// doesn't show the exact same sentence every time.
+const POOL_FOR_MODE={meaning:'meaning',reverse:'meaning',typing:'typing',gap:'gap',gapTyping:'gap',situation:'situation'};
+// Least-used unlocked variant; ties broken at random so variants alternate.
+// Retired variants carry a far-future lockedUntil, so they're never picked
+// while anything else is available.
+function pickWordVariant(pools,w,poolType,rng=Math.random){
+  const seedText=poolType==='typing'?w.meaning:w[poolType];
+  const stored=pools?.[w.word]?.[poolType];
+  const arr=(stored?.length?stored:[{id:'seed',attempts:0}]).map(it=>it.id==='seed'?{...it,text:seedText}:it).filter(it=>it.text);
+  if(!arr.length)return null;
+  const now=Date.now();
+  const unlocked=arr.filter(it=>!it.lockedUntil||it.lockedUntil<=now);
+  const candidates=unlocked.length?unlocked:arr;
+  const least=Math.min(...candidates.map(it=>Number(it.attempts||0)));
+  const tied=candidates.filter(it=>Number(it.attempts||0)===least);
+  return tied[Math.floor(rng()*tied.length)];
+}
+function makeQuestion(w,mode,words,rng=Math.random,difficulty=1,pools=null) {
+  const poolType=POOL_FOR_MODE[mode];
+  const variant=poolType&&pools?pickWordVariant(pools,w,poolType,rng):null;
+  // A variant that leaks the answer or lost its blank falls back to the seed.
+  const usable=variant&&variant.id!=='seed'&&!(mode!=='meaning'&&norm(variant.text).includes(norm(w.word)))&&!(poolType==='gap'&&!/_{2,}/.test(variant.text));
+  if(usable)w={...w,[poolType==='typing'?'meaning':poolType]:variant.text};
+  const pool=poolType&&pools?{poolType,poolItemId:usable?variant.id:'seed'}:{};
+  const q={id:`${w.word}:${mode}`,mode,targets:[w.word],hints:w.hints||[],explanation:w.meaning,type:'mcq',answers:[w.word],difficulty,...pool};
   if(mode==='transform')return {...q,type:'typing',prompt:`Use “${w.word}” to rewrite: ${w.transformExample.before}`,answers:[w.transformExample.after],explanation:w.transformExample.after,modelOnly:true};
   if(mode==='order')return {...q,type:'order',prompt:`Build the sentence using “${w.word}”.`,tokens:shuffleCopy(w.sentenceBuild.tokens.map((text,id)=>({text,id})),rng),answers:[w.sentenceBuild.modelAnswer],constraints:w.sentenceBuild.constraints,explanation:w.sentenceBuild.modelAnswer};
   if(mode==='typing')return {...q,type:'typing',prompt:w.meaning};
@@ -242,7 +267,11 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
     const weak=Object.entries(s.modes||{}).filter(([,v])=>v.total>0).sort((a,b)=>a[1].correct/a[1].total-b[1].correct/b[1].total)[0]?.[0];
     modes=shuffleCopy(modes,rng).sort((a,b)=>(b===weak)-(a===weak));
     if(known(s)&&w.commonMistake&&!isQuarantined(w.word,'grammarCourt'))candidates.push({id:`${w.word}:court`,mode:'grammarCourt',type:'mcq',prompt:`Choose the correct sentence. Context: ${w.situation}`,targets:[w.word],answers:[w.commonMistake.correction],options:shuffleCopy([w.commonMistake.sentence,w.commonMistake.correction],rng),explanation:w.commonMistake.why});
-    for(const mode of modes){if(mode.includes('gap')&&!/_{2,}/.test(w.gap))continue;const q=makeQuestion(w,mode,content.words,rng,difficulty);if(q)candidates.push(q);}
+    for(const mode of modes){if(mode.includes('gap')&&!/_{2,}/.test(w.gap))continue;const q=makeQuestion(w,mode,content.words,rng,difficulty,pools);if(q)candidates.push(q);}
+    // Extra question styles (Who Am I, Opposites, Two People, …) come from
+    // the caller so this module stays free of the legacy builders. Never for
+    // brand-new words, and not while the production gate wants typing.
+    if(opts.extraQuestion&&st!=='New'&&!needsProduction){const q=opts.extraQuestion(w,st,rng);if(q&&!isQuarantined(w.word,q.mode))candidates.push(q);}
   }
   // Combos and impostor challenges keep their own progress record
   // (progressKey, same as the grammar loop below). With no spaced
@@ -258,7 +287,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // pick whichever variant (seed or AI-generated) is least-attempted and
   // not on cooldown, instead of always the one static authored example.
   for(const g of shuffleCopy(content.grammar||[],rng).filter(g=>!category||topic(g.category)===topic(category)).slice(0,1)){const grammarKey=`grammar:${g.id}`;const item=pickPoolVariant(pools,grammarKey,{prompt:g.prompt,options:g.options,answer:g.answer,explanation:g.explanation});candidates.push({id:`grammar:${g.id}:${item.id}`,mode:'grammarCourt',type:'mcq',prompt:item.prompt,answers:[item.answer],options:shuffleCopy(item.options,rng),targets:[],progressKey:grammarKey,poolType:'grammar',poolItemId:item.id,explanation:item.explanation});}
-  const queue=[],counts={}, weights={meaning:3,reverse:3,gap:3,gapTyping:3,situation:2,typing:3,order:2,transform:2,multi:1,grammarCourt:1};
+  const queue=[],counts={}, weights={meaning:3,reverse:3,gap:3,gapTyping:3,situation:2,typing:3,order:2,transform:2,multi:1,grammarCourt:1,whoami:2,opposite:2,twopeople:2,selecttwo:2,idiomDetective:2,story:2};
   // Introductions are separate cards. Last introduced word is never the first test.
   const lastIntro=fresh.at(-1)?.word;
   const usedWords=new Set();
@@ -496,7 +525,28 @@ const REPORT_REASONS=["Wrong or missing correct answer","My answer should've bee
 // double-check (no point asking AI to judge a non-answer) and is graded
 // wrong immediately, same as leaving it blank would be if that were allowed.
 const DONT_KNOW_TOKEN="-";
-function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onReport,onReviewReport,onWithdrawReport,onUpdateWord,onResult,onAskWord}){
+// Short synthesized cues, no audio files. Correct: a quick rising pair
+// that climbs a little with the combo; wrong: one low soft note.
+let audioCtx=null;
+function playCue(kind,combo=0){
+  try{
+    audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();
+    const ctx=audioCtx,t=ctx.currentTime;
+    const notes=kind==='correct'?[523.25*Math.pow(2,Math.min(combo,8)/12),659.25*Math.pow(2,Math.min(combo,8)/12)]:[196];
+    notes.forEach((freq,i)=>{
+      const osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.type=kind==='correct'?'triangle':'sine';osc.frequency.value=freq;
+      const start=t+i*0.09,len=kind==='correct'?0.14:0.28;
+      gain.gain.setValueAtTime(0.0001,start);gain.gain.exponentialRampToValueAtTime(0.18,start+0.02);gain.gain.exponentialRampToValueAtTime(0.0001,start+len);
+      osc.connect(gain).connect(ctx.destination);osc.start(start);osc.stop(start+len+0.02);
+    });
+  }catch{}
+}
+// Friendly names for the V2-only modes MODE_META doesn't cover.
+const MODE_LABELS_V2={reverse:"Name the Word",grammarCourt:"Grammar Court",multi:"Combo",transform:"Transform",order:"Build the Sentence"};
+// Correct answers in a row ending at index i (reported/skipped ones don't break it).
+function comboAt(answers,i){let n=0;for(let j=i;j>=0;j--){const a=answers[j];if(!a||a.reported)continue;if(!a.correct)break;n++;}return n;}
+function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onReport,onReviewReport,onWithdrawReport,onUpdateWord,onResult,onAskWord,sound=true,autoContinue=true,onToggleSound}){
   const [reviewOpen,setReviewOpen]=useState(false);
   const [aiChecking,setAiChecking]=useState(false);
   const [cardIndex,setCardIndex]=useState(0);
@@ -516,6 +566,25 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
   // Only shown after a correct answer — by then the word is already known,
   // so an image here is a reward/reinforcement, never a hint toward it.
   const correctImage=result?.correct&&!result.reported?V2.findWord(words,q?.targets?.[0])?.image:null;
+  const graded=!!result&&s?.kind!=='story'&&!result.reported&&!result.aiFailed&&!result.unverified;
+  const combo=graded&&result.correct?comboAt(s.answers,s.index):0;
+  // Play a cue only when a result appears on this question, not when a
+  // saved session is resumed onto an already-answered question.
+  const cueRef=useRef({key:null,hadResult:true,fresh:false});
+  useEffect(()=>{
+    const key=`${s?.id}:${s?.index}`;
+    if(cueRef.current.key!==key){cueRef.current={key,hadResult:!!result,fresh:false};return;}
+    cueRef.current.fresh=!!result&&!cueRef.current.hadResult;
+    if(cueRef.current.fresh&&graded&&sound)playCue(result.correct?'correct':'wrong',combo);
+    cueRef.current.hadResult=!!result;
+  },[result,s?.id,s?.index]);
+  // Auto-continue only right after answering (never on resume) and never
+  // while a popup (report, pronunciation) is open over the question.
+  useEffect(()=>{
+    if(!autoContinue||!graded||!result.correct||result.aiFeedback||!cueRef.current.fresh||reportOpen||youglishTerm)return;
+    const t=setTimeout(()=>save({index:s.index+1,draft:{}}),1100);
+    return()=>clearTimeout(t);
+  },[result,s?.index,autoContinue,reportOpen,youglishTerm]);
   useEffect(()=>{
     function handleKeyboard(event){
       if(!q||event.defaultPrevented||event.metaKey||event.ctrlKey||event.altKey)return;
@@ -597,10 +666,15 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
     const total=s.queue.length;
     const pct=total?Math.round(correct/total*100):0;
     const isSolved=s.kind==='story'&&s.sourceStoryId;
+    const bestCombo=s.queue.reduce((best,_,i)=>Math.max(best,comboAt(s.answers,i)),0);
+    const missed=[...new Set(s.queue.flatMap((q,i)=>{const a=s.answers[i];return a&&!a.correct&&!a.reported?q.targets||[]:[];}))];
     return <section className="wh-panel">
       {isSolved&&<div className="wh-story-solved-banner"><CheckCircle2 size={22}/> <span>Story solved!</span></div>}
       <h2>{s.kind==='story'?s.title||'Story complete':'Session complete'}</h2>
-      <p className="wh-session-score">{correct} / {total} correct ({pct}%) · {s.answers.filter(a=>a.assisted).length} assisted</p>
+      <p className="wh-session-score">{correct} / {total} correct ({pct}%) · {s.answers.filter(a=>a?.assisted).length} assisted</p>
+      {s.kind!=='story'&&total>0&&<div className="wh-session-summary"><div><b>{pct}%</b><span>accuracy</span></div><div><b><Flame size={16}/> {bestCombo}</b><span>best streak</span></div><div><b>{missed.length}</b><span>to review</span></div></div>}
+      {s.kind!=='story'&&total>0&&<p className="wh-session-score-sub">{pct===100?'Perfect round — nothing slipped past you.':pct>=80?'Sharp work. Only a few got away.':pct>=60?'Solid progress — the missed ones will come back first next time.':'Tough round. The missed words come back first next time, so they will stick.'}</p>}
+      {missed.length>0&&<div className="wh-missed-words"><span>Missed:</span>{missed.map(word=><button key={word} className="wh-evidence-chip" onClick={()=>onAskWord?.(word)} title="Ask AI about this word">{word}</button>)}</div>}
       {isSolved&&<p className="wh-session-score-sub">{pct>=80?'Excellent work — you really know these words!':pct>=60?'Good job — keep practising the ones you missed.':'Keep going — re-read the story and try again soon.'}</p>}
       {s.queue.length===0&&<p>No safe questions are available yet. Your learning cards are saved. Return for practice later.</p>}
       <button className="wh-level-btn" onClick={()=>{onFinish(s);setReviewOpen(true);}}>Save results &amp; review</button>
@@ -703,7 +777,8 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
   const statusClass=result?(s.kind==='story'||result.reported||result.unverified?'':result.aiClose?'close':result.spelling?'close':result.correct?'correct':'wrong'):'';
   const answerText=result?q.answers.join(' + '):'';
   const sameAsExplanation=result&&q.explanation&&answerText.trim().toLowerCase()===q.explanation.trim().toLowerCase();
-  return <section><div className="wh-round-top"><button className="wh-back-btn wh-nav-btn" onClick={onBack}>Save and leave</button><span>{s.title} · {s.index+1}/{s.queue.length}</span></div>{s.kind==='practice'&&s.initialLength<(s.targetLength||12)&&<p className="wh-v2-notice">Short session: {s.initialLength} valid questions (usual goal: {s.targetLength||12}).</p>}{s.text&&<details className="wh-v2-story" open={s.index===0}><summary>Read the story</summary><p><AskableText text={s.text} onAskWord={onAskWord} onListen={setYouglishTerm} /></p></details>}<div className="wh-card">{result&&statusClass==='correct'&&<div className="wh-stamp correct">SUCCESS</div>}<div className="wh-file-row"><span>{q.mode}</span><div><button className="wh-back-btn" onClick={()=>onAskWord?.(q.targets?.[0]||'')}>Ask AI</button> <button className="wh-back-btn" onClick={()=>setYouglishTerm(q.targets?.[0]||'')}><Volume2 size={12}/> Listen</button> <button className="wh-back-btn" disabled={!!result&&(result.correct||result.reported||s.kind==='story')} onClick={()=>{setReportReason("");setReportReview(null);setReportOpen(true);}}>Report question</button></div></div><p className="wh-sentence"><AskableText text={q.prompt} onAskWord={onAskWord} onListen={setYouglishTerm} /></p>{q.type==='multi'&&<p>Choose {q.answers.length} words.</p>}<AnswerControl key={q.id} q={q} draft={draft} onChange={draft=>save({draft})} disabled={!!result} onSubmit={submit}/>{!result&&q.hints?.length>0&&<><button className="wh-back-btn" disabled={(draft.hints||0)>=q.hints.length} onClick={()=>save({draft:{...draft,hints:(draft.hints||0)+1}})}>Hint ({draft.hints||0}/{q.hints.length})</button>{q.hints.slice(0,draft.hints||0).map((h,i)=><p key={i}>{h}</p>)}</>}{!result?<button className="wh-level-btn wh-submit-btn" disabled={!ready||aiChecking} onClick={submit}>{aiChecking?'Checking with AI…':'Submit'}</button>:<><div role="status" className={`wh-feedback ${statusClass}`}>{s.kind==='story'?'Answer saved. Feedback follows at the end.':result.reported?'Reported; excluded from mastery.':result.aiFailed?'AI check failed. Tap Retry to try again, or Continue without grading this one.':result.dontKnow?"No worries — here's the answer:":result.unverified?'Different from the model. Not graded: a text match cannot check all valid sentences.':result.aiClose?'Almost — close, but not quite right yet.':result.spelling?'Close spelling; this is not a full recall success.':result.correct?'Correct'+(result.assisted?' with help.':'.'):'Try this answer:'}</div>{s.kind!=='story'&&!result.reported&&!result.aiFailed&&<div className="wh-result-details"><SmartImage src={correctImage} className="wh-flashcard-img"/><p>{answerText}</p>{!sameAsExplanation&&<p>{q.explanation}</p>}{result.aiFeedback&&<p className="wh-ai-feedback">{result.aiFeedback}</p>}</div>}{result.aiFailed&&<button className="wh-level-btn wh-result-continue" onClick={retry}>Retry</button>}<button ref={continueRef} className="wh-level-btn wh-result-continue" onClick={next}>Continue</button></>}</div>{reportOpen&&<div className="wh-modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget&&reportReview?.status!=='reviewing')closeReport();}}><div className="wh-panel wh-confirm-panel" role="alertdialog">{!reportReview?<><p><b>Report this question?</b></p><p>Pick what's wrong (optional), or add your own note below. AI will check it right away.</p><div className="wh-options wh-report-reasons">{REPORT_REASONS.map(reason=><button type="button" key={reason} className={`wh-option ${reportReason===reason?'picked':''}`} onClick={()=>setReportReason(current=>current===reason?"":reason)}>{reason}</button>)}</div><textarea className="wh-freeform" style={{width:"100%",minHeight:60,boxSizing:"border-box",marginTop:8}} value={reportReason} onChange={e=>setReportReason(e.target.value)} placeholder="Add detail (optional)"/><div className="wh-ai-actions"><button onClick={()=>setReportOpen(false)}>Cancel</button><button className="primary" onClick={submitReport}>Submit report</button></div></>:reportReview.status==='reviewing'?<><p><b>Report saved.</b></p><p className="wh-ai-feedback"><Sparkles size={13}/> AI is checking this question…</p></>:reportReview.status==='failed'?<><p><b>Report saved.</b></p><p>AI couldn't check it right now. It's still in the admin's report list, and this question won't count against you.</p><div className="wh-ai-actions"><button className="primary" onClick={closeReport}>Continue</button></div></>:<><p><b>{reportReview.review.verdict==='flawed'?'AI agrees — this question has a problem.':reportReview.review.verdict==='fine'?'AI thinks this question is OK.':"AI isn't sure about this one."}</b></p>{reportReview.review.explanation&&<p className="wh-ai-feedback">{reportReview.review.explanation}</p>}{reportReview.review.learnerAnswerAcceptable===true&&<p>Your answer looks acceptable too.</p>}{reportReview.review.verdict==='flawed'&&<p><small>{reportReview.review.fixed?'A fix is drafted and waiting for admin review.':'Saved for admin review.'} The question won't count against you.</small></p>}{reportReview.review.verdict!=='flawed'&&<p><small>Your report is still saved for the admin, and this question won't count against you. You can withdraw it if you agree with the AI.</small></p>}<div className="wh-ai-actions">{reportReview.review.verdict!=='flawed'&&<button onClick={withdrawReport}>{reportReview.prior?'Withdraw report':'Withdraw & answer it'}</button>}<button className="primary" onClick={closeReport}>{reportReview.review.verdict!=='flawed'?'Keep report':'Continue'}</button></div></>}</div></div>}{youglishTerm&&<PronunciationModal term={youglishTerm} onClose={()=>setYouglishTerm(null)}/>}</section>;
+  const answeredCount=s.answers.slice(0,s.queue.length).filter(Boolean).length;
+  return <section><div className="wh-round-top"><button className="wh-back-btn wh-nav-btn" onClick={onBack}>Save and leave</button><span className="wh-round-meta">{combo>=2&&<span key={combo} className="wh-combo"><Flame size={13}/> {combo} in a row</span>}<span>{s.title} · {s.index+1}/{s.queue.length}</span>{onToggleSound&&<button className="wh-icon-btn" onClick={onToggleSound} title={sound?"Mute sounds":"Turn sounds on"} aria-label={sound?"Mute sounds":"Turn sounds on"}>{sound?<Volume2 size={13}/>:<VolumeX size={13}/>}</button>}</span></div><div className="wh-session-progress" role="progressbar" aria-valuemin={0} aria-valuemax={s.queue.length} aria-valuenow={answeredCount}><span style={{width:`${s.queue.length?answeredCount/s.queue.length*100:0}%`}}/></div>{s.kind==='practice'&&s.initialLength<(s.targetLength||12)&&<p className="wh-v2-notice">Short session: {s.initialLength} valid questions (usual goal: {s.targetLength||12}).</p>}{s.text&&<details className="wh-v2-story" open={s.index===0}><summary>Read the story</summary><p><AskableText text={s.text} onAskWord={onAskWord} onListen={setYouglishTerm} /></p></details>}<div className="wh-card">{result&&statusClass==='correct'&&<div className="wh-stamp correct">SUCCESS</div>}<div className="wh-file-row"><span>{MODE_META[q.mode]?.label||MODE_LABELS_V2[q.mode]||q.mode}</span><div><button className="wh-back-btn" onClick={()=>onAskWord?.(q.targets?.[0]||'')}>Ask AI</button> <button className="wh-back-btn" onClick={()=>setYouglishTerm(q.targets?.[0]||'')}><Volume2 size={12}/> Listen</button> <button className="wh-back-btn" disabled={!!result&&(result.correct||result.reported||s.kind==='story')} onClick={()=>{setReportReason("");setReportReview(null);setReportOpen(true);}}>Report question</button></div></div><p className="wh-sentence"><AskableText text={q.prompt} onAskWord={onAskWord} onListen={setYouglishTerm} /></p>{q.type==='multi'&&<p>Choose {q.answers.length} words.</p>}<AnswerControl key={q.id} q={q} draft={draft} onChange={draft=>save({draft})} disabled={!!result} onSubmit={submit}/>{!result&&q.hints?.length>0&&<><button className="wh-back-btn" disabled={(draft.hints||0)>=q.hints.length} onClick={()=>save({draft:{...draft,hints:(draft.hints||0)+1}})}>Hint ({draft.hints||0}/{q.hints.length})</button>{q.hints.slice(0,draft.hints||0).map((h,i)=><p key={i}>{h}</p>)}</>}{!result?<button className="wh-level-btn wh-submit-btn" disabled={!ready||aiChecking} onClick={submit}>{aiChecking?'Checking with AI…':'Submit'}</button>:<><div role="status" className={`wh-feedback ${statusClass}`}>{s.kind==='story'?'Answer saved. Feedback follows at the end.':result.reported?'Reported; excluded from mastery.':result.aiFailed?'AI check failed. Tap Retry to try again, or Continue without grading this one.':result.dontKnow?"No worries — here's the answer:":result.unverified?'Different from the model. Not graded: a text match cannot check all valid sentences.':result.aiClose?'Almost — close, but not quite right yet.':result.spelling?'Close spelling; this is not a full recall success.':result.correct?'Correct'+(result.assisted?' with help.':'.'):'Try this answer:'}</div>{s.kind!=='story'&&!result.reported&&!result.aiFailed&&<div className="wh-result-details"><SmartImage src={correctImage} className="wh-flashcard-img"/><p>{answerText}</p>{!sameAsExplanation&&<p>{q.explanation}</p>}{result.aiFeedback&&<p className="wh-ai-feedback">{result.aiFeedback}</p>}</div>}{result.aiFailed&&<button className="wh-level-btn wh-result-continue" onClick={retry}>Retry</button>}<button ref={continueRef} className="wh-level-btn wh-result-continue" onClick={next}>Continue</button></>}</div>{reportOpen&&<div className="wh-modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget&&reportReview?.status!=='reviewing')closeReport();}}><div className="wh-panel wh-confirm-panel" role="alertdialog">{!reportReview?<><p><b>Report this question?</b></p><p>Pick what's wrong (optional), or add your own note below. AI will check it right away.</p><div className="wh-options wh-report-reasons">{REPORT_REASONS.map(reason=><button type="button" key={reason} className={`wh-option ${reportReason===reason?'picked':''}`} onClick={()=>setReportReason(current=>current===reason?"":reason)}>{reason}</button>)}</div><textarea className="wh-freeform" style={{width:"100%",minHeight:60,boxSizing:"border-box",marginTop:8}} value={reportReason} onChange={e=>setReportReason(e.target.value)} placeholder="Add detail (optional)"/><div className="wh-ai-actions"><button onClick={()=>setReportOpen(false)}>Cancel</button><button className="primary" onClick={submitReport}>Submit report</button></div></>:reportReview.status==='reviewing'?<><p><b>Report saved.</b></p><p className="wh-ai-feedback"><Sparkles size={13}/> AI is checking this question…</p></>:reportReview.status==='failed'?<><p><b>Report saved.</b></p><p>AI couldn't check it right now. It's still in the admin's report list, and this question won't count against you.</p><div className="wh-ai-actions"><button className="primary" onClick={closeReport}>Continue</button></div></>:<><p><b>{reportReview.review.verdict==='flawed'?'AI agrees — this question has a problem.':reportReview.review.verdict==='fine'?'AI thinks this question is OK.':"AI isn't sure about this one."}</b></p>{reportReview.review.explanation&&<p className="wh-ai-feedback">{reportReview.review.explanation}</p>}{reportReview.review.learnerAnswerAcceptable===true&&<p>Your answer looks acceptable too.</p>}{reportReview.review.verdict==='flawed'&&<p><small>{reportReview.review.fixed?'A fix is drafted and waiting for admin review.':'Saved for admin review.'} The question won't count against you.</small></p>}{reportReview.review.verdict!=='flawed'&&<p><small>Your report is still saved for the admin, and this question won't count against you. You can withdraw it if you agree with the AI.</small></p>}<div className="wh-ai-actions">{reportReview.review.verdict!=='flawed'&&<button onClick={withdrawReport}>{reportReview.prior?'Withdraw report':'Withdraw & answer it'}</button>}<button className="primary" onClick={closeReport}>{reportReview.review.verdict!=='flawed'?'Keep report':'Continue'}</button></div></>}</div></div>}{youglishTerm&&<PronunciationModal term={youglishTerm} onClose={()=>setYouglishTerm(null)}/>}</section>;
 }
 
 return SessionView;
@@ -2678,7 +2753,7 @@ const SCHEMA_VERSION = 6;
 // General settings — tunable knobs for round length and question mix.
 // Kept small and additive so old saves without a `settings` block just
 // fall back to these defaults.
-const DEFAULT_SETTINGS = { questionsPerRound: 12, newWordsPerRound: 3, weakReviewSize: 8, enablePairModes: true };
+const DEFAULT_SETTINGS = { questionsPerRound: 12, newWordsPerRound: 3, weakReviewSize: 8, enablePairModes: true, sound: true, autoContinue: true };
 function normalizeSettings(raw) {
   const s = raw && typeof raw === "object" ? raw : {};
   return {
@@ -2686,6 +2761,8 @@ function normalizeSettings(raw) {
     newWordsPerRound: Math.max(0, Math.min(10, Number(s.newWordsPerRound) ?? DEFAULT_SETTINGS.newWordsPerRound)),
     weakReviewSize: Math.max(3, Math.min(20, Number(s.weakReviewSize) || DEFAULT_SETTINGS.weakReviewSize)),
     enablePairModes: s.enablePairModes !== false,
+    sound: s.sound !== false,
+    autoContinue: s.autoContinue !== false,
   };
 }
 const STORAGE_KEY = "progress-v6";
@@ -2971,7 +3048,9 @@ function AdminControlCenter({content,mastery,confusions,reports,activeSession,se
         <label className="wh-settings-row"><span>Questions per round (Level Practice)</span><input type="number" min="4" max="30" value={settings.questionsPerRound} onChange={e=>onUpdateSettings({...settings,questionsPerRound:Math.max(4,Math.min(30,Number(e.target.value)||12))})}/></label>
         <label className="wh-settings-row"><span>New words introduced per round</span><input type="number" min="0" max="10" value={settings.newWordsPerRound} onChange={e=>onUpdateSettings({...settings,newWordsPerRound:Math.max(0,Math.min(10,Number(e.target.value)||0))})}/></label>
         <label className="wh-settings-row"><span>Words per Weak Review session</span><input type="number" min="3" max="20" value={settings.weakReviewSize} onChange={e=>onUpdateSettings({...settings,weakReviewSize:Math.max(3,Math.min(20,Number(e.target.value)||8))})}/></label>
-        <label className="wh-settings-row wh-settings-toggle"><input type="checkbox" checked={settings.enablePairModes} onChange={e=>onUpdateSettings({...settings,enablePairModes:e.target.checked})}/><span>Enable "pick two" pair questions (twopeople / selecttwo) in Weak Review</span></label>
+        <label className="wh-settings-row wh-settings-toggle"><input type="checkbox" checked={settings.enablePairModes} onChange={e=>onUpdateSettings({...settings,enablePairModes:e.target.checked})}/><span>Enable "pick two" pair questions (twopeople / selecttwo) in Practice and Weak Review</span></label>
+        <label className="wh-settings-row wh-settings-toggle"><input type="checkbox" checked={settings.sound} onChange={e=>onUpdateSettings({...settings,sound:e.target.checked})}/><span>Sound effects for correct and wrong answers</span></label>
+        <label className="wh-settings-row wh-settings-toggle"><input type="checkbox" checked={settings.autoContinue} onChange={e=>onUpdateSettings({...settings,autoContinue:e.target.checked})}/><span>Go to the next question automatically after a correct answer</span></label>
       </div>}
       {tab==="progress"&&<div className="wh-admin-grid"><article className="wh-admin-card"><h3>Weakest practiced words</h3>{weak.map(({word,stats})=><p key={word.word}><b>{word.word}</b> — {stats.correct||0}/{stats.total||0} · {V2.stage(stats)}</p>)}</article><article className="wh-admin-card"><h3>Top confusions</h3>{!topConfusions.length?<p>No confusion pairs recorded yet.</p>:topConfusions.map(item=><p key={item.pair}><b>{item.pair.replace("|"," ↔ ")}</b> — {item.count}</p>)}</article></div>}
       {tab==="data"&&<div className="wh-admin-grid"><article className="wh-admin-card"><h3>Import &amp; restore</h3><p>Validate content or a full backup before applying it. Existing progress keys remain attached.</p><button className="primary" onClick={onOpenImport}>Open Import Center</button></article><article className="wh-admin-card"><h3>Export</h3><p>Create a content-only handoff or a complete safety backup.</p><p className={`wh-storage-gauge ${estimatedStorageBytes>4*1024*1024?"danger":estimatedStorageBytes>2*1024*1024?"warn":""}`}>Saved progress size: ~{(estimatedStorageBytes/1024/1024).toFixed(2)} MB (storage limit: 5 MB per key)</p><div className="wh-ai-actions"><button onClick={()=>onExport("content")}>Export Content</button><button className="primary" onClick={()=>onExport("backup")}>Full Backup</button></div></article><article className="wh-admin-card"><h3>Active session</h3>{activeSession&&!activeSession.completed?<><p><b>{activeSession.kind==="story"?activeSession.title:activeSession.title||activeSession.kind}</b> · {activeSession.kind} · in progress</p><p>{Math.min(activeSession.index+1,activeSession.queue?.length||0)} / {activeSession.queue?.length||0} questions · {(activeSession.answers||[]).filter(a=>a?.correct).length} correct so far</p><p>Started as: <code>{activeSession.id}</code></p><button className="danger" onClick={onClearActiveSession}>Clear stuck session</button></>:activeSession&&activeSession.completed?<><p><b>{activeSession.title||activeSession.kind}</b> · {activeSession.kind} · last session, finished</p><p>{(activeSession.answers||[]).filter(a=>a?.correct).length} / {activeSession.queue?.length||0} correct — results already saved to progress.</p><button onClick={onClearActiveSession}>Clear from here</button></>:<p>No session started yet — the player is on the level list.</p>}{activeSession?.queue?.length>0&&<div className="wh-admin-session-questions">{activeSession.queue.map((q,i)=>{const a=activeSession.answers?.[i];return <div key={q.id||i} className={`wh-admin-session-q ${a?(a.correct?"ok":"bad"):"pending"}`}><b>{i+1}. {q.prompt}</b><span>Given: {a?(Array.isArray(a.value)?a.value.join(" + "):a.value||(a.reported?"Reported/skipped":"—")):"—"}</span><span>Correct: {(q.answers||[]).join(" + ")}</span></div>;})}</div>}</article><article className="wh-admin-card"><h3>Session log</h3><p>Last {sessionLogs.length} completed session{sessionLogs.length===1?"":"s"} (kept up to 50 — summary only, not every question).</p>{sessionLogs.length?<div className="wh-admin-session-questions">{sessionLogs.map(entry=>{const isOpen=expandedLogId===entry.id;const liveDetail=activeSession&&activeSession.id===entry.id&&activeSession.queue?.length?activeSession:null;return <div key={entry.id}><button className={`wh-admin-session-q wh-admin-log-row ${entry.total?(entry.correct/entry.total>=0.7?"ok":"bad"):"pending"}`} onClick={()=>setExpandedLogId(isOpen?null:entry.id)}>{isOpen?<ChevronDown size={14}/>:<ChevronRight size={14}/>}<span className="wh-admin-log-main"><b>{entry.title}</b><span>{entry.kind} · {entry.correct}/{entry.total} correct</span><span>{new Date(entry.at).toLocaleString()}</span></span></button>{isOpen&&(liveDetail?<div className="wh-admin-session-questions wh-admin-log-detail">{liveDetail.queue.map((q,i)=>{const a=liveDetail.answers?.[i];return <div key={q.id||i} className={`wh-admin-session-q ${a?(a.correct?"ok":"bad"):"pending"}`}><b>{i+1}. {q.prompt}</b><span>Given: {a?(Array.isArray(a.value)?a.value.join(" + "):a.value||(a.reported?"Reported/skipped":"—")):"—"}</span><span>Correct: {(q.answers||[]).join(" + ")}</span></div>;})}</div>:<p className="wh-admin-log-detail wh-admin-log-empty">Per-question detail wasn't kept for this session — only the most recently completed session keeps its full question breakdown (see "Active session" above while it's still the latest).</p>)}</div>;})}</div>:<p>No completed sessions logged yet.</p>}</article></div>}
@@ -3086,6 +3165,24 @@ export default function WordHunter() {
   const contentNoteRef = useRef("");
   function liveContent() { return { words: WORDS, grammar: GRAMMAR, puns: PUNS, challenges: CHALLENGES, combos: customCombos, stories: customStories, note: contentNoteRef.current }; }
   function launchSession(session) { setActiveSession(session); setScreen("session"); }
+  // One extra question style per word for Level Practice, built with the
+  // adaptive-engine builders and converted to the V2 question shape.
+  function buildPracticeExtra(wordObj, stage, rng = Math.random) {
+    const allowed = new Set(getAllowedModes(wordObj));
+    const byStage = stage === "Familiar" ? ["whoami", "idiomDetective", "story", "opposite"] : ["whoami", "idiomDetective", "story", "opposite", "twopeople", "selecttwo"];
+    const modes = byStage.filter((m) => allowed.has(m) && (m !== "opposite" || wordObj.opposite));
+    if (!modes.length) return null;
+    const mode = modes[Math.floor(rng() * modes.length)];
+    try {
+      // Multi-step authored challenges don't fit a single practice slot.
+      const built = legacyQuestionToV2(buildQuestion(mode, wordObj, poolsRef.current, { difficulty: 2 }), { kind: "word", wordObj }, mode);
+      const q = built.length === 1 ? built[0] : null;
+      if (!q || q.noMastery || !q.targets?.length) return null;
+      return { ...q, id: `${wordObj.word}:${q.mode}` };
+    } catch {
+      return null;
+    }
+  }
   function launchStory(story) { try { launchSession(V2.storySession(story, WORDS, masteryRef.current)); } catch(e) { setToast({text:e.message}); } }
   function launchChain(group) { try { const session = V2.chainSession(group, WORDS, masteryRef.current); if(!session.queue.length) {setToast({text:"No eligible opposite questions yet."});return;} launchSession(session); } catch(e) { setToast({text:e.message}); } }
   function introduceWords(words) { const next={...masteryRef.current}; words.forEach(w=>{next[w.word]={...next[w.word], introducedAt:next[w.word]?.introducedAt||Date.now()};}); masteryRef.current=next;setMastery(next);recordStudyDay(); }
@@ -3138,7 +3235,11 @@ export default function WordHunter() {
         });
         const nextWordPools={...wordPools,[q.poolType]:items}, nextPools={...snapshot,[wordObj.word]:nextWordPools};
         poolsRef.current=nextPools;setPools(nextPools);
-        if(poolNeedsGeneration(nextWordPools,q.poolType))triggerGeneration([{word:wordObj.word,poolType:q.poolType}],nextPools);
+        // Keep one unseen variant ready: after a correct answer, if nothing
+        // besides the text just shown is still fresh, write a new one now so
+        // the next time this word comes up it has a different sentence.
+        const freshOthers=items.some(it=>it.id!==q.poolItemId&&(!it.lockedUntil||it.lockedUntil<=now));
+        if(poolNeedsGeneration(nextWordPools,q.poolType)||(independentCorrect&&!freshOthers))triggerGeneration([{word:wordObj.word,poolType:q.poolType}],nextPools);
       }
     }
 
@@ -3669,7 +3770,7 @@ export default function WordHunter() {
   function startLevel(index) {
     const level = LEVELS[index]; if(!level) return;
     setCurrentLevelIndex(index);
-    const session = V2.practice(liveContent(), masteryRef.current, level.title, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound: settings.newWordsPerRound, pools: poolsRef.current });
+    const session = V2.practice(liveContent(), masteryRef.current, level.title, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound: settings.newWordsPerRound, pools: poolsRef.current, extraQuestion: buildPracticeExtra });
     launchSession(session);
   }
   function startWeakReview() {
@@ -4851,6 +4952,20 @@ export default function WordHunter() {
           padding: 6px 14px; border: 3px solid; border-radius: 4px; text-transform: uppercase;
           transform: rotate(-8deg); opacity: 0.92; pointer-events: none;
         }
+.wh-round-meta { display:flex; align-items:center; gap:10px; }
+        .wh-combo { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:999px; background:var(--gold-soft); color:#1b1814; font-weight:700; font-size:12px; }
+        .wh-session-progress { height:6px; border-radius:999px; background:rgba(127,127,127,.22); overflow:hidden; margin:-6px 0 14px; }
+        .wh-session-progress span { display:block; height:100%; background:var(--green); border-radius:inherit; transition:width .35s ease; }
+        .wh-session-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0; }
+        .wh-session-summary div { border:1px solid rgba(127,127,127,.3); border-radius:6px; padding:12px 8px; text-align:center; }
+        .wh-session-summary b { display:flex; align-items:center; justify-content:center; gap:4px; font-size:22px; }
+        .wh-session-summary span { display:block; font-size:12px; opacity:.75; margin-top:2px; }
+        .wh-missed-words { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:0 0 14px; }
+        .wh-missed-words .wh-evidence-chip { cursor:pointer; background:none; }.wh-missed-words > span { font-size:13px; opacity:.8; }
+        @media (prefers-reduced-motion: no-preference) {
+          .wh-combo { animation: wh-combo-pop .3s cubic-bezier(.2,.9,.3,1.4); }
+        }
+        @keyframes wh-combo-pop { 0% { transform:scale(1.5); } 100% { transform:scale(1); } }
         .wh-stamp.correct { color: var(--green); border-color: var(--green); }
         .wh-stamp.wrong { color: var(--red); border-color: var(--red); }
         .wh-stamp.close { color: var(--gold-soft); border-color: var(--gold-soft); }
@@ -5336,7 +5451,7 @@ export default function WordHunter() {
             {!customStories.length&&<p>No authored stories loaded. Import a Content v2 file to add them.</p>}{[...customStories].sort((a,b)=>a.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length-b.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length).map(story=>{const fresh=story.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length;const record=solvedStories.find(e=>e.id===story.id);return <article className="wh-v2-learn" key={story.id}><strong>{story.title}{record&&<span className="wh-story-solved-flag"><CheckCircle2 size={13}/> Solved · {record.correct}/{record.total}</span>}</strong><p>{story.questions.length}{story.grammarQuestions?.length?` + ${story.grammarQuestions.length} grammar`:""} questions · {fresh?`${fresh} new words: preview first`:"Ready for review"}</p><button className="wh-level-btn" onClick={()=>launchStory(story)}>{record?"Play again":"Open story"}</button></article>;})}</div>}
           {section==="challenges"&&<div className="wh-panel"><h2>Opposite Chain</h2>{[...new Set(WORDS.filter(w=>w.chainGroup&&w.opposite).map(w=>w.chainGroup))].map(group=><button key={group} className="wh-level-btn" onClick={()=>launchChain(group)}>{group}</button>)}<h2>Authored Challenges</h2>{!CHALLENGES.length&&<p>No authored challenges loaded.</p>}{CHALLENGES.map(c=><button key={c.id} className="wh-level-btn" onClick={()=>launchAuthoredChallenge(c)}>{c.label||c.id}</button>)}</div>}
         </>}
-        {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={reportSessionQuestion} onReviewReport={reviewQuestionReport} onWithdrawReport={deleteQuestionReport} onUpdateWord={updateWordFields} onResult={recordSessionResult} onAskWord={openAskAi}/>}
+        {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={reportSessionQuestion} onReviewReport={reviewQuestionReport} onWithdrawReport={deleteQuestionReport} onUpdateWord={updateWordFields} sound={settings.sound} autoContinue={settings.autoContinue} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onResult={recordSessionResult} onAskWord={openAskAi}/>}
 
         {screen === "levels" && (
           <>
