@@ -3,7 +3,7 @@
 // React and lucide-react are the only imports; no local files or build setup.
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
-  Search, PenLine, Compass, Keyboard, Flame, RotateCcw, Scale, Sparkles,
+  Search, PenLine, Compass, Keyboard, Flame, Scale, Sparkles,
   Trophy, Award, Lock, X, Play, CheckCircle2, BarChart3, ArrowLeft, BookOpen, Flag,
   Users, Newspaper, ShoppingBag, Target, Angry, Upload, ArrowLeftRight, Download, Copy, ClipboardCheck,
   HelpCircle, Users2, ListChecks, Zap, Trash2, ChevronDown, ChevronRight, Volume2, VolumeX,
@@ -108,7 +108,7 @@ function compatible(a,b) {
   if (norm(a.word)===norm(b.word)) return false;
   return !(Array.isArray(a.excludeFromSameOptionsWith)?a.excludeFromSameOptionsWith:[]).some(x=>norm(x)===norm(b.word)) && !(Array.isArray(b.excludeFromSameOptionsWith)?b.excludeFromSameOptionsWith:[]).some(x=>norm(x)===norm(a.word));
 }
-function optionWords(targets, words, count=4, rng=Math.random) {
+function optionWords(targets, words, count=4, rng=Math.random, boost=null) {
   const chosen = targets.map(t=>typeof t==='string'?findWord(words,t):t);
   // Correct targets only need to be distinct from each other. Exclusions
   // (excludeFromSameOptionsWith) exist to stop an ambiguous *distractor*
@@ -119,7 +119,7 @@ function optionWords(targets, words, count=4, rng=Math.random) {
   // distractorGroup, which beats the mapper's cluster, which beats plain
   // type/category. A pair is confusable in either direction.
   const confusable=(t,w)=>(t.relations?.confusableWords||[]).some(x=>norm(x)===norm(w.word));
-  const ranked = shuffleCopy(words,rng).map(w=>({w,rank:Math.max(...chosen.map(t=>(confusable(t,w)?150:confusable(w,t)?120:0)+(t.distractorGroup && t.distractorGroup===w.distractorGroup?100:0)+(t.learningData?.cluster && t.learningData.cluster===w.learningData?.cluster?40:0)+(t.type===w.type?10:0)+(topic(t.category)===topic(w.category)?5:0)))})).sort((a,b)=>b.rank-a.rank);
+  const ranked = shuffleCopy(words,rng).map(w=>({w,rank:Math.max(...chosen.map(t=>(confusable(t,w)?150:confusable(w,t)?120:0)+(t.distractorGroup && t.distractorGroup===w.distractorGroup?100:0)+(t.learningData?.cluster && t.learningData.cluster===w.learningData?.cluster?40:0)+(t.type===w.type?10:0)+(topic(t.category)===topic(w.category)?5:0)+(boost?boost(t,w):0)))})).sort((a,b)=>b.rank-a.rank);
   for(const {w} of ranked) {
     if(chosen.length>=count) break;
     // Identical definitions are known alternatives; semantic synonyms require author review/exclusions.
@@ -209,7 +209,7 @@ function pickWordVariant(pools,w,poolType,rng=Math.random){
   const tied=candidates.filter(it=>Number(it.attempts||0)===least);
   return tied[Math.floor(rng()*tied.length)];
 }
-function makeQuestion(w,mode,words,rng=Math.random,difficulty=1,pools=null) {
+function makeQuestion(w,mode,words,rng=Math.random,difficulty=1,pools=null,boost=null) {
   const poolType=POOL_FOR_MODE[mode];
   const variant=poolType&&pools?pickWordVariant(pools,w,poolType,rng):null;
   // A variant that leaks the answer or lost its blank falls back to the seed.
@@ -222,7 +222,7 @@ function makeQuestion(w,mode,words,rng=Math.random,difficulty=1,pools=null) {
   if(mode==='typing')return {...q,type:'typing',prompt:w.meaning};
   if(mode==='gapTyping')return {...q,type:'typing',prompt:w.gap};
   q.prompt=mode==='meaning'?w.word:mode==='reverse'?w.meaning:mode==='gap'?w.gap:w.situation;
-  const choices=optionWords([w],words,difficulty>=3?(mode==='meaning'?5:6):4,rng);
+  const choices=optionWords([w],words,difficulty>=3?(mode==='meaning'?5:6):4,rng,boost);
   q.options=choices.map(x=>mode==='meaning'?x.meaning:x.word);
   if(mode==='meaning')q.answers=[w.meaning];
   if(q.options.length<2)return null;
@@ -240,6 +240,11 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   const pools=opts.pools||{};
   const questionsPerRound=Math.max(4,opts.questionsPerRound||12);
   const newWordsPerRound=Math.max(0,opts.newWordsPerRound??3);
+  // Words this learner has actually picked by mistake for each other
+  // (either direction) make the strongest distractors, ahead of authored
+  // confusable pairs.
+  const confusedPairs=new Set(Object.keys(opts.confusions||{}).flatMap(key=>{const [a,b]=key.split('|');return a&&b?[`${norm(a)}|${norm(b)}`,`${norm(b)}|${norm(a)}`]:[];}));
+  const confusionBoost=confusedPairs.size?(t,w)=>confusedPairs.has(`${norm(t.word)}|${norm(w.word)}`)?200:0:null;
   const source=content.words.filter(w=>!category||topic(w.category)===topic(category));
   const fresh=shuffleCopy(source.filter(w=>!known(mastery[w.word])),rng).slice(0,newWordsPerRound);
   // No spaced repetition: known words are picked in rotation. Words missed
@@ -254,7 +259,9 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   for(const w of chosen){const s=mastery[w.word]||{};const st=stage(s);
     // Familiar words already get one production chance (gapTyping) once they
     // have a correct answer, so typing evidence starts before 'Learned'.
-    let modes=st==='New'?['meaning','reverse']:st==='Familiar'?['reverse','gap','situation',...((s.correct||0)>=1?['gapTyping']:[])]:['typing','gapTyping','reverse','gap','situation'];
+    // Once a word is Learned, "definition → pick the word" is too easy to
+    // tell you anything, so known words lean on typing and context instead.
+    let modes=st==='New'?['meaning','reverse']:st==='Familiar'?['reverse','gap','situation',...((s.correct||0)>=1?['gapTyping']:[])]:['typing','gapTyping','gap','situation'];
     if(['Learned','Mastered'].includes(st)){if(['phrasal','fyi'].includes(w.type)&&w.transformExample)modes.push('transform');}
     // Production gate: a word held at PRODUCTION_GATE_STEP (or already
     // Learned/Mastered) with zero correct productions only gets typing modes
@@ -267,7 +274,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
     const weak=Object.entries(s.modes||{}).filter(([,v])=>v.total>0).sort((a,b)=>a[1].correct/a[1].total-b[1].correct/b[1].total)[0]?.[0];
     modes=shuffleCopy(modes,rng).sort((a,b)=>(b===weak)-(a===weak));
     if(known(s)&&w.commonMistake&&!isQuarantined(w.word,'grammarCourt'))candidates.push({id:`${w.word}:court`,mode:'grammarCourt',type:'mcq',prompt:`Choose the correct sentence. Context: ${w.situation}`,targets:[w.word],answers:[w.commonMistake.correction],options:shuffleCopy([w.commonMistake.sentence,w.commonMistake.correction],rng),explanation:w.commonMistake.why});
-    for(const mode of modes){if(mode.includes('gap')&&!/_{2,}/.test(w.gap))continue;const q=makeQuestion(w,mode,content.words,rng,difficulty,pools);if(q)candidates.push(q);}
+    for(const mode of modes){if(mode.includes('gap')&&!/_{2,}/.test(w.gap))continue;const q=makeQuestion(w,mode,content.words,rng,difficulty,pools,confusionBoost);if(q)candidates.push(q);}
     // Extra question styles (Who Am I, Opposites, Two People, …) come from
     // the caller so this module stays free of the legacy builders. Never for
     // brand-new words, and not while the production gate wants typing.
@@ -291,8 +298,11 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // Introductions are separate cards. Last introduced word is never the first test.
   const lastIntro=fresh.at(-1)?.word;
   const usedWords=new Set();
+  // A word shows up at most twice per round; a small category ends the
+  // round early instead of cycling the same few words over and over.
+  const wordUses={};
   while(queue.length<questionsPerRound&&candidates.length){
-    const eligible=candidates.map((q,i)=>({q,i})).filter(({q})=>!(queue.length===0&&q.targets.includes(lastIntro)) && !queue.slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))) && !(queue.length>=2&&queue.slice(-2).every(p=>p.mode===q.mode)));
+    const eligible=candidates.map((q,i)=>({q,i})).filter(({q})=>!(queue.length===0&&q.targets.includes(lastIntro)) && !q.targets.some(t=>(wordUses[t]||0)>=2) && !queue.slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))) && !(queue.length>=2&&queue.slice(-2).every(p=>p.mode===q.mode)));
     if(!eligible.length)break;
     eligible.sort((a,b)=>{
       const aFresh=a.q.targets.some(t=>!usedWords.has(t))?0:1;
@@ -300,7 +310,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
       if(aFresh!==bFresh)return aFresh-bFresh;
       return ((counts[a.q.mode]||0)/(weights[a.q.mode]||1))-((counts[b.q.mode]||0)/(weights[b.q.mode]||1));
     });
-    const {q,i}=eligible[0];queue.push(q);counts[q.mode]=(counts[q.mode]||0)+1;q.targets.forEach(t=>usedWords.add(t));candidates.splice(i,1);
+    const {q,i}=eligible[0];queue.push(q);counts[q.mode]=(counts[q.mode]||0)+1;q.targets.forEach(t=>{usedWords.add(t);wordUses[t]=(wordUses[t]||0)+1;});candidates.splice(i,1);
   }
   return {kind:'practice',id:`session-${Date.now()}-${rng()}`,title:category||'Practice',queue,introductions:fresh,index:0,answers:[],initialLength:queue.length,targetLength:questionsPerRound,reserves:candidates,extraAdded:false};
 }
@@ -546,7 +556,7 @@ function playCue(kind,combo=0){
 const MODE_LABELS_V2={reverse:"Name the Word",grammarCourt:"Grammar Court",multi:"Combo",transform:"Transform",order:"Build the Sentence"};
 // Correct answers in a row ending at index i (reported/skipped ones don't break it).
 function comboAt(answers,i){let n=0;for(let j=i;j>=0;j--){const a=answers[j];if(!a||a.reported)continue;if(!a.correct)break;n++;}return n;}
-function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onReport,onReviewReport,onWithdrawReport,onUpdateWord,onResult,onAskWord,sound=true,autoContinue=true,onToggleSound}){
+function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onReport,onReviewReport,onWithdrawReport,onUpdateWord,onResult,onAskWord,sound=true,onToggleSound}){
   const [reviewOpen,setReviewOpen]=useState(false);
   const [aiChecking,setAiChecking]=useState(false);
   const [cardIndex,setCardIndex]=useState(0);
@@ -570,21 +580,13 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
   const combo=graded&&result.correct?comboAt(s.answers,s.index):0;
   // Play a cue only when a result appears on this question, not when a
   // saved session is resumed onto an already-answered question.
-  const cueRef=useRef({key:null,hadResult:true,fresh:false});
+  const cueRef=useRef({key:null,hadResult:true});
   useEffect(()=>{
     const key=`${s?.id}:${s?.index}`;
-    if(cueRef.current.key!==key){cueRef.current={key,hadResult:!!result,fresh:false};return;}
-    cueRef.current.fresh=!!result&&!cueRef.current.hadResult;
-    if(cueRef.current.fresh&&graded&&sound)playCue(result.correct?'correct':'wrong',combo);
+    if(cueRef.current.key!==key){cueRef.current={key,hadResult:!!result};return;}
+    if(result&&!cueRef.current.hadResult&&graded&&sound)playCue(result.correct?'correct':'wrong',combo);
     cueRef.current.hadResult=!!result;
   },[result,s?.id,s?.index]);
-  // Auto-continue only right after answering (never on resume) and never
-  // while a popup (report, pronunciation) is open over the question.
-  useEffect(()=>{
-    if(!autoContinue||!graded||!result.correct||result.aiFeedback||!cueRef.current.fresh||reportOpen||youglishTerm)return;
-    const t=setTimeout(()=>save({index:s.index+1,draft:{}}),1100);
-    return()=>clearTimeout(t);
-  },[result,s?.index,autoContinue,reportOpen,youglishTerm]);
   useEffect(()=>{
     function handleKeyboard(event){
       if(!q||event.defaultPrevented||event.metaKey||event.ctrlKey||event.altKey)return;
@@ -1005,6 +1007,12 @@ function updateReviewStreak(stats, correct, now = Date.now(), opts = {}) {
   const stepCap = productionCorrect > 0 ? REVIEW_STEP_MAX : PRODUCTION_GATE_STEP;
   const reviewStep = correct ? Math.min(prev.reviewStep + 1, stepCap) : Math.max(0, prev.reviewStep - 1);
   return { reviewStep, lastReviewedAt: now, nextReviewAt: 0 };
+}
+
+// Today's answered/correct counts for the daily goal; a record from an
+// earlier day reads as a fresh zero.
+function todayProgress(record, today = localDateKey()) {
+  return record && record.date === today ? record : { date: today, answered: 0, correct: 0 };
 }
 
 function localDateKey(date = new Date()) {
@@ -2753,7 +2761,7 @@ const SCHEMA_VERSION = 6;
 // General settings — tunable knobs for round length and question mix.
 // Kept small and additive so old saves without a `settings` block just
 // fall back to these defaults.
-const DEFAULT_SETTINGS = { questionsPerRound: 12, newWordsPerRound: 3, weakReviewSize: 8, enablePairModes: true, sound: true, autoContinue: true };
+const DEFAULT_SETTINGS = { questionsPerRound: 12, newWordsPerRound: 3, weakReviewSize: 8, enablePairModes: true, sound: true, dailyGoal: 20 };
 function normalizeSettings(raw) {
   const s = raw && typeof raw === "object" ? raw : {};
   return {
@@ -2762,7 +2770,7 @@ function normalizeSettings(raw) {
     weakReviewSize: Math.max(3, Math.min(20, Number(s.weakReviewSize) || DEFAULT_SETTINGS.weakReviewSize)),
     enablePairModes: s.enablePairModes !== false,
     sound: s.sound !== false,
-    autoContinue: s.autoContinue !== false,
+    dailyGoal: Math.max(5, Math.min(100, Number(s.dailyGoal) || DEFAULT_SETTINGS.dailyGoal)),
   };
 }
 const STORAGE_KEY = "progress-v6";
@@ -2837,7 +2845,7 @@ function emptyProgressData() {
   return migrateProgressData({ schemaVersion: SCHEMA_VERSION });
 }
 
-function AdminControlCenter({content,mastery,confusions,reports,activeSession,sessionLogs,estimatedStorageBytes,settings,onUpdateSettings,onClearActiveSession,onUpdate,onResolveReport,onReviewReport,onRetireVariant,onDeleteReport,onOpenImport,onExport,onClose}){
+function AdminControlCenter({content,mastery,confusions,reports,activeSession,sessionLogs,estimatedStorageBytes,settings,onUpdateSettings,onClearActiveSession,onUpdate,onResolveReport,onReviewReport,onRetireVariant,onDeleteReport,onOpenImport,onExport,onResetProgress,onWipeEverything,onClose}){
   const [tab,setTab]=useState("dashboard");
   const [entity,setEntity]=useState("words");
   const [query,setQuery]=useState("");
@@ -3049,11 +3057,11 @@ function AdminControlCenter({content,mastery,confusions,reports,activeSession,se
         <label className="wh-settings-row"><span>New words introduced per round</span><input type="number" min="0" max="10" value={settings.newWordsPerRound} onChange={e=>onUpdateSettings({...settings,newWordsPerRound:Math.max(0,Math.min(10,Number(e.target.value)||0))})}/></label>
         <label className="wh-settings-row"><span>Words per Weak Review session</span><input type="number" min="3" max="20" value={settings.weakReviewSize} onChange={e=>onUpdateSettings({...settings,weakReviewSize:Math.max(3,Math.min(20,Number(e.target.value)||8))})}/></label>
         <label className="wh-settings-row wh-settings-toggle"><input type="checkbox" checked={settings.enablePairModes} onChange={e=>onUpdateSettings({...settings,enablePairModes:e.target.checked})}/><span>Enable "pick two" pair questions (twopeople / selecttwo) in Practice and Weak Review</span></label>
+        <label className="wh-settings-row"><span>Daily goal (questions per day)</span><input type="number" min="5" max="100" value={settings.dailyGoal} onChange={e=>onUpdateSettings({...settings,dailyGoal:Math.max(5,Math.min(100,Number(e.target.value)||20))})}/></label>
         <label className="wh-settings-row wh-settings-toggle"><input type="checkbox" checked={settings.sound} onChange={e=>onUpdateSettings({...settings,sound:e.target.checked})}/><span>Sound effects for correct and wrong answers</span></label>
-        <label className="wh-settings-row wh-settings-toggle"><input type="checkbox" checked={settings.autoContinue} onChange={e=>onUpdateSettings({...settings,autoContinue:e.target.checked})}/><span>Go to the next question automatically after a correct answer</span></label>
       </div>}
       {tab==="progress"&&<div className="wh-admin-grid"><article className="wh-admin-card"><h3>Weakest practiced words</h3>{weak.map(({word,stats})=><p key={word.word}><b>{word.word}</b> — {stats.correct||0}/{stats.total||0} · {V2.stage(stats)}</p>)}</article><article className="wh-admin-card"><h3>Top confusions</h3>{!topConfusions.length?<p>No confusion pairs recorded yet.</p>:topConfusions.map(item=><p key={item.pair}><b>{item.pair.replace("|"," ↔ ")}</b> — {item.count}</p>)}</article></div>}
-      {tab==="data"&&<div className="wh-admin-grid"><article className="wh-admin-card"><h3>Import &amp; restore</h3><p>Validate content or a full backup before applying it. Existing progress keys remain attached.</p><button className="primary" onClick={onOpenImport}>Open Import Center</button></article><article className="wh-admin-card"><h3>Export</h3><p>Create a content-only handoff or a complete safety backup.</p><p className={`wh-storage-gauge ${estimatedStorageBytes>4*1024*1024?"danger":estimatedStorageBytes>2*1024*1024?"warn":""}`}>Saved progress size: ~{(estimatedStorageBytes/1024/1024).toFixed(2)} MB (storage limit: 5 MB per key)</p><div className="wh-ai-actions"><button onClick={()=>onExport("content")}>Export Content</button><button className="primary" onClick={()=>onExport("backup")}>Full Backup</button></div></article><article className="wh-admin-card"><h3>Active session</h3>{activeSession&&!activeSession.completed?<><p><b>{activeSession.kind==="story"?activeSession.title:activeSession.title||activeSession.kind}</b> · {activeSession.kind} · in progress</p><p>{Math.min(activeSession.index+1,activeSession.queue?.length||0)} / {activeSession.queue?.length||0} questions · {(activeSession.answers||[]).filter(a=>a?.correct).length} correct so far</p><p>Started as: <code>{activeSession.id}</code></p><button className="danger" onClick={onClearActiveSession}>Clear stuck session</button></>:activeSession&&activeSession.completed?<><p><b>{activeSession.title||activeSession.kind}</b> · {activeSession.kind} · last session, finished</p><p>{(activeSession.answers||[]).filter(a=>a?.correct).length} / {activeSession.queue?.length||0} correct — results already saved to progress.</p><button onClick={onClearActiveSession}>Clear from here</button></>:<p>No session started yet — the player is on the level list.</p>}{activeSession?.queue?.length>0&&<div className="wh-admin-session-questions">{activeSession.queue.map((q,i)=>{const a=activeSession.answers?.[i];return <div key={q.id||i} className={`wh-admin-session-q ${a?(a.correct?"ok":"bad"):"pending"}`}><b>{i+1}. {q.prompt}</b><span>Given: {a?(Array.isArray(a.value)?a.value.join(" + "):a.value||(a.reported?"Reported/skipped":"—")):"—"}</span><span>Correct: {(q.answers||[]).join(" + ")}</span></div>;})}</div>}</article><article className="wh-admin-card"><h3>Session log</h3><p>Last {sessionLogs.length} completed session{sessionLogs.length===1?"":"s"} (kept up to 50 — summary only, not every question).</p>{sessionLogs.length?<div className="wh-admin-session-questions">{sessionLogs.map(entry=>{const isOpen=expandedLogId===entry.id;const liveDetail=activeSession&&activeSession.id===entry.id&&activeSession.queue?.length?activeSession:null;return <div key={entry.id}><button className={`wh-admin-session-q wh-admin-log-row ${entry.total?(entry.correct/entry.total>=0.7?"ok":"bad"):"pending"}`} onClick={()=>setExpandedLogId(isOpen?null:entry.id)}>{isOpen?<ChevronDown size={14}/>:<ChevronRight size={14}/>}<span className="wh-admin-log-main"><b>{entry.title}</b><span>{entry.kind} · {entry.correct}/{entry.total} correct</span><span>{new Date(entry.at).toLocaleString()}</span></span></button>{isOpen&&(liveDetail?<div className="wh-admin-session-questions wh-admin-log-detail">{liveDetail.queue.map((q,i)=>{const a=liveDetail.answers?.[i];return <div key={q.id||i} className={`wh-admin-session-q ${a?(a.correct?"ok":"bad"):"pending"}`}><b>{i+1}. {q.prompt}</b><span>Given: {a?(Array.isArray(a.value)?a.value.join(" + "):a.value||(a.reported?"Reported/skipped":"—")):"—"}</span><span>Correct: {(q.answers||[]).join(" + ")}</span></div>;})}</div>:<p className="wh-admin-log-detail wh-admin-log-empty">Per-question detail wasn't kept for this session — only the most recently completed session keeps its full question breakdown (see "Active session" above while it's still the latest).</p>)}</div>;})}</div>:<p>No completed sessions logged yet.</p>}</article></div>}
+      {tab==="data"&&<div className="wh-admin-grid"><article className="wh-admin-card"><h3>Import &amp; restore</h3><p>Validate content or a full backup before applying it. Existing progress keys remain attached.</p><button className="primary" onClick={onOpenImport}>Open Import Center</button></article><article className="wh-admin-card"><h3>Export</h3><p>Create a content-only handoff or a complete safety backup.</p><p className={`wh-storage-gauge ${estimatedStorageBytes>4*1024*1024?"danger":estimatedStorageBytes>2*1024*1024?"warn":""}`}>Saved progress size: ~{(estimatedStorageBytes/1024/1024).toFixed(2)} MB (storage limit: 5 MB per key)</p><div className="wh-ai-actions"><button onClick={()=>onExport("content")}>Export Content</button><button className="primary" onClick={()=>onExport("backup")}>Full Backup</button></div></article><article className="wh-admin-card"><h3>Danger zone</h3><p>Take a Full Backup first. Reset clears progress but keeps your content; Clear everything deletes both.</p><div className="wh-ai-actions"><button onClick={onResetProgress}>Reset progress</button><button className="danger" onClick={onWipeEverything}>Clear everything</button></div></article><article className="wh-admin-card"><h3>Active session</h3>{activeSession&&!activeSession.completed?<><p><b>{activeSession.kind==="story"?activeSession.title:activeSession.title||activeSession.kind}</b> · {activeSession.kind} · in progress</p><p>{Math.min(activeSession.index+1,activeSession.queue?.length||0)} / {activeSession.queue?.length||0} questions · {(activeSession.answers||[]).filter(a=>a?.correct).length} correct so far</p><p>Started as: <code>{activeSession.id}</code></p><button className="danger" onClick={onClearActiveSession}>Clear stuck session</button></>:activeSession&&activeSession.completed?<><p><b>{activeSession.title||activeSession.kind}</b> · {activeSession.kind} · last session, finished</p><p>{(activeSession.answers||[]).filter(a=>a?.correct).length} / {activeSession.queue?.length||0} correct — results already saved to progress.</p><button onClick={onClearActiveSession}>Clear from here</button></>:<p>No session started yet — the player is on the level list.</p>}{activeSession?.queue?.length>0&&<div className="wh-admin-session-questions">{activeSession.queue.map((q,i)=>{const a=activeSession.answers?.[i];return <div key={q.id||i} className={`wh-admin-session-q ${a?(a.correct?"ok":"bad"):"pending"}`}><b>{i+1}. {q.prompt}</b><span>Given: {a?(Array.isArray(a.value)?a.value.join(" + "):a.value||(a.reported?"Reported/skipped":"—")):"—"}</span><span>Correct: {(q.answers||[]).join(" + ")}</span></div>;})}</div>}</article><article className="wh-admin-card"><h3>Session log</h3><p>Last {sessionLogs.length} completed session{sessionLogs.length===1?"":"s"} (kept up to 50 — summary only, not every question).</p>{sessionLogs.length?<div className="wh-admin-session-questions">{sessionLogs.map(entry=>{const isOpen=expandedLogId===entry.id;const liveDetail=activeSession&&activeSession.id===entry.id&&activeSession.queue?.length?activeSession:null;return <div key={entry.id}><button className={`wh-admin-session-q wh-admin-log-row ${entry.total?(entry.correct/entry.total>=0.7?"ok":"bad"):"pending"}`} onClick={()=>setExpandedLogId(isOpen?null:entry.id)}>{isOpen?<ChevronDown size={14}/>:<ChevronRight size={14}/>}<span className="wh-admin-log-main"><b>{entry.title}</b><span>{entry.kind} · {entry.correct}/{entry.total} correct</span><span>{new Date(entry.at).toLocaleString()}</span></span></button>{isOpen&&(liveDetail?<div className="wh-admin-session-questions wh-admin-log-detail">{liveDetail.queue.map((q,i)=>{const a=liveDetail.answers?.[i];return <div key={q.id||i} className={`wh-admin-session-q ${a?(a.correct?"ok":"bad"):"pending"}`}><b>{i+1}. {q.prompt}</b><span>Given: {a?(Array.isArray(a.value)?a.value.join(" + "):a.value||(a.reported?"Reported/skipped":"—")):"—"}</span><span>Correct: {(q.answers||[]).join(" + ")}</span></div>;})}</div>:<p className="wh-admin-log-detail wh-admin-log-empty">Per-question detail wasn't kept for this session — only the most recently completed session keeps its full question breakdown (see "Active session" above while it's still the latest).</p>)}</div>;})}</div>:<p>No completed sessions logged yet.</p>}</article></div>}
     </main>
     {deleteTarget && (
       <div className="wh-modal-overlay" onMouseDown={(e)=>{if(e.target===e.currentTarget)setDeleteTarget(null);}}>
@@ -3159,6 +3167,7 @@ export default function WordHunter() {
   }, [questionReports]);
   const [solvedStories,setSolvedStories]=useState([]);
   const [sessionLogs,setSessionLogs]=useState([]);
+  const [dailyProgress,setDailyProgress]=useState(null);
   const recordedSessionAnswersRef = useRef(new Set());
   const [section, setSection] = useState("practice");
   const progressExtrasRef = useRef({});
@@ -3196,6 +3205,11 @@ export default function WordHunter() {
     if (recordedSessionAnswersRef.current.has(answerKey)) return;
     recordedSessionAnswersRef.current.add(answerKey);
     const independentCorrect = !!result.correct && !result.assisted;
+    const prevDay = todayProgress(progressExtrasRef.current.dailyProgress);
+    const nextDay = { ...prevDay, answered: prevDay.answered + 1, correct: prevDay.correct + (result.correct ? 1 : 0) };
+    progressExtrasRef.current = { ...progressExtrasRef.current, dailyProgress: nextDay };
+    setDailyProgress(nextDay);
+    if (prevDay.answered < settings.dailyGoal && nextDay.answered >= settings.dailyGoal) setToast({ text: `Daily goal reached: ${settings.dailyGoal} questions today. Anything more is a bonus!` });
     setAttempted((n) => n + 1);
     setStreak((current) => {
       const next = independentCorrect ? current + 1 : 0;
@@ -3670,7 +3684,7 @@ export default function WordHunter() {
           } catch (_) {}
         }
         const data = raw ? migrateProgressData(raw) : emptyProgressData();
-        progressExtrasRef.current = data; setActiveSession(data.activeSession || null);setQuestionReports(Array.isArray(data.reports)?data.reports:[]);setSolvedStories(Array.isArray(data.solvedStories)?data.solvedStories:[]);setSessionLogs(Array.isArray(data.sessionLogs)?data.sessionLogs:[]);
+        progressExtrasRef.current = data; setActiveSession(data.activeSession || null);setDailyProgress(data.dailyProgress||null);setQuestionReports(Array.isArray(data.reports)?data.reports:[]);setSolvedStories(Array.isArray(data.solvedStories)?data.solvedStories:[]);setSessionLogs(Array.isArray(data.sessionLogs)?data.sessionLogs:[]);
         if (raw && sourceKey !== STORAGE_KEY) {
           try { await storage.set(STORAGE_KEY, JSON.stringify(data), false); } catch (_) {}
         }
@@ -3770,7 +3784,15 @@ export default function WordHunter() {
   function startLevel(index) {
     const level = LEVELS[index]; if(!level) return;
     setCurrentLevelIndex(index);
-    const session = V2.practice(liveContent(), masteryRef.current, level.title, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound: settings.newWordsPerRound, pools: poolsRef.current, extraQuestion: buildPracticeExtra });
+    // New-word intake follows the last round in this level: a strong round
+    // (90%+) earns two extra new words, a rough one (under 60%) holds back
+    // two so the missed words get room. 0 in Settings still means none.
+    const lastRound = sessionLogs.find((log) => log.kind === "practice" && log.title === level.title && log.total > 0);
+    const lastAccuracy = lastRound ? lastRound.correct / lastRound.total : null;
+    const baseNew = settings.newWordsPerRound;
+    const newWordsPerRound = baseNew === 0 || lastAccuracy === null ? baseNew : lastAccuracy >= 0.9 ? Math.min(10, baseNew + 2) : lastAccuracy < 0.6 ? Math.max(1, baseNew - 2) : baseNew;
+    const session = V2.practice(liveContent(), masteryRef.current, level.title, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound, pools: poolsRef.current, extraQuestion: buildPracticeExtra, confusions: confusionsRef.current });
+    if (newWordsPerRound > baseNew && session.introductions.length > baseNew) setToast({ text: `Strong last round here — ${session.introductions.length} new words this time.` });
     launchSession(session);
   }
   function startWeakReview() {
@@ -4251,7 +4273,7 @@ export default function WordHunter() {
   }, [screen, speedTimeLeft]);
 
   async function handleReset() {
-    progressExtrasRef.current={};setActiveSession(null);
+    progressExtrasRef.current={};setActiveSession(null);setDailyProgress(null);
     try { await storage.delete(STORAGE_KEY, false); } catch (_) {}
     const empty = emptyProgressData();
     setScore(0); setStreak(0); setBestStreak(0); setAttempted(0);
@@ -4408,7 +4430,7 @@ export default function WordHunter() {
     mergeCustomData(content.words,content.grammar,content.puns,content.challenges,order);
     setCustomWords(content.words);setCustomGrammar(content.grammar);setCustomPuns(content.puns);setCustomChallenges(content.challenges);setCustomCombos(content.combos);setCustomStories(content.stories);
     if(restoreProgress){
-      const restored=migrateProgressData(data);progressExtrasRef.current=restored;setActiveSession(restored.activeSession||null);
+      const restored=migrateProgressData(data);progressExtrasRef.current=restored;setActiveSession(restored.activeSession||null);setDailyProgress(restored.dailyProgress||null);
       setScore(restored.score);setStreak(restored.streak);setBestStreak(restored.bestStreak);setAttempted(restored.attempted);
       setMastery(restored.mastery);masteryRef.current=restored.mastery;setLevelsCleared(restored.levelsCleared);setLevelStats(restored.levelStats);
       setStudyStreak(restored.studyStreak);setBestStudyStreak(restored.bestStudyStreak);setLastStudyDate(restored.lastStudyDate);
@@ -4953,6 +4975,14 @@ export default function WordHunter() {
           transform: rotate(-8deg); opacity: 0.92; pointer-events: none;
         }
 .wh-round-meta { display:flex; align-items:center; gap:10px; }
+        .wh-daily-goal { border:1px solid rgba(127,127,127,.3); border-radius:8px; padding:12px 14px; margin:10px 0 14px; }
+        .wh-daily-goal-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+        .wh-daily-goal-head b { display:inline-flex; align-items:center; gap:6px; }
+        .wh-daily-goal-head span { font-size:13px; opacity:.8; }
+        .wh-daily-goal-bar { height:8px; border-radius:999px; background:rgba(127,127,127,.22); overflow:hidden; }
+        .wh-daily-goal-bar span { display:block; height:100%; background:var(--gold-soft); border-radius:inherit; transition:width .35s ease; }
+        .wh-daily-goal.done .wh-daily-goal-bar span { background:var(--green); }
+        .wh-daily-goal small { display:block; margin-top:6px; opacity:.75; }
         .wh-combo { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:999px; background:var(--gold-soft); color:#1b1814; font-weight:700; font-size:12px; }
         .wh-session-progress { height:6px; border-radius:999px; background:rgba(127,127,127,.22); overflow:hidden; margin:-6px 0 14px; }
         .wh-session-progress span { display:block; height:100%; background:var(--green); border-radius:inherit; transition:width .35s ease; }
@@ -5133,12 +5163,6 @@ export default function WordHunter() {
               <button className="wh-icon-btn" onClick={()=>openAskAi(askAiTerm)} title="Ask AI"><HelpCircle size={13}/> Ask AI</button>
               <button className="wh-icon-btn" onClick={()=>{const term=askAiTerm.trim();if(term)setListenTerm(term);}} title="Hear it pronounced"><Volume2 size={13}/> Listen</button>
             </div>
-            <button className="wh-reset" onClick={() => setConfirmAction("reset")} title="Clear saved progress">
-              <RotateCcw size={12} /> Reset
-            </button>
-            <button className="wh-reset danger" onClick={() => setConfirmAction("wipe")} title="Delete everything, including imported content">
-              <RotateCcw size={12} /> Clear everything
-            </button>
           </div>
         </div>
         {listenTerm&&<PronunciationModal term={listenTerm} onClose={()=>setListenTerm(null)}/>}
@@ -5157,7 +5181,7 @@ export default function WordHunter() {
             </article>}
           </aside>
         </div>}
-        {screen==="admin"&&<AdminControlCenter content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onResolveReport={resolveQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onClose={()=>setScreen("levels")} onOpenImport={()=>{setScreen("levels");setContentPanelView("review");setImportOpen(true);}} onExport={mode=>{handleExport(mode);setScreen("levels");setContentPanelView("export");setImportOpen(true);}}/>}
+        {screen==="admin"&&<AdminControlCenter content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onResolveReport={resolveQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} onOpenImport={()=>{setScreen("levels");setContentPanelView("review");setImportOpen(true);}} onExport={mode=>{handleExport(mode);setScreen("levels");setContentPanelView("export");setImportOpen(true);}}/>}
         {confirmAction && (
           <div className="wh-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmAction(null); }}>
           <div className="wh-panel wh-confirm-panel" role="alertdialog">
@@ -5433,7 +5457,7 @@ export default function WordHunter() {
           </div>}
           <nav className="wh-v2-nav" aria-label="Game sections">{[["practice","Practice"],["stories","Stories"],["challenges","Challenges"]].map(([id,label])=><button key={id} aria-pressed={section===id} onClick={()=>setSection(id)}>{label}</button>)}</nav>
           {activeSession&&!activeSession.completed&&<button className="wh-level-btn" onClick={()=>setScreen("session")}>Resume {activeSession.title} ({Math.min(activeSession.index+1,activeSession.queue.length)}/{activeSession.queue.length})</button>}
-          {section==="practice"&&<p>Up to 12 questions · at most 3 new words · offline practice</p>}
+          {section==="practice"&&(()=>{const day=todayProgress(dailyProgress);const goal=settings.dailyGoal;const done=day.answered>=goal;return <div className={`wh-daily-goal ${done?"done":""}`}><div className="wh-daily-goal-head"><b>{done?<><CheckCircle2 size={15}/> Daily goal reached</>:<><Target size={15}/> Today's goal</>}</b><span>{day.answered} / {goal} questions{day.answered?` · ${Math.round(day.correct/day.answered*100)}% correct`:""}</span></div><div className="wh-daily-goal-bar"><span style={{width:`${Math.min(100,day.answered/goal*100)}%`}}/></div>{done&&day.answered>goal&&<small>+{day.answered-goal} bonus questions today</small>}</div>;})()}
           {section==="stories"&&<div className="wh-panel"><h2>Stories</h2>
             <div className="wh-story-builder"><h3>Generate a mixed-category story</h3><p className="wh-regen-meta">Choose one or more categories. Weak words are selected first and distributed across your choices.</p><div className="wh-category-multiselect">{LEVEL_ORDER.filter(category=>WORDS.some(word=>word.category===category)).map(category=><label key={category} className={`wh-category-choice ${selectedStoryCategories.includes(category)?"selected":""}`}><input type="checkbox" checked={selectedStoryCategories.includes(category)} onChange={()=>toggleStoryCategory(category)}/><span>{category}</span><small>{WORDS.filter(word=>word.category===category).length}</small></label>)}</div>{storyGenState!=="loading"&&<button className="wh-level-btn" disabled={!selectedStoryCategories.length} onClick={handleGenerateStory}>✨ Generate from {selectedStoryCategories.length||0} categor{selectedStoryCategories.length===1?"y":"ies"}</button>}{storyGenError&&storyGenState!=="loading"&&<p className="wh-regen-status error">{storyGenError}</p>}</div>
             {storyGenState==="loading"&&<p className="wh-regen-status">Writing and checking a new story…</p>}
@@ -5451,7 +5475,7 @@ export default function WordHunter() {
             {!customStories.length&&<p>No authored stories loaded. Import a Content v2 file to add them.</p>}{[...customStories].sort((a,b)=>a.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length-b.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length).map(story=>{const fresh=story.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length;const record=solvedStories.find(e=>e.id===story.id);return <article className="wh-v2-learn" key={story.id}><strong>{story.title}{record&&<span className="wh-story-solved-flag"><CheckCircle2 size={13}/> Solved · {record.correct}/{record.total}</span>}</strong><p>{story.questions.length}{story.grammarQuestions?.length?` + ${story.grammarQuestions.length} grammar`:""} questions · {fresh?`${fresh} new words: preview first`:"Ready for review"}</p><button className="wh-level-btn" onClick={()=>launchStory(story)}>{record?"Play again":"Open story"}</button></article>;})}</div>}
           {section==="challenges"&&<div className="wh-panel"><h2>Opposite Chain</h2>{[...new Set(WORDS.filter(w=>w.chainGroup&&w.opposite).map(w=>w.chainGroup))].map(group=><button key={group} className="wh-level-btn" onClick={()=>launchChain(group)}>{group}</button>)}<h2>Authored Challenges</h2>{!CHALLENGES.length&&<p>No authored challenges loaded.</p>}{CHALLENGES.map(c=><button key={c.id} className="wh-level-btn" onClick={()=>launchAuthoredChallenge(c)}>{c.label||c.id}</button>)}</div>}
         </>}
-        {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={reportSessionQuestion} onReviewReport={reviewQuestionReport} onWithdrawReport={deleteQuestionReport} onUpdateWord={updateWordFields} sound={settings.sound} autoContinue={settings.autoContinue} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onResult={recordSessionResult} onAskWord={openAskAi}/>}
+        {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={reportSessionQuestion} onReviewReport={reviewQuestionReport} onWithdrawReport={deleteQuestionReport} onUpdateWord={updateWordFields} sound={settings.sound} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onResult={recordSessionResult} onAskWord={openAskAi}/>}
 
         {screen === "levels" && (
           <>
@@ -5473,7 +5497,7 @@ export default function WordHunter() {
           </>
         )}
 
-        {screen === "levels" && section === "challenges" && (
+        {screen === "levels" && (section === "challenges" || section === "practice") && (
           <div className={`wh-speed-card ${masteredWords.length < MIN_LEARNED_FOR_SPEED ? "locked" : ""}`}>
             <div className="wh-speed-card-icon"><Zap size={22} /></div>
             <div className="wh-speed-card-info">
