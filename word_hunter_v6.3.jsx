@@ -215,22 +215,14 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   const pools=opts.pools||{};
   const questionsPerRound=Math.max(4,opts.questionsPerRound||12);
   const newWordsPerRound=Math.max(0,opts.newWordsPerRound??3);
-  const now=Date.now();
   const source=content.words.filter(w=>!category||topic(w.category)===topic(category));
-  // Review-first: when the overdue backlog is large, due words from EVERY
-  // category come before this level's own words, and new words are held
-  // back. dueOnly builds a pure cross-category review round.
-  const dueAll=(opts.dueFirst||opts.dueOnly)?content.words.filter(w=>{const s=mastery[w.word];return known(s)&&s.nextReviewAt&&s.nextReviewAt<=now;}).sort((a,b)=>(mastery[a.word].nextReviewAt||0)-(mastery[b.word].nextReviewAt||0)):[];
-  const dueSet=new Set(dueAll.map(w=>w.word));
-  const fresh=opts.dueOnly?[]:shuffleCopy(source.filter(w=>!known(mastery[w.word])),rng).slice(0,dueAll.length>=questionsPerRound?0:newWordsPerRound);
-  // Known words are picked in rotation. Due words and words missed last time
-  // come first. A word answered correctly and not yet due goes to the back
-  // of the line (least recently reviewed first), so it doesn't return until
-  // the rest of the pool has had a turn. The old priority treated every
-  // non-Mastered word the same whether or not it was due, so in a small
-  // category the same just-answered words were picked every session.
-  const old=[...dueAll,...shuffleCopy(source.filter(w=>known(mastery[w.word])&&!dueSet.has(w.word)),rng).sort((a,b)=>priority(a)-priority(b)||lastSeen(a)-lastSeen(b))];
-  function priority(w){const s=mastery[w.word]||{};if(s.nextReviewAt&&s.nextReviewAt<=now)return 0;if(s.lastResult&&s.lastResult!=='correct')return 0;return stage(s)==='Mastered'?2:1;}
+  const fresh=shuffleCopy(source.filter(w=>!known(mastery[w.word])),rng).slice(0,newWordsPerRound);
+  // No spaced repetition: known words are picked in rotation. Words missed
+  // last time come first; everything else goes least recently reviewed
+  // first, so a word answered correctly goes to the back of the line and
+  // doesn't return until the rest of the pool has had a turn.
+  const old=shuffleCopy(source.filter(w=>known(mastery[w.word])),rng).sort((a,b)=>missed(b)-missed(a)||lastSeen(a)-lastSeen(b));
+  function missed(w){const r=mastery[w.word]?.lastResult;return r&&r!=='correct'?1:0;}
   function lastSeen(w){return mastery[w.word]?.lastReviewedAt||0;}
   const oldCount=Math.max(questionsPerRound-newWordsPerRound,questionsPerRound-fresh.length);
   const chosen=[...old.slice(0,oldCount),...fresh];const candidates=[];
@@ -252,14 +244,16 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
     if(known(s)&&w.commonMistake&&!isQuarantined(w.word,'grammarCourt'))candidates.push({id:`${w.word}:court`,mode:'grammarCourt',type:'mcq',prompt:`Choose the correct sentence. Context: ${w.situation}`,targets:[w.word],answers:[w.commonMistake.correction],options:shuffleCopy([w.commonMistake.sentence,w.commonMistake.correction],rng),explanation:w.commonMistake.why});
     for(const mode of modes){if(mode.includes('gap')&&!/_{2,}/.test(w.gap))continue;const q=makeQuestion(w,mode,content.words,rng,difficulty);if(q)candidates.push(q);}
   }
-  // Combos and impostor challenges get their OWN spaced-repetition record
-  // (progressKey, same trick the grammar loop below already uses) instead
-  // of a flat 20%-chance reappearance. Once answered correctly, the real
-  // 1/3/7/14/30-day schedule (from sessionEvidence) pushes it further away
-  // each time — same as normal vocabulary — rather than gambling on every
-  // single session regardless of how many times it's been gotten right.
-  for(const c of content.combos||[])if((!category||topic(c.category)===topic(category))&&c.words.every(w=>known(mastery[findWord(content.words,w)?.word]))&&!c.words.some(w=>isQuarantined(w,'multi'))){const comboKey=`combo:${c.id}`;const comboStats=mastery[comboKey];const due=!comboStats||!comboStats.nextReviewAt||comboStats.nextReviewAt<=Date.now();if(due){const item=pickPoolVariant(pools,comboKey,{situation:c.situation,prompt:c.prompt});try{candidates.push(activityQuestion({mode:'multi',targetWords:c.words,prompt:`${item.situation}\n${item.prompt}`,explanation:c.explanation,progressKey:comboKey,poolType:'combo',poolItemId:item.id},content.words,`combo:${c.id}:${item.id}`,rng));}catch{}}}
-  for(const c of content.challenges||[])if(['impostor','reverseImpostor'].includes(c.type||c.mode)&&!c.steps&&c.options?.length>=2&&c.answer&&(!category||topic(c.category)===topic(category))){const targets=(c.linkedWords||[]).filter(w=>norm(w)===norm(c.answer));if(targets.length&&targets.every(w=>['Learned','Mastered'].includes(stage(mastery[w])))&&!targets.some(w=>isQuarantined(w,'impostor'))){const challengeKey=`challenge:${c.id}`;const challengeStats=mastery[challengeKey];const due=!challengeStats||!challengeStats.nextReviewAt||challengeStats.nextReviewAt<=Date.now();if(due){const refs=c.options.map(o=>findWord(content.words,o)).filter(Boolean);if(refs.every((a,i)=>refs.slice(i+1).every(b=>compatible(a,b))))candidates.push({id:`challenge:${c.id}`,mode:'impostor',type:'mcq',targets,progressKey:challengeKey,prompt:c.prompt,answers:[c.answer],options:shuffleCopy(c.options,rng),explanation:c.explanation});}}}
+  // Combos and impostor challenges keep their own progress record
+  // (progressKey, same as the grammar loop below). With no spaced
+  // repetition they rotate like words: at most one of each per session,
+  // least recently reviewed first.
+  const lastSeenKey=key=>mastery[key]?.lastReviewedAt||0;
+  const comboPool=(content.combos||[]).filter(c=>(!category||topic(c.category)===topic(category))&&c.words.every(w=>known(mastery[findWord(content.words,w)?.word]))&&!c.words.some(w=>isQuarantined(w,'multi')));
+  for(const c of shuffleCopy(comboPool,rng).sort((a,b)=>lastSeenKey(`combo:${a.id}`)-lastSeenKey(`combo:${b.id}`)).slice(0,1)){const comboKey=`combo:${c.id}`;const item=pickPoolVariant(pools,comboKey,{situation:c.situation,prompt:c.prompt});try{candidates.push(activityQuestion({mode:'multi',targetWords:c.words,prompt:`${item.situation}\n${item.prompt}`,explanation:c.explanation,progressKey:comboKey,poolType:'combo',poolItemId:item.id},content.words,`combo:${c.id}:${item.id}`,rng));}catch{}}
+  const challengePool=[];
+  for(const c of content.challenges||[])if(['impostor','reverseImpostor'].includes(c.type||c.mode)&&!c.steps&&c.options?.length>=2&&c.answer&&(!category||topic(c.category)===topic(category))){const targets=(c.linkedWords||[]).filter(w=>norm(w)===norm(c.answer));if(targets.length&&targets.every(w=>['Learned','Mastered'].includes(stage(mastery[w])))&&!targets.some(w=>isQuarantined(w,'impostor'))){const refs=c.options.map(o=>findWord(content.words,o)).filter(Boolean);if(refs.every((a,i)=>refs.slice(i+1).every(b=>compatible(a,b))))challengePool.push({c,targets});}}
+  for(const {c,targets} of shuffleCopy(challengePool,rng).sort((a,b)=>lastSeenKey(`challenge:${a.c.id}`)-lastSeenKey(`challenge:${b.c.id}`)).slice(0,1))candidates.push({id:`challenge:${c.id}`,mode:'impostor',type:'mcq',targets,progressKey:`challenge:${c.id}`,prompt:c.prompt,answers:[c.answer],options:shuffleCopy(c.options,rng),explanation:c.explanation});
   // Grammar: same "fresh example after mastery" idea as combos above —
   // pick whichever variant (seed or AI-generated) is least-attempted and
   // not on cooldown, instead of always the one static authored example.
@@ -279,7 +273,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
     });
     const {q,i}=eligible[0];queue.push(q);counts[q.mode]=(counts[q.mode]||0)+1;q.targets.forEach(t=>usedWords.add(t));candidates.splice(i,1);
   }
-  return {kind:'practice',id:`session-${Date.now()}-${rng()}`,title:opts.dueOnly?'Due Review':category||'Practice',reviewFirst:!!(opts.dueFirst&&dueAll.length),dueCount:dueAll.length,queue,introductions:fresh,index:0,answers:[],initialLength:queue.length,targetLength:questionsPerRound,reserves:candidates,extraAdded:false};
+  return {kind:'practice',id:`session-${Date.now()}-${rng()}`,title:category||'Practice',queue,introductions:fresh,index:0,answers:[],initialLength:queue.length,targetLength:questionsPerRound,reserves:candidates,extraAdded:false};
 }
 function storySession(story,words,mastery={},rng=Math.random){const introductions=story.targetWords.map(w=>findWord(words,w)).filter(w=>!known(mastery[w.word]));const scoped=story.sourceCategories?.length?words.filter(w=>story.sourceCategories.includes(w.category)):words;const optionSource=scoped.length>=4?scoped:words;const queue=story.questions.map((q,i)=>activityQuestion(q,optionSource,`${story.id}:${i}`,rng));for(const g of story.grammarQuestions||[])queue.push({...g,options:shuffleCopy(g.options,rng)});return {id:`story-${story.id}-${Date.now()}`,sourceStoryId:story.id,kind:'story',title:story.title,text:story.text,queue,introductions,unfairTargets:introductions.map(w=>w.word),index:0,answers:[]};}
 function chainSession(group,words,mastery={},rng=Math.random){const queue=shuffleCopy(words.filter(w=>w.chainGroup===group&&w.opposite&&known(mastery[w.word])&&known(mastery[findWord(words,w.opposite)?.word])),rng).map((w,i)=>{const target=findWord(words,w.opposite);if(!target)return null;const options=optionWords([target],words,4,rng).map(x=>x.word);return options.length<2?null:{id:`chain:${i}`,mode:'opposite',type:'mcq',prompt:`What is the opposite of “${w.word}”?`,answers:[target.word],targets:[target.word],options,explanation:`${w.word} ↔ ${target.word}`};}).filter(Boolean);return {id:`chain-${Date.now()}`,kind:'chain',title:group,queue,introductions:[],index:0,answers:[]};}
@@ -306,7 +300,7 @@ function sessionEvidence(mastery,session,now=Date.now()){
       modes[modeId]={...previous,total:(previous.total||0)+1,correct:(previous.correct||0)+(correct?1:0),spellingMisses:(previous.spellingMisses||0)+(result.spelling?1:0),lastResult:correct?'correct':result.spelling?'spelling':result.assisted?'assisted':'wrong',lastDifficulty:result.difficulty||1};
       recent.push({correct,modeId,difficulty:result.difficulty||1,at:now,spelling:!!result.spelling});
     });
-    const record={...s,everMastered:s.everMastered===true||stage(s)==='Mastered',evidenceV2:true,correct:(s.correct||0)+(ok?1:0),total:(s.total||0)+1,modes,productionCorrect:(s.productionCorrect||0)+(ok&&recall?1:0),productionAttempts:(s.productionAttempts||0)+(results.some(a=>a.type==='typing')?1:0),assistedAttempts:(s.assistedAttempts||0)+results.filter(a=>a.assisted).length,spellingMisses:(s.spellingMisses||0)+spellingMisses,aiEvaluatedAttempts:(s.aiEvaluatedAttempts||0)+results.filter(a=>a.aiEvaluated).length,independentSessions:sessions,appliedSessions:[...(s.appliedSessions||[]),session.id],lastReviewedAt:now,nextReviewAt:now+[1,3,7,14,30][step]*86400000,reviewStep:step,lastResult,recentResults:recent.slice(-8),regressionStrikes:s.everMastered?(ok?Math.max(0,(s.regressionStrikes||0)-1):(s.regressionStrikes||0)+1):(s.regressionStrikes||0)};
+    const record={...s,everMastered:s.everMastered===true||stage(s)==='Mastered',evidenceV2:true,correct:(s.correct||0)+(ok?1:0),total:(s.total||0)+1,modes,productionCorrect:(s.productionCorrect||0)+(ok&&recall?1:0),productionAttempts:(s.productionAttempts||0)+(results.some(a=>a.type==='typing')?1:0),assistedAttempts:(s.assistedAttempts||0)+results.filter(a=>a.assisted).length,spellingMisses:(s.spellingMisses||0)+spellingMisses,aiEvaluatedAttempts:(s.aiEvaluatedAttempts||0)+results.filter(a=>a.aiEvaluated).length,independentSessions:sessions,appliedSessions:[...(s.appliedSessions||[]),session.id],lastReviewedAt:now,nextReviewAt:0,reviewStep:step,lastResult,recentResults:recent.slice(-8),regressionStrikes:s.everMastered?(ok?Math.max(0,(s.regressionStrikes||0)-1):(s.regressionStrikes||0)+1):(s.regressionStrikes||0)};
     if(stage(record)==='Mastered')record.everMastered=true;
     next[key]=record;
   }
@@ -608,7 +602,7 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
       <h2>{s.kind==='story'?s.title||'Story complete':'Session complete'}</h2>
       <p className="wh-session-score">{correct} / {total} correct ({pct}%) · {s.answers.filter(a=>a.assisted).length} assisted</p>
       {isSolved&&<p className="wh-session-score-sub">{pct>=80?'Excellent work — you really know these words!':pct>=60?'Good job — keep practising the ones you missed.':'Keep going — re-read the story and try again soon.'}</p>}
-      {s.queue.length===0&&<p>No safe spaced questions are available yet. Your learning cards are saved. Return for practice later.</p>}
+      {s.queue.length===0&&<p>No safe questions are available yet. Your learning cards are saved. Return for practice later.</p>}
       <button className="wh-level-btn" onClick={()=>{onFinish(s);setReviewOpen(true);}}>Save results &amp; review</button>
       {extra.queue.length>s.queue.length&&!reviewOpen&&<button className="wh-level-btn" onClick={()=>onChange(extra)}>Add {extra.queue.length-s.queue.length} reinforcement questions ({extra.queue.length} total)</button>}
       {(reviewOpen||s.completed)&&s.queue.map((q,i)=><article key={q.id} className="wh-v2-learn"><strong>{i+1}. {q.prompt}</strong><p>Your answer: {s.answers[i]?.dontKnow?"Didn't know":Array.isArray(s.answers[i]?.value)?s.answers[i].value.join(' + '):s.answers[i]?.value||'Reported / skipped'}</p><p>{q.modelOnly?'Model answer (other valid sentences may exist)':'Answer'}: {q.answers.join(' + ')}</p><p>{q.explanation}</p></article>)}
@@ -709,7 +703,7 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
   const statusClass=result?(s.kind==='story'||result.reported||result.unverified?'':result.aiClose?'close':result.spelling?'close':result.correct?'correct':'wrong'):'';
   const answerText=result?q.answers.join(' + '):'';
   const sameAsExplanation=result&&q.explanation&&answerText.trim().toLowerCase()===q.explanation.trim().toLowerCase();
-  return <section><div className="wh-round-top"><button className="wh-back-btn wh-nav-btn" onClick={onBack}>Save and leave</button><span>{s.title} · {s.index+1}/{s.queue.length}</span></div>{s.kind==='practice'&&s.initialLength<(s.targetLength||12)&&<p className="wh-v2-notice">Short session: {s.initialLength} valid questions (usual goal: {s.targetLength||12}).</p>}{s.reviewFirst&&<p className="wh-v2-notice">Review first: {s.dueCount} overdue words across all levels come before this level's words.</p>}{s.text&&<details className="wh-v2-story" open={s.index===0}><summary>Read the story</summary><p><AskableText text={s.text} onAskWord={onAskWord} onListen={setYouglishTerm} /></p></details>}<div className="wh-card">{result&&statusClass==='correct'&&<div className="wh-stamp correct">SUCCESS</div>}<div className="wh-file-row"><span>{q.mode}</span><div><button className="wh-back-btn" onClick={()=>onAskWord?.(q.targets?.[0]||'')}>Ask AI</button> <button className="wh-back-btn" onClick={()=>setYouglishTerm(q.targets?.[0]||'')}><Volume2 size={12}/> Listen</button> <button className="wh-back-btn" disabled={!!result&&(result.correct||result.reported||s.kind==='story')} onClick={()=>{setReportReason("");setReportReview(null);setReportOpen(true);}}>Report question</button></div></div><p className="wh-sentence"><AskableText text={q.prompt} onAskWord={onAskWord} onListen={setYouglishTerm} /></p>{q.type==='multi'&&<p>Choose {q.answers.length} words.</p>}<AnswerControl key={q.id} q={q} draft={draft} onChange={draft=>save({draft})} disabled={!!result} onSubmit={submit}/>{!result&&q.hints?.length>0&&<><button className="wh-back-btn" disabled={(draft.hints||0)>=q.hints.length} onClick={()=>save({draft:{...draft,hints:(draft.hints||0)+1}})}>Hint ({draft.hints||0}/{q.hints.length})</button>{q.hints.slice(0,draft.hints||0).map((h,i)=><p key={i}>{h}</p>)}</>}{!result?<button className="wh-level-btn wh-submit-btn" disabled={!ready||aiChecking} onClick={submit}>{aiChecking?'Checking with AI…':'Submit'}</button>:<><div role="status" className={`wh-feedback ${statusClass}`}>{s.kind==='story'?'Answer saved. Feedback follows at the end.':result.reported?'Reported; excluded from mastery.':result.aiFailed?'AI check failed. Tap Retry to try again, or Continue without grading this one.':result.dontKnow?"No worries — here's the answer:":result.unverified?'Different from the model. Not graded: a text match cannot check all valid sentences.':result.aiClose?'Almost — close, but not quite right yet.':result.spelling?'Close spelling; this is not a full recall success.':result.correct?'Correct'+(result.assisted?' with help.':'.'):'Try this answer:'}</div>{s.kind!=='story'&&!result.reported&&!result.aiFailed&&<div className="wh-result-details"><SmartImage src={correctImage} className="wh-flashcard-img"/><p>{answerText}</p>{!sameAsExplanation&&<p>{q.explanation}</p>}{result.aiFeedback&&<p className="wh-ai-feedback">{result.aiFeedback}</p>}</div>}{result.aiFailed&&<button className="wh-level-btn wh-result-continue" onClick={retry}>Retry</button>}<button ref={continueRef} className="wh-level-btn wh-result-continue" onClick={next}>Continue</button></>}</div>{reportOpen&&<div className="wh-modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget&&reportReview?.status!=='reviewing')closeReport();}}><div className="wh-panel wh-confirm-panel" role="alertdialog">{!reportReview?<><p><b>Report this question?</b></p><p>Pick what's wrong (optional), or add your own note below. AI will check it right away.</p><div className="wh-options wh-report-reasons">{REPORT_REASONS.map(reason=><button type="button" key={reason} className={`wh-option ${reportReason===reason?'picked':''}`} onClick={()=>setReportReason(current=>current===reason?"":reason)}>{reason}</button>)}</div><textarea className="wh-freeform" style={{width:"100%",minHeight:60,boxSizing:"border-box",marginTop:8}} value={reportReason} onChange={e=>setReportReason(e.target.value)} placeholder="Add detail (optional)"/><div className="wh-ai-actions"><button onClick={()=>setReportOpen(false)}>Cancel</button><button className="primary" onClick={submitReport}>Submit report</button></div></>:reportReview.status==='reviewing'?<><p><b>Report saved.</b></p><p className="wh-ai-feedback"><Sparkles size={13}/> AI is checking this question…</p></>:reportReview.status==='failed'?<><p><b>Report saved.</b></p><p>AI couldn't check it right now. It's still in the admin's report list, and this question won't count against you.</p><div className="wh-ai-actions"><button className="primary" onClick={closeReport}>Continue</button></div></>:<><p><b>{reportReview.review.verdict==='flawed'?'AI agrees — this question has a problem.':reportReview.review.verdict==='fine'?'AI thinks this question is OK.':"AI isn't sure about this one."}</b></p>{reportReview.review.explanation&&<p className="wh-ai-feedback">{reportReview.review.explanation}</p>}{reportReview.review.learnerAnswerAcceptable===true&&<p>Your answer looks acceptable too.</p>}{reportReview.review.verdict==='flawed'&&<p><small>{reportReview.review.fixed?'A fix is drafted and waiting for admin review.':'Saved for admin review.'} The question won't count against you.</small></p>}{reportReview.review.verdict!=='flawed'&&<p><small>Your report is still saved for the admin, and this question won't count against you. You can withdraw it if you agree with the AI.</small></p>}<div className="wh-ai-actions">{reportReview.review.verdict!=='flawed'&&<button onClick={withdrawReport}>{reportReview.prior?'Withdraw report':'Withdraw & answer it'}</button>}<button className="primary" onClick={closeReport}>{reportReview.review.verdict!=='flawed'?'Keep report':'Continue'}</button></div></>}</div></div>}{youglishTerm&&<PronunciationModal term={youglishTerm} onClose={()=>setYouglishTerm(null)}/>}</section>;
+  return <section><div className="wh-round-top"><button className="wh-back-btn wh-nav-btn" onClick={onBack}>Save and leave</button><span>{s.title} · {s.index+1}/{s.queue.length}</span></div>{s.kind==='practice'&&s.initialLength<(s.targetLength||12)&&<p className="wh-v2-notice">Short session: {s.initialLength} valid questions (usual goal: {s.targetLength||12}).</p>}{s.text&&<details className="wh-v2-story" open={s.index===0}><summary>Read the story</summary><p><AskableText text={s.text} onAskWord={onAskWord} onListen={setYouglishTerm} /></p></details>}<div className="wh-card">{result&&statusClass==='correct'&&<div className="wh-stamp correct">SUCCESS</div>}<div className="wh-file-row"><span>{q.mode}</span><div><button className="wh-back-btn" onClick={()=>onAskWord?.(q.targets?.[0]||'')}>Ask AI</button> <button className="wh-back-btn" onClick={()=>setYouglishTerm(q.targets?.[0]||'')}><Volume2 size={12}/> Listen</button> <button className="wh-back-btn" disabled={!!result&&(result.correct||result.reported||s.kind==='story')} onClick={()=>{setReportReason("");setReportReview(null);setReportOpen(true);}}>Report question</button></div></div><p className="wh-sentence"><AskableText text={q.prompt} onAskWord={onAskWord} onListen={setYouglishTerm} /></p>{q.type==='multi'&&<p>Choose {q.answers.length} words.</p>}<AnswerControl key={q.id} q={q} draft={draft} onChange={draft=>save({draft})} disabled={!!result} onSubmit={submit}/>{!result&&q.hints?.length>0&&<><button className="wh-back-btn" disabled={(draft.hints||0)>=q.hints.length} onClick={()=>save({draft:{...draft,hints:(draft.hints||0)+1}})}>Hint ({draft.hints||0}/{q.hints.length})</button>{q.hints.slice(0,draft.hints||0).map((h,i)=><p key={i}>{h}</p>)}</>}{!result?<button className="wh-level-btn wh-submit-btn" disabled={!ready||aiChecking} onClick={submit}>{aiChecking?'Checking with AI…':'Submit'}</button>:<><div role="status" className={`wh-feedback ${statusClass}`}>{s.kind==='story'?'Answer saved. Feedback follows at the end.':result.reported?'Reported; excluded from mastery.':result.aiFailed?'AI check failed. Tap Retry to try again, or Continue without grading this one.':result.dontKnow?"No worries — here's the answer:":result.unverified?'Different from the model. Not graded: a text match cannot check all valid sentences.':result.aiClose?'Almost — close, but not quite right yet.':result.spelling?'Close spelling; this is not a full recall success.':result.correct?'Correct'+(result.assisted?' with help.':'.'):'Try this answer:'}</div>{s.kind!=='story'&&!result.reported&&!result.aiFailed&&<div className="wh-result-details"><SmartImage src={correctImage} className="wh-flashcard-img"/><p>{answerText}</p>{!sameAsExplanation&&<p>{q.explanation}</p>}{result.aiFeedback&&<p className="wh-ai-feedback">{result.aiFeedback}</p>}</div>}{result.aiFailed&&<button className="wh-level-btn wh-result-continue" onClick={retry}>Retry</button>}<button ref={continueRef} className="wh-level-btn wh-result-continue" onClick={next}>Continue</button></>}</div>{reportOpen&&<div className="wh-modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget&&reportReview?.status!=='reviewing')closeReport();}}><div className="wh-panel wh-confirm-panel" role="alertdialog">{!reportReview?<><p><b>Report this question?</b></p><p>Pick what's wrong (optional), or add your own note below. AI will check it right away.</p><div className="wh-options wh-report-reasons">{REPORT_REASONS.map(reason=><button type="button" key={reason} className={`wh-option ${reportReason===reason?'picked':''}`} onClick={()=>setReportReason(current=>current===reason?"":reason)}>{reason}</button>)}</div><textarea className="wh-freeform" style={{width:"100%",minHeight:60,boxSizing:"border-box",marginTop:8}} value={reportReason} onChange={e=>setReportReason(e.target.value)} placeholder="Add detail (optional)"/><div className="wh-ai-actions"><button onClick={()=>setReportOpen(false)}>Cancel</button><button className="primary" onClick={submitReport}>Submit report</button></div></>:reportReview.status==='reviewing'?<><p><b>Report saved.</b></p><p className="wh-ai-feedback"><Sparkles size={13}/> AI is checking this question…</p></>:reportReview.status==='failed'?<><p><b>Report saved.</b></p><p>AI couldn't check it right now. It's still in the admin's report list, and this question won't count against you.</p><div className="wh-ai-actions"><button className="primary" onClick={closeReport}>Continue</button></div></>:<><p><b>{reportReview.review.verdict==='flawed'?'AI agrees — this question has a problem.':reportReview.review.verdict==='fine'?'AI thinks this question is OK.':"AI isn't sure about this one."}</b></p>{reportReview.review.explanation&&<p className="wh-ai-feedback">{reportReview.review.explanation}</p>}{reportReview.review.learnerAnswerAcceptable===true&&<p>Your answer looks acceptable too.</p>}{reportReview.review.verdict==='flawed'&&<p><small>{reportReview.review.fixed?'A fix is drafted and waiting for admin review.':'Saved for admin review.'} The question won't count against you.</small></p>}{reportReview.review.verdict!=='flawed'&&<p><small>Your report is still saved for the admin, and this question won't count against you. You can withdraw it if you agree with the AI.</small></p>}<div className="wh-ai-actions">{reportReview.review.verdict!=='flawed'&&<button onClick={withdrawReport}>{reportReview.prior?'Withdraw report':'Withdraw & answer it'}</button>}<button className="primary" onClick={closeReport}>{reportReview.review.verdict!=='flawed'?'Keep report':'Continue'}</button></div></>}</div></div>}{youglishTerm&&<PronunciationModal term={youglishTerm} onClose={()=>setYouglishTerm(null)}/>}</section>;
 }
 
 return SessionView;
@@ -797,10 +791,10 @@ function levelItemKey(item) {
 const MASTERY_STAGE = { NEW: "New", FAMILIAR: "Familiar", LEARNED: "Learned", MASTERED: "Mastered" };
 const MASTERY_STAGE_RANK = { New: 0, Familiar: 1, Learned: 2, Mastered: 3 };
 const PRODUCTION_MODES = new Set(["typing", "gapTyping", "phrasalTransform", "finalReport"]);
-const REVIEW_INTERVAL_DAYS = [1, 3, 7, 14, 30];
-// A word cannot climb past this review step (max 7-day interval) until it has
-// been produced correctly at least once (typing / gapTyping). Recognition-only
-// evidence must not push a word onto long intervals.
+const REVIEW_STEP_MAX = 4;
+// A word's correct-answer streak (reviewStep) cannot climb past this step
+// until it has been produced correctly at least once (typing / gapTyping);
+// once held here it only gets typing questions until it produces.
 const PRODUCTION_GATE_STEP = 2;
 const isWordKey = (key) => !/^(grammar|combo|challenge|pun):/.test(String(key));
 const MAX_CONFUSIONS = 80;
@@ -927,28 +921,15 @@ function updateLevelStat(previous = {}, accuracy, grandfatherStars = 0, now = Da
   };
 }
 
-function updateSpacedReview(stats, correct, now = Date.now(), opts = {}) {
+// Spaced repetition is off: nothing is ever scheduled or "due". reviewStep
+// survives only as a streak of correct answers, capped until the word has
+// one correct production — the production gate reads it.
+function updateReviewStreak(stats, correct, now = Date.now(), opts = {}) {
   const prev = normalizeMasteryRecord(stats);
   const productionCorrect = prev.productionCorrect + (opts.productionNow ? 1 : 0);
-  const stepCap = productionCorrect > 0 ? REVIEW_INTERVAL_DAYS.length - 1 : PRODUCTION_GATE_STEP;
-  if (!correct) {
-    return { reviewStep: Math.max(0, prev.reviewStep - 1), lastReviewedAt: now, nextReviewAt: now };
-  }
-  if (prev.nextReviewAt && prev.nextReviewAt > now) {
-    return { reviewStep: prev.reviewStep, lastReviewedAt: now, nextReviewAt: prev.nextReviewAt };
-  }
-  const intervalIndex = Math.min(prev.reviewStep, REVIEW_INTERVAL_DAYS.length - 1);
-  const nextStep = Math.min(prev.reviewStep + 1, stepCap);
-  return {
-    reviewStep: nextStep,
-    lastReviewedAt: now,
-    nextReviewAt: now + REVIEW_INTERVAL_DAYS[intervalIndex] * 24 * 60 * 60 * 1000,
-  };
-}
-
-function isDueForReview(stats, now = Date.now()) {
-  const nextReviewAt = Number(stats?.nextReviewAt || 0);
-  return nextReviewAt > 0 && nextReviewAt <= now;
+  const stepCap = productionCorrect > 0 ? REVIEW_STEP_MAX : PRODUCTION_GATE_STEP;
+  const reviewStep = correct ? Math.min(prev.reviewStep + 1, stepCap) : Math.max(0, prev.reviewStep - 1);
+  return { reviewStep, lastReviewedAt: now, nextReviewAt: 0 };
 }
 
 function localDateKey(date = new Date()) {
@@ -1408,7 +1389,6 @@ function selectAdaptiveMode(word, masteryStats, context = {}) {
   const stats = normalizeMasteryRecord(masteryStats);
   const stage = getMasteryStage(stats, { kind: "word", obj: word });
   const allowed = new Set(getAllowedModes(word));
-  const due = isDueForReview(stats, context.now || Date.now());
   const confusion = context.confusion || null;
   const hasProduction = getProductionCorrect(stats) > 0;
   const weakModes = Object.entries(stats.modes)
@@ -1440,11 +1420,11 @@ function selectAdaptiveMode(word, masteryStats, context = {}) {
     base.impostor = (base.impostor || 0) + 5;
     base.situation = (base.situation || 0) + 3;
   }
-  if (due || context.sessionType === "weak") {
+  if (context.sessionType === "weak") {
     base.typing = (base.typing || 0) + 1.5;
     base.situation = (base.situation || 0) + 1.5;
   }
-  if (stage === MASTERY_STAGE.MASTERED && !due && !context.forceMastered) {
+  if (stage === MASTERY_STAGE.MASTERED && !context.forceMastered) {
     Object.keys(base).forEach((k) => { base[k] *= 0.35; });
   }
   if (context.lastMode && base[context.lastMode] && !weakModes.includes(context.lastMode)) base[context.lastMode] *= 0.25;
@@ -1463,7 +1443,7 @@ function buildAdaptiveRound(level, mastery = {}, confusions = {}, sessionType = 
       if (item.kind !== "word") return true;
       const stats = mastery[item.obj.word];
       const mastered = getMasteryStage(stats, item) === MASTERY_STAGE.MASTERED;
-      return !mastered || isDueForReview(stats) || Math.random() < 0.18;
+      return !mastered || Math.random() < 0.18;
     });
     unique = filtered.length ? filtered : shuffle(allUnique).slice(0, Math.min(6, allUnique.length));
   }
@@ -2592,7 +2572,6 @@ function getWeakWordCandidates(words, mastery, confusions = {}, now = Date.now()
   return words.map((word) => {
     const stats = normalizeMasteryRecord(mastery[word.word]);
     const accuracy = getAccuracy(stats);
-    const due = isDueForReview(stats, now);
     const lastWrong = stats.lastResult === "wrong";
     const lowAccuracy = stats.total >= 3 && accuracy < 70;
     const weakModes = Object.entries(stats.modes).filter(([, m]) => m.total >= 2 && (m.correct / m.total) < 0.65).map(([id]) => id);
@@ -2600,9 +2579,8 @@ function getWeakWordCandidates(words, mastery, confusions = {}, now = Date.now()
     const missingProduction = stats.correct >= 2 && getProductionCorrect(stats) === 0;
     const confusion = getStrongConfusion(word, confusions);
     const failedSentence = stats.sentenceAttempts >= 1 && stats.sentenceSuccesses < stats.sentenceAttempts;
-    if (!due && !lastWrong && !lowAccuracy && !weakModes.length && !spelling && !missingProduction && !confusion && !failedSentence) return null;
+    if (!lastWrong && !lowAccuracy && !weakModes.length && !spelling && !missingProduction && !confusion && !failedSentence) return null;
     let priority = 0;
-    if (due) priority += 8;
     if (lastWrong) priority += 7;
     if (lowAccuracy) priority += 6;
     if (weakModes.length) priority += 5;
@@ -2610,7 +2588,7 @@ function getWeakWordCandidates(words, mastery, confusions = {}, now = Date.now()
     if (missingProduction) priority += 4;
     if (confusion) priority += Math.min(7, confusion.count * 2);
     if (failedSentence) priority += 5;
-    return { word, stats, accuracy, due, lastWrong, lowAccuracy, weakModes, spelling, missingProduction, confusion, failedSentence, priority };
+    return { word, stats, accuracy, lastWrong, lowAccuracy, weakModes, spelling, missingProduction, confusion, failedSentence, priority };
   }).filter(Boolean).sort((a, b) => b.priority - a.priority || a.accuracy - b.accuracy || Number(a.stats.lastReviewedAt || 0) - Number(b.stats.lastReviewedAt || 0));
 }
 
@@ -2642,7 +2620,6 @@ function deriveLearningInsights(words, mastery, confusions = {}, now = Date.now(
   });
   const weakest = Object.entries(modeTotals).filter(([, x]) => x.total >= 3).sort((a, b) => (a[1].correct/a[1].total) - (b[1].correct/b[1].total))[0];
   const confusionEntry = Object.entries(confusions || {}).filter(([, v]) => confusionCount(v) >= 2).sort((a,b)=>confusionCount(b[1])-confusionCount(a[1]))[0];
-  const dueCount = words.filter((w) => isDueForReview(mastery[w.word], now)).length;
   const closeToMastery = words.filter((w) => {
     const stats = normalizeMasteryRecord(mastery[w.word]);
     return getMasteryStage(stats, {kind:"word",obj:w}) === MASTERY_STAGE.LEARNED && stats.total >= 4 && getAccuracy(stats) >= 75;
@@ -2650,7 +2627,6 @@ function deriveLearningInsights(words, mastery, confusions = {}, now = Date.now(
   return {
     weakestMode: weakest ? { id: weakest[0], accuracy: (weakest[1].correct/weakest[1].total)*100 } : null,
     topConfusion: confusionEntry ? { pair: confusionEntry[0].split("|"), count: Number(confusionEntry[1]?.count || confusionEntry[1] || 0) } : null,
-    dueCount,
     closeToMastery,
   };
 }
@@ -2702,7 +2678,7 @@ const SCHEMA_VERSION = 6;
 // General settings — tunable knobs for round length and question mix.
 // Kept small and additive so old saves without a `settings` block just
 // fall back to these defaults.
-const DEFAULT_SETTINGS = { questionsPerRound: 12, newWordsPerRound: 3, weakReviewSize: 8, enablePairModes: true, reviewFirstThreshold: 40 };
+const DEFAULT_SETTINGS = { questionsPerRound: 12, newWordsPerRound: 3, weakReviewSize: 8, enablePairModes: true };
 function normalizeSettings(raw) {
   const s = raw && typeof raw === "object" ? raw : {};
   return {
@@ -2710,7 +2686,6 @@ function normalizeSettings(raw) {
     newWordsPerRound: Math.max(0, Math.min(10, Number(s.newWordsPerRound) ?? DEFAULT_SETTINGS.newWordsPerRound)),
     weakReviewSize: Math.max(3, Math.min(20, Number(s.weakReviewSize) || DEFAULT_SETTINGS.weakReviewSize)),
     enablePairModes: s.enablePairModes !== false,
-    reviewFirstThreshold: Math.max(0, Math.min(500, Number(s.reviewFirstThreshold) ?? DEFAULT_SETTINGS.reviewFirstThreshold)),
   };
 }
 const STORAGE_KEY = "progress-v6";
@@ -2750,12 +2725,11 @@ function migrateProgressData(raw = {}) {
     confusions[pair] = { count: confusionCount(value), lastAt: Number(value?.lastAt || 0) };
   });
   // Production gate migration: words that climbed past PRODUCTION_GATE_STEP on
-  // recognition evidence alone are pulled back and made due now, so their next
-  // appearance is a typing question rather than a 14/30-day silence.
-  const nowTs = Date.now();
+  // recognition evidence alone are pulled back to the gate, so their next
+  // appearance is a typing question.
   Object.entries(mastery).forEach(([key, record]) => {
     if (!isWordKey(key) || record.productionCorrect > 0 || record.reviewStep <= PRODUCTION_GATE_STEP) return;
-    mastery[key] = { ...record, reviewStep: PRODUCTION_GATE_STEP, nextReviewAt: nowTs };
+    mastery[key] = { ...record, reviewStep: PRODUCTION_GATE_STEP };
   });
   const solvedStories = Array.isArray(raw.solvedStories) ? raw.solvedStories.map(entry=>typeof entry==="string"?{id:entry,correct:0,total:0}:entry).filter(e=>e&&typeof e.id==="string") : [];
   const sessionLogs = Array.isArray(raw.sessionLogs) ? raw.sessionLogs.filter(e=>e&&typeof e.id==="string").slice(0,50) : [];
@@ -2997,7 +2971,6 @@ function AdminControlCenter({content,mastery,confusions,reports,activeSession,se
         <label className="wh-settings-row"><span>Questions per round (Level Practice)</span><input type="number" min="4" max="30" value={settings.questionsPerRound} onChange={e=>onUpdateSettings({...settings,questionsPerRound:Math.max(4,Math.min(30,Number(e.target.value)||12))})}/></label>
         <label className="wh-settings-row"><span>New words introduced per round</span><input type="number" min="0" max="10" value={settings.newWordsPerRound} onChange={e=>onUpdateSettings({...settings,newWordsPerRound:Math.max(0,Math.min(10,Number(e.target.value)||0))})}/></label>
         <label className="wh-settings-row"><span>Words per Weak Review session</span><input type="number" min="3" max="20" value={settings.weakReviewSize} onChange={e=>onUpdateSettings({...settings,weakReviewSize:Math.max(3,Math.min(20,Number(e.target.value)||8))})}/></label>
-        <label className="wh-settings-row"><span>Review-first when overdue words reach (0 = off)</span><input type="number" min="0" max="500" value={settings.reviewFirstThreshold} onChange={e=>onUpdateSettings({...settings,reviewFirstThreshold:Number(e.target.value)})}/></label>
         <label className="wh-settings-row wh-settings-toggle"><input type="checkbox" checked={settings.enablePairModes} onChange={e=>onUpdateSettings({...settings,enablePairModes:e.target.checked})}/><span>Enable "pick two" pair questions (twopeople / selecttwo) in Weak Review</span></label>
       </div>}
       {tab==="progress"&&<div className="wh-admin-grid"><article className="wh-admin-card"><h3>Weakest practiced words</h3>{weak.map(({word,stats})=><p key={word.word}><b>{word.word}</b> — {stats.correct||0}/{stats.total||0} · {V2.stage(stats)}</p>)}</article><article className="wh-admin-card"><h3>Top confusions</h3>{!topConfusions.length?<p>No confusion pairs recorded yet.</p>:topConfusions.map(item=><p key={item.pair}><b>{item.pair.replace("|"," ↔ ")}</b> — {item.count}</p>)}</article></div>}
@@ -3193,9 +3166,7 @@ export default function WordHunter() {
     const next = V2.sessionEvidence(masteryRef.current, session);
     masteryRef.current = next; setMastery(next); recordStudyDay();
     if(session.kind==="practice" && session.queue.length && session.answers.length===session.queue.length) {
-      // A review-first round is mostly other levels' words, so it must not
-      // score or clear this level.
-      const level=session.reviewFirst?null:LEVELS.find(l=>l.title===session.title);
+      const level=LEVELS.find(l=>l.title===session.title);
       if(level){const accuracy=session.answers.filter(a=>a.correct).length/session.queue.length*100;setLevelStats(prev=>({...prev,[level.id]:updateLevelStat(prev[level.id],accuracy)}));if(accuracy>=70)setLevelsCleared(prev=>[...new Set([...prev,level.id])]);}
     }
     if(session.kind==="story" && session.sourceStoryId && session.queue.length && session.answers.length===session.queue.length) {
@@ -3425,7 +3396,6 @@ export default function WordHunter() {
 
   const clearedSet = useMemo(() => new Set(levelsCleared), [levelsCleared]);
   const weakCandidates = useMemo(() => getWeakWordCandidates(WORDS, mastery, confusions), [mastery, confusions, dataVersion]);
-  const dueWords = useMemo(() => WORDS.filter((w) => isDueForReview(mastery[w.word])), [mastery, dataVersion]);
   const masteredOnlyWords = useMemo(() => WORDS.filter((w) => getMasteryStage(mastery[w.word], { kind: "word", obj: w }) === MASTERY_STAGE.MASTERED), [mastery, dataVersion]);
   const stageSummary = useMemo(() => { const counts = { New: 0, Familiar: 0, Learned: 0, Mastered: 0 }; LEVELS.forEach((level) => level.items.forEach((item) => { counts[getMasteryStage(mastery[levelItemKey(item)], item)] += 1; })); return counts; }, [mastery, dataVersion]);
   const overviewStats = useMemo(() => {
@@ -3696,25 +3666,12 @@ export default function WordHunter() {
   }, [toast]);
   useEffect(()=>{if(!askAiOpen)return;const close=event=>{if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();setAskAiOpen(false);}};window.addEventListener('keydown',close,true);return()=>window.removeEventListener('keydown',close,true);},[askAiOpen]);
 
-  function dueWordCount() {
-    const now = Date.now();
-    return WORDS.filter((w) => isDueForReview(masteryRef.current[w.word], now)).length;
-  }
   function startLevel(index) {
     const level = LEVELS[index]; if(!level) return;
     setCurrentLevelIndex(index);
-    const dueFirst = settings.reviewFirstThreshold > 0 && dueWordCount() >= settings.reviewFirstThreshold;
-    const session = V2.practice(liveContent(), masteryRef.current, level.title, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound: settings.newWordsPerRound, pools: poolsRef.current, dueFirst });
-    if (session.reviewFirst) setToast({ text: `Review first: ${session.dueCount} words are overdue, so this round starts with them.` });
+    const session = V2.practice(liveContent(), masteryRef.current, level.title, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound: settings.newWordsPerRound, pools: poolsRef.current });
     launchSession(session);
   }
-  function startDueReview() {
-    setCurrentLevelIndex(null);
-    const session = V2.practice(liveContent(), masteryRef.current, null, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound: 0, pools: poolsRef.current, dueOnly: true });
-    if (!session.queue.length) { setToast({ text: "Nothing is due right now." }); return; }
-    launchSession(session);
-  }
-
   function startWeakReview() {
     const picked = weakCandidates.slice(0, settings.weakReviewSize);
     if (!picked.length) return;
@@ -3819,7 +3776,7 @@ export default function WordHunter() {
       const prevMode = normalizeModeStats(prev.modes[modeId]);
       const productionAttempt = isWord && PRODUCTION_MODES.has(modeId);
       const genuineProduction = productionAttempt && masteryCorrect && meta.productionSuccess !== false;
-      const spaced = isWord ? updateSpacedReview(prev, masteryCorrect, now, { productionNow: genuineProduction }) : { lastReviewedAt: now };
+      const streak = isWord ? updateReviewStreak(prev, masteryCorrect, now, { productionNow: genuineProduction }) : { lastReviewedAt: now };
       const sentenceAttempt = modeId === "buildSentence" || modeId === "finalReport";
       const regressionStrikes = prev.everMastered
         ? (masteryCorrect ? Math.max(0, prev.regressionStrikes - 1) : prev.regressionStrikes + 1)
@@ -3839,7 +3796,7 @@ export default function WordHunter() {
         lastResult: masteryCorrect ? "correct" : meta.spellingIssue ? "spelling" : "wrong",
         regressionStrikes,
         recentResults: [...prev.recentResults, { correct: masteryCorrect, modeId, difficulty: Number(question.difficulty || 1), at: now, spelling: !!meta.spellingIssue }].slice(-RECENT_RESULT_LIMIT),
-        ...spaced,
+        ...streak,
       };
       if (getMasteryStage(nextRecord, { kind: isWord ? "word" : "grammar", obj: question.target }) === MASTERY_STAGE.MASTERED) nextRecord.everMastered = true;
       let nextMastery = { ...prevMastery, [key]: nextRecord };
@@ -3871,7 +3828,7 @@ export default function WordHunter() {
             sentenceSuccesses: linkedPrev.sentenceSuccesses + (modeId === "buildSentence" && linkedProductionSuccess ? 1 : 0),
             lastResult: masteryCorrect ? "correct" : "wrong",
             recentResults: [...linkedPrev.recentResults, { correct: masteryCorrect, modeId, difficulty: Number(question.difficulty || 1), at: now }].slice(-RECENT_RESULT_LIMIT),
-            ...updateSpacedReview(linkedPrev, masteryCorrect, now),
+            ...updateReviewStreak(linkedPrev, masteryCorrect, now),
           };
           if (getMasteryStage(linkedRecord, { kind: "word", obj: wordObj }) === MASTERY_STAGE.MASTERED) linkedRecord.everMastered = true;
           nextMastery[linkedWord] = linkedRecord;
@@ -5390,14 +5347,13 @@ export default function WordHunter() {
                 <div className="wh-insight-lines">
                   {learningInsights.weakestMode && <span>{MODE_META[learningInsights.weakestMode.id]?.label || learningInsights.weakestMode.id} is currently your weakest mode ({formatAccuracy(learningInsights.weakestMode.accuracy)}%).</span>}
                   {learningInsights.topConfusion && <span>You often confuse {learningInsights.topConfusion.pair[0]} and {learningInsights.topConfusion.pair[1]}.</span>}
-                  <span>{learningInsights.dueCount} word{learningInsights.dueCount === 1 ? " is" : "s are"} due for review · {learningInsights.closeToMastery} Learned close to Mastery.</span>
+                  <span>{learningInsights.closeToMastery} Learned close to Mastery.</span>
                   <span>Archive: {stageSummary.New} New · {stageSummary.Familiar} Familiar · {stageSummary.Learned} Learned · {stageSummary.Mastered} Mastered</span>
                 </div>
               </div>
             </div>
             <div className="wh-adaptive-actions">
-              {learningInsights.dueCount > 0 && <button className="primary" onClick={startDueReview}>Due today ({learningInsights.dueCount})</button>}
-              {weakCandidates.length > 0 && <button className={learningInsights.dueCount > 0 ? "secondary" : "primary"} onClick={startWeakReview}>Hunt Weak Evidence ({weakCandidates.length})</button>}
+              {weakCandidates.length > 0 && <button className="primary" onClick={startWeakReview}>Hunt Weak Evidence ({weakCandidates.length})</button>}
             </div>
           </>
         )}
