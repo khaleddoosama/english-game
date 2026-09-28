@@ -122,13 +122,20 @@ function normalizeV3(data, existing = {}) {
     if (!Object.keys(out.relations).length) delete out.relations;
     return out;
   });
+  // Grammar rules point at a category id too.
+  const grammar = (Array.isArray(data.grammar) ? data.grammar : []).map((g, i) => {
+    if (!isObj(g) || g.category === undefined) return g;
+    const title = catTitle.get(norm(g.category));
+    if (!title && cats.length) warnings.push(`grammar[${i}].category: "${g.category}" isn't listed in categories — used as the title`);
+    return { ...g, categoryId: g.category, category: title || String(g.category) };
+  });
   // Same category id, new title → rename that category everywhere.
   const catRenames = [];
   const oldTitleById = new Map();
   for (const f of fields) for (const it of existing[f] || []) if (it && it.categoryId) oldTitleById.set(norm(it.categoryId), it.category);
   for (const [id, title] of catTitle) { const old = oldTitleById.get(id); if (old && old !== title) catRenames.push({ from: old, to: title }); }
   const { categories, words: _w, ...rest } = data;
-  const content = { ...rest, schemaVersion: 2, kind: data.kind || 'content', words };
+  const content = { ...rest, schemaVersion: 2, kind: data.kind || 'content', words, ...(Array.isArray(data.grammar) ? { grammar } : {}) };
   return { content, errors, warnings, renames: { words: wordRenames, categories: catRenames }, levelOrder: cats.length ? cats.map(c => catTitle.get(norm(c.id))).filter(Boolean) : null };
 }
 // Apply word and category renames to existing content, including every
@@ -317,7 +324,7 @@ function validateContent(data, existing={}) {
     for(const [f,ks] of [['transformExample',['before','after']],['commonMistake',['sentence','correction','why']]])if(w[f]!==undefined){if(!obj(w[f]))err(`${p}.${f}`,'expected object');else ks.forEach(k=>text(w[f][k],`${p}.${f}.${k}`));}
     if(w.transformExample&&!['phrasal','fyi'].includes(w.type))err(`${p}.transformExample`,'only phrasal/fyi');
   });
-  (data.grammar||[]).forEach((g,i)=>{const p=`grammar[${i}]`;for(const k of ['category','rule','prompt','answer','explanation'])text(g[k],`${p}.${k}`);if(!Array.isArray(g.options)||g.options.length<2||g.options.some(o=>typeof o!=='string'||!o.trim()))err(`${p}.options`,'expected at least two strings');else {if(new Set(g.options.map(norm)).size!==g.options.length)err(`${p}.options`,'duplicate options');if(!g.options.some(o=>norm(o)===norm(g.answer)))err(`${p}.answer`,'answer missing from options');}});
+  (data.grammar||[]).forEach((g,i)=>{const p=`grammar[${i}]`;if(g&&typeof g.id==='string'&&g.id.includes(':'))err(`${p}.id`,'must not contain ":"');if(g&&Array.isArray(g.questions)){for(const k of ['category','rule','explanation'])text(g[k],`${p}.${k}`);if(!g.questions.length)err(`${p}.questions`,'expected at least one question');g.questions.forEach((q,j)=>{const qp=`${p}.questions[${j}]`;if(!q||typeof q!=='object')return err(qp,'expected an object');if(q.type==='choose'){text(q.prompt,`${qp}.prompt`);text(q.answer,`${qp}.answer`);if(!Array.isArray(q.options)||q.options.length<2||q.options.some(o=>typeof o!=='string'||!o.trim()))err(`${qp}.options`,'expected at least two strings');else{if(new Set(q.options.map(norm)).size!==q.options.length)err(`${qp}.options`,'duplicate options');if(!q.options.some(o=>norm(o)===norm(q.answer)))err(`${qp}.answer`,'answer missing from options');}}else if(q.type==='judge'){text(q.sentence,`${qp}.sentence`);if(typeof q.correct!=='boolean')err(`${qp}.correct`,'expected true or false');else if(q.correct)text(q.alternative,`${qp}.alternative`);else text(q.fix,`${qp}.fix`);const other=q.correct?q.alternative:q.fix;if(typeof other==='string'&&sentence(other)===sentence(q.sentence))err(qp,'the other version must differ from the sentence');}else if(q.type==='fix'){text(q.sentence,`${qp}.sentence`);text(q.answer,`${qp}.answer`);if(typeof q.answer==='string'&&typeof q.sentence==='string'&&sentence(q.answer)===sentence(q.sentence))err(`${qp}.answer`,'must differ from the sentence');}else err(`${qp}.type`,'expected "choose", "judge" or "fix"');});return;}for(const k of ['category','rule','prompt','answer','explanation'])text(g[k],`${p}.${k}`);if(!Array.isArray(g.options)||g.options.length<2||g.options.some(o=>typeof o!=='string'||!o.trim()))err(`${p}.options`,'expected at least two strings');else {if(new Set(g.options.map(norm)).size!==g.options.length)err(`${p}.options`,'duplicate options');if(!g.options.some(o=>norm(o)===norm(g.answer)))err(`${p}.answer`,'answer missing from options');}});
   (merged.combos||[]).forEach((c,i)=>{const p=`combos[${i}]`;['category','situation','prompt','explanation'].forEach(k=>text(c[k],`${p}.${k}`));const a=refs(c.words,`${p}.words`,2);if(a.length!==2)err(`${p}.words`,'expected exactly two');else if(norm(a[0])===norm(a[1]))err(`${p}.words`,'the two words must be different');});
   (merged.stories||[]).forEach((s,i)=>{const p=`stories[${i}]`;['category','title','text'].forEach(k=>text(s[k],`${p}.${k}`));const targets=refs(s.targetWords,`${p}.targetWords`,5);if(targets.length>12)err(`${p}.targetWords`,'expected 5–12 targets');const covered=new Set();if(!Array.isArray(s.questions)||s.questions.length<5)err(`${p}.questions`,'expected at least five questions');
     (Array.isArray(s.questions)?s.questions:[]).forEach((q,j)=>{const qp=`${p}.questions[${j}]`;if(!obj(q)){err(qp,'expected object');return;}if(!['mcq','typing','multi'].includes(q.mode))err(`${qp}.mode`,'unsupported mode');text(q.prompt,`${qp}.prompt`);text(q.explanation,`${qp}.explanation`);const a=refs(q.mode==='multi'?q.targetWords:[q.targetWord],qp,q.mode==='multi'?2:1);if(q.mode==='multi'&&a.length!==2)err(qp,'multi requires exactly two targets');if(q.mode==='multi'&&q.targetWord!==undefined||q.mode!=='multi'&&q.targetWords!==undefined)err(qp,'conflicting target fields');if(q.options!==undefined||q.answer!==undefined)err(qp,'answers come from targetWord(s); options are generated');a.forEach(w=>{covered.add(norm(w));if(!targets.some(t=>norm(t)===norm(w)))err(qp,'question target not in story targets');});if(a.length===2&&norm(a[0])===norm(a[1]))err(qp,'multi targets must be different');});
@@ -396,6 +403,25 @@ function activityQuestion(q,words,id,rng=Math.random){
   if(out.type!=='typing'){out.options=optionWords(targets,words,Math.max(4,targets.length+1),rng).map(w=>w.word);if(out.options.length<=targets.length)throw Error(`${id}: not enough safe distractors`);}
   return out;
 }
+// A grammar rule's questions. v3 rules carry questions[] (choose / judge /
+// fix); an older rule is one choose question built from its own fields.
+function grammarQuestions(g){
+  if(!g)return [];
+  if(!Array.isArray(g.questions))return g.prompt&&Array.isArray(g.options)&&g.answer?[{type:'choose',prompt:g.prompt,options:g.options,answer:g.answer,explanation:g.explanation}]:[];
+  return g.questions.filter(q=>q&&(q.type==='choose'?q.prompt&&Array.isArray(q.options)&&q.options.length>=2&&q.answer:q.type==='judge'?q.sentence&&typeof q.correct==='boolean'&&(q.correct?q.alternative:q.fix):q.type==='fix'?q.sentence&&q.answer:false));
+}
+const JUDGE_OK="It's correct as it is";
+function grammarQuestion(g,item,turn,rng=Math.random){
+  if(!item)return null;
+  const base={id:`grammar:${g.id}:q${turn}`,targets:[],progressKey:`grammar:${g.id}`,rule:g.rule,explanation:[item.explanation||g.explanation,g.rule&&`Rule: ${g.rule}`].filter(Boolean).join('\n')};
+  if(item.type==='choose')return {...base,mode:'grammarChoose',type:'mcq',prompt:item.prompt,answers:[item.answer],options:shuffleCopy(item.options,rng)};
+  // Judge: keep it as it is, or take the other version. For a correct
+  // sentence the other version is a tempting wrong rewrite, so the choices
+  // look the same either way and don't give the answer away.
+  if(item.type==='judge')return {...base,mode:'grammarJudge',type:'mcq',prompt:`Is this sentence correct? If not, choose the fixed version.\n“${item.sentence}”`,answers:[item.correct?JUDGE_OK:item.fix],options:shuffleCopy([JUDGE_OK,item.correct?item.alternative:item.fix],rng)};
+  if(item.type==='fix')return {...base,mode:'grammarFix',type:'typing',prompt:`Fix the mistake and write the whole sentence:\n“${item.sentence}”`,answers:[item.answer],sentence:item.sentence,modelOnly:true,freeformKind:'grammarFix'};
+  return null;
+}
 function practice(content,mastery={},category=null,rng=Math.random,quarantine=null,opts={}){
   const isQuarantined=(word,mode)=>!!quarantine&&quarantine.has(`${String(word).trim().toLowerCase()}|${mode}`);
   const pools=opts.pools||{};
@@ -456,18 +482,29 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   const challengePool=[];
   for(const c of content.challenges||[])if(['impostor','reverseImpostor'].includes(c.type||c.mode)&&!c.steps&&c.options?.length>=2&&c.answer&&(!category||topic(c.category)===topic(category))){const targets=(c.linkedWords||[]).filter(w=>norm(w)===norm(c.answer));if(targets.length&&targets.every(w=>['Learned','Mastered'].includes(stage(mastery[w])))&&!targets.some(w=>isQuarantined(w,'impostor'))){const refs=c.options.map(o=>findWord(content.words,o)).filter(Boolean);if(refs.every((a,i)=>refs.slice(i+1).every(b=>compatible(a,b))))challengePool.push({c,targets});}}
   for(const {c,targets} of shuffleCopy(challengePool,rng).sort((a,b)=>lastSeenKey(`challenge:${a.c.id}`)-lastSeenKey(`challenge:${b.c.id}`)).slice(0,1))candidates.push({id:`challenge:${c.id}`,mode:'impostor',type:'mcq',targets,progressKey:`challenge:${c.id}`,prompt:c.prompt,answers:[c.answer],options:shuffleCopy(c.options,rng),explanation:c.explanation});
-  // Grammar: same "fresh example after mastery" idea as combos above —
-  // pick whichever variant (seed or AI-generated) is least-attempted and
-  // not on cooldown, instead of always the one static authored example.
-  for(const g of shuffleCopy(content.grammar||[],rng).filter(g=>!category||topic(g.category)===topic(category)).slice(0,1)){const grammarKey=`grammar:${g.id}`;const item=pickPoolVariant(pools,grammarKey,{prompt:g.prompt,options:g.options,answer:g.answer,explanation:g.explanation});candidates.push({id:`grammar:${g.id}:${item.id}`,mode:'grammarCourt',type:'mcq',prompt:item.prompt,answers:[item.answer],options:shuffleCopy(item.options,rng),targets:[],progressKey:grammarKey,poolType:'grammar',poolItemId:item.id,explanation:item.explanation});}
+  // Grammar lives inside word sessions: rules from the same lesson as this
+  // session's words, one question per rule, 1–2 rules per session. Rules
+  // rotate like words (missed last time first, then least recently
+  // reviewed) and each rule steps through its own questions in turn.
+  const grammarTopics=new Set((category?[category]:chosen.map(w=>w.category)).map(topic));
+  const missedKey=key=>{const r=mastery[key]?.lastResult;return r&&r!=='correct'?1:0;};
+  const grammarPool=(content.grammar||[]).filter(g=>g&&g.id&&grammarTopics.has(topic(g.category))&&grammarQuestions(g).length);
+  const grammarQueue=shuffleCopy(grammarPool,rng).sort((a,b)=>missedKey(`grammar:${b.id}`)-missedKey(`grammar:${a.id}`)||lastSeenKey(`grammar:${a.id}`)-lastSeenKey(`grammar:${b.id}`)).slice(0,questionsPerRound>=10?2:1).map(g=>{
+    const grammarKey=`grammar:${g.id}`;
+    // Old single-question rules keep their AI variant pool.
+    if(!Array.isArray(g.questions)){const item=pickPoolVariant(pools,grammarKey,{prompt:g.prompt,options:g.options,answer:g.answer,explanation:g.explanation});return {id:`grammar:${g.id}:${item.id}`,mode:'grammarChoose',type:'mcq',prompt:item.prompt,answers:[item.answer],options:shuffleCopy(item.options,rng),targets:[],progressKey:grammarKey,poolType:'grammar',poolItemId:item.id,explanation:item.explanation};}
+    const list=grammarQuestions(g);const turn=(mastery[grammarKey]?.total||0)%list.length;
+    return grammarQuestion(g,list[turn],turn,rng);
+  }).filter(Boolean);
   const queue=[],counts={}, weights={meaning:3,reverse:3,gap:3,gapTyping:3,situation:2,typing:3,order:2,transform:2,multi:1,grammarCourt:1,whoami:2,opposite:2,twopeople:2,selecttwo:2,idiomDetective:2,story:2};
+  const wordSlots=questionsPerRound-grammarQueue.length;
   // Introductions are separate cards. Last introduced word is never the first test.
   const lastIntro=fresh.at(-1)?.word;
   const usedWords=new Set();
   // A word shows up at most twice per round; a small category ends the
   // round early instead of cycling the same few words over and over.
   const wordUses={};
-  while(queue.length<questionsPerRound&&candidates.length){
+  while(queue.length<wordSlots&&candidates.length){
     const eligible=candidates.map((q,i)=>({q,i})).filter(({q})=>!(queue.length===0&&q.targets.includes(lastIntro)) && !q.targets.some(t=>(wordUses[t]||0)>=2) && !queue.slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))) && !(queue.length>=2&&queue.slice(-2).every(p=>p.mode===q.mode)));
     if(!eligible.length)break;
     eligible.sort((a,b)=>{
@@ -478,6 +515,12 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
     });
     const {q,i}=eligible[0];queue.push(q);counts[q.mode]=(counts[q.mode]||0)+1;q.targets.forEach(t=>{usedWords.add(t);wordUses[t]=(wordUses[t]||0)+1;});candidates.splice(i,1);
   }
+  // At most one grammar question per 4 word questions, so a short round
+  // (e.g. the very first one) stays about the words. Spread the rest
+  // through the round (never first), e.g. at 1/3 and 2/3.
+  grammarQueue.splice(Math.floor(queue.length/4));
+  const spots=grammarQueue.map((_,k)=>Math.max(1,Math.round(queue.length*(k+1)/(grammarQueue.length+1))));
+  for(let k=grammarQueue.length-1;k>=0;k--)queue.splice(Math.min(spots[k],queue.length),0,grammarQueue[k]);
   return {kind:'practice',id:`session-${Date.now()}-${rng()}`,title:category||'Practice',queue,introductions:fresh,index:0,answers:[],initialLength:queue.length,targetLength:questionsPerRound,reserves:candidates,extraAdded:false};
 }
 function storySession(story,words,mastery={},rng=Math.random){const introductions=story.targetWords.map(w=>findWord(words,w)).filter(w=>!known(mastery[w.word]));const scoped=story.sourceCategories?.length?words.filter(w=>story.sourceCategories.includes(w.category)):words;const optionSource=scoped.length>=4?scoped:words;const queue=story.questions.map((q,i)=>activityQuestion(q,optionSource,`${story.id}:${i}`,rng));for(const g of story.grammarQuestions||[])queue.push({...g,options:shuffleCopy(g.options,rng)});return {id:`story-${story.id}-${Date.now()}`,sourceStoryId:story.id,kind:'story',title:story.title,text:story.text,queue,introductions,unfairTargets:introductions.map(w=>w.word),index:0,answers:[]};}
@@ -513,7 +556,7 @@ function sessionEvidence(mastery,session,now=Date.now()){
 }
 function reinforcement(s){if(s.extraAdded||s.kind!=='practice')return s;const wrong=s.queue.filter((q,i)=>s.answers[i]&&!s.answers[i].correct&&!s.answers[i].reported).flatMap(q=>q.targets);const added=[];for(const q of s.reserves||[]){if(added.length>=2)break;if(!q.targets.some(t=>wrong.includes(t)))continue;if([...s.queue,...added].slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))))continue;added.push(q);}return {...s,queue:[...s.queue,...added],extraAdded:true};}
 
-return { norm, sentence, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
+return { norm, sentence, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, grammarQuestions, grammarQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
 })();
 
 // Pronunciation: two independent sources, tried in order.
@@ -653,7 +696,7 @@ const { grade, sentence, reinforcement } = V2;
 // One answer control for Practice, Stories and Chains. The draft lives in player state.
 function AnswerControl({q,draft={},onChange,disabled,onSubmit}){
   const selected=draft.selected||[];
-  if(q.type==='typing'&&q.modelOnly)return <textarea autoFocus className="wh-v2-input wh-v2-long-answer" aria-label="Your answer" disabled={disabled} value={draft.text||''} onChange={e=>onChange({...draft,text:e.target.value})} onKeyDown={e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();e.stopPropagation();if(!disabled&&(draft.text||'').trim())onSubmit?.();}}} placeholder="Write your answer… (Ctrl + Enter to submit)"/>;
+  if(q.type==='typing'&&q.modelOnly)return <textarea autoFocus className="wh-v2-input wh-v2-long-answer" aria-label="Your answer" disabled={disabled} value={draft.text??(q.freeformKind==='grammarFix'?q.sentence:'')} onChange={e=>onChange({...draft,text:e.target.value})} onKeyDown={e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();e.stopPropagation();if(!disabled&&(draft.text||'').trim())onSubmit?.();}}} placeholder={q.freeformKind==='grammarFix'?"Edit the sentence to fix it… (Ctrl + Enter to submit)":"Write your answer… (Ctrl + Enter to submit)"}/>;
   if(q.type==='typing')return <input autoFocus className="wh-v2-input" aria-label="Your answer" autoComplete="off" spellCheck={false} disabled={disabled} value={draft.text||''} onChange={e=>onChange({...draft,text:e.target.value})} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();e.stopPropagation();if(!disabled&&(draft.text||'').trim())onSubmit?.();}}} placeholder={`Type your answer… (or "${DONT_KNOW_TOKEN}" if you don't know)`}/>;
   return <div className="wh-options">{(q.options||[]).map((opt,index)=><button type="button" className={`wh-option ${selected.includes(opt)?'picked':''}`} aria-pressed={selected.includes(opt)} key={opt} disabled={disabled} onClick={()=>onChange({...draft,selected:q.type==='multi'?(selected.includes(opt)?selected.filter(x=>x!==opt):selected.length<q.answers.length?[...selected,opt]:selected):[opt]})}><span className="wh-shortcut-key" aria-hidden="true">{index+1}</span>{opt}</button>)}</div>;
 }
@@ -715,7 +758,7 @@ function playCue(kind,combo=0){
   }catch{}
 }
 // Friendly names for the V2-only modes MODE_META doesn't cover.
-const MODE_LABELS_V2={reverse:"Name the Word",grammarCourt:"Grammar Court",multi:"Combo",transform:"Transform"};
+const MODE_LABELS_V2={reverse:"Name the Word",grammarCourt:"Grammar Court",grammarChoose:"Grammar",grammarJudge:"Right or Wrong?",grammarFix:"Fix the Sentence",multi:"Combo",transform:"Transform"};
 // Correct answers in a row ending at index i (reported/skipped ones don't break it).
 function comboAt(answers,i){let n=0;for(let j=i;j>=0;j--){const a=answers[j];if(!a||a.reported)continue;if(!a.correct)break;n++;}return n;}
 function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onReport,onReviewReport,onWithdrawReport,onUpdateWord,onResult,onAskWord,sound=true,onToggleSound}){
@@ -868,8 +911,9 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
       setAiChecking(true);
       try{
         const targetWord=V2.findWord(words,q.targets?.[0]);
-        const evaluation=await evaluateFreeForm({freeformKind:q.freeformKind||'sentence',target:{word:q.targets?.[0],meaning:targetWord?.meaning,situation:targetWord?.situation},answer:q.answers[0]},value);
-        const targetRequired=q.freeformKind!=='idiomMeaning';
+        const target=q.freeformKind==='grammarFix'?{label:q.rule,situation:q.sentence}:{word:q.targets?.[0],meaning:targetWord?.meaning,situation:targetWord?.situation};
+        const evaluation=await evaluateFreeForm({freeformKind:q.freeformKind||'sentence',target,answer:q.answers[0]},value);
+        const targetRequired=!['idiomMeaning','grammarFix'].includes(q.freeformKind);
         const genuine=evaluation.correct&&(!targetRequired||evaluation.targetWordUsed)&&evaluation.semanticUse==='correct';
         const aiClose=!genuine&&evaluation.semanticUse==='partly_correct'&&evaluation.naturalness!=='nonsense';
         const answers=[...s.answers];
@@ -2075,7 +2119,8 @@ function buildQuestionUnsafe(modeId, wordObj, pools, options = {}) {
 }
 function buildGrammarQuestion(g) {
   const target = { ...g, key: `grammar:${g.id}`, label: g.rule, explanation: g.explanation };
-  return { target, modeId: "grammarCourt", prompt: g.prompt, options: shuffle(g.options), answer: g.answer, type: "mcq", court: true };
+  const q = V2.grammarQuestions(g).find((x) => x.type === "choose") || { prompt: g.prompt, options: g.options || [], answer: g.answer };
+  return { target, modeId: "grammarCourt", prompt: q.prompt, options: shuffle(q.options), answer: q.answer, type: "mcq", court: true };
 }
 
 function buildEntryQuestion(entry, pools) {
@@ -2690,6 +2735,8 @@ async function evaluateFreeForm(question, answerText) {
     learnerAnswer: answerText,
     rules: kind === "idiomMeaning"
       ? "Judge whether the learner correctly explains the idiom in this situation. The learner does not need to repeat the idiom itself."
+      : kind === "grammarFix"
+      ? "situation is a sentence with a grammar mistake and targetWord is the grammar rule it breaks. Judge whether the learner's sentence fixes that mistake correctly while keeping the same meaning. Any correct fix is fine; it does not have to match expectedAnswer. Set semanticUse to \"correct\" only when the mistake is fixed and no new error was added, and set targetWordUsed to true."
       : kind === "phrasalTransform"
       ? "The requested target phrasal verb should be used. A different valid equivalent may be acknowledged in feedback, but targetWordUsed must be false unless the requested target itself is present."
       : "Judge whether the target word is actually used with the intended meaning in a meaningful natural sentence; reject random word stuffing.",
