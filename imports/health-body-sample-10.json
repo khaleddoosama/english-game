@@ -1,0 +1,572 @@
+{
+  "schemaVersion": 3,
+  "kind": "content",
+  "note": "Health-Body sample (10 words), content v3.",
+  "categories": [
+    {
+      "id": "health-body",
+      "title": "Health-Body",
+      "subCategories": [
+        {
+          "id": "sport-and-exertion",
+          "title": "Sport and exertion"
+        },
+        {
+          "id": "injuries",
+          "title": "Injuries"
+        },
+        {
+          "id": "health-states",
+          "title": "Health states"
+        },
+        {
+          "id": "medication-forms",
+          "title": "Medication forms"
+        },
+        {
+          "id": "sleep-arrangements",
+          "title": "Sleep arrangements"
+        },
+        {
+          "id": "blood-pressure",
+          "title": "Blood pressure"
+        },
+        {
+          "id": "medical-supports",
+          "title": "Medical supports"
+        }
+      ]
+    }
+  ],
+  "words": [
+    {
+      "id": "athletic",
+      "word": "Athletic",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "health-body",
+      "subCategory": "sport-and-exertion",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "Good at sports or enjoying physical activity.",
+      "situations": [
+        "He is very athletic because he plays soccer and runs every single morning."
+      ],
+      "gaps": [
+        "My sister is very ______ — she swims, plays tennis, and never gets tired.",
+        "You need to be quite ______ to finish a marathon."
+      ],
+      "hints": [
+        "Describes someone who is strong, fit, and good at sports.",
+        "Starts with 'ath-' and ends with '-ic'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He is a very athlete person.",
+          "correction": "He is a very athletic person.",
+          "why": "'Athlete' is a noun (the person); use the adjective 'athletic' to describe someone."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "athlete",
+          "pos": "noun"
+        },
+        {
+          "word": "athletics",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "athletic build",
+        "athletic ability"
+      ],
+      "synonyms": [
+        "sporty",
+        "fit",
+        "active"
+      ],
+      "antonyms": [
+        "unfit",
+        "inactive"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      }
+    },
+    {
+      "id": "sprain",
+      "word": "Sprain",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "health-body",
+      "subCategory": "injuries",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "An injury in which a ligament is stretched or torn.",
+      "situations": [
+        "He sprained his ankle during the match and had to sit out for a week."
+      ],
+      "gaps": [
+        "Be careful on the stairs — a bad ______ can keep you off your feet for weeks.",
+        "The doctor said it was only a ______, not a broken bone."
+      ],
+      "hints": [
+        "An injury to a ligament, often in the ankle or wrist.",
+        "Starts with 'spr-' and rhymes with 'rain'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I have a sprain in my back muscle from lifting weights.",
+          "correction": "I have a strain in my back muscle from lifting weights.",
+          "why": "A sprain hurts a ligament; a hurt muscle or tendon is a strain."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "sprained",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "sprain your ankle",
+        "a bad sprain"
+      ],
+      "synonyms": [],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "fracture",
+          "strain"
+        ],
+        "excludeWith": []
+      }
+    },
+    {
+      "id": "strain",
+      "word": "Strain",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "health-body",
+      "subCategory": "injuries",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "An injury in which a muscle or tendon is stretched or torn.",
+      "situations": [
+        "He got a muscle strain in his back after lifting heavy boxes."
+      ],
+      "gaps": [
+        "Running without warming up can cause a ______ in your leg muscles.",
+        "Lifting that heavy sofa gave him a painful ______ in his lower back."
+      ],
+      "hints": [
+        "An injury to a muscle or tendon that was stretched too far.",
+        "Starts with 'str-' and rhymes with 'rain'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She twisted her ankle and got a strain in the ligament.",
+          "correction": "She twisted her ankle and got a sprain in the ligament.",
+          "why": "A hurt ligament is a sprain; 'strain' is for muscles and tendons."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "strained",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "a muscle strain",
+        "a back strain"
+      ],
+      "synonyms": [
+        "pulled muscle"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "fracture",
+          "sprain"
+        ],
+        "excludeWith": []
+      }
+    },
+    {
+      "id": "sick",
+      "word": "Sick",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "health-body",
+      "subCategory": "health-states",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "Ill or unwell.",
+      "situations": [
+        "She stayed at home because she was sick."
+      ],
+      "gaps": [
+        "I felt too ______ to go to work, so I called my manager and stayed in bed.",
+        "Grandma was ______ last week, but she's feeling much better now."
+      ],
+      "hints": [
+        "How you feel when you have a cold, the flu, or another illness.",
+        "A four-letter word that starts with 's'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I feel sickness today, so I'm staying home.",
+          "correction": "I feel sick today, so I'm staying home.",
+          "why": "'Sick' is the adjective for how you feel; 'sickness' is the noun."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "sickness",
+          "pos": "noun"
+        },
+        {
+          "word": "sickly",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "feel sick",
+        "call in sick"
+      ],
+      "synonyms": [
+        "Ill",
+        "Under the weather",
+        "unwell"
+      ],
+      "antonyms": [
+        "Good",
+        "Well",
+        "healthy"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "sick-and-tired"
+        ],
+        "excludeWith": [
+          "ill",
+          "under-the-weather"
+        ]
+      }
+    },
+    {
+      "id": "pills",
+      "word": "Pills",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "health-body",
+      "subCategory": "medication-forms",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "Small solid medicines taken by mouth, including tablets and capsules in everyday use.",
+      "situations": [
+        "He takes blood pressure pills every morning without fail."
+      ],
+      "gaps": [
+        "The doctor told me to take two ______ after breakfast with a glass of water.",
+        "Keep all ______ in a high cupboard where children can't reach them."
+      ],
+      "hints": [
+        "Small solid medicines that you swallow.",
+        "A five-letter word that starts with 'p'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I drank two pills for my headache.",
+          "correction": "I took two pills for my headache.",
+          "why": "We take or swallow pills; we drink liquids."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "pill",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "take a pill",
+        "sleeping pills"
+      ],
+      "synonyms": [],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "capsules",
+          "tablets"
+        ]
+      }
+    },
+    {
+      "id": "under-the-weather",
+      "word": "Under the weather",
+      "type": "idiom",
+      "partsOfSpeech": [
+        "adjective phrase"
+      ],
+      "category": "health-body",
+      "subCategory": "health-states",
+      "level": "B1",
+      "register": "informal",
+      "meaning": "Feeling slightly ill; informal.",
+      "situations": [
+        "I couldn't go to work — I was under the weather."
+      ],
+      "gaps": [
+        "Maya is feeling a bit ______ today, so she's staying home with a cup of tea.",
+        "I won't come to the party tonight — I'm a little ______."
+      ],
+      "hints": [
+        "An informal way to say you feel slightly ill.",
+        "It starts with 'under'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I'm feeling under the weathers today.",
+          "correction": "I'm feeling under the weather today.",
+          "why": "The idiom is fixed: 'weather' is always singular here."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "feel under the weather"
+      ],
+      "synonyms": [
+        "Sick",
+        "Ill",
+        "unwell",
+        "off colour"
+      ],
+      "antonyms": [
+        "as fit as a fiddle",
+        "in good health"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "ill",
+          "sick"
+        ]
+      }
+    },
+    {
+      "id": "stay-up",
+      "word": "Stay up",
+      "type": "phrasal",
+      "partsOfSpeech": [
+        "phrasal verb"
+      ],
+      "category": "health-body",
+      "subCategory": "sleep-arrangements",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To remain awake instead of going to bed.",
+      "situations": [
+        "I stayed up until 3 AM watching a series and regretted it the next morning."
+      ],
+      "gaps": [
+        "Kids are allowed to ______ late on Friday nights to watch a movie.",
+        "Don't ______ too late; you have an exam tomorrow."
+      ],
+      "hints": [
+        "To not go to bed at your usual time.",
+        "A phrasal verb: 'stay' + the opposite of 'down'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I woke up until midnight to finish my homework.",
+          "correction": "I stayed up until midnight to finish my homework.",
+          "why": "'Wake up' means to stop sleeping; 'stay up' means to not go to bed."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "stay up late",
+        "stay up all night"
+      ],
+      "synonyms": [
+        "stay awake"
+      ],
+      "antonyms": [
+        "catch some Z's",
+        "go to bed"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "insomnia"
+        ],
+        "excludeWith": []
+      }
+    },
+    {
+      "id": "hypertension",
+      "word": "Hypertension",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "health-body",
+      "subCategory": "blood-pressure",
+      "level": "B2",
+      "register": "formal",
+      "meaning": "Blood pressure that is too high.",
+      "situations": [
+        "He was told to reduce salt and stress to control his hypertension."
+      ],
+      "gaps": [
+        "Too much salt and stress can lead to ______, so doctors check your blood pressure regularly.",
+        "People with ______ should check their blood pressure every day."
+      ],
+      "hints": [
+        "A medical word for blood pressure that is too high.",
+        "Starts with 'hyper-', which means 'too much'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "My grandfather has hypotension, so he must eat less salt.",
+          "correction": "My grandfather has hypertension, so he must eat less salt.",
+          "why": "Hypertension is high blood pressure; hypotension is low blood pressure."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "hypertensive",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "treat hypertension",
+        "suffer from hypertension"
+      ],
+      "synonyms": [
+        "high blood pressure"
+      ],
+      "antonyms": [
+        "Hypotension"
+      ],
+      "links": {
+        "opposite": "hypotension",
+        "confusableWith": [],
+        "excludeWith": []
+      }
+    },
+    {
+      "id": "cast",
+      "word": "Cast",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "health-body",
+      "subCategory": "medical-supports",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "A hard covering that supports and protects a broken bone while it heals.",
+      "situations": [
+        "He wore a cast on his arm for six weeks after breaking it."
+      ],
+      "gaps": [
+        "After she broke her leg, the doctor put it in a ______ for two months.",
+        "The children drew funny pictures on her ______ while her leg healed."
+      ],
+      "hints": [
+        "A hard cover that keeps a broken bone still while it heals.",
+        "A four-letter word that also means all the actors in a film."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The doctor put a bandage on his broken arm to keep the bone still for six weeks.",
+          "correction": "The doctor put a cast on his broken arm to keep the bone still for six weeks.",
+          "why": "A bandage is soft material; the hard cover that holds a broken bone still is a cast."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "wear a cast",
+        "put in a cast"
+      ],
+      "synonyms": [
+        "plaster cast"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "bandage"
+        ],
+        "excludeWith": []
+      }
+    },
+    {
+      "id": "safe-and-sound",
+      "word": "Safe and sound",
+      "type": "binomial",
+      "partsOfSpeech": [
+        "adjective phrase"
+      ],
+      "category": "health-body",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "Safe and unharmed, especially after a journey or dangerous event.",
+      "situations": [
+        "He had an accident but he was safe and sound."
+      ],
+      "gaps": [
+        "After a long flight through a storm, the family finally arrived home ______.",
+        "Call me when you get there so I know you arrived ______."
+      ],
+      "hints": [
+        "Not hurt or damaged, especially after danger or a journey.",
+        "'Safe and ___' — the missing word also means 'noise'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The kids came home sound and safe.",
+          "correction": "The kids came home safe and sound.",
+          "why": "Binomials have a fixed order: always 'safe and sound'."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "arrive safe and sound",
+        "home safe and sound"
+      ],
+      "synonyms": [
+        "unharmed",
+        "unhurt"
+      ],
+      "antonyms": [
+        "injured",
+        "hurt"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      }
+    }
+  ]
+}

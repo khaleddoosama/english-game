@@ -16,7 +16,7 @@ const norm = v => String(v ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
 const sentence = v => norm(v).replace(/\s+([,.!?;:])/g, '$1');
 const shuffleCopy = (a, rng = Math.random) => { const b = [...a]; for(let i=b.length-1;i>0;i--){const j=Math.floor(rng()*(i+1)); [b[i],b[j]]=[b[j],b[i]];} return b; };
 const topic = s => norm(s).replace(/\s+[ivxlcdm]+$/i, '');
-const fields = ['words','combos','stories','grammar','puns','challenges'];
+const fields = ['words','combos','stories','grammar','challenges'];
 // Generic "answer it right twice, get a fresh example next time" pool —
 // same idea as the word content pools, reused here for combos/grammar so
 // a mastered combo/rule keeps testing the concept with new situations
@@ -35,11 +35,130 @@ function pickPoolVariant(pools,key,seed){
 // - Sentence Build (the word field and buildSentence challenges).
 // - `example`: `situation` is the example sentence now. An example is only
 //   kept, as the situation, when the word has no situation at all.
+// - Puns.
 function withoutRemovedFields(content) {
   const out = {...content};
+  delete out.puns;
   if (Array.isArray(out.words)) out.words = out.words.map(({sentenceBuild, example, ...w}) => (!w.situation && example ? {...w, situation: example} : w));
   if (Array.isArray(out.challenges)) out.challenges = out.challenges.filter(c => !['buildSentence','build-sentence'].includes(c?.type || c?.mode));
   return out;
+}
+// ---- Content v3 ----
+// v3 files give every word a stable `id`, name categories by id (with titles
+// listed once in `categories`), link words by id (`links`), and use lists
+// for sentences and mistakes. The rest of the app still keys words by their
+// display text, so a v3 file is converted to that shape on the way in:
+// ids resolve to words, category ids to titles, and the first list item
+// fills the single legacy field (situation, gap, commonMistake).
+// A word whose id is already known under a different spelling is a rename:
+// the existing entry is renamed before merging so no duplicate appears, and
+// the caller moves its progress (see renames).
+const bareWord = w => String(w ?? '').replace(/\s*\([^)]*\)\s*$/, '');
+function normalizeV3(data, existing = {}) {
+  const empty = { content: data, errors: [], warnings: [], renames: { words: [], categories: [] }, levelOrder: null };
+  if (!data || data.schemaVersion !== 3) return empty;
+  const errors = [], warnings = [];
+  const isObj = x => x && typeof x === 'object' && !Array.isArray(x);
+  const strings = a => (Array.isArray(a) ? a : []).filter(x => typeof x === 'string' && x.trim()).map(x => x.trim());
+  const cats = Array.isArray(data.categories) ? data.categories.filter(isObj) : [];
+  const catTitle = new Map(), subTitle = new Map();
+  for (const c of cats) {
+    if (!c.id) { errors.push('categories: every category needs an id'); continue; }
+    catTitle.set(norm(c.id), String(c.title || c.id).trim());
+    for (const sc of Array.isArray(c.subCategories) ? c.subCategories : []) if (sc && sc.id) subTitle.set(norm(sc.id), String(sc.title || sc.id).trim());
+  }
+  const oldWords = existing.words || [];
+  const oldById = new Map(oldWords.filter(w => w.id).map(w => [norm(w.id), w]));
+  const incoming = Array.isArray(data.words) ? data.words : [];
+  const idToWord = new Map();
+  oldWords.forEach(w => { if (w.id) idToWord.set(norm(w.id), w.word); });
+  const seenIds = new Set();
+  incoming.forEach((w, i) => {
+    if (!isObj(w)) return;
+    if (typeof w.id !== 'string' || !w.id.trim()) { errors.push(`words[${i}].id: v3 words need a stable id`); return; }
+    if (seenIds.has(norm(w.id))) errors.push(`words[${i}].id: duplicate id "${w.id}"`);
+    seenIds.add(norm(w.id));
+    idToWord.set(norm(w.id), w.word);
+  });
+  const resolve = (id, path, selfId) => {
+    if (id === undefined || id === null || id === '') return null;
+    if (norm(id) === norm(selfId)) { warnings.push(`${path}: a word can't link to itself — skipped`); return null; }
+    const hit = idToWord.get(norm(id));
+    if (!hit) warnings.push(`${path}: no word with id "${id}" — link skipped`);
+    return hit || null;
+  };
+  const wordRenames = [];
+  const words = incoming.filter(isObj).map((w, i) => {
+    const p = `words[${i}]`;
+    const prev = w.id ? oldById.get(norm(w.id)) : null;
+    if (prev && typeof w.word === 'string' && norm(prev.word) !== norm(w.word)) {
+      if (oldWords.some(o => o !== prev && norm(o.word) === norm(w.word))) errors.push(`${p}: renaming "${prev.word}" to "${w.word}" clashes with an existing word`);
+      else wordRenames.push({ from: prev.word, to: w.word });
+    }
+    const out = { ...w };
+    delete out.links;
+    if (w.category !== undefined) {
+      const title = catTitle.get(norm(w.category));
+      if (!title && cats.length) warnings.push(`${p}.category: "${w.category}" isn't listed in categories — used as the title`);
+      out.categoryId = w.category;
+      out.category = title || String(w.category);
+    }
+    if (w.subCategory) out.subCategoryTitle = subTitle.get(norm(w.subCategory)) || String(w.subCategory);
+    const situations = strings(w.situations !== undefined ? w.situations : [w.situation]);
+    const gaps = strings(w.gaps !== undefined ? w.gaps : [w.gap]);
+    const commonMistakes = (Array.isArray(w.commonMistakes) ? w.commonMistakes : w.commonMistake ? [w.commonMistake] : []).filter(m => isObj(m) && m.sentence && m.correction && m.why);
+    out.situations = situations; out.gaps = gaps; out.commonMistakes = commonMistakes;
+    if (situations[0]) out.situation = situations[0]; else delete out.situation;
+    if (gaps[0]) out.gap = gaps[0]; else delete out.gap;
+    if (commonMistakes[0]) out.commonMistake = commonMistakes[0]; else delete out.commonMistake;
+    const links = isObj(w.links) ? w.links : {};
+    const opposite = resolve(links.opposite, `${p}.links.opposite`, w.id);
+    if (opposite) out.opposite = opposite; else delete out.opposite;
+    const excl = strings(links.excludeWith).map((id, j) => resolve(id, `${p}.links.excludeWith[${j}]`, w.id)).filter(Boolean);
+    if (excl.length) out.excludeFromSameOptionsWith = excl; else delete out.excludeFromSameOptionsWith;
+    const conf = strings(links.confusableWith).map((id, j) => resolve(id, `${p}.links.confusableWith[${j}]`, w.id)).filter(Boolean);
+    out.relations = { ...(isObj(w.relations) ? w.relations : {}) };
+    if (conf.length) out.relations.confusableWords = conf;
+    if (!Object.keys(out.relations).length) delete out.relations;
+    return out;
+  });
+  // Same category id, new title → rename that category everywhere.
+  const catRenames = [];
+  const oldTitleById = new Map();
+  for (const f of fields) for (const it of existing[f] || []) if (it && it.categoryId) oldTitleById.set(norm(it.categoryId), it.category);
+  for (const [id, title] of catTitle) { const old = oldTitleById.get(id); if (old && old !== title) catRenames.push({ from: old, to: title }); }
+  const { categories, words: _w, ...rest } = data;
+  const content = { ...rest, schemaVersion: 2, kind: data.kind || 'content', words };
+  return { content, errors, warnings, renames: { words: wordRenames, categories: catRenames }, levelOrder: cats.length ? cats.map(c => catTitle.get(norm(c.id))).filter(Boolean) : null };
+}
+// Apply word and category renames to existing content, including every
+// reference to a renamed word, so a merge afterwards updates in place.
+function applyRenames(content = {}, renames) {
+  if (!renames || (!renames.words.length && !renames.categories.length)) return content;
+  const wmap = new Map(renames.words.map(r => [norm(r.from), r.to]));
+  const cmap = new Map(renames.categories.map(r => [r.from, r.to]));
+  const rw = x => (typeof x === 'string' && wmap.has(norm(x)) ? wmap.get(norm(x)) : x);
+  const rc = it => (it && cmap.has(it.category) ? { ...it, category: cmap.get(it.category) } : it);
+  const out = { ...content };
+  out.words = (content.words || []).map(w => {
+    const n = rc({ ...w, word: rw(w.word) });
+    if (n.opposite) n.opposite = rw(n.opposite);
+    if (Array.isArray(n.excludeFromSameOptionsWith)) n.excludeFromSameOptionsWith = n.excludeFromSameOptionsWith.map(rw);
+    if (n.relations?.confusableWords) n.relations = { ...n.relations, confusableWords: n.relations.confusableWords.map(rw) };
+    return n;
+  });
+  out.combos = (content.combos || []).map(c => rc({ ...c, words: (c.words || []).map(rw) }));
+  out.stories = (content.stories || []).map(st => rc({ ...st, targetWords: (st.targetWords || []).map(rw), questions: (st.questions || []).map(q => ({ ...q, ...(q.targetWord ? { targetWord: rw(q.targetWord) } : {}), ...(q.targetWords ? { targetWords: q.targetWords.map(rw) } : {}) })) }));
+  out.challenges = (content.challenges || []).map(c => rc(c.linkedWords ? { ...c, linkedWords: c.linkedWords.map(rw) } : c));
+  out.grammar = (content.grammar || []).map(rc);
+  return out;
+}
+// One entry point for importing any content/backup file: v3 is converted,
+// renames are applied to the existing content, and warnings are returned
+// for the Import Center to show. Merge with mergeContent(existing, data).
+function prepareImport(data, existing = {}) {
+  const n = normalizeV3(withoutRemovedFields(data || {}), existing);
+  return { data: n.content, existing: applyRenames(withoutRemovedFields(existing), n.renames), errors: n.errors, warnings: n.warnings, renames: n.renames, levelOrder: n.levelOrder };
 }
 function mergeContent(old = {}, incoming = {}) {
   old = withoutRemovedFields(old); incoming = withoutRemovedFields(incoming);
@@ -114,12 +233,22 @@ function contentOnly(data) {
   return {schemaVersion:2, kind:'content', note:data.note || 'Content only. word and existing ids remain progress keys.', ...Object.fromEntries(fields.map(f=>[f, JSON.parse(JSON.stringify(data[f] || []))]))};
 }
 const findWord = (words, name) => words.find(w=>norm(w.word)===norm(name));
+// A synonym that is itself a word in the game would be a second right
+// answer, so it counts like an exclusion.
+const synonymsOf = w => (Array.isArray(w.synonyms) ? w.synonyms : Array.isArray(w.relations?.synonyms) ? w.relations.synonyms : []);
 function compatible(a,b) {
   if (!a || !b) return false;
   if (norm(a.word)===norm(b.word)) return false;
-  return !(Array.isArray(a.excludeFromSameOptionsWith)?a.excludeFromSameOptionsWith:[]).some(x=>norm(x)===norm(b.word)) && !(Array.isArray(b.excludeFromSameOptionsWith)?b.excludeFromSameOptionsWith:[]).some(x=>norm(x)===norm(a.word));
+  const syn=(x,y)=>synonymsOf(x).some(s=>norm(bareWord(s))===norm(bareWord(y.word)));
+  return !(Array.isArray(a.excludeFromSameOptionsWith)?a.excludeFromSameOptionsWith:[]).some(x=>norm(x)===norm(b.word)) && !(Array.isArray(b.excludeFromSameOptionsWith)?b.excludeFromSameOptionsWith:[]).some(x=>norm(x)===norm(a.word)) && !syn(a,b) && !syn(b,a);
 }
-function optionWords(targets, words, count=4, rng=Math.random, boost=null) {
+// opts: {boost(t,w) → extra rank, sameGroupMax → how many distractors may
+// come from the target's own subCategory (easier questions mix groups).
+// A plain function is accepted as boost for older callers.
+function optionWords(targets, words, count=4, rng=Math.random, opts=null) {
+  const o=typeof opts==='function'?{boost:opts}:(opts||{});
+  const boost=o.boost||null, sameGroupMax=o.sameGroupMax??Infinity;
+  const group=w=>w.subCategory||w.distractorGroup||null;
   const chosen = targets.map(t=>typeof t==='string'?findWord(words,t):t);
   // Correct targets only need to be distinct from each other. Exclusions
   // (excludeFromSameOptionsWith) exist to stop an ambiguous *distractor*
@@ -130,15 +259,26 @@ function optionWords(targets, words, count=4, rng=Math.random, boost=null) {
   // distractorGroup, which beats the mapper's cluster, which beats plain
   // type/category. A pair is confusable in either direction.
   const confusable=(t,w)=>(t.relations?.confusableWords||[]).some(x=>norm(x)===norm(w.word));
-  const ranked = shuffleCopy(words,rng).map(w=>({w,rank:Math.max(...chosen.map(t=>(confusable(t,w)?150:confusable(w,t)?120:0)+(t.distractorGroup && t.distractorGroup===w.distractorGroup?100:0)+(t.learningData?.cluster && t.learningData.cluster===w.learningData?.cluster?40:0)+(t.type===w.type?10:0)+(topic(t.category)===topic(w.category)?5:0)+(boost?boost(t,w):0)))})).sort((a,b)=>b.rank-a.rank);
+  const ranked = shuffleCopy(words,rng).map(w=>({w,rank:Math.max(...chosen.map(t=>(confusable(t,w)?150:confusable(w,t)?120:0)+(group(t) && group(t)===group(w)?100:0)+(t.learningData?.cluster && t.learningData.cluster===w.learningData?.cluster?40:0)+(t.type===w.type?10:0)+(topic(t.category)===topic(w.category)?5:0)+(boost?boost(t,w):0)))})).sort((a,b)=>b.rank-a.rank);
+  const correct=[...chosen], fits=w=>chosen.every(t=>compatible(t,w) && norm(t.meaning)!==norm(w.meaning));
+  const sameGroup=w=>correct.some(t=>group(t) && group(t)===group(w));
+  let same=0; const later=[];
   for(const {w} of ranked) {
     if(chosen.length>=count) break;
     // Identical definitions are known alternatives; semantic synonyms require author review/exclusions.
-    if(chosen.every(t=>compatible(t,w) && norm(t.meaning)!==norm(w.meaning))) chosen.push(w);
+    if(!fits(w)) continue;
+    if(sameGroup(w)){ if(same>=sameGroupMax){ later.push(w); continue; } same++; }
+    chosen.push(w);
   }
+  // Not enough words outside the group: fill from it after all.
+  for(const w of later){ if(chosen.length>=count) break; if(fits(w)) chosen.push(w); }
   return shuffleCopy(chosen,rng);
 }
 function validateContent(data, existing={}) {
+  if(data && typeof data==='object' && !Array.isArray(data)){
+    if(data.schemaVersion===3){const prep=prepareImport(data,existing);if(prep.errors.length)return prep.errors;data=prep.data;existing=prep.existing;}
+    else data=withoutRemovedFields(data);
+  }
   const errors=[]; const err=(p,m)=>errors.push(`${p}: ${m}`);
   const obj=x=>x && typeof x==='object' && !Array.isArray(x);
   const text=(v,p)=>{if(typeof v!=='string'||!v.trim())err(p,'expected non-empty string');};
@@ -169,7 +309,7 @@ function validateContent(data, existing={}) {
     // flags them for follow-up, so the schema shouldn't also reject them.
     for(const k of (w._autoStub?['word','type','category','meaning']:['word','type','category','meaning','situation','gap']))text(w[k],`${p}.${k}`);
     if(!['vocab','idiom','binomial','phrasal','fyi'].includes(w.type))err(`${p}.type`,'unsupported type');
-    if('id' in w)err(`${p}.id`,'words use word as key, not id');
+    if('id' in w)text(w.id,`${p}.id`);
     for(const k of ['opposite','chainGroup','distractorGroup','plainForm'])if(w[k]!==undefined)text(w[k],`${p}.${k}`);
     if(w.opposite && norm(w.opposite)!=='none')refs([w.opposite],`${p}.opposite`);
     if(w.excludeFromSameOptionsWith!==undefined)refs(w.excludeFromSameOptionsWith,`${p}.excludeFromSameOptionsWith`,0);
@@ -178,7 +318,6 @@ function validateContent(data, existing={}) {
     if(w.transformExample&&!['phrasal','fyi'].includes(w.type))err(`${p}.transformExample`,'only phrasal/fyi');
   });
   (data.grammar||[]).forEach((g,i)=>{const p=`grammar[${i}]`;for(const k of ['category','rule','prompt','answer','explanation'])text(g[k],`${p}.${k}`);if(!Array.isArray(g.options)||g.options.length<2||g.options.some(o=>typeof o!=='string'||!o.trim()))err(`${p}.options`,'expected at least two strings');else {if(new Set(g.options.map(norm)).size!==g.options.length)err(`${p}.options`,'duplicate options');if(!g.options.some(o=>norm(o)===norm(g.answer)))err(`${p}.answer`,'answer missing from options');}});
-  (data.puns||[]).forEach((g,i)=>['category','word','joke','pair'].forEach(k=>text(g[k],`puns[${i}].${k}`)));
   (merged.combos||[]).forEach((c,i)=>{const p=`combos[${i}]`;['category','situation','prompt','explanation'].forEach(k=>text(c[k],`${p}.${k}`));const a=refs(c.words,`${p}.words`,2);if(a.length!==2)err(`${p}.words`,'expected exactly two');else if(norm(a[0])===norm(a[1]))err(`${p}.words`,'the two words must be different');});
   (merged.stories||[]).forEach((s,i)=>{const p=`stories[${i}]`;['category','title','text'].forEach(k=>text(s[k],`${p}.${k}`));const targets=refs(s.targetWords,`${p}.targetWords`,5);if(targets.length>12)err(`${p}.targetWords`,'expected 5–12 targets');const covered=new Set();if(!Array.isArray(s.questions)||s.questions.length<5)err(`${p}.questions`,'expected at least five questions');
     (Array.isArray(s.questions)?s.questions:[]).forEach((q,j)=>{const qp=`${p}.questions[${j}]`;if(!obj(q)){err(qp,'expected object');return;}if(!['mcq','typing','multi'].includes(q.mode))err(`${qp}.mode`,'unsupported mode');text(q.prompt,`${qp}.prompt`);text(q.explanation,`${qp}.explanation`);const a=refs(q.mode==='multi'?q.targetWords:[q.targetWord],qp,q.mode==='multi'?2:1);if(q.mode==='multi'&&a.length!==2)err(qp,'multi requires exactly two targets');if(q.mode==='multi'&&q.targetWord!==undefined||q.mode!=='multi'&&q.targetWords!==undefined)err(qp,'conflicting target fields');if(q.options!==undefined||q.answer!==undefined)err(qp,'answers come from targetWord(s); options are generated');a.forEach(w=>{covered.add(norm(w));if(!targets.some(t=>norm(t)===norm(w)))err(qp,'question target not in story targets');});if(a.length===2&&norm(a[0])===norm(a[1]))err(qp,'multi targets must be different');});
@@ -207,10 +346,21 @@ const POOL_FOR_MODE={meaning:'meaning',reverse:'meaning',typing:'typing',gap:'ga
 // Least-used unlocked variant; ties broken at random so variants alternate.
 // Retired variants carry a far-future lockedUntil, so they're never picked
 // while anything else is available.
+// Authored texts for a pool: the v3 list (gaps / situations) when present,
+// otherwise the single field. They get ids seed, seed-2, seed-3… and keep
+// any usage stats already stored under those ids; stored AI variants follow.
+function authoredTexts(w,poolType){
+  const list=poolType==='gap'?w.gaps:poolType==='situation'?w.situations:null;
+  const single=poolType==='typing'?w.meaning:w[poolType];
+  return (Array.isArray(list)&&list.length?list:[single]).filter(t=>typeof t==='string'&&t.trim());
+}
+function poolItems(w,poolType,stored){
+  const byId=new Map((stored||[]).map(it=>[it.id,it]));
+  const authored=authoredTexts(w,poolType).map((text,i)=>{const id=i?`seed-${i+1}`:'seed';return {attempts:0,correctCount:0,lockedUntil:null,flagged:false,...(byId.get(id)||{}),id,text};});
+  return [...authored,...(stored||[]).filter(it=>!/^seed(-\d+)?$/.test(String(it.id)))];
+}
 function pickWordVariant(pools,w,poolType,rng=Math.random){
-  const seedText=poolType==='typing'?w.meaning:w[poolType];
-  const stored=pools?.[w.word]?.[poolType];
-  const arr=(stored?.length?stored:[{id:'seed',attempts:0}]).map(it=>it.id==='seed'?{...it,text:seedText}:it).filter(it=>it.text);
+  const arr=poolItems(w,poolType,pools?.[w.word]?.[poolType]).filter(it=>it.text);
   if(!arr.length)return null;
   const now=Date.now();
   const unlocked=arr.filter(it=>!it.lockedUntil||it.lockedUntil<=now);
@@ -223,7 +373,7 @@ function makeQuestion(w,mode,words,rng=Math.random,difficulty=1,pools=null,boost
   const poolType=POOL_FOR_MODE[mode];
   const variant=poolType&&pools?pickWordVariant(pools,w,poolType,rng):null;
   // A variant that leaks the answer or lost its blank falls back to the seed.
-  const usable=variant&&variant.id!=='seed'&&!(mode!=='meaning'&&norm(variant.text).includes(norm(w.word)))&&!(poolType==='gap'&&!/_{2,}/.test(variant.text));
+  const usable=variant&&variant.id!=='seed'&&!(mode!=='meaning'&&norm(variant.text).includes(norm(bareWord(w.word))))&&!(poolType==='gap'&&!/_{2,}/.test(variant.text));
   if(usable)w={...w,[poolType==='typing'?'meaning':poolType]:variant.text};
   const pool=poolType&&pools?{poolType,poolItemId:usable?variant.id:'seed'}:{};
   const q={id:`${w.word}:${mode}`,mode,targets:[w.word],hints:w.hints||[],explanation:w.meaning,type:'mcq',answers:[w.word],difficulty,...pool};
@@ -231,11 +381,13 @@ function makeQuestion(w,mode,words,rng=Math.random,difficulty=1,pools=null,boost
   if(mode==='typing')return {...q,type:'typing',prompt:w.meaning};
   if(mode==='gapTyping')return {...q,type:'typing',prompt:w.gap};
   q.prompt=mode==='meaning'?w.word:mode==='reverse'?w.meaning:mode==='gap'?w.gap:w.situation;
-  const choices=optionWords([w],words,difficulty>=3?(mode==='meaning'?5:6):4,rng,boost);
+  // Easier questions take at most one distractor from the word's own
+  // subCategory; from difficulty 3 all of them may (Strain, Fracture, Bruise…).
+  const choices=optionWords([w],words,difficulty>=3?(mode==='meaning'?5:6):4,rng,{boost,sameGroupMax:difficulty>=3?Infinity:1});
   q.options=choices.map(x=>mode==='meaning'?x.meaning:x.word);
   if(mode==='meaning')q.answers=[w.meaning];
   if(q.options.length<2)return null;
-  if(mode!=='meaning' && norm(q.prompt).includes(norm(w.word)))return null;
+  if(mode!=='meaning' && norm(q.prompt).includes(norm(bareWord(w.word))))return null;
   return q;
 }
 function activityQuestion(q,words,id,rng=Math.random){
@@ -248,14 +400,16 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   const isQuarantined=(word,mode)=>!!quarantine&&quarantine.has(`${String(word).trim().toLowerCase()}|${mode}`);
   const pools=opts.pools||{};
   const questionsPerRound=Math.max(4,opts.questionsPerRound||12);
-  const newWordsPerRound=Math.max(0,opts.newWordsPerRound??3);
+  const newWordsPerRound=Math.max(0,Number.isFinite(opts.newWordsPerRound)?opts.newWordsPerRound:3);
   // Words this learner has actually picked by mistake for each other
   // (either direction) make the strongest distractors, ahead of authored
   // confusable pairs.
   const confusedPairs=new Set(Object.keys(opts.confusions||{}).flatMap(key=>{const [a,b]=key.split('|');return a&&b?[`${norm(a)}|${norm(b)}`,`${norm(b)}|${norm(a)}`]:[];}));
   const confusionBoost=confusedPairs.size?(t,w)=>confusedPairs.has(`${norm(t.word)}|${norm(w.word)}`)?200:0:null;
   const source=content.words.filter(w=>!category||topic(w.category)===topic(category));
-  const fresh=shuffleCopy(source.filter(w=>!known(mastery[w.word])),rng).slice(0,newWordsPerRound);
+  const levelRank=w=>{const i=['A1','A2','B1','B2','C1','C2'].indexOf(String(w.level||'').toUpperCase());return i<0?2.5:i;};
+  // New words come in level order (A2 before B1…), random within a level.
+  const fresh=shuffleCopy(source.filter(w=>!known(mastery[w.word])),rng).sort((a,b)=>levelRank(a)-levelRank(b)).slice(0,newWordsPerRound);
   // No spaced repetition: known words are picked in rotation. Words missed
   // last time come first; everything else goes least recently reviewed
   // first, so a word answered correctly goes to the back of the line and
@@ -284,7 +438,8 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
     modes=modes.filter(m=>!isQuarantined(w.word,m));
     const weak=Object.entries(s.modes||{}).filter(([,v])=>v.total>0).sort((a,b)=>a[1].correct/a[1].total-b[1].correct/b[1].total)[0]?.[0];
     modes=shuffleCopy(modes,rng).sort((a,b)=>(b===weak)-(a===weak));
-    if(known(s)&&w.commonMistake&&!isQuarantined(w.word,'grammarCourt'))candidates.push({id:`${w.word}:court`,mode:'grammarCourt',type:'mcq',prompt:`Choose the correct sentence. Context: ${w.situation}`,targets:[w.word],answers:[w.commonMistake.correction],options:shuffleCopy([w.commonMistake.sentence,w.commonMistake.correction],rng),explanation:w.commonMistake.why});
+    const cm=Array.isArray(w.commonMistakes)&&w.commonMistakes.length?w.commonMistakes[Math.floor(rng()*w.commonMistakes.length)]:w.commonMistake;
+    if(known(s)&&cm&&!isQuarantined(w.word,'grammarCourt'))candidates.push({id:`${w.word}:court`,mode:'grammarCourt',type:'mcq',prompt:`Choose the correct sentence. Context: ${w.situation}`,targets:[w.word],answers:[cm.correction],options:shuffleCopy([cm.sentence,cm.correction],rng),explanation:cm.why});
     for(const mode of modes){if(mode.includes('gap')&&!/_{2,}/.test(w.gap))continue;const q=makeQuestion(w,mode,content.words,rng,difficulty,pools,confusionBoost);if(q)candidates.push(q);}
     // Extra question styles (Who Am I, Opposites, Two People, …) come from
     // the caller so this module stays free of the legacy builders. Never for
@@ -327,7 +482,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
 }
 function storySession(story,words,mastery={},rng=Math.random){const introductions=story.targetWords.map(w=>findWord(words,w)).filter(w=>!known(mastery[w.word]));const scoped=story.sourceCategories?.length?words.filter(w=>story.sourceCategories.includes(w.category)):words;const optionSource=scoped.length>=4?scoped:words;const queue=story.questions.map((q,i)=>activityQuestion(q,optionSource,`${story.id}:${i}`,rng));for(const g of story.grammarQuestions||[])queue.push({...g,options:shuffleCopy(g.options,rng)});return {id:`story-${story.id}-${Date.now()}`,sourceStoryId:story.id,kind:'story',title:story.title,text:story.text,queue,introductions,unfairTargets:introductions.map(w=>w.word),index:0,answers:[]};}
 function chainSession(group,words,mastery={},rng=Math.random){const queue=shuffleCopy(words.filter(w=>w.chainGroup===group&&w.opposite&&known(mastery[w.word])&&known(mastery[findWord(words,w.opposite)?.word])),rng).map((w,i)=>{const target=findWord(words,w.opposite);if(!target)return null;const options=optionWords([target],words,4,rng).map(x=>x.word);return options.length<2?null:{id:`chain:${i}`,mode:'opposite',type:'mcq',prompt:`What is the opposite of “${w.word}”?`,answers:[target.word],targets:[target.word],options,explanation:`${w.word} ↔ ${target.word}`};}).filter(Boolean);return {id:`chain-${Date.now()}`,kind:'chain',title:group,queue,introductions:[],index:0,answers:[]};}
-function grade(q,value,words=[]){const a=Array.isArray(value)?value:[value];const correct=a.length===q.answers.length&&q.answers.every(x=>a.some(v=>sentence(v)===sentence(x)));let spelling=false;if(!correct&&q.type==='typing'&&!q.modelOnly&&!findWord(words,value)){const x=norm(value),y=norm(q.answers[0]);if(x.length>=3){const d=Array.from({length:x.length+1},(_,i)=>[i]);for(let j=0;j<=y.length;j++)d[0][j]=j;for(let i=1;i<=x.length;i++)for(let j=1;j<=y.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(x[i-1]!==y[j-1]));spelling=d[x.length][y.length]<=1;}}return {correct,spelling,unverified:!correct&&q.modelOnly};}
+function grade(q,value,words=[]){const a=Array.isArray(value)?value:[value];const correct=a.length===q.answers.length&&q.answers.every(x=>a.some(v=>sentence(v)===sentence(x)||sentence(v)===sentence(bareWord(x))));let spelling=false;if(!correct&&q.type==='typing'&&!q.modelOnly&&!findWord(words,value)){const x=norm(value),y=norm(bareWord(q.answers[0]));if(x.length>=3){const d=Array.from({length:x.length+1},(_,i)=>[i]);for(let j=0;j<=y.length;j++)d[0][j]=j;for(let i=1;i<=x.length;i++)for(let j=1;j<=y.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(x[i-1]!==y[j-1]));spelling=d[x.length][y.length]<=1;}}return {correct,spelling,unverified:!correct&&q.modelOnly};}
 function sessionEvidence(mastery,session,now=Date.now()){
   const next={...mastery};const grouped={};
   session.queue.forEach((q,i)=>{const a=session.answers[i];if(!a||a.reported||a.unverified||a.aiFailed||q.noMastery||session.kind==='speed')return;for(const key of q.progressKeys?.length?q.progressKeys:q.progressKey?[q.progressKey]:q.targets){if(session.unfairTargets?.includes(key))continue;(grouped[key] ||= []).push({...a,mode:q.mode,type:q.type,difficulty:q.difficulty||1});}});
@@ -358,7 +513,7 @@ function sessionEvidence(mastery,session,now=Date.now()){
 }
 function reinforcement(s){if(s.extraAdded||s.kind!=='practice')return s;const wrong=s.queue.filter((q,i)=>s.answers[i]&&!s.answers[i].correct&&!s.answers[i].reported).flatMap(q=>q.targets);const added=[];for(const q of s.reserves||[]){if(added.length>=2)break;if(!q.targets.some(t=>wrong.includes(t)))continue;if([...s.queue,...added].slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))))continue;added.push(q);}return {...s,queue:[...s.queue,...added],extraAdded:true};}
 
-return { norm, sentence, shuffleCopy, topic, fields, withoutRemovedFields, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
+return { norm, sentence, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
 })();
 
 // Pronunciation: two independent sources, tried in order.
@@ -831,7 +986,6 @@ async function storageSetWithRetry(key, value, attempts = 3) {
 
 const BUILTIN_WORDS = [];
 
-const BUILTIN_PUNS = [];
 
 const BUILTIN_GRAMMAR = [];
 
@@ -841,14 +995,13 @@ const BUILTIN_GRAMMAR = [];
 const BUILTIN_CHALLENGES = [];
 
 /* ------------------------------ DYNAMIC DATA -------------------------------- */
-// WORDS/GRAMMAR/PUNS start as just the built-in content, then get merged with
+// WORDS/GRAMMAR start as just the built-in content, then get merged with
 // anything imported from Anki (see the import feature below). LEVELS/BADGES
 // are re-derived every time that merge happens — so these live as mutable
 // module-level bindings rather than one-time constants.
 
 let WORDS = BUILTIN_WORDS;
 let GRAMMAR = BUILTIN_GRAMMAR;
-let PUNS = BUILTIN_PUNS;
 let CHALLENGES = BUILTIN_CHALLENGES;
 
 // Explicit level ordering: the 5 built-in topics, plus any new topics or
@@ -1044,10 +1197,6 @@ function nextStudyStreakState(lastStudyDate, studyStreak, bestStudyStreak, today
   return { lastStudyDate: today, studyStreak: nextStreak, bestStudyStreak: Math.max(bestStudyStreak, nextStreak) };
 }
 
-// Puns are parked for now — the pun data and its question builder are kept
-// intact (and imports still store them), they're just not dealt into rounds.
-// Flip this to true to bring them back into play.
-const PUNS_ENABLED = false;
 
 function buildLevel(title) {
   return {
@@ -1057,7 +1206,6 @@ function buildLevel(title) {
       ...WORDS.filter((w) => w.category === title).map((w) => ({ kind: "word", obj: w })),
       ...GRAMMAR.filter((g) => g.category === title).map((g) => ({ kind: "grammar", obj: g })),
       ...CHALLENGES.filter((c) => c.category === title).map((c) => ({ kind: "challenge", obj: c })),
-      ...(PUNS_ENABLED ? PUNS.filter((p) => p.category === title).map((p) => ({ kind: "pun", obj: p })) : []),
     ],
   };
 }
@@ -1153,14 +1301,12 @@ const INCLUDE_BUILTIN_IN_PLAY = false;
 // Merges freshly imported content into the live data and rebuilds
 // LEVELS/BADGES. Called once on load (with anything saved from a previous
 // import) and again right after a new import completes.
-function mergeCustomData(customWords, customGrammar, customPuns, customChallenges, levelOrder) {
+function mergeCustomData(customWords, customGrammar, customChallenges, levelOrder) {
   const baseWords = INCLUDE_BUILTIN_IN_PLAY ? BUILTIN_WORDS : [];
   const baseGrammar = INCLUDE_BUILTIN_IN_PLAY ? BUILTIN_GRAMMAR : [];
-  const basePuns = INCLUDE_BUILTIN_IN_PLAY ? BUILTIN_PUNS : [];
   const baseChallenges = INCLUDE_BUILTIN_IN_PLAY ? BUILTIN_CHALLENGES : [];
   WORDS = dedupeBy([...baseWords, ...customWords], (w) => w.word && w.word.trim().toLowerCase());
   GRAMMAR = dedupeBy([...baseGrammar, ...customGrammar], (g) => g.id);
-  PUNS = dedupeBy([...basePuns, ...customPuns], (p) => p.id);
   CHALLENGES = dedupeBy([...baseChallenges, ...(Array.isArray(customChallenges) ? customChallenges : [])], (c) => c && c.id);
   LEVEL_ORDER = levelOrder;
   rebuildDerived();
@@ -1309,7 +1455,7 @@ function authoredChallengesForWord(word, type = null) {
 // The situation is the word's example sentence, so it normally contains the
 // word. True when `text` (the situation by default) contains the word.
 function situationLeaks(word, text = word?.situation) {
-  const answer = normalizeAnswerText(word?.word);
+  const answer = normalizeAnswerText(V2.bareWord(word?.word));
   return !!answer && normalizeAnswerText(text).includes(answer);
 }
 
@@ -1582,26 +1728,11 @@ function buildRound(level, mastery = {}, confusions = {}, sessionType = "level")
 const POOL_TYPES = ["meaning", "gap", "situation", "typing"];
 const LOCK_DAYS = 7;
 
-function seedPoolItem(text) {
-  return { id: "seed", text, attempts: 0, correctCount: 0, lockedUntil: null, flagged: false };
-}
-
 function getWordPools(pools, word) {
-  const existing = pools[word.word];
-  if (existing) {
-    const current={...existing};
-    for(const type of POOL_TYPES) {
-      const text=type==="typing"?word.meaning:word[type];
-      current[type]=(existing[type]?.length?existing[type]:[seedPoolItem(text)]).map(item=>item.id==="seed"?{...item,text}:item);
-    }
-    return current;
-  }
-  return {
-    meaning: [seedPoolItem(word.meaning)],
-    gap: [seedPoolItem(word.gap)],
-    situation: [seedPoolItem(word.situation)],
-    typing: [seedPoolItem(word.meaning)],
-  };
+  const existing = pools[word.word] || {};
+  const current = { ...existing };
+  for (const type of POOL_TYPES) current[type] = V2.poolItems(word, type, existing[type]);
+  return current;
 }
 
 function pickActiveItem(wordPools, poolType) {
@@ -1947,18 +2078,11 @@ function buildGrammarQuestion(g) {
   return { target, modeId: "grammarCourt", prompt: g.prompt, options: shuffle(g.options), answer: g.answer, type: "mcq", court: true };
 }
 
-function buildPunQuestion(p) {
-  const distractors = shuffle(PUNS.filter((o) => o.id !== p.id)).slice(0, 3).map((o) => o.pair);
-  const target = { ...p, key: `pun:${p.id}`, label: p.word, explanation: p.pair };
-  const options = shuffle([p.pair, ...distractors]);
-  return { target, prompt: `"${p.word}" — ${p.joke}`, options, answer: p.pair, type: "mcq" };
-}
-
 function buildEntryQuestion(entry, pools) {
   if (entry.kind === "word") return buildQuestion(entry.mode, entry.wordObj, pools, { difficulty: entry.difficulty, confusionPartner: entry.confusionPartner });
   if (entry.kind === "grammar") return buildGrammarQuestion(entry.obj);
   if (entry.kind === "challenge") return buildChallengeQuestion(entry.obj);
-  return buildPunQuestion(entry.obj);
+  return null;
 }
 
 // Adaptive builders remain question factories, but all questions are
@@ -2033,7 +2157,7 @@ async function generateContent(batch, pools) {
     const siblings = WORDS.filter((x) => x.category === w.category && x.word !== w.word)
       .map((x) => `${x.word} = ${x.meaning}`)
       .join(" | ");
-    const existing = (pools[word]?.[poolType] || []).map((it) => it.text);
+    const existing = getWordPools(pools, w)[poolType].map((it) => it.text);
     return { word, poolType, meaning: w.meaning, category: w.category, siblings, existing };
   });
 
@@ -2146,7 +2270,7 @@ async function aiFixImportJson(rawText, errorText) {
     `You are repairing a JSON document for the "Word Hunter" English vocabulary game's Admin import. The document below failed validation. You are given the exact validator error messages and the raw text the person pasted or uploaded (it may not even be valid JSON yet — fix syntax errors too if present).
 Rules:
 - Fix ONLY what the listed errors require. Do not rewrite, rephrase, reorder, or "improve" any field, sentence, or value that wasn't flagged.
-- Every "word" value (in the words array) and every "id" value (in grammar/stories/combos/challenges/puns) is a stable progress key — never change, rename, or regenerate one of these unless an error explicitly says the id/word itself is invalid (e.g. missing or duplicate).
+- Every "word" value (in the words array) and every "id" value (in grammar/stories/combos/challenges) is a stable progress key — never change, rename, or regenerate one of these unless an error explicitly says the id/word itself is invalid (e.g. missing or duplicate).
 - If a required field is completely missing or empty and an error flags it, write a short, reasonable, English-only placeholder value that keeps the schema valid, and mention that placeholder in "changes" so a human reviews it — never guess elaborate content silently.
 - Keep the overall JSON shape (schemaVersion, kind, note, and array names) exactly as given; do not add or remove top-level fields beyond what's needed to fix an error.
 - If some errors genuinely cannot be fixed without information only the author has (e.g. an ambiguous duplicate you can't safely merge), leave that item as-is and explain why in "changes" instead of guessing.
@@ -2838,7 +2962,9 @@ function normalizeSettings(raw) {
   const s = raw && typeof raw === "object" ? raw : {};
   return {
     questionsPerRound: Math.max(4, Math.min(30, Number(s.questionsPerRound) || DEFAULT_SETTINGS.questionsPerRound)),
-    newWordsPerRound: Math.max(0, Math.min(10, Number(s.newWordsPerRound) ?? DEFAULT_SETTINGS.newWordsPerRound)),
+    // 0 is a valid choice here, so a missing value (a fresh game) must fall
+    // back to the default instead of turning into NaN and meaning "none".
+    newWordsPerRound: Math.max(0, Math.min(10, Number.isFinite(Number(s.newWordsPerRound)) && s.newWordsPerRound !== null && s.newWordsPerRound !== "" ? Number(s.newWordsPerRound) : DEFAULT_SETTINGS.newWordsPerRound)),
     weakReviewSize: Math.max(3, Math.min(20, Number(s.weakReviewSize) || DEFAULT_SETTINGS.weakReviewSize)),
     enablePairModes: s.enablePairModes !== false,
     sound: s.sound !== false,
@@ -2931,7 +3057,7 @@ function ContentHealthPanel({ content, onUpdate, onMergeCategories, onRemoveEmpt
   const [review, setReview] = useState(null); // {kind, items:[{word, ok, field, before, after, reason, selected}]}
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
-  const entityIds = ["words", "grammar", "combos", "challenges", "stories", "puns"];
+  const entityIds = ["words", "grammar", "combos", "challenges", "stories"];
   const counts = {};
   for (const id of entityIds) for (const item of content[id] || []) if (item.category) counts[item.category] = (counts[item.category] || 0) + 1;
   const levelTitles = (content.levels || []).map((l) => l.title);
@@ -2959,6 +3085,10 @@ function ContentHealthPanel({ content, onUpdate, onMergeCategories, onRemoveEmpt
     const reverse = new Map(chosen.filter((it) => it.extra?.opposite).map((it) => [it.extra.opposite, it.word]));
     onUpdate("words", words.map((w) => {
       let next = byWord.has(w.word) ? { ...w, [byWord.get(w.word).field]: byWord.get(w.word).after, ...(byWord.get(w.word).extra || {}) } : w;
+      // v3 lists feed the questions, so the fix goes into them too.
+      const fix = byWord.get(w.word);
+      if (fix?.field === "situation" && Array.isArray(w.situations)) next.situations = [fix.after, ...w.situations.slice(1)];
+      if (fix?.field === "commonMistake" && Array.isArray(w.commonMistakes)) next.commonMistakes = [fix.after, ...w.commonMistakes];
       if (reverse.has(w.word) && !next.opposite) next = { ...next, opposite: reverse.get(w.word) };
       return next;
     }));
@@ -3060,7 +3190,7 @@ function AdminControlCenter({content,mastery,confusions,reports,activeSession,se
     onUpdate(moveEntity,nextList);
     setMoveTarget(null);setMoveInput("");
   }
-  const entities={words:{key:"word",label:"Words"},grammar:{key:"id",label:"Grammar"},stories:{key:"id",label:"Stories"},combos:{key:"id",label:"Combos"},challenges:{key:"id",label:"Challenges"},puns:{key:"id",label:"Puns"},levels:{key:"title",label:"Levels"}};
+  const entities={words:{key:"word",label:"Words"},grammar:{key:"id",label:"Grammar"},stories:{key:"id",label:"Stories"},combos:{key:"id",label:"Combos"},challenges:{key:"id",label:"Challenges"},levels:{key:"title",label:"Levels"}};
   async function handleSuggestReportFix(report,key){
     setReportFixError(null);setReportFix(null);
     const source=locateReportSource(content,report);
@@ -3116,7 +3246,7 @@ function AdminControlCenter({content,mastery,confusions,reports,activeSession,se
   // combos...) at a time. This groups everything tagged with one category
   // across all types in one place, so editing "this category" doesn't mean
   // hopping between tabs to find every related piece.
-  const browsableEntities=["words","grammar","combos","challenges","stories","puns"];
+  const browsableEntities=["words","grammar","combos","challenges","stories"];
   const allCategories=[...new Set(browsableEntities.flatMap(id=>(content[id]||[]).map(item=>item.category)).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   const categoryGroups=categoryBrowse?browsableEntities.map(id=>({id,label:entities[id].label,items:(content[id]||[]).map((item,index)=>({item,index})).filter(({item})=>item.category===categoryBrowse)})).filter(g=>g.items.length):[];
   async function handleSuggestCategoryMerges(){
@@ -3201,7 +3331,7 @@ function AdminControlCenter({content,mastery,confusions,reports,activeSession,se
     <aside className="wh-admin-side"><div className="wh-admin-brand"><span>WH</span><div><b>CONTROL CENTER</b><small>Content &amp; Learning</small></div></div>{[["dashboard","Dashboard"],["content","Content Manager"],["reports","Question Reports"],["health","Content Health"],["progress","Learning Progress"],["settings","Settings"],["data","Data Center"]].map(([id,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}<button onClick={onClose}>← Play Mode</button></aside>
     <main className="wh-admin-main">
       <header className="wh-admin-top"><div><small>WORD HUNTER V7</small><h2>{tab==="dashboard"?"Command Dashboard":tab==="content"?"Content Manager":tab==="reports"?"Question Reports":tab==="health"?"Content Health":tab==="progress"?"Learning Progress":tab==="settings"?"Settings":"Data Center"}</h2></div><button className="wh-back-btn" onClick={onClose}>Close Admin</button></header>
-      {tab==="dashboard"&&<><div className="wh-admin-kpis">{[[content.words.length,"Words"],[attempts,"Attempts"],[correct?Math.round(correct/Math.max(1,attempts)*100)+"%":"—","Accuracy"],[reports.filter(x=>!x.resolvedAt).length,"Open reports"],[missing,"Needs content"],[content.words.filter(w=>w._aiAdded).length,"AI-added"]].map(([value,label])=><article key={label}><b>{value}</b><span>{label}</span></article>)}</div><div className="wh-admin-grid"><article className="wh-admin-card"><h3>Mastery distribution</h3>{Object.entries(stages).map(([name,value])=><div className="wh-admin-meter" key={name}><span>{name}</span><i style={{width:`${content.words.length?value/content.words.length*100:0}%`}}/><b>{value}</b></div>)}</article><article className="wh-admin-card"><h3>Library health</h3><p>{content.grammar.length} grammar questions</p><p>{content.stories.length} stories · {content.combos.length} combos</p><p>{content.challenges.length} authored challenges · {content.puns.length} puns</p><p>{new Set(content.words.map(w=>V2.topic(w.category))).size} levels/categories</p></article></div></>}
+      {tab==="dashboard"&&<><div className="wh-admin-kpis">{[[content.words.length,"Words"],[attempts,"Attempts"],[correct?Math.round(correct/Math.max(1,attempts)*100)+"%":"—","Accuracy"],[reports.filter(x=>!x.resolvedAt).length,"Open reports"],[missing,"Needs content"],[content.words.filter(w=>w._aiAdded).length,"AI-added"]].map(([value,label])=><article key={label}><b>{value}</b><span>{label}</span></article>)}</div><div className="wh-admin-grid"><article className="wh-admin-card"><h3>Mastery distribution</h3>{Object.entries(stages).map(([name,value])=><div className="wh-admin-meter" key={name}><span>{name}</span><i style={{width:`${content.words.length?value/content.words.length*100:0}%`}}/><b>{value}</b></div>)}</article><article className="wh-admin-card"><h3>Library health</h3><p>{content.grammar.length} grammar questions</p><p>{content.stories.length} stories · {content.combos.length} combos</p><p>{content.challenges.length} authored challenges</p><p>{new Set(content.words.map(w=>V2.topic(w.category))).size} levels/categories</p></article></div></>}
       {tab==="content"&&<><div className="wh-admin-toolbar"><div className="wh-admin-entities">{Object.entries(entities).map(([id,item])=><button key={id} className={entity===id?"active":""} onClick={()=>{setEntity(id);setEditor(null);setCategoryFilter("");setCategoryBrowse("");setStubOnly(false);}}>{item.label} <span>{content[id]?.length||0}</span></button>)}</div>{categories.length>0&&<select value={categoryFilter} onChange={e=>setCategoryFilter(e.target.value)}><option value="">All categories</option>{categories.map(cat=><option key={cat} value={cat}>{cat}</option>)}</select>}<select value={categoryBrowse} onChange={e=>{setCategoryBrowse(e.target.value);setEditor(null);}} title="Show every word, grammar item, combo, challenge and story for one category, across all types"><option value="">Browse a category (all types)…</option>{allCategories.map(cat=><option key={cat} value={cat}>{cat}</option>)}</select><button className="wh-import-btn primary" disabled={categoryMergeBusy} onClick={handleSuggestCategoryMerges}><Sparkles size={13}/> {categoryMergeBusy?"Analyzing…":"Suggest category cleanup"}</button>{entity!=="levels"&&categoryFilter&&filtered.length>0&&<button onClick={()=>{setMoveTarget({entity,ids:filtered.map(({item})=>item[config.key])});setMoveInput("");}}>Move all {filtered.length} in "{categoryFilter}" to…</button>}{entity==="words"&&stubCount>0&&<label className="wh-admin-stub-toggle"><input type="checkbox" checked={stubOnly} onChange={e=>setStubOnly(e.target.checked)}/> Needs content only ({stubCount})</label>}{entity==="words"&&stubCount>0&&<button className="wh-import-btn primary" disabled={bulkFixBusy} onClick={handleBulkFixStubs}><Sparkles size={13}/> {bulkFixBusy?`Fixing ${bulkFixProgress?.done||0}/${bulkFixProgress?.total||stubCount}…`:`Fill ${stubCount} with AI`}</button>}<input value={query} onChange={e=>setQuery(e.target.value)} placeholder={`Search ${config.label.toLowerCase()}…`}/><button className="primary" onClick={()=>startEdit(null,null)}>+ Add</button></div>{bulkFixReport&&<div className="wh-import-hint"><b>AI content fill: {bulkFixReport.succeeded.length} filled, {bulkFixReport.failed.length} failed.</b>{bulkFixReport.failed.length>0&&<ul>{bulkFixReport.failed.map((f,i)=><li key={i}>{f.word}: {f.message}</li>)}</ul>}<div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={()=>setBulkFixReport(null)}>Dismiss</button></div></div>}{categoryMergeError&&<div className="wh-import-error">{categoryMergeError}</div>}{categoryMergeSuggestions&&<div className="wh-import-hint"><b>Suggested category merges:</b>{!categoryMergeSuggestions.length?<p>No confident duplicates found.</p>:categoryMergeSuggestions.map((m,i)=><div className="wh-admin-browse-row" key={i}><span><b>{m.canonical}</b><small>absorbs: {m.duplicates.join(", ")}</small></span><span>{appliedMerges.includes(m.canonical)?<i>Merged</i>:<button className="wh-import-btn primary" onClick={()=>applyCategoryMerge(m)}>Merge</button>}</span></div>)}<div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={()=>{setCategoryMergeSuggestions(null);setAppliedMerges([]);}}>Dismiss</button></div></div>}{editor?<div className="wh-admin-editor"><div className="wh-admin-editor-head"><h3>{editor.index===null?`Add ${config.label}`:`Edit ${editor.original?.[config.key]}`}</h3><button onClick={()=>setEditor(null)}>Cancel</button></div><p>Edit every supported field as structured JSON. IDs and word labels are stable progress keys.</p><textarea value={draft} onChange={e=>setDraft(e.target.value)} spellCheck={false}/>{error&&<div className="wh-import-error">{error}</div>}<div className="wh-ai-actions"><button className="primary" onClick={saveEdit}>Validate &amp; Save</button>{entity==="words"&&<button disabled={editorBusy} onClick={fillWordWithAi}>{editorBusy?"Generating…":"Fill fields with AI"}</button>}<button onClick={()=>{try{setDraft(JSON.stringify(JSON.parse(draft),null,2));setError(null);}catch{setError("Invalid JSON.");}}}>Format JSON</button></div></div>:categoryBrowse?<div className="wh-admin-category-browse"><div className="wh-admin-category-browse-head"><h3>Everything in "{categoryBrowse}"</h3><button onClick={()=>setCategoryBrowse("")}>✕ Clear</button></div>{!categoryGroups.length?<p>Nothing tagged with this category yet.</p>:categoryGroups.map(group=><div className="wh-admin-card" key={group.id}><h4>{group.label} <span>{group.items.length}</span><button onClick={()=>{setMoveTarget({entity:group.id,ids:group.items.map(({item})=>item[entities[group.id].key])});setMoveInput("");}}>Move all {group.items.length} to…</button></h4>{group.items.map(({item,index})=><div className="wh-admin-browse-row" key={item[entities[group.id].key]||index}><span><b>{item[entities[group.id].key]}</b><small>{item.meaning||item.title||item.rule||item.prompt||""}</small></span><span><button onClick={()=>{setEntity(group.id);setCategoryFilter("");startEdit(item,index);}}>Edit</button><button onClick={()=>{setMoveTarget({entity:group.id,ids:[item[entities[group.id].key]]});setMoveInput("");}}>Move</button></span></div>)}</div>)}</div>:<div className="wh-admin-table"><div className="wh-admin-row head"><span>Item</span><span>Category / Type</span><span>Status</span><span>Actions</span></div>{filtered.map(({item,index})=>{const rec=entity==="words"?mastery[item.word]:null;const modesCount=rec?Object.values(rec.modes||{}).filter(m=>m.correct>0).length:0;return <div className="wh-admin-row" key={item[config.key]||index}><span><b>{item[config.key]}</b><small>{item.meaning||item.title||item.rule||item.prompt||""}</small></span><span>{entity==="levels"?`${content.words.filter(word=>V2.topic(word.category)===V2.topic(item.title)).length} words`:item.category||item.type||"—"}</span><span>{item._autoStub?<span className="wh-stub-badge" title="Auto-created from a missing reference during import — needs real content">⚠ Needs content</span>:entity==="words"?<span className="wh-status-stack"><b>{V2.stage(rec)}</b><small>{rec?.correct||0}/{rec?.total||0} · {modesCount} mode{modesCount===1?"":"s"}{item._aiAdded?" · AI-added":""}</small></span>:"Ready"}</span><span><button onClick={()=>startEdit(item,index)}>Edit</button>{entity!=="levels"&&<button onClick={()=>{setMoveTarget({entity,ids:[item[config.key]]});setMoveInput("");}}>Move</button>}<button className="danger" onClick={()=>remove(index)}>Delete</button></span></div>;})}</div>}</>}
       {tab==="health"&&<ContentHealthPanel content={content} onUpdate={onUpdate} onMergeCategories={onMergeCategories} onRemoveEmptyLevels={onRemoveEmptyLevels}/>}
       {tab==="reports"&&<div className="wh-admin-card"><h3>Reported questions</h3><p>An open report keeps that exact word + question type out of future sessions automatically. Resolving or retiring it lifts that block. AI checks each report when it's filed and drafts a fix when the question is really flawed.</p>{(()=>{const unreviewed=reports.filter(r=>!r.resolvedAt&&!r.aiReview).length;const busy=reviewAllProgress&&reviewAllProgress.done<reviewAllProgress.total;return (unreviewed>0||reviewAllProgress)&&<div className="wh-import-actions">{unreviewed>0&&<button className="wh-import-btn primary" disabled={busy} onClick={reviewAllOpenReports}><Sparkles size={13}/> {busy?`AI reviewing… ${reviewAllProgress.done}/${reviewAllProgress.total}`:`AI review open reports (${unreviewed})`}</button>}{reviewAllProgress&&!busy&&<small>Reviewed {reviewAllProgress.total-reviewAllProgress.failed}/{reviewAllProgress.total}{reviewAllProgress.failed?` · ${reviewAllProgress.failed} failed — try again`:""}</small>}</div>;})()}{!reports.length?<p>No questions have been reported.</p>:reports.slice().reverse().map((report,index)=>{const key=`${report.sessionId}-${report.questionId}-${index}`;const isOpen=expandedReportKey===key;return <article className="wh-admin-report" key={key}><div><button className="wh-admin-log-row" onClick={()=>{const next=isOpen?null:key;setExpandedReportKey(next);setReportFix(null);setReportFixError(null);}}>{isOpen?<ChevronDown size={14}/>:<ChevronRight size={14}/>}<b>{report.prompt||report.questionId}</b></button><small>{report.mode||"question"} · {(report.targetWords||[]).join(", ")||"no target"} · {new Date(report.at).toLocaleString()}</small>{report.reason&&<small><i>Reason: {report.reason}</i></small>}{report.aiReview&&<small className={`wh-report-ai ${report.aiReview.verdict}`}><Sparkles size={11}/> AI: {report.aiReview.verdict==='flawed'?'real problem':report.aiReview.verdict==='fine'?'question looks OK':'unsure'} ({report.aiReview.confidence}){report.aiReview.fixed?' · fix drafted':''}</small>}{isOpen&&<div className="wh-admin-log-detail"><p><b>Question ID:</b> {report.questionId}</p><p><b>Session:</b> {report.sessionId}</p>{report.options?.length>0&&<p><b>Options shown:</b> {report.options.join(" / ")}</p>}{report.answers?.length>0&&<p><b>Correct answer(s):</b> {report.answers.join(", ")}</p>}{report.poolType&&<p><b>Pool:</b> {report.poolType} / {report.poolItemId}</p>}{report.learnerAnswer!=null&&<p><b>Learner answered:</b> {Array.isArray(report.learnerAnswer)?report.learnerAnswer.join(" + "):String(report.learnerAnswer)}{report.aiReview?.learnerAnswerAcceptable!=null&&` (AI: ${report.aiReview.learnerAnswerAcceptable?'acceptable':'not acceptable'})`}</p>}{report.aiReview&&<div className="wh-import-hint"><b><Sparkles size={12}/> AI review: {report.aiReview.verdict}</b>{report.aiReview.adminNote&&<p>{report.aiReview.adminNote}</p>}{report.aiReview.explanation&&<p><small>Told the learner: {report.aiReview.explanation}</small></p>}</div>}<p>{report.resolvedAt?`Resolved ${new Date(report.resolvedAt).toLocaleString()} — no longer blocked.`:"Currently blocked from future sessions for this word + question type."}</p>{!report.resolvedAt&&<><div className="wh-import-actions">{report.aiReview?.fixed&&<button className="wh-import-btn primary" onClick={()=>openStoredReportFix(report,key)}><Sparkles size={13}/> Review drafted fix</button>}<button className={`wh-import-btn ${report.aiReview?.fixed?"secondary":"primary"}`} disabled={reportFixBusy} onClick={()=>handleSuggestReportFix(report,key)}><Sparkles size={13}/> {reportFixBusy?"Asking AI…":report.aiReview?.fixed?"Ask AI for a new fix":"Suggest fix with AI"}</button></div>{reportFixError&&<div className="wh-import-error">{reportFixError}</div>}{reportFix&&reportFix.key===key&&<div className="wh-import-hint"><b>AI suggests these changes to the {entities[reportFix.entity].label.slice(0,-1).toLowerCase()}:</b><ul>{reportFix.changes.map((c,i)=><li key={i}>{c}</li>)}</ul><textarea className="wh-import-textarea" value={JSON.stringify(reportFix.after,null,2)} readOnly rows={6}/><div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={()=>setReportFix(null)}>Discard</button><button className="wh-import-btn primary" onClick={()=>applyReportFix(report)}>Apply fix &amp; resolve</button></div></div>}</>}</div>}</div><span className={report.resolvedAt?"resolved":"open"}>{report.resolvedAt?"Resolved":"Open"}</span><div>{!report.resolvedAt&&report.poolItemId&&<button onClick={()=>onRetireVariant(report)}>Retire variant</button>}{!report.resolvedAt&&<button onClick={()=>onResolveReport(report)}>Resolve</button>}<button onClick={()=>setConfirmDeleteReport(report)}>Delete</button></div></article>;})}</div>}
@@ -3327,7 +3457,7 @@ export default function WordHunter() {
   const [section, setSection] = useState("practice");
   const progressExtrasRef = useRef({});
   const contentNoteRef = useRef("");
-  function liveContent() { return { words: WORDS, grammar: GRAMMAR, puns: PUNS, challenges: CHALLENGES, combos: customCombos, stories: customStories, note: contentNoteRef.current }; }
+  function liveContent() { return { words: WORDS, grammar: GRAMMAR, challenges: CHALLENGES, combos: customCombos, stories: customStories, note: contentNoteRef.current }; }
   function launchSession(session) { setActiveSession(session); setScreen("session"); }
   // One extra question style per word for Level Practice, built with the
   // adaptive-engine builders and converted to the V2 question shape.
@@ -3499,9 +3629,31 @@ export default function WordHunter() {
   }
   function updateWordFields(wordName, patch) {
     const next = customWords.map((w) => (V2.norm(w.word) === V2.norm(wordName) ? { ...w, ...patch } : w));
-    mergeCustomData(next, customGrammar, customPuns, customChallenges, LEVEL_ORDER);
+    mergeCustomData(next, customGrammar, customChallenges, LEVEL_ORDER);
     setCustomWords(next);
     setDataVersion((v) => v + 1);
+  }
+  // A v3 import can rename a word (same id, new spelling) or a category
+  // (same id, new title). Progress is keyed by those names, so move it:
+  // mastery, content pools, confusion pairs and report targets for words;
+  // level stats and cleared levels for categories.
+  function migrateRenamedProgress(renames){
+    if(!renames||(!renames.words.length&&!renames.categories.length))return;
+    const wmap=new Map(renames.words.map(r=>[r.from,r.to]));
+    const moveKeys=obj=>{const next={...obj};for(const [from,to] of wmap){if(from in next){if(!(to in next))next[to]=next[from];delete next[from];}}return next;};
+    if(wmap.size){
+      const m=moveKeys(masteryRef.current);masteryRef.current=m;setMastery(m);
+      const p=moveKeys(poolsRef.current);poolsRef.current=p;setPools(p);
+      const c={};for(const [key,val] of Object.entries(confusionsRef.current||{})){const [a,b]=key.split("|");c[`${wmap.get(a)||a}|${wmap.get(b)||b}`]=val;}
+      confusionsRef.current=c;setConfusions(c);
+      const reports=(progressExtrasRef.current.reports||[]).map(r=>({...r,targetWords:(r.targetWords||[]).map(t=>wmap.get(t)||t)}));
+      progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);
+    }
+    if(renames.categories.length){
+      const cmap=new Map(renames.categories.map(r=>[`cat-${r.from}`,`cat-${r.to}`]));
+      setLevelStats(prev=>{const next={...prev};for(const [from,to] of cmap){if(from in next){if(!(to in next))next[to]=next[from];delete next[from];}}return next;});
+      setLevelsCleared(prev=>[...new Set(prev.map(id=>cmap.get(id)||id))]);
+    }
   }
   // Merge category names in one pass over every content list and the level
   // order, so no empty duplicate level is left behind (the old per-list
@@ -3510,18 +3662,18 @@ export default function WordHunter() {
     const dup=new Set(duplicates.filter(name=>name!==canonical));
     if(!dup.size)return;
     const remap=item=>dup.has(item.category)?{...item,category:canonical}:item;
-    const nextWords=customWords.map(remap),nextGrammar=customGrammar.map(remap),nextPuns=customPuns.map(remap),nextChallenges=customChallenges.map(remap),nextCombos=customCombos.map(remap),nextStories=customStories.map(remap);
+    const nextWords=customWords.map(remap),nextGrammar=customGrammar.map(remap),nextChallenges=customChallenges.map(remap),nextCombos=customCombos.map(remap),nextStories=customStories.map(remap);
     let order=[...LEVEL_ORDER];
     if(!order.includes(canonical)){const at=order.findIndex(t=>dup.has(t));order.splice(at<0?order.length:at,0,canonical);}
     order=order.filter(t=>!dup.has(t));
-    setCustomWords(nextWords);setCustomGrammar(nextGrammar);setCustomPuns(nextPuns);setCustomChallenges(nextChallenges);setCustomCombos(nextCombos);setCustomStories(nextStories);
-    mergeCustomData(nextWords,nextGrammar,nextPuns,nextChallenges,order);setDataVersion(value=>value+1);
+    setCustomWords(nextWords);setCustomGrammar(nextGrammar);setCustomChallenges(nextChallenges);setCustomCombos(nextCombos);setCustomStories(nextStories);
+    mergeCustomData(nextWords,nextGrammar,nextChallenges,order);setDataVersion(value=>value+1);
   }
   function removeEmptyLevels(){
-    const used=new Set([...customWords,...customGrammar,...customPuns,...customChallenges,...customCombos,...customStories].map(item=>item.category).filter(Boolean));
+    const used=new Set([...customWords,...customGrammar,...customChallenges,...customCombos,...customStories].map(item=>item.category).filter(Boolean));
     const order=LEVEL_ORDER.filter(title=>used.has(title));
     const removed=LEVEL_ORDER.length-order.length;
-    if(removed){mergeCustomData(customWords,customGrammar,customPuns,customChallenges,order);setDataVersion(value=>value+1);}
+    if(removed){mergeCustomData(customWords,customGrammar,customChallenges,order);setDataVersion(value=>value+1);}
     return removed;
   }
   function updateAdminContent(field,nextList){
@@ -3531,27 +3683,25 @@ export default function WordHunter() {
       const deleted=new Set(current.filter(level=>!nextById.has(level.id)).map(level=>level.title));
       const renamed=new Map(current.filter(level=>nextById.has(level.id)&&nextById.get(level.id)!==level.title).map(level=>[level.title,nextById.get(level.id)]));
       const adjust=item=>deleted.has(item.category)?null:renamed.has(item.category)?{...item,category:renamed.get(item.category)}:item;
-      const nextWords=customWords.map(adjust).filter(Boolean),nextGrammar=customGrammar.map(adjust).filter(Boolean),nextPuns=customPuns.map(adjust).filter(Boolean),nextChallenges=customChallenges.map(adjust).filter(Boolean);
+      const nextWords=customWords.map(adjust).filter(Boolean),nextGrammar=customGrammar.map(adjust).filter(Boolean),nextChallenges=customChallenges.map(adjust).filter(Boolean);
       const nextCombos=customCombos.map(adjust).filter(Boolean),nextStories=customStories.map(adjust).filter(Boolean);
       const nextOrder=nextList.map(level=>String(level.title||"").trim()).filter(Boolean);
-      setCustomWords(nextWords);setCustomGrammar(nextGrammar);setCustomPuns(nextPuns);setCustomChallenges(nextChallenges);setCustomCombos(nextCombos);setCustomStories(nextStories);
-      mergeCustomData(nextWords,nextGrammar,nextPuns,nextChallenges,nextOrder);setDataVersion(value=>value+1);return;
+      setCustomWords(nextWords);setCustomGrammar(nextGrammar);setCustomChallenges(nextChallenges);setCustomCombos(nextCombos);setCustomStories(nextStories);
+      mergeCustomData(nextWords,nextGrammar,nextChallenges,nextOrder);setDataVersion(value=>value+1);return;
     }
     const nextWords=field==="words"?nextList:customWords;
     const nextGrammar=field==="grammar"?nextList:customGrammar;
-    const nextPuns=field==="puns"?nextList:customPuns;
     const nextChallenges=field==="challenges"?nextList:customChallenges;
     if(field==="words")setCustomWords(nextList);
     if(field==="grammar")setCustomGrammar(nextList);
-    if(field==="puns")setCustomPuns(nextList);
     if(field==="challenges")setCustomChallenges(nextList);
     if(field==="combos")setCustomCombos(nextList);
     if(field==="stories")setCustomStories(nextList);
-    mergeCustomData(nextWords,nextGrammar,nextPuns,nextChallenges,LEVEL_ORDER);
+    mergeCustomData(nextWords,nextGrammar,nextChallenges,LEVEL_ORDER);
     setDataVersion(value=>value+1);
   }
 
-  const [dataVersion, setDataVersion] = useState(0); // bumped whenever WORDS/GRAMMAR/PUNS/LEVELS change
+  const [dataVersion, setDataVersion] = useState(0); // bumped whenever WORDS/GRAMMAR/LEVELS change
   const [confirmAction, setConfirmAction] = useState(null); // null | 'reset' | 'wipe'
   const [deleteCategoryTarget, setDeleteCategoryTarget] = useState(null); // null | level object
 
@@ -3561,7 +3711,6 @@ export default function WordHunter() {
   }
   const [customWords, setCustomWords] = useState([]);
   const [customGrammar, setCustomGrammar] = useState([]);
-  const [customPuns, setCustomPuns] = useState([]);
   const [customChallenges, setCustomChallenges] = useState([]);
   const [importOpen, setImportOpen] = useState(false);
   const [contentPanelView, setContentPanelView] = useState("review"); // 'export' | 'review'
@@ -3622,7 +3771,7 @@ export default function WordHunter() {
     const errors=V2.validateContent({schemaVersion:2,kind:"content",words:[entry]},liveContent());
     if(errors.length){setAskAiError(`Cannot add this card: ${errors[0]}`);return;}
     const next=[...customWords,entry];
-    mergeCustomData(next,customGrammar,customPuns,customChallenges,LEVEL_ORDER);
+    mergeCustomData(next,customGrammar,customChallenges,LEVEL_ORDER);
     setCustomWords(next);setDataVersion(value=>value+1);
     setAskAiResult(previous=>({...previous,alreadyInCollection:true}));
     setToast({kind:"import",text:`${entry.word} added to your collection`});
@@ -3843,10 +3992,9 @@ export default function WordHunter() {
           setCustomCombos(custom.combos || []); setCustomStories(custom.stories || []); contentNoteRef.current=custom.note||"";
           setCustomWords(custom.words || []);
           setCustomGrammar(custom.grammar || []);
-          setCustomPuns(custom.puns || []);
           setCustomChallenges(Array.isArray(custom.challenges) ? custom.challenges : []);
           levelOrder = custom.levelOrder || LEVEL_ORDER;
-          mergeCustomData(custom.words || [], custom.grammar || [], custom.puns || [], custom.challenges || [], levelOrder);
+          mergeCustomData(custom.words || [], custom.grammar || [], custom.challenges || [], levelOrder);
         }
       } catch (e) {
         // no custom content yet — built-in content only
@@ -3928,7 +4076,7 @@ export default function WordHunter() {
       try {
         await storageSetWithRetry(
           CUSTOM_CONTENT_KEY,
-          JSON.stringify({ schemaVersion: 2, kind: "content", note: contentNoteRef.current, combos: customCombos, stories: customStories, words: customWords, grammar: customGrammar, puns: customPuns, challenges: customChallenges, levelOrder: LEVEL_ORDER })
+          JSON.stringify({ schemaVersion: 2, kind: "content", note: contentNoteRef.current, combos: customCombos, stories: customStories, words: customWords, grammar: customGrammar, challenges: customChallenges, levelOrder: LEVEL_ORDER })
         );
       } catch (e) {
         console.error("Could not save custom content:", e);
@@ -3938,7 +4086,7 @@ export default function WordHunter() {
       }
     }, 600);
     return () => clearTimeout(handle);
-  }, [loaded, customCombos, customStories, customWords, customGrammar, customPuns, customChallenges, dataVersion]);
+  }, [loaded, customCombos, customStories, customWords, customGrammar, customChallenges, dataVersion]);
 
   // Detect newly earned badges and surface a small celebration toast
   useEffect(() => {
@@ -4470,7 +4618,7 @@ export default function WordHunter() {
   async function handleWipeEverything() {
     await handleReset();
     mergeCustomData([], [], [], [], []);
-    setCustomWords([]); setCustomGrammar([]); setCustomPuns([]); setCustomChallenges([]);
+    setCustomWords([]); setCustomGrammar([]); setCustomChallenges([]);
     setCustomCombos([]); setCustomStories([]);
     setDataVersion((v) => v + 1);
     try { await storage.delete(CUSTOM_CONTENT_KEY, false); } catch (_) {}
@@ -4482,7 +4630,7 @@ export default function WordHunter() {
   // handed to another AI for a review pass, then brought back in with
   // "Apply AI Review" below.
   function handleExport(mode) {
-    const content = V2.contentOnly(mode === "builtin" ? {words:BUILTIN_WORDS,grammar:BUILTIN_GRAMMAR,puns:BUILTIN_PUNS,challenges:BUILTIN_CHALLENGES} : liveContent());
+    const content = V2.contentOnly(mode === "builtin" ? {words:BUILTIN_WORDS,grammar:BUILTIN_GRAMMAR,challenges:BUILTIN_CHALLENGES} : liveContent());
     const payload = mode === "backup" ? {
       ...progressExtrasRef.current, ...content, kind:"backup", schemaVersion:SCHEMA_VERSION, contentSchemaVersion:2,
       activeSession, levelOrder:LEVEL_ORDER, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings,
@@ -4556,13 +4704,16 @@ export default function WordHunter() {
   function handleParseReview() {
     setReviewError(null);setReviewPreview(null);setAiFixError(null);
     try {
-      const data=JSON.parse(reviewText);
-      const issues=V2.validateContent(data,liveContent());
+      const raw=JSON.parse(reviewText);
+      const issues=V2.validateContent(raw,liveContent());
       if(issues.length){setReviewError(issues.join("\n"));return;}
-      const preview={backupData:data,isBackup:data.kind==="backup"||(!data.kind&&(data.mastery!==undefined||data.pools!==undefined)),restoreProgress:false,builtinSkipped:0,invalidChallenges:[],expectedWords:WORDS.length,gotWords:data.words?.length||0,expectedChallenges:CHALLENGES.length,gotChallenges:data.challenges?.length||0};
-      for(const [field,singular,source,key] of [["words","word",WORDS,"word"],["grammar","grammar",GRAMMAR,"id"],["puns","pun",PUNS,"id"],["challenges","challenge",CHALLENGES,"id"]]){
+      // v3 files are converted here; matching uses the converted words and
+      // the existing content after renames, so a renamed word shows as an update.
+      const prep=V2.prepareImport(raw,liveContent()),data=prep.data,current=prep.existing;
+      const preview={backupData:raw,isBackup:raw.kind==="backup"||(!raw.kind&&(raw.mastery!==undefined||raw.pools!==undefined)),restoreProgress:false,builtinSkipped:0,invalidChallenges:[],expectedWords:WORDS.length,gotWords:data.words?.length||0,expectedChallenges:CHALLENGES.length,gotChallenges:data.challenges?.length||0,warnings:prep.warnings,renames:prep.renames,v3:raw.schemaVersion===3};
+      for(const [field,singular,key] of [["words","word","word"],["grammar","grammar","id"],["challenges","challenge","id"]]){
         preview[singular+"Updates"]=[];const plural=field[0].toUpperCase()+field.slice(1);preview["new"+plural]=[];
-        for(const incoming of data[field]||[]){const existing=source.find(x=>V2.norm(x[key])===V2.norm(incoming[key]));if(existing)preview[singular+"Updates"].push({existing,incoming});else preview["new"+plural].push(incoming);}
+        for(const incoming of data[field]||[]){const existing=(current[field]||[]).find(x=>V2.norm(x[key])===V2.norm(incoming[key]));if(existing)preview[singular+"Updates"].push({existing,incoming});else preview["new"+plural].push(incoming);}
       }
       setReviewPreview(preview);
     }catch(e){setReviewError("JSON: "+e.message);}
@@ -4598,15 +4749,19 @@ export default function WordHunter() {
   // unmatched goes through the normal capacity-aware level placement.
   function handleConfirmReview() {
     if(!reviewPreview)return;
-    const {backupData:data,restoreProgress}=reviewPreview;
-    const issues=V2.validateContent(data,restoreProgress?{}:liveContent());if(issues.length){setReviewError(issues.join("\n"));return;}
+    const {backupData:raw,restoreProgress}=reviewPreview;
+    const issues=V2.validateContent(raw,restoreProgress?{}:liveContent());if(issues.length){setReviewError(issues.join("\n"));return;}
+    const prep=V2.prepareImport(raw,restoreProgress?{}:liveContent()),data=prep.data;
     // The existing restore checkbox plus the explicit Restore backup button
     // confirm replacement inside the artifact, without a sandbox-blocked native dialog.
-    const content=restoreProgress?V2.mergeContent({},data):V2.mergeContent(liveContent(),data);
-    const order=restoreProgress&&Array.isArray(data.levelOrder)?data.levelOrder:insertLevelTitles(LEVEL_ORDER,[...new Set([...content.words,...content.grammar,...content.puns,...content.challenges].map(x=>x.category).filter(Boolean))]);
+    const content=V2.mergeContent(prep.existing,data);
+    const catMap=new Map(prep.renames.categories.map(r=>[r.from,r.to]));
+    const baseOrder=[...new Set(LEVEL_ORDER.map(t=>catMap.get(t)||t))];
+    const order=restoreProgress&&Array.isArray(raw.levelOrder)?raw.levelOrder:insertLevelTitles(baseOrder,[...new Set([...(prep.levelOrder||[]),...[...content.words,...content.grammar,...content.challenges].map(x=>x.category).filter(Boolean)])]);
     contentNoteRef.current=data.note||contentNoteRef.current;
-    mergeCustomData(content.words,content.grammar,content.puns,content.challenges,order);
-    setCustomWords(content.words);setCustomGrammar(content.grammar);setCustomPuns(content.puns);setCustomChallenges(content.challenges);setCustomCombos(content.combos);setCustomStories(content.stories);
+    mergeCustomData(content.words,content.grammar,content.challenges,order);
+    setCustomWords(content.words);setCustomGrammar(content.grammar);setCustomChallenges(content.challenges);setCustomCombos(content.combos);setCustomStories(content.stories);
+    if(!restoreProgress)migrateRenamedProgress(prep.renames);
     if(restoreProgress){
       const restored=migrateProgressData(data);progressExtrasRef.current=restored;setActiveSession(restored.activeSession||null);setDailyProgress(restored.dailyProgress||null);
       setScore(restored.score);setStreak(restored.streak);setBestStreak(restored.bestStreak);setAttempted(restored.attempted);
@@ -5377,7 +5532,7 @@ export default function WordHunter() {
             <p>
               {confirmAction === "reset"
                 ? "Reset all progress? This clears your score, streaks, mastery, and level stats. Your imported words and content stay untouched."
-                : "Clear everything? This deletes your progress AND all imported words, grammar, puns, and stories. This cannot be undone — make sure you have a Full Backup first."}
+                : "Clear everything? This deletes your progress AND all imported words, grammar, and stories. This cannot be undone — make sure you have a Full Backup first."}
             </p>
             <div className="wh-regen-actions">
               <button
@@ -5395,7 +5550,7 @@ export default function WordHunter() {
           <div className="wh-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setDeleteCategoryTarget(null); }}>
           <div className="wh-panel wh-confirm-panel" role="alertdialog">
             <p>
-              Delete the category "{deleteCategoryTarget.title}"? This removes its words, grammar, puns, combos, stories, and challenges from your content. This cannot be undone — make sure you have a Full Backup first.
+              Delete the category "{deleteCategoryTarget.title}"? This removes its words, grammar, combos, stories, and challenges from your content. This cannot be undone — make sure you have a Full Backup first.
             </p>
             <div className="wh-regen-actions">
               <button
@@ -5563,7 +5718,7 @@ export default function WordHunter() {
             {contentPanelView === "review" && !reviewPreview && (
               <>
                 <p className="wh-import-hint">
-                  Paste the reviewed JSON back here, or upload a .json/.txt file. Matched words/rules/puns/challenges get
+                  Paste the reviewed JSON back here, or upload a .json/.txt file. Matched words/rules/challenges get
                   their content refreshed without touching your progress; anything new gets added as usual.
                 </p>
                 <textarea
@@ -5600,24 +5755,24 @@ export default function WordHunter() {
               <>
                 <div className="wh-import-summary">
                   <div>
-                    <b>{reviewPreview.wordUpdates.length + reviewPreview.grammarUpdates.length + reviewPreview.punUpdates.length + reviewPreview.challengeUpdates.length}</b> updated,{" "}
-                    <b>{reviewPreview.newWords.length + reviewPreview.newGrammar.length + reviewPreview.newPuns.length + reviewPreview.newChallenges.length}</b> new · {reviewPreview.backupData.combos?.length||0} combos · {reviewPreview.backupData.stories?.length||0} stories
+                    <b>{reviewPreview.wordUpdates.length + reviewPreview.grammarUpdates.length + reviewPreview.challengeUpdates.length}</b> updated,{" "}
+                    <b>{reviewPreview.newWords.length + reviewPreview.newGrammar.length + reviewPreview.newChallenges.length}</b> new · {reviewPreview.backupData.combos?.length||0} combos · {reviewPreview.backupData.stories?.length||0} stories
                     {reviewPreview.builtinSkipped > 0 && <> — {reviewPreview.builtinSkipped} matched built-in content and can't be edited this way</>}
                   </div>
                   <div className="wh-import-breakdown">
                     {reviewPreview.wordUpdates.length > 0 && <span>{reviewPreview.wordUpdates.length} word(s) updated</span>}
                     {reviewPreview.grammarUpdates.length > 0 && <span>{reviewPreview.grammarUpdates.length} grammar updated</span>}
-                    {reviewPreview.punUpdates.length > 0 && <span>{reviewPreview.punUpdates.length} pun(s) updated</span>}
                     {reviewPreview.challengeUpdates.length > 0 && <span>{reviewPreview.challengeUpdates.length} challenge(s) updated by stable ID</span>}
                     {reviewPreview.newWords.length > 0 && <span>{reviewPreview.newWords.length} new word(s)</span>}
                     {reviewPreview.newGrammar.length > 0 && <span>{reviewPreview.newGrammar.length} new grammar</span>}
-                    {reviewPreview.newPuns.length > 0 && <span>{reviewPreview.newPuns.length} new pun(s)</span>}
                     {reviewPreview.newChallenges.length > 0 && <span>{reviewPreview.newChallenges.length} new challenge(s)</span>}
                     {reviewPreview.invalidChallenges.length > 0 && <span>{reviewPreview.invalidChallenges.length} invalid challenge(s) skipped</span>}
                     <span>received {reviewPreview.gotWords} of {reviewPreview.expectedWords} current words</span>
                     <span>received {reviewPreview.gotChallenges} challenge(s); currently loaded {reviewPreview.expectedChallenges}</span>
                   </div>
                   <p>Partial content files are merged. Missing arrays do not delete current items. Structural checks do not verify B1 language or semantic accuracy.</p>
+                  {reviewPreview.renames && (reviewPreview.renames.words.length > 0 || reviewPreview.renames.categories.length > 0) && <div className="wh-import-hint"><b>Renamed by id — progress moves with them:</b><ul>{[...reviewPreview.renames.words, ...reviewPreview.renames.categories].map((r, i) => <li key={i}>{r.from} → {r.to}</li>)}</ul></div>}
+                  {reviewPreview.warnings?.length > 0 && <div className="wh-import-error"><b>{reviewPreview.warnings.length} warning(s) — the rest imports normally:</b><ul>{reviewPreview.warnings.slice(0, 30).map((w, i) => <li key={i}>{w}</li>)}</ul>{reviewPreview.warnings.length > 30 && <p>…and {reviewPreview.warnings.length - 30} more.</p>}</div>}
                 </div>
                 {reviewPreview.isBackup && (
                   <label className="wh-restore-toggle">
