@@ -366,9 +366,26 @@ function poolItems(w,poolType,stored){
   const authored=authoredTexts(w,poolType).map((text,i)=>{const id=i?`seed-${i+1}`:'seed';return {attempts:0,correctCount:0,lockedUntil:null,flagged:false,...(byId.get(id)||{}),id,text};});
   return [...authored,...(stored||[]).filter(it=>!/^seed(-\d+)?$/.test(String(it.id)))];
 }
-function pickWordVariant(pools,w,poolType,rng=Math.random){
-  const arr=poolItems(w,poolType,pools?.[w.word]?.[poolType]).filter(it=>it.text);
-  if(!arr.length)return null;
+// The sentences a question shows, normalized, so the game can remember
+// what the learner has already read. Definitions (meaning / reverse /
+// typing) and grammar rules aren't tracked: they have their own rotation.
+const UNTRACKED_MODES=new Set(['meaning','reverse','typing','transform','grammarChoose','grammarJudge','grammarFix']);
+function questionSentences(q){
+  if(!q||UNTRACKED_MODES.has(q.mode))return [];
+  const raw=Array.isArray(q.sentences)&&q.sentences.length?q.sentences:[q.prompt];
+  return [...new Set(raw.map(sentence).filter(Boolean))];
+}
+// Seen within the last `hours` (or ever, when hours is Infinity).
+const SEEN_FRESH_HOURS=20;
+const PAIR_MODES=new Set(['twopeople','selecttwo']);
+function seenRecently(seen,text,hours=SEEN_FRESH_HOURS,now=Date.now()){const at=seen?.[sentence(text)];return !!at&&(hours===Infinity||now-at<hours*3600000);}
+function pickWordVariant(pools,w,poolType,rng=Math.random,seen=null){
+  const all=poolItems(w,poolType,pools?.[w.word]?.[poolType]).filter(it=>it.text);
+  if(!all.length)return null;
+  // Sentences read recently go to the back; if every one was, the question
+  // is built anyway and practice() drops it as stale.
+  const unseen=all.filter(it=>!seenRecently(seen,it.text));
+  const arr=unseen.length?unseen:all;
   const now=Date.now();
   const unlocked=arr.filter(it=>!it.lockedUntil||it.lockedUntil<=now);
   const candidates=unlocked.length?unlocked:arr;
@@ -376,9 +393,9 @@ function pickWordVariant(pools,w,poolType,rng=Math.random){
   const tied=candidates.filter(it=>Number(it.attempts||0)===least);
   return tied[Math.floor(rng()*tied.length)];
 }
-function makeQuestion(w,mode,words,rng=Math.random,difficulty=1,pools=null,boost=null) {
+function makeQuestion(w,mode,words,rng=Math.random,difficulty=1,pools=null,boost=null,seen=null) {
   const poolType=POOL_FOR_MODE[mode];
-  const variant=poolType&&pools?pickWordVariant(pools,w,poolType,rng):null;
+  const variant=poolType&&pools?pickWordVariant(pools,w,poolType,rng,seen):null;
   // A variant that leaks the answer or lost its blank falls back to the seed.
   const usable=variant&&variant.id!=='seed'&&!(mode!=='meaning'&&norm(variant.text).includes(norm(bareWord(w.word))))&&!(poolType==='gap'&&!/_{2,}/.test(variant.text));
   if(usable)w={...w,[poolType==='typing'?'meaning':poolType]:variant.text};
@@ -466,7 +483,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
     modes=shuffleCopy(modes,rng).sort((a,b)=>(b===weak)-(a===weak));
     const cm=Array.isArray(w.commonMistakes)&&w.commonMistakes.length?w.commonMistakes[Math.floor(rng()*w.commonMistakes.length)]:w.commonMistake;
     if(known(s)&&cm&&!isQuarantined(w.word,'grammarCourt'))candidates.push({id:`${w.word}:court`,mode:'grammarCourt',type:'mcq',prompt:`Choose the correct sentence. Context: ${w.situation}`,targets:[w.word],answers:[cm.correction],options:shuffleCopy([cm.sentence,cm.correction],rng),explanation:cm.why});
-    for(const mode of modes){if(mode.includes('gap')&&!/_{2,}/.test(w.gap))continue;const q=makeQuestion(w,mode,content.words,rng,difficulty,pools,confusionBoost);if(q)candidates.push(q);}
+    for(const mode of modes){if(mode.includes('gap')&&!/_{2,}/.test(w.gap))continue;const q=makeQuestion(w,mode,content.words,rng,difficulty,pools,confusionBoost,opts.seen);if(q)candidates.push(q);}
     // Extra question styles (Who Am I, Opposites, Two People, …) come from
     // the caller so this module stays free of the legacy builders. Never for
     // brand-new words, and not while the production gate wants typing.
@@ -498,6 +515,13 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   }).filter(Boolean);
   const queue=[],counts={}, weights={meaning:3,reverse:3,gap:3,gapTyping:3,situation:2,typing:3,order:2,transform:2,multi:1,grammarCourt:1,whoami:2,opposite:2,twopeople:2,selecttwo:2,idiomDetective:2,story:2};
   const wordSlots=questionsPerRound-grammarQueue.length;
+  // Don't show a sentence the learner read in the last SEEN_FRESH_HOURS;
+  // Two People / Select Two only ever use sentences never shown before.
+  // A round with nothing fresh left is shorter instead of repetitive.
+  const seen=opts.seen||{};const nowTs=Date.now();
+  const stale=q=>questionSentences(q).some(t=>seenRecently(seen,t,PAIR_MODES.has(q.mode)?Infinity:SEEN_FRESH_HOURS,nowTs));
+  for(let i=candidates.length-1;i>=0;i--)if(stale(candidates[i]))candidates.splice(i,1);
+  const usedSentences=new Set();
   // Introductions are separate cards. Last introduced word is never the first test.
   const lastIntro=fresh.at(-1)?.word;
   const usedWords=new Set();
@@ -505,7 +529,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // round early instead of cycling the same few words over and over.
   const wordUses={};
   while(queue.length<wordSlots&&candidates.length){
-    const eligible=candidates.map((q,i)=>({q,i})).filter(({q})=>!(queue.length===0&&q.targets.includes(lastIntro)) && !q.targets.some(t=>(wordUses[t]||0)>=2) && !queue.slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))) && !(queue.length>=2&&queue.slice(-2).every(p=>p.mode===q.mode)));
+    const eligible=candidates.map((q,i)=>({q,i})).filter(({q})=>!(queue.length===0&&q.targets.includes(lastIntro)) && !questionSentences(q).some(t=>usedSentences.has(t)) && !q.targets.some(t=>(wordUses[t]||0)>=2) && !queue.slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))) && !(queue.length>=2&&queue.slice(-2).every(p=>p.mode===q.mode)));
     if(!eligible.length)break;
     eligible.sort((a,b)=>{
       const aFresh=a.q.targets.some(t=>!usedWords.has(t))?0:1;
@@ -513,7 +537,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
       if(aFresh!==bFresh)return aFresh-bFresh;
       return ((counts[a.q.mode]||0)/(weights[a.q.mode]||1))-((counts[b.q.mode]||0)/(weights[b.q.mode]||1));
     });
-    const {q,i}=eligible[0];queue.push(q);counts[q.mode]=(counts[q.mode]||0)+1;q.targets.forEach(t=>{usedWords.add(t);wordUses[t]=(wordUses[t]||0)+1;});candidates.splice(i,1);
+    const {q,i}=eligible[0];queue.push(q);questionSentences(q).forEach(t=>usedSentences.add(t));counts[q.mode]=(counts[q.mode]||0)+1;q.targets.forEach(t=>{usedWords.add(t);wordUses[t]=(wordUses[t]||0)+1;});candidates.splice(i,1);
   }
   // At most one grammar question per 4 word questions, so a short round
   // (e.g. the very first one) stays about the words. Spread the rest
@@ -554,9 +578,9 @@ function sessionEvidence(mastery,session,now=Date.now()){
   }
   return next;
 }
-function reinforcement(s){if(s.extraAdded||s.kind!=='practice')return s;const wrong=s.queue.filter((q,i)=>s.answers[i]&&!s.answers[i].correct&&!s.answers[i].reported).flatMap(q=>q.targets);const added=[];for(const q of s.reserves||[]){if(added.length>=2)break;if(!q.targets.some(t=>wrong.includes(t)))continue;if([...s.queue,...added].slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))))continue;added.push(q);}return {...s,queue:[...s.queue,...added],extraAdded:true};}
+function reinforcement(s){if(s.extraAdded||s.kind!=='practice')return s;const wrong=s.queue.filter((q,i)=>s.answers[i]&&!s.answers[i].correct&&!s.answers[i].reported).flatMap(q=>q.targets);const added=[];for(const q of s.reserves||[]){if(added.length>=2)break;if(!q.targets.some(t=>wrong.includes(t)))continue;if([...s.queue,...added].slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))))continue;const shown=new Set([...s.queue,...added].flatMap(questionSentences));if(questionSentences(q).some(t=>shown.has(t)))continue;added.push(q);}return {...s,queue:[...s.queue,...added],extraAdded:true};}
 
-return { norm, sentence, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, grammarQuestions, grammarQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
+return { norm, sentence, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, questionSentences, seenRecently, SEEN_FRESH_HOURS, grammarQuestions, grammarQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
 })();
 
 // Pronunciation: two independent sources, tried in order.
@@ -769,7 +793,10 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
   const [regenState,setRegenState]=useState(null);
   const [reportOpen,setReportOpen]=useState(false);
   const [youglishTerm,setYouglishTerm]=useState(null);
+  // The picked reason and the learner's own words are kept apart, so
+  // picking a reason never wipes what they typed (and the AI gets both).
   const [reportReason,setReportReason]=useState("");
+  const [reportDetails,setReportDetails]=useState("");
   // After submit the modal stays open to show the AI's verdict:
   // {report, prior (the answer slot before reporting), index, status:'reviewing'|'done'|'failed', review}
   const [reportReview,setReportReview]=useState(null);
@@ -966,7 +993,7 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
   function next(){save({index:s.index+1,draft:{}});}
   function submitReport(){
     const prior=s.answers[s.index]||null,index=s.index;
-    const report=onReport(q,s,reportReason.trim(),prior?.value??null);
+    const report=onReport(q,s,reportReason,prior?.value??null,reportDetails.trim());
     const answers=[...s.answers];answers[index]={...(prior||{}),reported:true,correct:false};save({answers});
     if(!onReviewReport||!report){setReportOpen(false);return;}
     setReportReview({report,prior,index,status:'reviewing'});
@@ -986,7 +1013,7 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
   const answerText=result?q.answers.join(' + '):'';
   const sameAsExplanation=result&&q.explanation&&answerText.trim().toLowerCase()===q.explanation.trim().toLowerCase();
   const answeredCount=s.answers.slice(0,s.queue.length).filter(Boolean).length;
-  return <section><div className="wh-round-top"><button className="wh-back-btn wh-nav-btn" onClick={onBack}>Save and leave</button><span className="wh-round-meta">{combo>=2&&<span key={combo} className="wh-combo"><Flame size={13}/> {combo} in a row</span>}<span>{s.title} · {s.index+1}/{s.queue.length}</span>{onToggleSound&&<button className="wh-icon-btn" onClick={onToggleSound} title={sound?"Mute sounds":"Turn sounds on"} aria-label={sound?"Mute sounds":"Turn sounds on"}>{sound?<Volume2 size={13}/>:<VolumeX size={13}/>}</button>}</span></div><div className="wh-session-progress" role="progressbar" aria-valuemin={0} aria-valuemax={s.queue.length} aria-valuenow={answeredCount}><span style={{width:`${s.queue.length?answeredCount/s.queue.length*100:0}%`}}/></div>{s.kind==='practice'&&s.initialLength<(s.targetLength||12)&&<p className="wh-v2-notice">Short session: {s.initialLength} valid questions (usual goal: {s.targetLength||12}).</p>}{s.text&&<details className="wh-v2-story" open={s.index===0}><summary>Read the story</summary><p><AskableText text={s.text} onAskWord={onAskWord} onListen={setYouglishTerm} /></p></details>}<div className="wh-card">{result&&statusClass==='correct'&&<div className="wh-stamp correct">SUCCESS</div>}<div className="wh-file-row"><span>{MODE_META[q.mode]?.label||MODE_LABELS_V2[q.mode]||q.mode}</span><div><button className="wh-back-btn" onClick={()=>onAskWord?.(q.targets?.[0]||'')}>Ask AI</button> <button className="wh-back-btn" onClick={()=>setYouglishTerm(q.targets?.[0]||'')}><Volume2 size={12}/> Listen</button> <button className="wh-back-btn" disabled={!!result&&(result.correct||result.reported||s.kind==='story')} onClick={()=>{setReportReason("");setReportReview(null);setReportOpen(true);}}>Report question</button></div></div><p className="wh-sentence"><AskableText text={q.prompt} onAskWord={onAskWord} onListen={setYouglishTerm} /></p>{q.type==='multi'&&<p>Choose {q.answers.length} words.</p>}<AnswerControl key={q.id} q={q} draft={draft} onChange={draft=>save({draft})} disabled={!!result} onSubmit={submit}/>{!result&&q.hints?.length>0&&<><button className="wh-back-btn" disabled={(draft.hints||0)>=q.hints.length} onClick={()=>save({draft:{...draft,hints:(draft.hints||0)+1}})}>Hint ({draft.hints||0}/{q.hints.length})</button>{q.hints.slice(0,draft.hints||0).map((h,i)=><p key={i}>{h}</p>)}</>}{!result?<button className="wh-level-btn wh-submit-btn" disabled={!ready||aiChecking} onClick={submit}>{aiChecking?'Checking with AI…':'Submit'}</button>:<><div role="status" className={`wh-feedback ${statusClass}`}>{s.kind==='story'?'Answer saved. Feedback follows at the end.':result.reported?'Reported; excluded from mastery.':result.aiFailed?'AI check failed. Tap Retry to try again, or Continue without grading this one.':result.dontKnow?"No worries — here's the answer:":result.unverified?'Different from the model. Not graded: a text match cannot check all valid sentences.':result.aiClose?'Almost — close, but not quite right yet.':result.spelling?'Close spelling; this is not a full recall success.':result.correct?'Correct'+(result.assisted?' with help.':'.'):'Try this answer:'}</div>{s.kind!=='story'&&!result.reported&&!result.aiFailed&&<div className="wh-result-details"><SmartImage src={correctImage} className="wh-flashcard-img"/><p>{answerText}</p>{!sameAsExplanation&&<p>{q.explanation}</p>}{result.aiFeedback&&<p className="wh-ai-feedback">{result.aiFeedback}</p>}</div>}{result.aiFailed&&<button className="wh-level-btn wh-result-continue" onClick={retry}>Retry</button>}<button ref={continueRef} className="wh-level-btn wh-result-continue" onClick={next}>Continue</button></>}</div>{reportOpen&&<div className="wh-modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget&&reportReview?.status!=='reviewing')closeReport();}}><div className="wh-panel wh-confirm-panel" role="alertdialog">{!reportReview?<><p><b>Report this question?</b></p><p>Pick what's wrong (optional), or add your own note below. AI will check it right away.</p><div className="wh-options wh-report-reasons">{REPORT_REASONS.map(reason=><button type="button" key={reason} className={`wh-option ${reportReason===reason?'picked':''}`} onClick={()=>setReportReason(current=>current===reason?"":reason)}>{reason}</button>)}</div><textarea className="wh-freeform" style={{width:"100%",minHeight:60,boxSizing:"border-box",marginTop:8}} value={reportReason} onChange={e=>setReportReason(e.target.value)} placeholder="Add detail (optional)"/><div className="wh-ai-actions"><button onClick={()=>setReportOpen(false)}>Cancel</button><button className="primary" onClick={submitReport}>Submit report</button></div></>:reportReview.status==='reviewing'?<><p><b>Report saved.</b></p><p className="wh-ai-feedback"><Sparkles size={13}/> AI is checking this question…</p></>:reportReview.status==='failed'?<><p><b>Report saved.</b></p><p>AI couldn't check it right now. It's still in the admin's report list, and this question won't count against you.</p><div className="wh-ai-actions"><button className="primary" onClick={closeReport}>Continue</button></div></>:<><p><b>{reportReview.review.verdict==='flawed'?'AI agrees — this question has a problem.':reportReview.review.verdict==='fine'?'AI thinks this question is OK.':"AI isn't sure about this one."}</b></p>{reportReview.review.explanation&&<p className="wh-ai-feedback">{reportReview.review.explanation}</p>}{reportReview.review.learnerAnswerAcceptable===true&&<p>Your answer looks acceptable too.</p>}{reportReview.review.verdict==='flawed'&&<p><small>{reportReview.review.fixed?'A fix is drafted and waiting for admin review.':'Saved for admin review.'} The question won't count against you.</small></p>}{reportReview.review.verdict!=='flawed'&&<p><small>Your report is still saved for the admin, and this question won't count against you. You can withdraw it if you agree with the AI.</small></p>}<div className="wh-ai-actions">{reportReview.review.verdict!=='flawed'&&<button onClick={withdrawReport}>{reportReview.prior?'Withdraw report':'Withdraw & answer it'}</button>}<button className="primary" onClick={closeReport}>{reportReview.review.verdict!=='flawed'?'Keep report':'Continue'}</button></div></>}</div></div>}{youglishTerm&&<PronunciationModal term={youglishTerm} onClose={()=>setYouglishTerm(null)}/>}</section>;
+  return <section><div className="wh-round-top"><button className="wh-back-btn wh-nav-btn" onClick={onBack}>Save and leave</button><span className="wh-round-meta">{combo>=2&&<span key={combo} className="wh-combo"><Flame size={13}/> {combo} in a row</span>}<span>{s.title} · {s.index+1}/{s.queue.length}</span>{onToggleSound&&<button className="wh-icon-btn" onClick={onToggleSound} title={sound?"Mute sounds":"Turn sounds on"} aria-label={sound?"Mute sounds":"Turn sounds on"}>{sound?<Volume2 size={13}/>:<VolumeX size={13}/>}</button>}</span></div><div className="wh-session-progress" role="progressbar" aria-valuemin={0} aria-valuemax={s.queue.length} aria-valuenow={answeredCount}><span style={{width:`${s.queue.length?answeredCount/s.queue.length*100:0}%`}}/></div>{s.kind==='practice'&&s.initialLength<(s.targetLength||12)&&<p className="wh-v2-notice">Short session: {s.initialLength} valid questions (usual goal: {s.targetLength||12}).</p>}{s.text&&<details className="wh-v2-story" open={s.index===0}><summary>Read the story</summary><p><AskableText text={s.text} onAskWord={onAskWord} onListen={setYouglishTerm} /></p></details>}<div className="wh-card">{result&&statusClass==='correct'&&<div className="wh-stamp correct">SUCCESS</div>}<div className="wh-file-row"><span>{MODE_META[q.mode]?.label||MODE_LABELS_V2[q.mode]||q.mode}</span><div><button className="wh-back-btn" onClick={()=>onAskWord?.(q.targets?.[0]||'')}>Ask AI</button> <button className="wh-back-btn" onClick={()=>setYouglishTerm(q.targets?.[0]||'')}><Volume2 size={12}/> Listen</button> <button className="wh-back-btn" disabled={!!result&&(result.correct||result.reported||s.kind==='story')} onClick={()=>{setReportReason("");setReportDetails("");setReportReview(null);setReportOpen(true);}}>Report question</button></div></div><p className="wh-sentence"><AskableText text={q.prompt} onAskWord={onAskWord} onListen={setYouglishTerm} /></p>{q.type==='multi'&&<p>Choose {q.answers.length} words.</p>}<AnswerControl key={q.id} q={q} draft={draft} onChange={draft=>save({draft})} disabled={!!result} onSubmit={submit}/>{!result&&q.hints?.length>0&&<><button className="wh-back-btn" disabled={(draft.hints||0)>=q.hints.length} onClick={()=>save({draft:{...draft,hints:(draft.hints||0)+1}})}>Hint ({draft.hints||0}/{q.hints.length})</button>{q.hints.slice(0,draft.hints||0).map((h,i)=><p key={i}>{h}</p>)}</>}{!result?<button className="wh-level-btn wh-submit-btn" disabled={!ready||aiChecking} onClick={submit}>{aiChecking?'Checking with AI…':'Submit'}</button>:<><div role="status" className={`wh-feedback ${statusClass}`}>{s.kind==='story'?'Answer saved. Feedback follows at the end.':result.reported?'Reported; excluded from mastery.':result.aiFailed?'AI check failed. Tap Retry to try again, or Continue without grading this one.':result.dontKnow?"No worries — here's the answer:":result.unverified?'Different from the model. Not graded: a text match cannot check all valid sentences.':result.aiClose?'Almost — close, but not quite right yet.':result.spelling?'Close spelling; this is not a full recall success.':result.correct?'Correct'+(result.assisted?' with help.':'.'):'Try this answer:'}</div>{s.kind!=='story'&&!result.reported&&!result.aiFailed&&<div className="wh-result-details"><SmartImage src={correctImage} className="wh-flashcard-img"/><p>{answerText}</p>{!sameAsExplanation&&<p>{q.explanation}</p>}{result.aiFeedback&&<p className="wh-ai-feedback">{result.aiFeedback}</p>}</div>}{result.aiFailed&&<button className="wh-level-btn wh-result-continue" onClick={retry}>Retry</button>}<button ref={continueRef} className="wh-level-btn wh-result-continue" onClick={next}>Continue</button></>}</div>{reportOpen&&<div className="wh-modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget&&reportReview?.status!=='reviewing')closeReport();}}><div className="wh-panel wh-confirm-panel" role="alertdialog">{!reportReview?<><p><b>Report this question?</b></p><p>Pick what's wrong (optional), or add your own note below. AI will check it right away.</p><div className="wh-options wh-report-reasons">{REPORT_REASONS.map(reason=><button type="button" key={reason} className={`wh-option ${reportReason===reason?'picked':''}`} onClick={()=>setReportReason(current=>current===reason?"":reason)}>{reason}</button>)}</div><textarea className="wh-freeform" style={{width:"100%",minHeight:60,boxSizing:"border-box",marginTop:8}} value={reportDetails} onChange={e=>setReportDetails(e.target.value)} placeholder="What's wrong? Write it in your own words (Arabic is fine)"/><div className="wh-ai-actions"><button onClick={()=>setReportOpen(false)}>Cancel</button><button className="primary" disabled={!reportReason&&!reportDetails.trim()} onClick={submitReport}>Submit report</button></div></>:reportReview.status==='reviewing'?<><p><b>Report saved.</b></p><p className="wh-ai-feedback"><Sparkles size={13}/> AI is checking this question…</p></>:reportReview.status==='failed'?<><p><b>Report saved.</b></p><p>AI couldn't check it right now. It's still in the admin's report list, and this question won't count against you.</p><div className="wh-ai-actions"><button className="primary" onClick={closeReport}>Continue</button></div></>:<><p><b>{reportReview.review.verdict==='flawed'?'AI agrees — this question has a problem.':reportReview.review.verdict==='repeated'?'Got it — this one keeps coming back.':reportReview.review.verdict==='fine'?'AI thinks this question is OK.':"AI isn't sure about this one."}</b></p>{reportReview.review.explanation&&<p className="wh-ai-feedback">{reportReview.review.explanation}</p>}{reportReview.review.learnerAnswerAcceptable===true&&<p>Your answer looks acceptable too.</p>}{reportReview.review.verdict==='flawed'&&<p><small>{reportReview.review.fixed?'A fix is drafted and waiting for admin review.':'Saved for admin review.'} The question won't count against you.</small></p>}{reportReview.review.verdict!=='flawed'&&<p><small>Your report is still saved for the admin, and this question won't count against you. You can withdraw it if you agree with the AI.</small></p>}<div className="wh-ai-actions">{reportReview.review.verdict!=='flawed'&&<button onClick={withdrawReport}>{reportReview.prior?'Withdraw report':'Withdraw & answer it'}</button>}<button className="primary" onClick={closeReport}>{reportReview.review.verdict!=='flawed'?'Keep report':'Continue'}</button></div></>}</div></div>}{youglishTerm&&<PronunciationModal term={youglishTerm} onClose={()=>setYouglishTerm(null)}/>}</section>;
 }
 
 return SessionView;
@@ -1917,14 +1944,16 @@ function buildWhoAmIQuestion(wordObj) {
 // --- Two People / Select Two — combine two context sentences (usually the
 // gap sentences) into one harder question, without needing new authored
 // content. A "companion" word from the same category supplies the second.
-function pickCompanion(wordObj) {
-  const source = normalizeAnswerText(contextSentence(wordObj));
+// `ctx` picks the sentence for a word (default: its first gap sentence);
+// practice passes one that returns only sentences the learner hasn't seen.
+function pickCompanion(wordObj, ctx = contextSentence) {
+  const source = normalizeAnswerText(ctx(wordObj));
   const pool = WORDS.filter((w) =>
     w.word !== wordObj.word &&
     w.category === wordObj.category &&
-    contextSentence(w) &&
-    normalizeAnswerText(contextSentence(w)) !== source &&
-    !situationLeaks(wordObj, contextSentence(w)) &&
+    ctx(w) &&
+    normalizeAnswerText(ctx(w)) !== source &&
+    !situationLeaks(wordObj, ctx(w)) &&
     meaningSimilarity(w.meaning, wordObj.meaning) < 0.55
   );
   return pool.length ? shuffle(pool)[0] : null;
@@ -1945,11 +1974,11 @@ function fillToFour(base, exclude) {
   return options;
 }
 
-function buildTwoPeopleQuestion(wordObj) {
-  const mine = contextSentence(wordObj);
-  const companion = mine ? pickCompanion(wordObj) : null;
+function buildTwoPeopleQuestion(wordObj, ctx = contextSentence) {
+  const mine = ctx(wordObj);
+  const companion = mine ? pickCompanion(wordObj, ctx) : null;
   if (!companion) return null;
-  const theirs = contextSentence(companion);
+  const theirs = ctx(companion);
   const askFirst = Math.random() < 0.5;
   const distractors = sampleDistractors(wordObj, 3).filter((d) => d.word !== companion.word);
   const options = shuffle(fillToFour([wordObj.word, companion.word, ...distractors.map((d) => d.word)], new Set([wordObj.word, companion.word])));
@@ -1957,12 +1986,12 @@ function buildTwoPeopleQuestion(wordObj) {
     ? `Person A: "${mine}"\n\nPerson B: "${theirs}"\n\nWhich word belongs to Person A?`
     : `Person A: "${theirs}"\n\nPerson B: "${mine}"\n\nWhich word belongs to Person B?`;
   const target = { ...wordObj, key: wordObj.word, label: wordObj.word, explanation: wordObj.meaning };
-  return { target, prompt, options, answer: wordObj.word, type: "mcq" };
+  return { target, prompt, options, answer: wordObj.word, type: "mcq", sentences: [mine, theirs] };
 }
 
-function buildSelectTwoQuestion(wordObj) {
-  const mine = contextSentence(wordObj);
-  const companion = mine ? pickCompanion(wordObj) : null;
+function buildSelectTwoQuestion(wordObj, ctx = contextSentence) {
+  const mine = ctx(wordObj);
+  const companion = mine ? pickCompanion(wordObj, ctx) : null;
   if (!companion) return null;
   const distractors = sampleDistractors(wordObj, 3).filter((d) => d.word !== companion.word);
   const options = shuffle(fillToFour([wordObj.word, companion.word, ...distractors.map((d) => d.word)], new Set([wordObj.word, companion.word])));
@@ -1974,7 +2003,8 @@ function buildSelectTwoQuestion(wordObj) {
   };
   return {
     target,
-    prompt: `Two sentences — pick the two words that fit:\n\n1) ${mine}\n\n2) ${contextSentence(companion)}`,
+    prompt: `Two sentences — pick the two words that fit:\n\n1) ${mine}\n\n2) ${ctx(companion)}`,
+    sentences: [mine, ctx(companion)],
     options,
     correctAnswers: [wordObj.word, companion.word],
     type: "multi",
@@ -2209,7 +2239,7 @@ async function generateContent(batch, pools) {
   const instructions = `Use B1-or-easier supporting language; only the target word and taught rule are exempt. You write short exercise content for an English vocabulary game. You will receive a JSON array of requests. For each request, produce ONE new piece of text for the given "poolType":
 
 - poolType "meaning" or "typing": reword the given "meaning" definition in fresh wording. Keep the exact same core meaning — do not invent a different definition. One sentence. Do not use the headword itself.
-- poolType "gap": write ONE new natural English sentence that uses the word/phrase naturally in a fresh context, then replace the word with exactly "______". The answer word (or any part of it) must NOT appear anywhere else in the sentence.
+- poolType "gap": write ONE new natural English sentence that uses the word/phrase naturally in a fresh context, then replace the word with exactly "______". The answer word (or any part of it) must NOT appear anywhere else in the sentence. Give enough context that ONLY this word fits the blank: a learner must not be able to type a different correct word (bad: "He had surgery on his left ______." — knee, elbow, hand all fit; good: "He hurt the joint in the middle of his leg, so he had surgery on his left ______."). Words in "siblings" must not fit either.
 - poolType "situation": write a short 1-2 sentence scenario (use a person's name) that clearly and uniquely implies the word's meaning. The related words listed in "siblings" are close synonyms in the same category — the scenario must clearly point to THIS word and not those. Do not use the headword itself anywhere in the scenario.
 
 For every request, avoid closely repeating anything listed in "existing" — write something meaningfully different.
@@ -2339,7 +2369,7 @@ async function suggestReportFix(report, sourceItem, sourceEntity) {
 Common causes worth checking: the situation/gap/prompt text accidentally contains or reveals the answer word itself; the meaning is ambiguous, wrong, or too close to another word's meaning; a gap sentence has more than one blank or more than one plausible correct word; a grammar rule's options don't clearly have exactly one correct answer; a commonMistake example doesn't match its paired situation.
 If the report's reason doesn't map to an obvious fix, make your best conservative improvement to the field(s) most likely responsible and explain your reasoning in "changes" — never leave "fixed" identical to the input with an empty "changes" list.
 Return ONLY JSON with this exact shape: {"fixed": <the complete corrected ${singular} object, same keys/shape as the input>, "changes": ["short plain-English description of each change made"]}`,
-    { report: { reason: report.reason || null, mode: report.mode, prompt: report.prompt, options: report.options || null, answers: report.answers || null }, entity: sourceEntity, currentContent: sourceItem },
+    { report: { reason: report.reason || null, details: report.details || null, mode: report.mode, prompt: report.prompt, options: report.options || null, answers: report.answers || null }, entity: sourceEntity, currentContent: sourceItem },
     1500
   );
   if (!result || typeof result !== "object" || !result.fixed) throw new Error("AI didn't return a usable fix. Try again or edit manually in Content Manager.");
@@ -2374,25 +2404,28 @@ async function reviewReportedQuestion(report, source) {
   const singular = source ? (source.entity === "words" ? "word" : source.entity.slice(0, -1)) : null;
   const keyField = source?.entity === "words" ? "word" : "id";
   const result = await callClaudeJson(
-    `You are the content-quality reviewer for "Word Hunter", an English vocabulary game. A learner just reported a question. You get the report (their reason, the question mode/type, the exact prompt, the options shown, the correct answer(s), and the learner's own answer if they had already answered) plus, when available, the authored ${singular || "content"} entry that generated the question.
+    `You are the content-quality reviewer for "Word Hunter", an English vocabulary game. A learner just reported a question. You get the report (the reason they picked, "details" = what they wrote in their own words, the question mode/type, the exact prompt, the options shown, the correct answer(s), and the learner's own answer if they had already answered) plus, when available, the authored ${singular || "content"} entry that generated the question.
+"details" is the learner's real complaint and matters most. It may be in Arabic or mixed Arabic/English: read it carefully and answer THAT complaint, not a generic one.
+Judge the question exactly as the learner saw it. The learner does NOT know which vocabulary entry the question came from, so "the question is about word X" is never a reason to reject an answer. For a typing or gap question, if the learner's answer fits the sentence naturally, correctly and with a sensible meaning (for example "elbow" in "He had surgery on his left ______."), the question is "flawed" (more than one correct answer) and learnerAnswerAcceptable is true; the fix adds context so only the target word fits.
 Decide honestly:
 - "flawed": the question really has a problem (answer leaked in the prompt, wrong or missing correct answer, more than one defensible answer, confusing wording, typo, a valid learner answer wrongly rejected).
+- "repeated": the complaint is only that the question or sentence keeps coming back; the content itself is fine.
 - "fine": the question is correct and clear; the learner's complaint does not hold.
 - "unsure": you cannot tell with confidence.
-If the learner gave an answer, set "learnerAnswerAcceptable" to true only if it is a genuinely correct answer to this exact question; otherwise false. Use null if they gave no answer.
-"explanation" is shown to the learner: 1-2 short sentences, English only, B1-or-easier, friendly. For "fine", explain why the expected answer is right (and why theirs isn't, if they answered). For "flawed", say briefly what is wrong.
+If the learner gave an answer, set "learnerAnswerAcceptable" to true only if it is a genuinely correct answer to the question as shown; otherwise false. Use null if they gave no answer.
+"explanation" is shown to the learner: 1-2 short sentences, English only, B1-or-easier, friendly, and it must respond to what they wrote. For "fine", explain why the expected answer is right (and why theirs isn't, if they answered). For "flawed", say briefly what is wrong. For "repeated", thank them and say this question will rest for a while.
 "adminNote" is one short sentence for the content author.
 Only when the verdict is "flawed" AND an authored entry is given, return "fixed": the complete corrected entry with the same keys/shape, changing ONLY the field(s) needed to fix the problem, and list each change in "changes". The "${keyField}" field is a stable progress key and must NEVER change. Otherwise set "fixed" to null and "changes" to [].
-Return ONLY JSON with this exact shape: {"verdict":"flawed|fine|unsure","confidence":"high|medium|low","learnerAnswerAcceptable":true,"explanation":"...","adminNote":"...","fixed":null,"changes":[]}`,
+Return ONLY JSON with this exact shape: {"verdict":"flawed|repeated|fine|unsure","confidence":"high|medium|low","learnerAnswerAcceptable":true,"explanation":"...","adminNote":"...","fixed":null,"changes":[]}`,
     {
-      report: { reason: report.reason || null, mode: report.mode, type: report.type || null, prompt: report.prompt, options: report.options || null, answers: report.answers || null, learnerAnswer: report.learnerAnswer ?? null },
+      report: { reason: report.reason || null, details: report.details || null, mode: report.mode, type: report.type || null, prompt: report.prompt, options: report.options || null, answers: report.answers || null, learnerAnswer: report.learnerAnswer ?? null },
       entity: source?.entity || null,
       currentContent: source?.item || null,
     },
     1800
   );
   if (!result || typeof result !== "object") throw new Error("AI didn't return a usable review.");
-  const verdict = ["flawed", "fine", "unsure"].includes(result.verdict) ? result.verdict : "unsure";
+  const verdict = ["flawed", "repeated", "fine", "unsure"].includes(result.verdict) ? result.verdict : "unsure";
   let fixed = verdict === "flawed" && source && result.fixed && typeof result.fixed === "object" && !Array.isArray(result.fixed) ? result.fixed : null;
   // The progress key is never allowed to drift, whatever the model returned.
   if (fixed) fixed = { ...fixed, [keyField]: source.item[keyField] };
@@ -3539,13 +3572,12 @@ function AdminControlCenter({content,mastery,confusions,reports,activeSession,se
       {tab==="content"&&<><div className="wh-admin-toolbar"><div className="wh-admin-entities">{Object.entries(entities).map(([id,item])=><button key={id} className={entity===id?"active":""} onClick={()=>{setEntity(id);setEditor(null);setCategoryFilter("");setCategoryBrowse("");setStubOnly(false);}}>{item.label} <span>{content[id]?.length||0}</span></button>)}</div>{categories.length>0&&<select value={categoryFilter} onChange={e=>setCategoryFilter(e.target.value)}><option value="">All categories</option>{categories.map(cat=><option key={cat} value={cat}>{cat}</option>)}</select>}<select value={categoryBrowse} onChange={e=>{setCategoryBrowse(e.target.value);setEditor(null);}} title="Show every word, grammar item, combo, challenge and story for one category, across all types"><option value="">Browse a category (all types)…</option>{allCategories.map(cat=><option key={cat} value={cat}>{cat}</option>)}</select><button className="wh-import-btn primary" disabled={categoryMergeBusy} onClick={handleSuggestCategoryMerges}><Sparkles size={13}/> {categoryMergeBusy?"Analyzing…":"Suggest category cleanup"}</button>{entity!=="levels"&&categoryFilter&&filtered.length>0&&<button onClick={()=>{setMoveTarget({entity,ids:filtered.map(({item})=>item[config.key])});setMoveInput("");}}>Move all {filtered.length} in "{categoryFilter}" to…</button>}{entity==="words"&&stubCount>0&&<label className="wh-admin-stub-toggle"><input type="checkbox" checked={stubOnly} onChange={e=>setStubOnly(e.target.checked)}/> Needs content only ({stubCount})</label>}{entity==="words"&&stubCount>0&&<button className="wh-import-btn primary" disabled={bulkFixBusy} onClick={handleBulkFixStubs}><Sparkles size={13}/> {bulkFixBusy?`Fixing ${bulkFixProgress?.done||0}/${bulkFixProgress?.total||stubCount}…`:`Fill ${stubCount} with AI`}</button>}<input value={query} onChange={e=>setQuery(e.target.value)} placeholder={`Search ${config.label.toLowerCase()}…`}/><button className="primary" onClick={()=>startEdit(null,null)}>+ Add</button></div>{bulkFixReport&&<div className="wh-import-hint"><b>AI content fill: {bulkFixReport.succeeded.length} filled, {bulkFixReport.failed.length} failed.</b>{bulkFixReport.failed.length>0&&<ul>{bulkFixReport.failed.map((f,i)=><li key={i}>{f.word}: {f.message}</li>)}</ul>}<div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={()=>setBulkFixReport(null)}>Dismiss</button></div></div>}{categoryMergeError&&<div className="wh-import-error">{categoryMergeError}</div>}{categoryMergeSuggestions&&<div className="wh-import-hint"><b>Suggested category merges:</b>{!categoryMergeSuggestions.length?<p>No confident duplicates found.</p>:categoryMergeSuggestions.map((m,i)=><div className="wh-admin-browse-row" key={i}><span><b>{m.canonical}</b><small>absorbs: {m.duplicates.join(", ")}</small></span><span>{appliedMerges.includes(m.canonical)?<i>Merged</i>:<button className="wh-import-btn primary" onClick={()=>applyCategoryMerge(m)}>Merge</button>}</span></div>)}<div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={()=>{setCategoryMergeSuggestions(null);setAppliedMerges([]);}}>Dismiss</button></div></div>}{editor?<div className="wh-admin-editor"><div className="wh-admin-editor-head"><h3>{editor.index===null?`Add ${config.label}`:`Edit ${editor.original?.[config.key]}`}</h3><button onClick={()=>setEditor(null)}>Cancel</button></div><p>Edit every supported field as structured JSON. IDs and word labels are stable progress keys.</p><textarea value={draft} onChange={e=>setDraft(e.target.value)} spellCheck={false}/>{error&&<div className="wh-import-error">{error}</div>}<div className="wh-ai-actions"><button className="primary" onClick={saveEdit}>Validate &amp; Save</button>{entity==="words"&&<button disabled={editorBusy} onClick={fillWordWithAi}>{editorBusy?"Generating…":"Fill fields with AI"}</button>}<button onClick={()=>{try{setDraft(JSON.stringify(JSON.parse(draft),null,2));setError(null);}catch{setError("Invalid JSON.");}}}>Format JSON</button></div></div>:categoryBrowse?<div className="wh-admin-category-browse"><div className="wh-admin-category-browse-head"><h3>Everything in "{categoryBrowse}"</h3><button onClick={()=>setCategoryBrowse("")}>✕ Clear</button></div>{!categoryGroups.length?<p>Nothing tagged with this category yet.</p>:categoryGroups.map(group=><div className="wh-admin-card" key={group.id}><h4>{group.label} <span>{group.items.length}</span><button onClick={()=>{setMoveTarget({entity:group.id,ids:group.items.map(({item})=>item[entities[group.id].key])});setMoveInput("");}}>Move all {group.items.length} to…</button></h4>{group.items.map(({item,index})=><div className="wh-admin-browse-row" key={item[entities[group.id].key]||index}><span><b>{item[entities[group.id].key]}</b><small>{item.meaning||item.title||item.rule||item.prompt||""}</small></span><span><button onClick={()=>{setEntity(group.id);setCategoryFilter("");startEdit(item,index);}}>Edit</button><button onClick={()=>{setMoveTarget({entity:group.id,ids:[item[entities[group.id].key]]});setMoveInput("");}}>Move</button></span></div>)}</div>)}</div>:<div className="wh-admin-table"><div className="wh-admin-row head"><span>Item</span><span>Category / Type</span><span>Status</span><span>Actions</span></div>{filtered.map(({item,index})=>{const rec=entity==="words"?mastery[item.word]:null;const modesCount=rec?Object.values(rec.modes||{}).filter(m=>m.correct>0).length:0;return <div className="wh-admin-row" key={item[config.key]||index}><span><b>{item[config.key]}</b><small>{item.meaning||item.title||item.rule||item.prompt||""}</small></span><span>{entity==="levels"?`${content.words.filter(word=>V2.topic(word.category)===V2.topic(item.title)).length} words`:item.category||item.type||"—"}</span><span>{item._autoStub?<span className="wh-stub-badge" title="Auto-created from a missing reference during import — needs real content">⚠ Needs content</span>:entity==="words"?<span className="wh-status-stack"><b>{V2.stage(rec)}</b><small>{rec?.correct||0}/{rec?.total||0} · {modesCount} mode{modesCount===1?"":"s"}{item._aiAdded?" · AI-added":""}</small></span>:"Ready"}</span><span><button onClick={()=>startEdit(item,index)}>Edit</button>{entity!=="levels"&&<button onClick={()=>{setMoveTarget({entity,ids:[item[config.key]]});setMoveInput("");}}>Move</button>}<button className="danger" onClick={()=>remove(index)}>Delete</button></span></div>;})}</div>}</>}
       {tab==="grammar"&&<GrammarPanel content={content} mastery={mastery} onUpdate={onUpdate}/>}
       {tab==="health"&&<ContentHealthPanel content={content} onUpdate={onUpdate} onMergeCategories={onMergeCategories} onRemoveEmptyLevels={onRemoveEmptyLevels}/>}
-      {tab==="reports"&&<div className="wh-admin-card"><h3>Reported questions</h3><p>An open report keeps that exact word + question type out of future sessions automatically. Resolving or retiring it lifts that block. AI checks each report when it's filed and drafts a fix when the question is really flawed.</p>{(()=>{const unreviewed=reports.filter(r=>!r.resolvedAt&&!r.aiReview).length;const busy=reviewAllProgress&&reviewAllProgress.done<reviewAllProgress.total;return (unreviewed>0||reviewAllProgress)&&<div className="wh-import-actions">{unreviewed>0&&<button className="wh-import-btn primary" disabled={busy} onClick={reviewAllOpenReports}><Sparkles size={13}/> {busy?`AI reviewing… ${reviewAllProgress.done}/${reviewAllProgress.total}`:`AI review open reports (${unreviewed})`}</button>}{reviewAllProgress&&!busy&&<small>Reviewed {reviewAllProgress.total-reviewAllProgress.failed}/{reviewAllProgress.total}{reviewAllProgress.failed?` · ${reviewAllProgress.failed} failed — try again`:""}</small>}</div>;})()}{!reports.length?<p>No questions have been reported.</p>:reports.slice().reverse().map((report,index)=>{const key=`${report.sessionId}-${report.questionId}-${index}`;const isOpen=expandedReportKey===key;return <article className="wh-admin-report" key={key}><div><button className="wh-admin-log-row" onClick={()=>{const next=isOpen?null:key;setExpandedReportKey(next);setReportFix(null);setReportFixError(null);}}>{isOpen?<ChevronDown size={14}/>:<ChevronRight size={14}/>}<b>{report.prompt||report.questionId}</b></button><small>{report.mode||"question"} · {(report.targetWords||[]).join(", ")||"no target"} · {new Date(report.at).toLocaleString()}</small>{report.reason&&<small><i>Reason: {report.reason}</i></small>}{report.aiReview&&<small className={`wh-report-ai ${report.aiReview.verdict}`}><Sparkles size={11}/> AI: {report.aiReview.verdict==='flawed'?'real problem':report.aiReview.verdict==='fine'?'question looks OK':'unsure'} ({report.aiReview.confidence}){report.aiReview.fixed?' · fix drafted':''}</small>}{isOpen&&<div className="wh-admin-log-detail"><p><b>Question ID:</b> {report.questionId}</p><p><b>Session:</b> {report.sessionId}</p>{report.options?.length>0&&<p><b>Options shown:</b> {report.options.join(" / ")}</p>}{report.answers?.length>0&&<p><b>Correct answer(s):</b> {report.answers.join(", ")}</p>}{report.poolType&&<p><b>Pool:</b> {report.poolType} / {report.poolItemId}</p>}{report.learnerAnswer!=null&&<p><b>Learner answered:</b> {Array.isArray(report.learnerAnswer)?report.learnerAnswer.join(" + "):String(report.learnerAnswer)}{report.aiReview?.learnerAnswerAcceptable!=null&&` (AI: ${report.aiReview.learnerAnswerAcceptable?'acceptable':'not acceptable'})`}</p>}{report.aiReview&&<div className="wh-import-hint"><b><Sparkles size={12}/> AI review: {report.aiReview.verdict}</b>{report.aiReview.adminNote&&<p>{report.aiReview.adminNote}</p>}{report.aiReview.explanation&&<p><small>Told the learner: {report.aiReview.explanation}</small></p>}</div>}<p>{report.resolvedAt?`Resolved ${new Date(report.resolvedAt).toLocaleString()} — no longer blocked.`:"Currently blocked from future sessions for this word + question type."}</p>{!report.resolvedAt&&<><div className="wh-import-actions">{report.aiReview?.fixed&&<button className="wh-import-btn primary" onClick={()=>openStoredReportFix(report,key)}><Sparkles size={13}/> Review drafted fix</button>}<button className={`wh-import-btn ${report.aiReview?.fixed?"secondary":"primary"}`} disabled={reportFixBusy} onClick={()=>handleSuggestReportFix(report,key)}><Sparkles size={13}/> {reportFixBusy?"Asking AI…":report.aiReview?.fixed?"Ask AI for a new fix":"Suggest fix with AI"}</button></div>{reportFixError&&<div className="wh-import-error">{reportFixError}</div>}{reportFix&&reportFix.key===key&&<div className="wh-import-hint"><b>AI suggests these changes to the {entities[reportFix.entity].label.slice(0,-1).toLowerCase()}:</b><ul>{reportFix.changes.map((c,i)=><li key={i}>{c}</li>)}</ul><textarea className="wh-import-textarea" value={JSON.stringify(reportFix.after,null,2)} readOnly rows={6}/><div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={()=>setReportFix(null)}>Discard</button><button className="wh-import-btn primary" onClick={()=>applyReportFix(report)}>Apply fix &amp; resolve</button></div></div>}</>}</div>}</div><span className={report.resolvedAt?"resolved":"open"}>{report.resolvedAt?"Resolved":"Open"}</span><div>{!report.resolvedAt&&report.poolItemId&&<button onClick={()=>onRetireVariant(report)}>Retire variant</button>}{!report.resolvedAt&&<button onClick={()=>onResolveReport(report)}>Resolve</button>}<button onClick={()=>setConfirmDeleteReport(report)}>Delete</button></div></article>;})}</div>}
+      {tab==="reports"&&<div className="wh-admin-card"><h3>Reported questions</h3><p>An open report keeps that exact word + question type out of future sessions automatically. Resolving or retiring it lifts that block. AI checks each report when it's filed and drafts a fix when the question is really flawed.</p>{(()=>{const unreviewed=reports.filter(r=>!r.resolvedAt&&!r.aiReview).length;const busy=reviewAllProgress&&reviewAllProgress.done<reviewAllProgress.total;return (unreviewed>0||reviewAllProgress)&&<div className="wh-import-actions">{unreviewed>0&&<button className="wh-import-btn primary" disabled={busy} onClick={reviewAllOpenReports}><Sparkles size={13}/> {busy?`AI reviewing… ${reviewAllProgress.done}/${reviewAllProgress.total}`:`AI review open reports (${unreviewed})`}</button>}{reviewAllProgress&&!busy&&<small>Reviewed {reviewAllProgress.total-reviewAllProgress.failed}/{reviewAllProgress.total}{reviewAllProgress.failed?` · ${reviewAllProgress.failed} failed — try again`:""}</small>}</div>;})()}{!reports.length?<p>No questions have been reported.</p>:reports.slice().reverse().map((report,index)=>{const key=`${report.sessionId}-${report.questionId}-${index}`;const isOpen=expandedReportKey===key;return <article className="wh-admin-report" key={key}><div><button className="wh-admin-log-row" onClick={()=>{const next=isOpen?null:key;setExpandedReportKey(next);setReportFix(null);setReportFixError(null);}}>{isOpen?<ChevronDown size={14}/>:<ChevronRight size={14}/>}<b>{report.prompt||report.questionId}</b></button><small>{report.mode||"question"} · {(report.targetWords||[]).join(", ")||"no target"} · {new Date(report.at).toLocaleString()}</small>{report.reason&&<small><i>Reason: {report.reason}</i></small>}{report.details&&<small><i>Learner wrote: {report.details}</i></small>}{report.learnerAnswer!=null&&report.learnerAnswer!==''&&<small><i>Their answer: {Array.isArray(report.learnerAnswer)?report.learnerAnswer.join(' + '):String(report.learnerAnswer)}</i></small>}{report.aiReview&&<small className={`wh-report-ai ${report.aiReview.verdict}`}><Sparkles size={11}/> AI: {report.aiReview.verdict==='flawed'?'real problem':report.aiReview.verdict==='repeated'?'repetition complaint':report.aiReview.verdict==='fine'?'question looks OK':'unsure'} ({report.aiReview.confidence}){report.aiReview.fixed?' · fix drafted':''}</small>}{isOpen&&<div className="wh-admin-log-detail"><p><b>Question ID:</b> {report.questionId}</p><p><b>Session:</b> {report.sessionId}</p>{report.options?.length>0&&<p><b>Options shown:</b> {report.options.join(" / ")}</p>}{report.answers?.length>0&&<p><b>Correct answer(s):</b> {report.answers.join(", ")}</p>}{report.poolType&&<p><b>Pool:</b> {report.poolType} / {report.poolItemId}</p>}{report.learnerAnswer!=null&&<p><b>Learner answered:</b> {Array.isArray(report.learnerAnswer)?report.learnerAnswer.join(" + "):String(report.learnerAnswer)}{report.aiReview?.learnerAnswerAcceptable!=null&&` (AI: ${report.aiReview.learnerAnswerAcceptable?'acceptable':'not acceptable'})`}</p>}{report.aiReview&&<div className="wh-import-hint"><b><Sparkles size={12}/> AI review: {report.aiReview.verdict}</b>{report.aiReview.adminNote&&<p>{report.aiReview.adminNote}</p>}{report.aiReview.explanation&&<p><small>Told the learner: {report.aiReview.explanation}</small></p>}</div>}<p>{report.resolvedAt?`Resolved ${new Date(report.resolvedAt).toLocaleString()} — no longer blocked.`:"Currently blocked from future sessions for this word + question type."}</p>{!report.resolvedAt&&<><div className="wh-import-actions">{report.aiReview?.fixed&&<button className="wh-import-btn primary" onClick={()=>openStoredReportFix(report,key)}><Sparkles size={13}/> Review drafted fix</button>}<button className={`wh-import-btn ${report.aiReview?.fixed?"secondary":"primary"}`} disabled={reportFixBusy} onClick={()=>handleSuggestReportFix(report,key)}><Sparkles size={13}/> {reportFixBusy?"Asking AI…":report.aiReview?.fixed?"Ask AI for a new fix":"Suggest fix with AI"}</button></div>{reportFixError&&<div className="wh-import-error">{reportFixError}</div>}{reportFix&&reportFix.key===key&&<div className="wh-import-hint"><b>AI suggests these changes to the {entities[reportFix.entity].label.slice(0,-1).toLowerCase()}:</b><ul>{reportFix.changes.map((c,i)=><li key={i}>{c}</li>)}</ul><textarea className="wh-import-textarea" value={JSON.stringify(reportFix.after,null,2)} readOnly rows={6}/><div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={()=>setReportFix(null)}>Discard</button><button className="wh-import-btn primary" onClick={()=>applyReportFix(report)}>Apply fix &amp; resolve</button></div></div>}</>}</div>}</div><span className={report.resolvedAt?"resolved":"open"}>{report.resolvedAt?"Resolved":"Open"}</span><div>{!report.resolvedAt&&report.poolItemId&&<button onClick={()=>onRetireVariant(report)}>Retire variant</button>}{!report.resolvedAt&&<button onClick={()=>onResolveReport(report)}>Resolve</button>}<button onClick={()=>setConfirmDeleteReport(report)}>Delete</button></div></article>;})}</div>}
       {confirmDeleteReport&&<div className="wh-modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)setConfirmDeleteReport(null);}}><div className="wh-panel wh-confirm-panel" role="alertdialog"><p><b>Delete this report?</b></p><p>This only removes the report record. If it's still open, this also lifts the block on that word + question type — it can be selected again.</p><div className="wh-ai-actions"><button onClick={()=>setConfirmDeleteReport(null)}>Cancel</button><button className="primary" onClick={()=>{onDeleteReport(confirmDeleteReport);setConfirmDeleteReport(null);}}>Yes, delete</button></div></div></div>}
       {moveTarget&&<div className="wh-modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget){setMoveTarget(null);setMoveInput("");}}}><div className="wh-panel wh-confirm-panel" role="alertdialog"><p><b>Move {moveTarget.ids.length>1?`${moveTarget.ids.length} ${entities[moveTarget.entity].label.toLowerCase()}`:`"${moveTarget.ids[0]}"`} to another category</b></p><p>{moveTarget.ids.length>1?"Every item listed keeps its content — only the category changes.":"Only the category changes; nothing else about this item is touched."}</p><input list="wh-category-options" value={moveInput} onChange={e=>setMoveInput(e.target.value)} placeholder="Pick an existing category or type a new one" style={{width:"100%",boxSizing:"border-box",padding:"9px 10px",font:"12px 'IBM Plex Mono',monospace"}}/><datalist id="wh-category-options">{allCategories.map(cat=><option key={cat} value={cat}/>)}</datalist><div className="wh-ai-actions"><button onClick={()=>{setMoveTarget(null);setMoveInput("");}}>Cancel</button><button className="primary" disabled={!moveInput.trim()} onClick={commitMove}>Move</button></div></div></div>}
       {tab==="settings"&&<div className="wh-admin-card"><h3>Round &amp; question settings</h3><p>Changes apply the next time you start a session.</p>
         <label className="wh-settings-row"><span>Questions per round (Level Practice)</span><input type="number" min="4" max="30" value={settings.questionsPerRound} onChange={e=>onUpdateSettings({...settings,questionsPerRound:Math.max(4,Math.min(30,Number(e.target.value)||12))})}/></label>
         <label className="wh-settings-row"><span>New words introduced per round</span><input type="number" min="0" max="10" value={settings.newWordsPerRound} onChange={e=>onUpdateSettings({...settings,newWordsPerRound:Math.max(0,Math.min(10,Number(e.target.value)||0))})}/></label>
-        <label className="wh-settings-row"><span>Words per Weak Review session</span><input type="number" min="3" max="20" value={settings.weakReviewSize} onChange={e=>onUpdateSettings({...settings,weakReviewSize:Math.max(3,Math.min(20,Number(e.target.value)||8))})}/></label>
         <label className="wh-settings-row wh-settings-toggle"><input type="checkbox" checked={settings.enablePairModes} onChange={e=>onUpdateSettings({...settings,enablePairModes:e.target.checked})}/><span>Enable "pick two" pair questions (twopeople / selecttwo) in Practice and Weak Review</span></label>
         <label className="wh-settings-row"><span>Daily goal (questions per day)</span><input type="number" min="5" max="100" value={settings.dailyGoal} onChange={e=>onUpdateSettings({...settings,dailyGoal:Math.max(5,Math.min(100,Number(e.target.value)||20))})}/></label>
         <label className="wh-settings-row wh-settings-toggle"><input type="checkbox" checked={settings.sound} onChange={e=>onUpdateSettings({...settings,sound:e.target.checked})}/><span>Sound effects for correct and wrong answers</span></label>
@@ -3673,9 +3705,19 @@ export default function WordHunter() {
     if (!modes.length) return null;
     const mode = modes[Math.floor(rng() * modes.length)];
     try {
+      // Two People / Select Two only use sentences never shown before: any
+      // gap sentence of the word (authored or AI-written) not yet seen.
+      let raw;
+      if (mode === "twopeople" || mode === "selecttwo") {
+        const seen = progressExtrasRef.current.seenSentences || {};
+        const fresh = (w) => V2.poolItems(w, "gap", poolsRef.current?.[w.word]?.gap).map((it) => it.text).find((t) => t && /_{2,}/.test(t) && !situationLeaks(w, t) && !V2.seenRecently(seen, t, Infinity)) || null;
+        const pair = mode === "twopeople" ? buildTwoPeopleQuestion(wordObj, fresh) : buildSelectTwoQuestion(wordObj, fresh);
+        if (!pair) return null;
+        raw = { ...pair, modeId: mode, difficulty: 2 };
+      } else raw = buildQuestion(mode, wordObj, poolsRef.current, { difficulty: 2 });
       // Multi-step authored challenges don't fit a single practice slot.
-      const built = legacyQuestionToV2(buildQuestion(mode, wordObj, poolsRef.current, { difficulty: 2 }), { kind: "word", wordObj }, mode);
-      const q = built.length === 1 ? built[0] : null;
+      const built = legacyQuestionToV2(raw, { kind: "word", wordObj }, mode);
+      const q = built.length === 1 ? { ...built[0], ...(raw.sentences ? { sentences: raw.sentences } : {}) } : null;
       if (!q || q.noMastery || !q.targets?.length) return null;
       // Last line of defence: never show a prompt that spells out an answer.
       if ((q.answers || []).some((a) => String(a).length > 2 && normalizeAnswerText(q.prompt).includes(normalizeAnswerText(a)))) return null;
@@ -3691,7 +3733,18 @@ export default function WordHunter() {
   // a word's stage. Global telemetry is still recorded once, at answer time,
   // just like the legacy engine. This also makes partially completed/resumed
   // sessions contribute to score, streaks, attempts and confusion learning.
+  // Remember every sentence the learner has read (answered or reported) so
+  // practice keeps it away for a while. The newest 4000 are kept.
+  function markSentencesSeen(q) {
+    const read = V2.questionSentences(q);
+    if (!read.length) return;
+    const now = Date.now(), seen = { ...(progressExtrasRef.current.seenSentences || {}) };
+    read.forEach((key) => { seen[key] = now; });
+    const entries = Object.entries(seen);
+    progressExtrasRef.current = { ...progressExtrasRef.current, seenSentences: entries.length > 4000 ? Object.fromEntries(entries.sort((a, b) => b[1] - a[1]).slice(0, 4000)) : seen };
+  }
   function recordSessionResult(q, result, session) {
+    if (q && result) markSentencesSeen(q);
     if (!q || !result || result.reported || result.unverified || result.aiFailed || q.noTelemetry) return;
     const answerKey = `${session?.id || 'session'}:${session?.index ?? -1}`;
     if (recordedSessionAnswersRef.current.has(answerKey)) return;
@@ -3793,8 +3846,9 @@ export default function WordHunter() {
       setScreen("finalReport");
     }
   }
-  function reportSessionQuestion(q, session, reason, learnerAnswer) {
-    const report={id:`rep-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,questionId:q.id,sessionId:session.id,prompt:q.prompt,targetWords:q.targets||[],mode:q.mode,type:q.type||null,options:q.options||null,answers:q.answers||null,poolType:q.poolType||null,poolItemId:q.poolItemId||null,reason:reason||null,learnerAnswer:learnerAnswer??null,at:Date.now()};
+  function reportSessionQuestion(q, session, reason, learnerAnswer, details) {
+    markSentencesSeen(q);
+    const report={id:`rep-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,questionId:q.id,sessionId:session.id,prompt:q.prompt,targetWords:q.targets||[],mode:q.mode,type:q.type||null,options:q.options||null,answers:q.answers||null,poolType:q.poolType||null,poolItemId:q.poolItemId||null,reason:reason||null,details:details||null,learnerAnswer:learnerAnswer??null,at:Date.now()};
     const merged=[...(progressExtrasRef.current.reports||[]),report];
     // Unbounded growth here was pushing the saved payload toward the
     // storage size limit over months of testing. Keep every unresolved
@@ -4322,7 +4376,12 @@ export default function WordHunter() {
     const lastAccuracy = lastRound ? lastRound.correct / lastRound.total : null;
     const baseNew = settings.newWordsPerRound;
     const newWordsPerRound = baseNew === 0 || lastAccuracy === null ? baseNew : lastAccuracy >= 0.9 ? Math.min(10, baseNew + 2) : lastAccuracy < 0.6 ? Math.max(1, baseNew - 2) : baseNew;
-    const session = V2.practice(liveContent(), masteryRef.current, level.title, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound, pools: poolsRef.current, extraQuestion: buildPracticeExtra, confusions: confusionsRef.current });
+    const session = V2.practice(liveContent(), masteryRef.current, level.title, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound, pools: poolsRef.current, extraQuestion: buildPracticeExtra, confusions: confusionsRef.current, seen: progressExtrasRef.current.seenSentences || {} });
+    // Words whose gap sentences have all been read get new ones written now,
+    // so the next rounds have fresh sentences instead of shrinking.
+    const seenNow = progressExtrasRef.current.seenSentences || {};
+    const exhausted = WORDS.filter((w) => w.category === level.title && V2.known(masteryRef.current[w.word]) && /_{2,}/.test(w.gap || "") && V2.poolItems(w, "gap", poolsRef.current?.[w.word]?.gap).every((it) => V2.seenRecently(seenNow, it.text))).slice(0, 8);
+    if (exhausted.length) triggerGeneration(exhausted.map((w) => ({ word: w.word, poolType: "gap" })), poolsRef.current);
     if (newWordsPerRound > baseNew && session.introductions.length > baseNew) setToast({ text: `Strong last round here — ${session.introductions.length} new words this time.` });
     launchSession(session);
   }
@@ -6043,25 +6102,6 @@ export default function WordHunter() {
         </>}
         {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={reportSessionQuestion} onReviewReport={reviewQuestionReport} onWithdrawReport={deleteQuestionReport} onUpdateWord={updateWordFields} sound={settings.sound} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onResult={recordSessionResult} onAskWord={openAskAi}/>}
 
-        {screen === "levels" && (
-          <>
-            <div className="wh-insight-card">
-              <Search size={18} />
-              <div>
-                <div className="wh-insight-title">Investigation Notes</div>
-                <div className="wh-insight-lines">
-                  {learningInsights.weakestMode && <span>{MODE_META[learningInsights.weakestMode.id]?.label || learningInsights.weakestMode.id} is currently your weakest mode ({formatAccuracy(learningInsights.weakestMode.accuracy)}%).</span>}
-                  {learningInsights.topConfusion && <span>You often confuse {learningInsights.topConfusion.pair[0]} and {learningInsights.topConfusion.pair[1]}.</span>}
-                  <span>{learningInsights.closeToMastery} Learned close to Mastery.</span>
-                  <span>Archive: {stageSummary.New} New · {stageSummary.Familiar} Familiar · {stageSummary.Learned} Learned · {stageSummary.Mastered} Mastered</span>
-                </div>
-              </div>
-            </div>
-            <div className="wh-adaptive-actions">
-              {weakCandidates.length > 0 && <button className="primary" onClick={startWeakReview}>Hunt Weak Evidence ({weakCandidates.length})</button>}
-            </div>
-          </>
-        )}
 
         {screen === "levels" && (section === "challenges" || section === "practice") && (
           <div className={`wh-speed-card ${masteredWords.length < MIN_LEARNED_FOR_SPEED ? "locked" : ""}`}>
@@ -6403,10 +6443,9 @@ export default function WordHunter() {
             <div className="wh-results-stamp">CASE CLOSED</div>
             <div style={{ fontFamily: "'Special Elite', monospace", fontSize: 20 }}>{currentLevel.title}</div>
             <div className="wh-results-score"><b>{formatAccuracy(lastRoundSummary.accuracy)}%</b> accuracy — {lastRoundSummary.correct}/{lastRoundSummary.total} correct · {formatStars(lastRoundSummary.earnedStars)}</div>
-            <div className="wh-results-learning"><span>{lastRoundSummary.improved} improved</span><span>{lastRoundSummary.masteredGained} mastered</span><span>{lastRoundSummary.weakCount} weak evidence</span></div>
+            <div className="wh-results-learning"><span>{lastRoundSummary.improved} improved</span><span>{lastRoundSummary.masteredGained} mastered</span></div>
             {learningInsights.topConfusion && <div className="wh-results-note">Investigation note: watch the difference between {learningInsights.topConfusion.pair[0]} and {learningInsights.topConfusion.pair[1]}.</div>}
             <div className="wh-results-actions">
-              {weakCandidates.length > 0 && <button className="primary" onClick={startWeakReview}>Hunt Weak Evidence</button>}
               <button className="secondary" onClick={retryLevel}>Retry case</button>
               {lastRoundSummary.passed && currentLevel.items.some((item) => item.kind === "word") && <button className="secondary" onClick={() => startFinalCase(currentLevelIndex)}>Final Case</button>}
               {lastRoundSummary.passed && hasNextLevel && <button className="primary" onClick={() => startLevel(nextLevelIndex)}>Next Case →</button>}
