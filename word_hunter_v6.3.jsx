@@ -2475,7 +2475,12 @@ const HEALTH_CHECKS = {
   duplicate: { label: "Same meaning as another word", help: "Two words share the exact same definition, so a question has two right answers. AI rewrites each so they can be told apart.", field: "meaning", test: null },
   commonMistake: { label: "Missing common mistake", help: "Grammar Court questions need a typical learner mistake, its correction and a short why.", field: "commonMistake", test: (w) => !(w.commonMistake?.sentence && w.commonMistake?.correction && w.commonMistake?.why) },
   partsOfSpeech: { label: "Missing part of speech", help: "Helps the game and the learning cards describe the word.", field: "partsOfSpeech", test: (w) => !(Array.isArray(w.partsOfSpeech) && w.partsOfSpeech.length) },
+  gaps: { label: "Gap sentences not checked yet", help: "AI checks whether another word could also fill each gap (like \"elbow\" in \"He had surgery on his left ______.\") and rewrites only those. Words with clear gaps are marked as checked; a changed gap is checked again.", field: "gaps", test: (w) => gapsOf(w).length > 0 && w.gapsCheckedFor !== gapsKey(gapsOf(w)) },
 };
+// A word's gap sentences (v3 list, or the single older gap) and a key that
+// changes whenever any of them changes.
+function gapsOf(w) { return Array.isArray(w?.gaps) && w.gaps.length ? w.gaps : w?.gap ? [w.gap] : []; }
+function gapsKey(list) { return list.map((g) => V2.sentence(g)).join(" | "); }
 function scanContentHealth(words) {
   const out = {};
   for (const [id, check] of Object.entries(HEALTH_CHECKS)) if (check.test) out[id] = words.filter((w) => check.test(w));
@@ -2489,11 +2494,12 @@ const HEALTH_INSTRUCTIONS = {
   meaning: `For each word, write a NEW "meaning": ONE clear sentence, B1 English, precise enough that a learner could type the exact word from it. Never use the word/phrase itself or "opposite of". Keep the same sense as the current meaning and situation. If "sameMeaningAs" is given, make the definitions clearly different from those words. Return {"results":[{"word":"...","value":"the new meaning"}]}.`,
   commonMistake: `For each word, write a typical B1 learner mistake when using it: "sentence" (the wrong sentence), "correction" (the same sentence fixed), "why" (one short simple reason). The mistake must be about using THIS word (form, preposition, collocation or meaning). Return {"results":[{"word":"...","value":{"sentence":"...","correction":"...","why":"..."}}]}.`,
   partsOfSpeech: `For each word, list its part(s) of speech for the meaning given, using ONLY these values: ${PARTS_OF_SPEECH.join(", ")}. Return {"results":[{"word":"...","value":["noun"]}]}.`,
+  gaps: `Each word has "gaps": sentences with the word replaced by "______". Learners TYPE the missing word, so check each gap: could a learner fill it with a different common word, or with one of the "siblings", and still make a correct, natural sentence? (Bad: "He had surgery on his left ______." — knee, elbow, hand all fit. Bad: "The ______ on the corner is open 24 hours." — pharmacy, shop, market all fit.) A true synonym of the word is not a problem. Keep every clear gap exactly as it is. Rewrite only the ambiguous ones: same word and meaning, one natural B1 sentence of at most 25 words, exactly one "______", and enough context that only this word fits. The word (or any part of it) must not appear in the sentence. Return {"results":[{"word":"...","value":["every gap, kept or rewritten, in the same order"],"why":"one short reason for the rewrites, or \"clear\""}]}.`,
 };
 async function aiFixWordBatch(kind, words, allWords) {
   const instructionKind = kind === "duplicate" ? "meaning" : kind;
   const payload = words.map((w) => ({
-    word: w.word, type: w.type, category: w.category, meaning: w.meaning, situation: w.situation, gap: w.gap,
+    word: w.word, type: w.type, category: w.category, meaning: w.meaning, situation: w.situation, ...(kind === "gaps" ? { gaps: gapsOf(w) } : { gap: w.gap }),
     siblings: allWords.filter((x) => x.category === w.category && x.word !== w.word).slice(0, 25).map((x) => x.word),
     ...(kind === "duplicate" ? { sameMeaningAs: allWords.filter((x) => x.word !== w.word && normalizeAnswerText(x.meaning) === normalizeAnswerText(w.meaning)).map((x) => x.word) } : {}),
   }));
@@ -2505,6 +2511,17 @@ async function aiFixWordBatch(kind, words, allWords) {
     if (!hit) return problem("AI returned nothing for this word.");
     const v = hit.value;
     if (/[\u0600-\u06FF]/.test(JSON.stringify(v ?? ""))) return problem("Contained non-English text.");
+    if (instructionKind === "gaps") {
+      const before = gapsOf(w), after = Array.isArray(v) ? v.map((g) => String(g || "").trim()) : [];
+      if (after.length !== before.length) return problem("AI returned a different number of gaps.");
+      for (const g of after) {
+        if ((g.match(/_{2,}/g) || []).length !== 1) return problem(`Needs exactly one blank: "${g}"`);
+        if (situationLeaks(w, g)) return problem(`Gives the word away: "${g}"`);
+      }
+      if (after.every((g, i) => V2.sentence(g) === V2.sentence(before[i]))) return { word: w.word, ok: false, fine: true, reason: "Gaps are clear." };
+      const changed = after.map((g, i) => i).filter((i) => V2.sentence(after[i]) !== V2.sentence(before[i]));
+      return { word: w.word, ok: true, field: "gaps", before, after, shownBefore: changed.map((i) => before[i]), shownAfter: changed.map((i) => after[i]), reason: String(hit.why || "").slice(0, 200) };
+    }
     if (instructionKind === "situation") {
       const text = String(v || "").trim();
       if (text.split(/\s+/).length < 6) return problem("Too short.");
@@ -2783,7 +2800,7 @@ async function evaluateFreeForm(question, answerText) {
 }
 
 async function evaluateAlternativeGap(question, answerText) {
-  const raw = await callClaudeJson(`${FREEFORM_EVALUATION_CONTRACT}\nFor this task, targetWordUsed may be false. Decide whether the learner's alternative word/phrase makes the exact gap sentence grammatically and semantically natural. If it is a reasonable alternative, correct may be true, but semanticUse must be correct.`, {
+  const raw = await callClaudeJson(`${FREEFORM_EVALUATION_CONTRACT}\nFor this task, targetWordUsed may be false. The learner typed a word that is not the intended one. Judge ONLY the sentence exactly as the learner saw it: the learner cannot know which vocabulary word the question was written for, so never reject an answer because it has a different meaning from intendedTarget. If the learner's word makes the gap sentence grammatically correct, natural and sensible (for example "elbow" in "He had surgery on his left ______."), set correct to true and semanticUse to "correct", even though it is a different word. Reject it only when the sentence becomes ungrammatical, unnatural or does not make sense. In feedback, say the answer fits and name the word the question was practising.`, {
     kind: "gapAlternative",
     sentenceWithGap: question.prompt,
     intendedTarget: question.answer,
@@ -3129,7 +3146,7 @@ function emptyProgressData() {
 
 function formatHealthValue(value) {
   if (value == null || value === "") return "—";
-  if (Array.isArray(value)) return value.join(", ");
+  if (Array.isArray(value)) return value.join(value.some((x) => String(x).length > 30) ? "  ·  " : ", ");
   if (typeof value === "object") return `✗ ${value.sentence}  →  ✓ ${value.correction}  (${value.why})`;
   return String(value);
 }
@@ -3159,11 +3176,12 @@ function ContentHealthPanel({ content, onUpdate, onMergeCategories, onRemoveEmpt
       setRun({ kind, done: Math.min(targets.length, i + HEALTH_BATCH), total: targets.length });
     }
     setRun(null);
-    setReview({ kind, items: items.map((it) => ({ ...it, selected: it.ok })) });
+    setReview({ kind, items: items.filter((it) => !it.fine).map((it) => ({ ...it, selected: it.ok })), fine: items.filter((it) => it.fine).map((it) => it.word) });
   }
   function apply() {
     const chosen = review.items.filter((it) => it.ok && it.selected);
-    if (!chosen.length) { setReview(null); return; }
+    const fine = new Set(review.fine || []);
+    if (!chosen.length && !fine.size) { setReview(null); return; }
     const byWord = new Map(chosen.map((it) => [it.word, it]));
     // Opposites go both ways: the named word gets this one back if it has none.
     const reverse = new Map(chosen.filter((it) => it.extra?.opposite).map((it) => [it.extra.opposite, it.word]));
@@ -3173,10 +3191,12 @@ function ContentHealthPanel({ content, onUpdate, onMergeCategories, onRemoveEmpt
       const fix = byWord.get(w.word);
       if (fix?.field === "situation" && Array.isArray(w.situations)) next.situations = [fix.after, ...w.situations.slice(1)];
       if (fix?.field === "commonMistake" && Array.isArray(w.commonMistakes)) next.commonMistakes = [fix.after, ...w.commonMistakes];
+      if (fix?.field === "gaps") { next.gap = fix.after[0]; next.gapsCheckedFor = gapsKey(fix.after); }
+      if (fine.has(w.word)) next = { ...next, gapsCheckedFor: gapsKey(gapsOf(w)) };
       if (reverse.has(w.word) && !next.opposite) next = { ...next, opposite: reverse.get(w.word) };
       return next;
     }));
-    setNotice(`Applied ${chosen.length} fix${chosen.length === 1 ? "" : "es"}.`);
+    setNotice(`Applied ${chosen.length} fix${chosen.length === 1 ? "" : "es"}.${fine.size ? ` ${fine.size} word${fine.size === 1 ? "" : "s"} marked as checked (gaps were clear).` : ""}`);
     setReview(null);
   }
   const toggle = (index) => setReview((r) => ({ ...r, items: r.items.map((it, i) => (i === index ? { ...it, selected: !it.selected } : it)) }));
@@ -3198,11 +3218,12 @@ function ContentHealthPanel({ content, onUpdate, onMergeCategories, onRemoveEmpt
       })}</div>
       {review && <div className="wh-health-review">
         <h4>Review: {HEALTH_CHECKS[review.kind].label} — {selectedCount} selected</h4>
+        {review.fine?.length > 0 && <p className="wh-import-hint">{review.fine.length} word{review.fine.length === 1 ? "" : "s"} had clear gaps: {review.fine.join(", ")}. They're marked as checked when you apply.</p>}
         {review.items.map((it, i) => <label key={it.word} className={`wh-health-item ${it.ok ? "" : "failed"}`}>
           <input type="checkbox" disabled={!it.ok} checked={!!it.selected} onChange={() => toggle(i)} />
-          <div><b>{it.word}</b>{it.ok ? <><p className="before">{formatHealthValue(it.before)}</p><p className="after">{formatHealthValue(it.after)}</p>{it.extra?.opposite && <p className="after">+ Opposite: {it.extra.opposite}</p>}</> : <p className="before">Skipped: {it.reason}</p>}</div>
+          <div><b>{it.word}</b>{it.ok ? <><p className="before">{formatHealthValue(it.shownBefore ?? it.before)}</p><p className="after">{formatHealthValue(it.shownAfter ?? it.after)}</p>{it.reason && <p><small>{it.reason}</small></p>}{it.extra?.opposite && <p className="after">+ Opposite: {it.extra.opposite}</p>}</> : <p className="before">Skipped: {it.reason}</p>}</div>
         </label>)}
-        <div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={() => setReview(null)}>Discard all</button><button className="wh-import-btn primary" disabled={!selectedCount} onClick={apply}>Apply {selectedCount} selected</button></div>
+        <div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={() => setReview(null)}>Discard all</button><button className="wh-import-btn primary" disabled={!selectedCount && !review.fine?.length} onClick={apply}>{selectedCount ? `Apply ${selectedCount} selected` : `Mark ${review.fine?.length || 0} as checked`}</button></div>
       </div>}
     </article>
     <article className="wh-admin-card">

@@ -136,7 +136,7 @@
       ],
       "gaps": [
         "My sister is very ______ — she swims, plays tennis, and never gets tired.",
-        "You need to be quite ______ to finish a marathon."
+        "He was the most ______ student in his class — the best at running, jumping and football."
       ],
       "hints": [
         "Describes someone who is strong, fit, and good at sports.",
@@ -522,7 +522,7 @@
         "Scientists are still searching for a cure for diabetes."
       ],
       "gaps": [
-        "There is still no ______ for the common cold.",
+        "The doctors found a ______, and after a month of treatment the illness was completely gone.",
         "Rest and warm soup are not a real ______, but they help you feel better."
       ],
       "hints": [
@@ -580,8 +580,8 @@
         "She goes for a full check-up every six months."
       ],
       "gaps": [
-        "The dentist said I should come back for a ______ in six months.",
-        "My company pays for a yearly health ______ for every worker."
+        "The dentist said my teeth were fine and I should come back in six months for a routine ______.",
+        "Once a year the company doctor gives every worker a full ______ to make sure they are healthy."
       ],
       "hints": [
         "A routine visit to make sure you are healthy.",
@@ -681,8 +681,8 @@
         "His ankle started to swell after he fell during the match."
       ],
       "gaps": [
-        "Bee stings can make your skin ______ and turn red.",
-        "If you stand all day, your feet may ______ a little."
+        "After the bee sting, her hand started to ______ until it was twice its normal size.",
+        "If you stand all day, your feet may ______ and your shoes will feel too tight."
       ],
       "hints": [
         "To get bigger, often after an injury.",
@@ -738,7 +738,7 @@
       ],
       "gaps": [
         "People with ______ need to check their blood sugar every day.",
-        "Eating too much sugar for years can increase the risk of ______."
+        "Years of eating too much sugar can lead to ______, and then some people need insulin every day."
       ],
       "hints": [
         "An illness where the body can't control blood sugar.",
@@ -786,7 +786,7 @@
       ],
       "gaps": [
         "Good news: the scan showed a ______, not cancer.",
-        "Doctors removed a small ______ from her neck, and she recovered quickly."
+        "Doctors removed a small ______ from her neck; it wasn't cancer, so she didn't need more treatment."
       ],
       "hints": [
         "A growth of cells that is not cancer.",
@@ -942,7 +942,7 @@
       ],
       "gaps": [
         "Too much salt and stress can lead to ______, so doctors check your blood pressure regularly.",
-        "People with ______ should check their blood pressure every day."
+        "People with ______ have blood pressure that is too high, so they should eat less salt."
       ],
       "hints": [
         "A medical word for blood pressure that is too high.",
@@ -994,7 +994,7 @@
       ],
       "gaps": [
         "The ball hit his leg and left a big purple ______.",
-        "Put ice on it quickly and the ______ won't be so bad."
+        "Put ice on it quickly and the dark blue ______ won't be so big tomorrow."
       ],
       "hints": [
         "A dark mark on the skin after you hit something.",
@@ -1041,7 +1041,7 @@
         "Every day, when I suddenly wake up, I'm lightheaded."
       ],
       "gaps": [
-        "I skipped breakfast and felt ______ during the meeting.",
+        "I skipped breakfast and felt ______ during the meeting, as if I was going to faint.",
         "Stand up slowly or you might feel ______."
       ],
       "hints": [
@@ -1192,8 +1192,8 @@
         "The argument blew up when no one could agree on the treatment plan."
       ],
       "gaps": [
-        "Small problems at work can ______ if nobody talks about them.",
-        "My dad tends to ______ when we come home late."
+        "Small problems at work can suddenly ______ into a big angry argument if nobody talks about them.",
+        "My dad tends to ______ and start shouting when we come home late."
       ],
       "hints": [
         "When an argument suddenly becomes big and angry.",
@@ -1306,7 +1306,7 @@
       ],
       "gaps": [
         "The new soap gave me an itchy red ______ on my hands.",
-        "If the ______ spreads, see a doctor."
+        "If the itchy red ______ on your skin spreads, see a doctor."
       ],
       "hints": [
         "Red spots or itchy skin.",
@@ -1401,7 +1401,7 @@
       ],
       "gaps": [
         "Her eyes were red and ______ after she cried all night.",
-        "My fingers get ______ when it's very hot."
+        "My fingers get so ______ when it's very hot that my ring won't come off."
       ],
       "hints": [
         "Bigger than normal because of an injury or illness.",
@@ -1453,7 +1453,7 @@
         "His sickness kept him home for an entire week."
       ],
       "gaps": [
-        "He took two days off work because of ______.",
+        "Morning ______ is common for pregnant women in the first months.",
         "Some people get motion ______ when they travel by boat."
       ],
       "hints": [
@@ -1508,8 +1508,8 @@
         "She recovered from a serious illness after months of treatment."
       ],
       "gaps": [
-        "She missed three weeks of school because of a long ______.",
-        "Stress can sometimes lead to physical ______."
+        "She missed three weeks of school because of a long ______ and needed time to get her strength back.",
+        "After years of stress, he developed a serious ______ and spent months in hospital."
       ],
       "hints": [
         "A period of being unwell.",
@@ -1563,8 +1563,8 @@
         "Heart disease is one of the leading causes of death worldwide."
       ],
       "gaps": [
-        "Washing your hands helps stop the spread of ______.",
-        "Smoking can cause lung ______."
+        "Malaria is a dangerous ______ that people can catch from mosquitoes.",
+        "Smoking can cause heart ______ and many other health problems."
       ],
       "hints": [
         "A condition that stops the body working normally.",
@@ -1618,7 +1618,7 @@
       ],
       "gaps": [
         "Doctors must act fast when they find a ______ because it can spread.",
-        "The tests showed a ______, so she started treatment right away."
+        "The tests showed a ______ that could spread to other organs, so she started treatment right away."
       ],
       "hints": [
         "A growth of cells that is cancer.",
@@ -1718,7 +1718,7 @@
       ],
       "gaps": [
         "People with ______ may feel dizzy when they stand up quickly.",
-        "Drinking more water can help with mild ______."
+        "Drinking more water and eating a little more salt can help with ______, when blood pressure is too low."
       ],
       "hints": [
         "Blood pressure that is too low.",
@@ -1769,7 +1769,7 @@
       ],
       "gaps": [
         "Sudden weakness on one side of the face can be a sign of a ______.",
-        "After his ______, he had to learn to speak again."
+        "After his ______, the blood flow to part of his brain was damaged, and he had to learn to speak again."
       ],
       "hints": [
         "A sudden brain injury caused by a blocked or broken blood vessel.",
@@ -1810,7 +1810,7 @@
         "The patient was in a coma for three days before regaining consciousness."
       ],
       "gaps": [
-        "He woke up from a ______ and didn't remember the accident.",
+        "After the accident he was in a ______ for three weeks and couldn't wake up.",
         "Doctors put him into a ______ to help his brain rest."
       ],
       "hints": [
@@ -2113,7 +2113,7 @@
       ],
       "gaps": [
         "I took a ______, and my toothache went away.",
-        "This ______ works fast, but it can make you sleepy."
+        "This ______ stops headaches fast, but it can make you sleepy."
       ],
       "hints": [
         "Medicine that makes pain go away.",
@@ -2248,7 +2248,7 @@
         "She stayed at home because she was sick."
       ],
       "gaps": [
-        "I felt too ______ to go to work, so I called my manager and stayed in bed.",
+        "I had a fever and felt too ______ to go to work, so I stayed in bed.",
         "Grandma was ______ last week, but she's feeling much better now."
       ],
       "hints": [
@@ -2365,7 +2365,7 @@
         "The child had a fever, so his mother took him to the doctor."
       ],
       "gaps": [
-        "Drink lots of water when you have a ______.",
+        "Drink lots of water when you have a ______ and your temperature is high.",
         "Her ______ went down after she took some medicine."
       ],
       "hints": [
@@ -2417,7 +2417,7 @@
         "The doctor saw ten patients this morning."
       ],
       "gaps": [
-        "The ______ waited an hour before the doctor saw her.",
+        "Dr. Ali has already seen every ______ on his list today.",
         "Each ______ gets a bed and a nurse on this floor."
       ],
       "hints": [
@@ -2515,7 +2515,7 @@
         "The child took a spoon of cough syrup before bed."
       ],
       "gaps": [
-        "Take one spoonful of this ______ every four hours.",
+        "Take one spoonful of this sweet, thick ______ every four hours.",
         "Children usually like cough ______ because it tastes sweet."
       ],
       "hints": [
@@ -2560,7 +2560,7 @@
         "He had an operation to fix his broken knee."
       ],
       "gaps": [
-        "After the ______, she stayed in hospital for three days.",
+        "After the ______ on her stomach, she stayed in hospital for three days.",
         "The surgeon said the ______ went well."
       ],
       "hints": [
@@ -2612,8 +2612,8 @@
         "She sneezed three times during the class."
       ],
       "gaps": [
-        "Pepper always makes me ______.",
-        "Cover your mouth when you ______."
+        "Pepper always makes me ______ — achoo!",
+        "Dust always gets up my nose and makes me ______."
       ],
       "hints": [
         "What you do suddenly through your nose — 'achoo!'.",
@@ -2710,7 +2710,7 @@
         "She felt dizzy after standing up too quickly."
       ],
       "gaps": [
-        "The fast ride made me feel ______.",
+        "The fast spinning ride made me feel ______, as if the room was going round.",
         "If you feel ______, sit down and put your head down."
       ],
       "hints": [
@@ -2964,7 +2964,7 @@
       ],
       "gaps": [
         "The doctor wrote a ______ for some antibiotics.",
-        "Read the ______ carefully before you take the first pill."
+        "Take the ______ the doctor gave you to the pharmacy to get your medicine."
       ],
       "hints": [
         "A doctor's written order for medicine.",
@@ -3014,7 +3014,7 @@
       ],
       "gaps": [
         "She was ______ for a week with the flu.",
-        "My grandfather is very ______, so we visit him every day."
+        "My grandfather is seriously ______ in hospital, so we visit him every day."
       ],
       "hints": [
         "Another word for not feeling well.",
@@ -3121,7 +3121,7 @@
         "The player had a knee injury and missed the match."
       ],
       "gaps": [
-        "He missed the final because of a back ______.",
+        "He missed the final because of a back ______ he got in training.",
         "Wear a helmet to avoid a head ______."
       ],
       "hints": [
@@ -3175,8 +3175,8 @@
         "The doctor told him to breathe deeply and relax."
       ],
       "gaps": [
-        "It's hard to ______ when you run up the stairs so fast.",
-        "Close your eyes and ______ slowly."
+        "Fish use their gills to ______ under water.",
+        "Close your eyes and ______ in and out slowly through your nose."
       ],
       "hints": [
         "To take air into your body and let it out.",
@@ -3223,7 +3223,7 @@
         "Shake the bottle before taking the syrup."
       ],
       "gaps": [
-        "Keep the medicine ______ closed and away from children.",
+        "Put the cap back on the medicine ______ and keep it away from children.",
         "There is only a little syrup left in the ______."
       ],
       "hints": [
@@ -3321,7 +3321,7 @@
         "She went to the clinic for a routine check-up."
       ],
       "gaps": [
-        "The ______ is open until eight o'clock tonight.",
+        "The doctors at the ______ can see you until eight o'clock tonight.",
         "I have a visit at the skin ______ next week."
       ],
       "hints": [
@@ -3369,8 +3369,8 @@
         "I picked up my prescription from the pharmacy downstairs."
       ],
       "gaps": [
-        "The ______ on the corner is open 24 hours.",
-        "Ask at the ______ if they have something for a sore throat."
+        "The ______ on the corner sells medicine and is open 24 hours.",
+        "Take your prescription to the ______ to get your medicine."
       ],
       "hints": [
         "A shop where you get medicine.",
@@ -3624,7 +3624,7 @@
         "He sprained his ankle during the match and had to sit out for a week."
       ],
       "gaps": [
-        "Be careful on the stairs — a bad ______ can keep you off your feet for weeks.",
+        "She twisted her ankle on the stairs — it's a bad ______, but the bone isn't broken.",
         "The doctor said it was only a ______, not a broken bone."
       ],
       "hints": [
@@ -3726,8 +3726,8 @@
         "He hit his elbow on the table and felt a sharp pain."
       ],
       "gaps": [
-        "Don't put your ______ on the table while you eat.",
-        "Tennis players often hurt their ______."
+        "Don't put your ______ on the table while you eat — keep your arms by your sides.",
+        "Tennis players often hurt their ______, the joint where the arm bends."
       ],
       "hints": [
         "The joint in the middle of your arm.",
@@ -3769,8 +3769,8 @@
         "She injured her knee during the football match."
       ],
       "gaps": [
-        "She fell and cut her ______ on the ground.",
-        "He had surgery on his left ______."
+        "She fell off her bike and cut her ______, the part of the leg that bends.",
+        "He hurt the joint in the middle of his leg playing football, so he had surgery on his left ______."
       ],
       "hints": [
         "The joint in the middle of your leg.",
@@ -3963,7 +3963,7 @@
       ],
       "gaps": [
         "The ______ is the strongest part of your leg.",
-        "He got a bruise on his ______ after the football match."
+        "He pulled a muscle in his upper leg, and now the back of his ______ hurts."
       ],
       "hints": [
         "The top part of your leg.",
@@ -4500,7 +4500,7 @@
       ],
       "gaps": [
         "This restaurant serves huge ______ — I can never finish my plate.",
-        "Cut the cake into eight equal ______."
+        "The restaurant serves small ______ for children, so they don't get too much food."
       ],
       "hints": [
         "Amounts of food for one person.",
@@ -4549,8 +4549,8 @@
         "When I'm stressed, I always crave chocolate and junk food."
       ],
       "gaps": [
-        "When I'm tired, I always ______ something sweet.",
-        "Pregnant women sometimes ______ strange foods."
+        "When I'm tired, I always ______ something sweet and can't stop thinking about it.",
+        "Pregnant women sometimes ______ strange foods and feel they must have them."
       ],
       "hints": [
         "To want something, especially food, very strongly.",
@@ -4602,7 +4602,7 @@
       ],
       "gaps": [
         "Milk has ______ like calcium that are good for your bones.",
-        "Spinach is full of vitamins and ______."
+        "Spinach is full of vitamins and ______ such as iron."
       ],
       "hints": [
         "Things like iron and calcium that your body needs.",
@@ -4855,7 +4855,7 @@
         "The farm raises livestock for both meat and dairy production."
       ],
       "gaps": [
-        "The farmer sells his ______ at the market every month.",
+        "The farmer raises ______ for meat and milk on his land.",
         "Cows, sheep, and goats are all ______."
       ],
       "hints": [
@@ -5761,8 +5761,8 @@
         "My daughter is so excited about her first sleepover at her best friend's house."
       ],
       "gaps": [
-        "Five girls came to our house for a birthday ______.",
-        "The kids watched movies all night at the ______."
+        "Five girls came to our house for a birthday ______ and slept on the living room floor.",
+        "The kids watched movies all night at the ______ and stayed until the next morning."
       ],
       "hints": [
         "A night when kids stay at a friend's house.",
@@ -6334,7 +6334,7 @@
         "He has been coughing all night because of his cold."
       ],
       "gaps": [
-        "The smoke made everyone ______.",
+        "The thick smoke got into our throats and made everyone ______.",
         "If you ______ for more than three weeks, see a doctor."
       ],
       "hints": [
@@ -6431,7 +6431,7 @@
         "I have a doctor's appointment tomorrow morning."
       ],
       "gaps": [
-        "I'm sorry I'm late for our ______.",
+        "I'm sorry I'm late for our ______ — the doctor was waiting for me.",
         "My dentist ______ is at 3 o'clock on Friday."
       ],
       "hints": [
