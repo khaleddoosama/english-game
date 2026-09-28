@@ -1,7 +1,7 @@
 {
   "schemaVersion": 3,
   "kind": "content",
-  "note": "Health-Body lesson, content v3 (136 words). Meanings, lesson sentences and links come from the vocabulary analysis; gaps, hints, common mistakes, collocations, word family, synonyms/antonyms, register and most levels were written for this file.",
+  "note": "Health-Body lesson, content v3 (136 words). Meanings, lesson sentences and links come from the vocabulary analysis; gaps, hints, common mistakes, collocations, word family, synonyms/antonyms, register and most levels were written for this file. Also 5 grammar rules (be about to, going to, past simple, so that + can/could, verbs + -ing), each with choose / judge / fix questions.",
   "categories": [
     {
       "id": "health-body",
@@ -6934,6 +6934,390 @@
         ],
         "excludeWith": []
       }
+    }
+  ],
+  "grammar": [
+    {
+      "id": "gr-be-about-to",
+      "rule": "Be about to (something happens very soon)",
+      "category": "health-body",
+      "level": "B1",
+      "explanation": "Use am/is/are + about to + base verb for something that will happen in a moment. For plans days or weeks away, use going to.",
+      "examples": [
+        "My last exam is tomorrow — I'm about to graduate.",
+        "Her wedding starts in ten minutes — she's about to get married.",
+        "Are you about to finish the course?"
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I'm about to travel next month.",
+          "correction": "I'm going to travel next month.",
+          "why": "About to means in a moment, not weeks away."
+        },
+        {
+          "sentence": "She is about to leaving.",
+          "correction": "She is about to leave.",
+          "why": "After about to, use the base verb."
+        }
+      ],
+      "questions": [
+        {
+          "type": "choose",
+          "prompt": "The nurse has the needle ready. She ______ give you the injection.",
+          "options": [
+            "is about to",
+            "about to",
+            "is about"
+          ],
+          "answer": "is about to",
+          "explanation": "am/is/are + about to + base verb: it will happen in a moment."
+        },
+        {
+          "type": "choose",
+          "prompt": "Which sentence is about something that will happen in a moment?",
+          "options": [
+            "The patient is about to wake up.",
+            "The patient woke up at six.",
+            "The patient wakes up early every day."
+          ],
+          "answer": "The patient is about to wake up.",
+          "explanation": "About to = very soon, in a moment."
+        },
+        {
+          "type": "judge",
+          "sentence": "I'm about to see the dentist next month.",
+          "correct": false,
+          "fix": "I'm going to see the dentist next month.",
+          "explanation": "Next month is not in a moment, so use going to for the plan."
+        },
+        {
+          "type": "judge",
+          "sentence": "Hurry! The pharmacy is about to close.",
+          "correct": true,
+          "alternative": "Hurry! The pharmacy is about closing.",
+          "explanation": "It will close in a moment: is about to + base verb."
+        },
+        {
+          "type": "fix",
+          "sentence": "He is about to fainting.",
+          "answer": "He is about to faint.",
+          "explanation": "After about to, use the base verb: faint."
+        },
+        {
+          "type": "fix",
+          "sentence": "Are you about leave the hospital?",
+          "answer": "Are you about to leave the hospital?",
+          "explanation": "Don't drop to: about to + base verb."
+        }
+      ]
+    },
+    {
+      "id": "gr-going-to",
+      "rule": "Going to (plans and predictions)",
+      "category": "health-body",
+      "level": "A2",
+      "explanation": "Use am/is/are + going to + base verb for plans you decided before speaking, and for predictions from what you can see now. Negative: isn't/aren't going to. Question: Are you going to…?",
+      "examples": [
+        "I'm going to travel to the UAE in 3 days.",
+        "Are you going to leave the country?",
+        "He isn't going to hang out with me.",
+        "Look at those dark clouds — it's going to rain."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I going to see a doctor.",
+          "correction": "I'm going to see a doctor.",
+          "why": "Don't forget am/is/are before going to."
+        },
+        {
+          "sentence": "She is going to visits her aunt.",
+          "correction": "She is going to visit her aunt.",
+          "why": "After going to, use the base verb."
+        }
+      ],
+      "questions": [
+        {
+          "type": "choose",
+          "prompt": "I've booked an appointment. I ______ see the doctor on Monday.",
+          "options": [
+            "am going to",
+            "going to",
+            "am going",
+            "will going to"
+          ],
+          "answer": "am going to",
+          "explanation": "A plan decided before speaking: am/is/are + going to + base verb."
+        },
+        {
+          "type": "choose",
+          "prompt": "Look at his face! He ______ be sick.",
+          "options": [
+            "is going to",
+            "going to",
+            "is going",
+            "goes to"
+          ],
+          "answer": "is going to",
+          "explanation": "A prediction from what you can see now: is going to."
+        },
+        {
+          "type": "judge",
+          "sentence": "She not going to join the gym.",
+          "correct": false,
+          "fix": "She isn't going to join the gym.",
+          "explanation": "The negative needs is: isn't going to."
+        },
+        {
+          "type": "judge",
+          "sentence": "Are you going to take the medicine tonight?",
+          "correct": true,
+          "alternative": "Are you going to taking the medicine tonight?",
+          "explanation": "After going to, use the base verb: take."
+        },
+        {
+          "type": "fix",
+          "sentence": "We are going to starting a diet next week.",
+          "answer": "We are going to start a diet next week.",
+          "explanation": "After going to, use the base verb: start."
+        },
+        {
+          "type": "fix",
+          "sentence": "They going to visit their grandmother in hospital.",
+          "answer": "They are going to visit their grandmother in hospital.",
+          "explanation": "Don't forget are before going to."
+        }
+      ]
+    },
+    {
+      "id": "gr-past-simple",
+      "rule": "Past simple (regular and irregular verbs)",
+      "category": "health-body",
+      "level": "A2",
+      "explanation": "Use the past simple for finished actions at a specific past time (yesterday, last week, 10 years ago). Regular verbs add -ed (play → played); irregular verbs have their own form (go → went, wake → woke). Use was/were for past states. After didn't, use the base verb.",
+      "examples": [
+        "My brother played football yesterday.",
+        "They woke up late this morning.",
+        "She went home early.",
+        "We were excited. He was sick yesterday.",
+        "I was a student 10 years ago."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I goed to the doctor yesterday.",
+          "correction": "I went to the doctor yesterday.",
+          "why": "Go is irregular: go → went."
+        },
+        {
+          "sentence": "We was tired after the match.",
+          "correction": "We were tired after the match.",
+          "why": "Use were with we, you and they."
+        }
+      ],
+      "questions": [
+        {
+          "type": "choose",
+          "prompt": "Yesterday I ______ my ankle playing football.",
+          "options": [
+            "hurt",
+            "hurted",
+            "hurts",
+            "am hurting"
+          ],
+          "answer": "hurt",
+          "explanation": "Hurt is irregular: its past form is also hurt."
+        },
+        {
+          "type": "choose",
+          "prompt": "She ______ sick last week, so she stayed at home.",
+          "options": [
+            "was",
+            "were",
+            "is",
+            "be"
+          ],
+          "answer": "was",
+          "explanation": "A past state with she: was."
+        },
+        {
+          "type": "judge",
+          "sentence": "He breaked his arm last year.",
+          "correct": false,
+          "fix": "He broke his arm last year.",
+          "explanation": "Break is irregular: break → broke."
+        },
+        {
+          "type": "judge",
+          "sentence": "We were at the hospital all night.",
+          "correct": true,
+          "alternative": "We was at the hospital all night.",
+          "explanation": "With we, the past of be is were."
+        },
+        {
+          "type": "fix",
+          "sentence": "I wake up with a headache yesterday.",
+          "answer": "I woke up with a headache yesterday.",
+          "explanation": "Yesterday is finished time: wake → woke."
+        },
+        {
+          "type": "fix",
+          "sentence": "They didn't went to the gym yesterday.",
+          "answer": "They didn't go to the gym yesterday.",
+          "explanation": "After didn't, use the base verb: go."
+        }
+      ]
+    },
+    {
+      "id": "gr-so-that-can-could",
+      "rule": "So that + can / could (purpose)",
+      "category": "health-body",
+      "level": "B1",
+      "explanation": "Use so that to give the purpose of an action. So that + can is common for a present or future purpose; so that + could for a past purpose. After can/could, use the base verb.",
+      "examples": [
+        "I drink coffee so that I can focus.",
+        "I took this course so that I could find a job.",
+        "I slept early so that I could wake up early."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I slept early so that I can wake up early.",
+          "correction": "I slept early so that I could wake up early.",
+          "why": "The action is in the past, so use could."
+        },
+        {
+          "sentence": "I exercise so that I can to stay fit.",
+          "correction": "I exercise so that I can stay fit.",
+          "why": "After can/could, use the base verb without to."
+        }
+      ],
+      "questions": [
+        {
+          "type": "choose",
+          "prompt": "I went to bed early last night so that I ______ rest.",
+          "options": [
+            "could",
+            "can",
+            "could to",
+            "can to"
+          ],
+          "answer": "could",
+          "explanation": "A past action (went) → so that + could + base verb."
+        },
+        {
+          "type": "choose",
+          "prompt": "I walk every day so that I ______ stay healthy.",
+          "options": [
+            "can",
+            "could",
+            "can to",
+            "could to"
+          ],
+          "answer": "can",
+          "explanation": "A present habit → so that + can + base verb."
+        },
+        {
+          "type": "judge",
+          "sentence": "She took the painkiller so that she can sleep.",
+          "correct": false,
+          "fix": "She took the painkiller so that she could sleep.",
+          "explanation": "Took is past, so the purpose uses could."
+        },
+        {
+          "type": "judge",
+          "sentence": "I eat vegetables so that I can stay strong.",
+          "correct": true,
+          "alternative": "I eat vegetables so that I could stay strong.",
+          "explanation": "Eat is present, so the purpose uses can."
+        },
+        {
+          "type": "fix",
+          "sentence": "I stretched before the race so that I can run faster.",
+          "answer": "I stretched before the race so that I could run faster.",
+          "explanation": "Stretched is past, so use could."
+        },
+        {
+          "type": "fix",
+          "sentence": "I drink water so that I can to stay hydrated.",
+          "answer": "I drink water so that I can stay hydrated.",
+          "explanation": "After can, use the base verb without to."
+        }
+      ]
+    },
+    {
+      "id": "gr-verb-ing",
+      "rule": "Verbs followed by -ing (enjoy, keep, quit, don't mind…)",
+      "category": "health-body",
+      "level": "B1",
+      "explanation": "When a verb comes after enjoy, keep, quit or don't mind (also finish, avoid, consider, suggest, practise), use the -ing form.",
+      "examples": [
+        "I enjoy playing football.",
+        "He keeps working every day.",
+        "I quit studying at the university.",
+        "I don't mind travelling to Alex."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I enjoy to swim.",
+          "correction": "I enjoy swimming.",
+          "why": "Enjoy is followed by -ing, not to."
+        },
+        {
+          "sentence": "You should avoid to eat too much sugar.",
+          "correction": "You should avoid eating too much sugar.",
+          "why": "Avoid is followed by -ing."
+        }
+      ],
+      "questions": [
+        {
+          "type": "choose",
+          "prompt": "My father quit ______ ten years ago.",
+          "options": [
+            "smoking",
+            "to smoke",
+            "smoke",
+            "smoked"
+          ],
+          "answer": "smoking",
+          "explanation": "Quit + -ing."
+        },
+        {
+          "type": "choose",
+          "prompt": "The doctor suggested ______ more water.",
+          "options": [
+            "drinking",
+            "to drink",
+            "drink",
+            "drank"
+          ],
+          "answer": "drinking",
+          "explanation": "Suggest + -ing."
+        },
+        {
+          "type": "judge",
+          "sentence": "I don't mind to wait for the doctor.",
+          "correct": false,
+          "fix": "I don't mind waiting for the doctor.",
+          "explanation": "Don't mind + -ing."
+        },
+        {
+          "type": "judge",
+          "sentence": "She keeps coughing at night.",
+          "correct": true,
+          "alternative": "She keeps to cough at night.",
+          "explanation": "Keep + -ing."
+        },
+        {
+          "type": "fix",
+          "sentence": "You should avoid to lift heavy boxes.",
+          "answer": "You should avoid lifting heavy boxes.",
+          "explanation": "Avoid + -ing."
+        },
+        {
+          "type": "fix",
+          "sentence": "Have you finished to take the antibiotics?",
+          "answer": "Have you finished taking the antibiotics?",
+          "explanation": "Finish + -ing."
+        }
+      ]
     }
   ]
 }
