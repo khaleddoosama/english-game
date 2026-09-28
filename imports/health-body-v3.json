@@ -816,7 +816,6 @@
         "Malignant tumor"
       ],
       "links": {
-        "opposite": "malignant-tumor",
         "confusableWith": [],
         "excludeWith": []
       }
@@ -972,7 +971,6 @@
         "Hypotension"
       ],
       "links": {
-        "opposite": "hypotension",
         "confusableWith": [],
         "excludeWith": []
       }
@@ -1648,7 +1646,6 @@
         "Benign tumor"
       ],
       "links": {
-        "opposite": "benign-tumor",
         "confusableWith": [],
         "excludeWith": []
       }
@@ -1747,7 +1744,6 @@
         "Hypertension"
       ],
       "links": {
-        "opposite": "hypertension",
         "confusableWith": [],
         "excludeWith": []
       }
