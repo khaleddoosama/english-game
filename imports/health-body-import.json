@@ -1,0 +1,1743 @@
+{
+  "schemaVersion": 2,
+  "kind": "content",
+  "note": "Health Body lesson, built from health-body-vocabulary-analysis.json (words only; grammar and puns need the original Health-Body.txt).",
+  "words": [
+    {
+      "word": "Athletic",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "meaning": "Good at sports or enjoying physical activity.",
+      "situation": "He is very athletic because he plays soccer and runs every single morning.",
+      "gap": "He is very ______ because he plays soccer and runs every single morning."
+    },
+    {
+      "word": "Ton",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A very large amount of something (informal).",
+      "situation": "I have a ton of homework to finish before the weekend starts.",
+      "gap": "I have a ______ of homework to finish before the weekend starts."
+    },
+    {
+      "word": "Addicting",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "meaning": "So enjoyable that it makes you want to keep doing or using it.",
+      "situation": "This new puzzle game is so addicting that I can't stop playing it!",
+      "gap": "This new puzzle game is so ______ that I can't stop playing it!"
+    },
+    {
+      "word": "From time to time",
+      "type": "idiom",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adverbial phrase"
+      ],
+      "meaning": "Occasionally, but not regularly.",
+      "situation": "I like to go for a walk in the park from time to time to relax.",
+      "gap": "I like to go for a walk in the park ______ to relax."
+    },
+    {
+      "word": "Obsessed",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "meaning": "Thinking about someone or something so much that it takes much of your attention.",
+      "situation": "My little sister is completely obsessed with dinosaurs; she knows every name by heart.",
+      "gap": "My little sister is completely ______ with dinosaurs; she knows every name by heart."
+    },
+    {
+      "word": "Playoffs",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Games near the end of a sports competition that help decide the final winner.",
+      "situation": "My favorite team played so well this year that they finally made it to the playoffs.",
+      "gap": "My favorite team played so well this year that they finally made it to the ______."
+    },
+    {
+      "word": "Dozens of times",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adverbial phrase"
+      ],
+      "meaning": "Many times; often used without an exact count.",
+      "situation": "I have watched my favorite movie dozens of times because it never gets boring.",
+      "gap": "I have watched my favorite movie ______ because it never gets boring."
+    },
+    {
+      "word": "Cure",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb",
+        "noun"
+      ],
+      "meaning": "A treatment or remedy that makes an illness go away.",
+      "situation": "Scientists are still searching for a cure for diabetes.",
+      "gap": "Scientists are still searching for a ______ for diabetes."
+    },
+    {
+      "word": "Check-up",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A medical examination to check your general health.",
+      "situation": "She goes for a full check-up every six months.",
+      "gap": "She goes for a full ______ every six months."
+    },
+    {
+      "word": "Symptoms",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Changes or problems a person experiences that may show illness.",
+      "situation": "Fever and a sore throat are common symptoms of the flu.",
+      "gap": "Fever and a sore throat are common ______ of the flu.",
+      "relations": {
+        "confusableWords": [
+          "Sign"
+        ]
+      }
+    },
+    {
+      "word": "Swell",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "meaning": "To become larger, especially after an injury or because of illness.",
+      "situation": "His ankle started to swell after he fell during the match.",
+      "gap": "His ankle started to ______ after he fell during the match."
+    },
+    {
+      "word": "Diabetes",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A condition in which the body has difficulty controlling blood sugar.",
+      "situation": "He was diagnosed with diabetes and had to change his diet completely.",
+      "gap": "He was diagnosed with ______ and had to change his diet completely."
+    },
+    {
+      "word": "Benign tumor",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun phrase"
+      ],
+      "meaning": "A growth of cells that is not cancer.",
+      "situation": "The doctor told her the tumor was benign, so no surgery was needed.",
+      "gap": "The doctor told her it was a ______, so no surgery was needed.",
+      "opposite": "Malignant tumor"
+    },
+    {
+      "word": "Chronic disease",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun phrase"
+      ],
+      "meaning": "An illness that lasts for a long time.",
+      "situation": "Diabetes and hypertension are both examples of chronic diseases.",
+      "gap": "Diabetes is an example of a ______."
+    },
+    {
+      "word": "Allergy",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "An immune reaction to something that is harmless to most people.",
+      "situation": "She has a severe allergy to peanuts and always carries medication.",
+      "gap": "She has a severe ______ to peanuts and always carries medication."
+    },
+    {
+      "word": "Hypertension",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Blood pressure that is too high.",
+      "situation": "He was told to reduce salt and stress to control his hypertension.",
+      "gap": "He was told to reduce salt and stress to control his ______.",
+      "opposite": "Hypotension"
+    },
+    {
+      "word": "Bruise",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A dark mark under the skin caused by damage to small blood vessels.",
+      "situation": "She had a bruise on her arm after bumping into the door.",
+      "gap": "She had a ______ on her arm after bumping into the door."
+    },
+    {
+      "word": "Lightheaded",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "meaning": "Feeling faint, as if you might lose consciousness.",
+      "situation": "Every day, when I suddenly wake up, I'm lightheaded.",
+      "gap": "Every day, when I suddenly wake up, I'm ______."
+    },
+    {
+      "word": "Sick and tired",
+      "type": "binomial",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective phrase"
+      ],
+      "meaning": "Very annoyed by something that has continued or happened repeatedly.",
+      "situation": "I hate my co-workers — I'm sick and tired of working with them.",
+      "gap": "I hate my co-workers — I'm ______ of working with them.",
+      "relations": {
+        "confusableWords": [
+          "Sick"
+        ]
+      }
+    },
+    {
+      "word": "Mixed up",
+      "type": "fyi",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective phrase"
+      ],
+      "meaning": "Confused about facts or how things fit together.",
+      "situation": "I was completely mixed up about which appointment was today.",
+      "gap": "I was completely ______ about which appointment was today."
+    },
+    {
+      "word": "Blow up",
+      "type": "phrasal",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "phrasal verb"
+      ],
+      "meaning": "To suddenly become very intense or angry, as a disagreement develops.",
+      "situation": "The argument blew up when no one could agree on the treatment plan.",
+      "gap": "The argument could ______ if no one agrees on the treatment plan."
+    },
+    {
+      "word": "Heal",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "meaning": "To become healthy again after an injury, or help an injury get better.",
+      "situation": "The wound took two weeks to heal completely.",
+      "gap": "The wound took two weeks to ______ completely."
+    },
+    {
+      "word": "Rash",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "An area of irritated skin with spots or changes in colour.",
+      "situation": "After three days of intense burning pain on his right side, Khaled developed a blistered rash that his doctor officially diagnosed as shingles.",
+      "gap": "After three days of intense burning pain on his right side, Khaled developed a blistered ______ that his doctor officially diagnosed as shingles."
+    },
+    {
+      "word": "Sign",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Something observable or measurable that can show a health problem.",
+      "situation": "Yellowing of the eyes is a sign of liver problems.",
+      "gap": "Yellowing of the eyes is a ______ of liver problems.",
+      "relations": {
+        "confusableWords": [
+          "Symptoms"
+        ]
+      }
+    },
+    {
+      "word": "Swollen",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "meaning": "Larger than usual because of injury, illness, or a build-up of fluid.",
+      "situation": "His knee was so swollen he couldn't walk after the fall.",
+      "gap": "His knee was so ______ he couldn't walk after the fall."
+    },
+    {
+      "word": "Sickness",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "The state of being ill.",
+      "situation": "His sickness kept him home for an entire week.",
+      "gap": "His ______ kept him home for an entire week.",
+      "excludeFromSameOptionsWith": [
+        "Illness"
+      ]
+    },
+    {
+      "word": "Illness",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A disease or a period or state of poor health.",
+      "situation": "She recovered from a serious illness after months of treatment.",
+      "gap": "She recovered from a serious ______ after months of treatment.",
+      "excludeFromSameOptionsWith": [
+        "Sickness"
+      ]
+    },
+    {
+      "word": "Disease",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A condition that affects the normal working of the body or mind.",
+      "situation": "Heart disease is one of the leading causes of death worldwide.",
+      "gap": "Heart ______ is one of the leading causes of death worldwide."
+    },
+    {
+      "word": "Malignant tumor",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun phrase"
+      ],
+      "meaning": "A cancerous growth that can invade nearby tissue or spread.",
+      "situation": "The biopsy confirmed the tumor was malignant and required immediate surgery.",
+      "gap": "The biopsy confirmed it was a ______ that required immediate surgery.",
+      "opposite": "Benign tumor"
+    },
+    {
+      "word": "Allergic to",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective phrase"
+      ],
+      "meaning": "Having an allergy to a particular substance.",
+      "situation": "He is allergic to dust, which causes him to sneeze constantly.",
+      "gap": "He is ______ dust, which causes him to sneeze constantly."
+    },
+    {
+      "word": "Hypotension",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Blood pressure that is too low.",
+      "situation": "She felt faint because of hypotension after standing up too quickly.",
+      "gap": "She felt faint because of ______ after standing up too quickly.",
+      "opposite": "Hypertension"
+    },
+    {
+      "word": "Stroke",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Brain injury caused by blocked blood flow or bleeding in the brain.",
+      "situation": "He had a stroke at 60 but recovered after months of physiotherapy.",
+      "gap": "He had a ______ at 60 but recovered after months of physiotherapy."
+    },
+    {
+      "word": "Coma",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A deep state of unconsciousness in which a person cannot be woken normally.",
+      "situation": "The patient was in a coma for three days before regaining consciousness.",
+      "gap": "The patient was in a ______ for three days before regaining consciousness.",
+      "relations": {
+        "confusableWords": [
+          "Sleep paralysis"
+        ]
+      }
+    },
+    {
+      "word": "Tablets",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Small solid pieces of medicine, usually made by pressing powder.",
+      "situation": "Take two tablets after each meal.",
+      "gap": "Take two ______ after each meal.",
+      "excludeFromSameOptionsWith": [
+        "Pills"
+      ],
+      "relations": {
+        "confusableWords": [
+          "Painkiller",
+          "Capsules"
+        ]
+      }
+    },
+    {
+      "word": "Drops",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Liquid medicine given in very small amounts, often into the eyes, ears, or nose.",
+      "situation": "The doctor prescribed eye drops to treat the infection.",
+      "gap": "The doctor prescribed eye ______ to treat the infection."
+    },
+    {
+      "word": "Injection",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "The act of putting medicine or another substance into the body with a needle.",
+      "situation": "The nurse gave him an injection before the operation.",
+      "gap": "The nurse gave him an ______ before the operation."
+    },
+    {
+      "word": "Pills",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Small solid medicines taken by mouth, including tablets and capsules in everyday use.",
+      "situation": "He takes blood pressure pills every morning without fail.",
+      "gap": "He takes blood pressure ______ every morning without fail.",
+      "excludeFromSameOptionsWith": [
+        "Tablets",
+        "Capsules"
+      ]
+    },
+    {
+      "word": "Capsules",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Medicines inside small containers that dissolve after being swallowed.",
+      "situation": "The doctor gave me capsules that I swallow with water twice a day.",
+      "gap": "The doctor gave me ______ that I swallow with water twice a day.",
+      "excludeFromSameOptionsWith": [
+        "Pills"
+      ],
+      "relations": {
+        "confusableWords": [
+          "Painkiller",
+          "Tablets"
+        ]
+      }
+    },
+    {
+      "word": "Painkiller",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A medicine used to reduce pain.",
+      "situation": "The doctor gave her a painkiller for her headache.",
+      "gap": "The doctor gave her a ______ for her headache.",
+      "relations": {
+        "confusableWords": [
+          "Capsules",
+          "Tablets"
+        ]
+      }
+    },
+    {
+      "word": "Ointment",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A thick substance applied to the skin as a treatment or protection.",
+      "situation": "The doctor prescribed an ointment to treat the rash on her arm.",
+      "gap": "The doctor prescribed an ______ to treat the rash on her arm."
+    },
+    {
+      "word": "Cast",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A hard covering that supports and protects a broken bone while it heals.",
+      "situation": "He wore a cast on his arm for six weeks after breaking it.",
+      "gap": "He wore a ______ on his arm for six weeks after breaking it."
+    },
+    {
+      "word": "Sick",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "meaning": "Ill or unwell.",
+      "situation": "She stayed at home because she was sick.",
+      "gap": "She stayed at home because she was ______.",
+      "excludeFromSameOptionsWith": [
+        "Ill"
+      ],
+      "relations": {
+        "confusableWords": [
+          "Sick and tired"
+        ]
+      }
+    },
+    {
+      "word": "Pale",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "meaning": "Having less colour in the skin than usual.",
+      "situation": "He looked pale after waiting in the hospital all day.",
+      "gap": "He looked ______ after waiting in the hospital all day."
+    },
+    {
+      "word": "Fever",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A body temperature that is higher than normal.",
+      "situation": "The child had a fever, so his mother took him to the doctor.",
+      "gap": "The child had a ______, so his mother took him to the doctor.",
+      "relations": {
+        "confusableWords": [
+          "Feverish"
+        ]
+      }
+    },
+    {
+      "word": "Patient",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A person receiving medical care.",
+      "situation": "The doctor saw ten patients this morning.",
+      "gap": "The doctor saw one ______ after another this morning."
+    },
+    {
+      "word": "Bandage",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A strip or piece of material used to cover or support an injured part of the body.",
+      "situation": "The nurse put a bandage around his injured arm.",
+      "gap": "The nurse put a ______ around his injured arm."
+    },
+    {
+      "word": "Syrup",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A liquid medicine that is often thick and sweet.",
+      "situation": "The child took a spoon of cough syrup before bed.",
+      "gap": "The child took a spoon of cough ______ before bed."
+    },
+    {
+      "word": "Operation",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A medical procedure in which a surgeon treats part of the body.",
+      "situation": "He had an operation to fix his broken knee.",
+      "gap": "He had an ______ to fix his broken knee.",
+      "excludeFromSameOptionsWith": [
+        "Surgery"
+      ]
+    },
+    {
+      "word": "Sneeze",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "meaning": "To suddenly force air out through the nose and mouth.",
+      "situation": "She sneezed three times during the class.",
+      "gap": "The dust made her ______ three times during the class."
+    },
+    {
+      "word": "Examine",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "meaning": "To look at or check someone carefully, especially during a medical examination.",
+      "situation": "The doctor examined the patient and wrote a prescription.",
+      "gap": "The doctor will ______ the patient and write a prescription."
+    },
+    {
+      "word": "Dizzy",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "meaning": "Feeling unsteady or as if you or your surroundings are spinning.",
+      "situation": "She felt dizzy after standing up too quickly.",
+      "gap": "She felt ______ after standing up too quickly."
+    },
+    {
+      "word": "Under the weather",
+      "type": "idiom",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective phrase"
+      ],
+      "meaning": "Feeling slightly ill; informal.",
+      "situation": "I couldn't go to work — I was under the weather.",
+      "gap": "I couldn't go to work — I was ______."
+    },
+    {
+      "word": "Got the sniffles",
+      "type": "idiom",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb phrase"
+      ],
+      "meaning": "Developed mild cold-like symptoms, especially a runny nose; informal.",
+      "situation": "Last winter I stayed at home because I got the sniffles.",
+      "gap": "Last winter I stayed at home because I ______."
+    },
+    {
+      "word": "Safe and sound",
+      "type": "binomial",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective phrase"
+      ],
+      "meaning": "Safe and unharmed, especially after a journey or dangerous event.",
+      "situation": "He had an accident but he was safe and sound.",
+      "gap": "He had an accident but he was ______."
+    },
+    {
+      "word": "Sniff",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "meaning": "To breathe air in through the nose, often to smell something.",
+      "situation": "She sniffed the medicine to check what it smelled like.",
+      "gap": "She decided to ______ the medicine to check what it smelled like."
+    },
+    {
+      "word": "Prescription",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "An instruction from an authorized medical professional for a medicine or treatment.",
+      "situation": "You need a prescription to buy this medicine from the pharmacy.",
+      "gap": "You need a ______ to buy this medicine from the pharmacy.",
+      "relations": {
+        "confusableWords": [
+          "Fill a prescription"
+        ]
+      }
+    },
+    {
+      "word": "Ill",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "meaning": "Not healthy; suffering from illness.",
+      "situation": "He was too ill to come to school today.",
+      "gap": "He was too ______ to come to school today.",
+      "excludeFromSameOptionsWith": [
+        "Sick"
+      ]
+    },
+    {
+      "word": "Flu",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "An illness caused by influenza viruses, often with fever, aches, and tiredness.",
+      "situation": "Half the office was absent because of the flu.",
+      "gap": "Half the office was absent because of the ______."
+    },
+    {
+      "word": "Injury",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Physical damage to part of the body.",
+      "situation": "The player had a knee injury and missed the match.",
+      "gap": "The player had a knee ______ and missed the match."
+    },
+    {
+      "word": "Breathe",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "meaning": "To take air into the lungs and let it out.",
+      "situation": "The doctor told him to breathe deeply and relax.",
+      "gap": "The doctor told him to ______ deeply and relax."
+    },
+    {
+      "word": "Bottle",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A container for liquids, here used for medicine.",
+      "situation": "Shake the bottle before taking the syrup.",
+      "gap": "Shake the ______ before taking the syrup."
+    },
+    {
+      "word": "Ache",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun",
+        "verb"
+      ],
+      "meaning": "To hurt continuously, often with a dull pain.",
+      "situation": "My back has been aching since I lifted those boxes.",
+      "gap": "My back started to ______ after I lifted those boxes."
+    },
+    {
+      "word": "Clinic",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A place where people receive medical advice, examinations, or treatment.",
+      "situation": "She went to the clinic for a routine check-up.",
+      "gap": "She went to the ______ for a routine check-up."
+    },
+    {
+      "word": "Pharmacy",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A place where medicines are prepared or supplied.",
+      "situation": "I picked up my prescription from the pharmacy downstairs.",
+      "gap": "I picked up my prescription from the ______ downstairs."
+    },
+    {
+      "word": "Good",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "meaning": "Feeling healthy or comfortable.",
+      "situation": "I feel good today — much better than yesterday.",
+      "gap": "I feel ______ today — much better than yesterday."
+    },
+    {
+      "word": "Blood clot",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun phrase"
+      ],
+      "meaning": "A mass formed when blood changes from liquid to a thicker state.",
+      "situation": "He was rushed to hospital after doctors found a blood clot in his leg.",
+      "gap": "He was rushed to hospital after doctors found a ______ in his leg.",
+      "relations": {
+        "confusableWords": [
+          "Embolism"
+        ]
+      }
+    },
+    {
+      "word": "Fracture",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A break or crack in a bone.",
+      "situation": "She got a fracture in her wrist after falling off her bike.",
+      "gap": "She got a ______ in her wrist after falling off her bike.",
+      "relations": {
+        "confusableWords": [
+          "Strain",
+          "Sprain"
+        ]
+      }
+    },
+    {
+      "word": "Allergies",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Immune reactions to substances that are harmless to most people.",
+      "situation": "His allergies get worse every spring because of the pollen in the air.",
+      "gap": "His ______ get worse every spring because of the pollen in the air."
+    },
+    {
+      "word": "Sprain",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "An injury in which a ligament is stretched or torn.",
+      "situation": "He sprained his ankle during the match and had to sit out for a week.",
+      "gap": "He might ______ his ankle during the match and sit out for a week.",
+      "relations": {
+        "confusableWords": [
+          "Strain",
+          "Fracture"
+        ]
+      }
+    },
+    {
+      "word": "Acute disease",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun phrase"
+      ],
+      "meaning": "An illness that develops quickly and usually has a relatively short course.",
+      "situation": "Pneumonia is an acute disease that requires immediate medical treatment.",
+      "gap": "Pneumonia is an ______ that requires immediate medical treatment."
+    },
+    {
+      "word": "Elbow",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "The joint where the upper arm meets the forearm.",
+      "situation": "He hit his elbow on the table and felt a sharp pain.",
+      "gap": "He hit his ______ on the table and felt a sharp pain."
+    },
+    {
+      "word": "Knee",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "The joint between the thigh and the lower leg.",
+      "situation": "She injured her knee during the football match.",
+      "gap": "She injured her ______ during the football match."
+    },
+    {
+      "word": "Strain",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "An injury in which a muscle or tendon is stretched or torn.",
+      "situation": "He got a muscle strain in his back after lifting heavy boxes.",
+      "gap": "He got a muscle ______ in his back after lifting heavy boxes.",
+      "relations": {
+        "confusableWords": [
+          "Fracture",
+          "Sprain"
+        ]
+      }
+    },
+    {
+      "word": "Diabetic",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective",
+        "noun"
+      ],
+      "meaning": "Relating to diabetes or a person who has it.",
+      "situation": "She follows a strict diabetic diet to keep her blood sugar stable.",
+      "gap": "She follows a strict ______ diet to keep her blood sugar stable."
+    },
+    {
+      "word": "Joint",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A place where two or more bones meet.",
+      "situation": "The knee is one of the largest joints in the human body.",
+      "gap": "The knee is the largest ______ in the human body."
+    },
+    {
+      "word": "Thigh",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "The upper part of the leg, between the hip and knee.",
+      "situation": "He pulled a muscle in his thigh during the race.",
+      "gap": "He pulled a muscle in his ______ during the race."
+    },
+    {
+      "word": "Anatomy",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "The study of the structure of the body.",
+      "situation": "She studied anatomy in her first year of medical school.",
+      "gap": "She studied ______ in her first year of medical school."
+    },
+    {
+      "word": "Nauseous",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "meaning": "Feeling as if you might vomit.",
+      "situation": "The car ride made her feel physically nauseous.",
+      "gap": "The car ride made her feel physically ______."
+    },
+    {
+      "word": "Embolism",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A blocked blood vessel caused by material carried through the blood, such as a clot or air bubble.",
+      "situation": "The doctor said he might be having an embolism and rushed him to surgery.",
+      "gap": "The doctor said he might be having an ______ and rushed him to surgery.",
+      "relations": {
+        "confusableWords": [
+          "Blood clot"
+        ]
+      }
+    },
+    {
+      "word": "Blocking",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "In American football, using the body to stop an opponent or protect a teammate.",
+      "situation": "The team needs better blocking to protect the quarterback.",
+      "gap": "The team needs better ______ to protect the quarterback."
+    },
+    {
+      "word": "Heave",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "meaning": "To lift or throw something with great effort.",
+      "situation": "He just heaved the ball downfield without thinking.",
+      "gap": "He tried to ______ the ball downfield without thinking."
+    },
+    {
+      "word": "Dietitian",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A trained professional who advises people about food and nutrition.",
+      "situation": "My doctor referred me to a dietitian to help me plan a healthier diet.",
+      "gap": "My doctor referred me to a ______ to help me plan a healthier diet.",
+      "excludeFromSameOptionsWith": [
+        "Nutritionist"
+      ]
+    },
+    {
+      "word": "Anorexia",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "An eating disorder involving severe food restriction and fear of weight gain.",
+      "situation": "She was diagnosed with anorexia after losing a dangerous amount of weight.",
+      "gap": "She was diagnosed with ______ after losing a dangerous amount of weight."
+    },
+    {
+      "word": "Consume",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "meaning": "To eat, drink, or use something.",
+      "situation": "The machine consumes a lot of electricity.",
+      "gap": "Old machines can ______ a lot of electricity.",
+      "relations": {
+        "confusableWords": [
+          "Consumer"
+        ]
+      }
+    },
+    {
+      "word": "Poultry",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Meat from farm birds such as chickens.",
+      "situation": "Poultry is a great source of lean protein if you remove the skin.",
+      "gap": "______ is a great source of lean protein if you remove the skin.",
+      "relations": {
+        "confusableWords": [
+          "Livestock"
+        ]
+      }
+    },
+    {
+      "word": "Bulimia",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "An eating disorder involving repeated binge eating followed by behaviours intended to prevent weight gain.",
+      "situation": "Bulimia can cause serious damage to your teeth and digestive system.",
+      "gap": "______ can cause serious damage to your teeth and digestive system."
+    },
+    {
+      "word": "Portions",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Amounts of food served to or intended for individual people.",
+      "situation": "Eating smaller portions is one of the easiest ways to control your weight.",
+      "gap": "Eating smaller ______ is one of the easiest ways to control your weight."
+    },
+    {
+      "word": "Crave",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "meaning": "To want something very strongly, especially a particular food.",
+      "situation": "When I'm stressed, I always crave chocolate and junk food.",
+      "gap": "When I'm stressed, I always ______ chocolate and junk food.",
+      "relations": {
+        "confusableWords": [
+          "have a sweet tooth"
+        ]
+      }
+    },
+    {
+      "word": "Minerals",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Substances such as iron and calcium that the body needs in small amounts.",
+      "situation": "Eating a variety of vegetables ensures you get all the essential minerals your body needs.",
+      "gap": "Eating a variety of vegetables ensures you get all the essential ______ your body needs."
+    },
+    {
+      "word": "Supplement",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A product taken to add nutrients to the usual diet.",
+      "situation": "Many people take vitamin D supplements in winter when there is less sunlight.",
+      "gap": "Many people take a vitamin D ______ in winter when there is less sunlight."
+    },
+    {
+      "word": "Saturated fats",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A type of fat found in foods such as butter, meat, and some plant oils.",
+      "situation": "You should limit your intake of saturated fats to keep your heart healthy.",
+      "gap": "You should limit your intake of ______ to keep your heart healthy."
+    },
+    {
+      "word": "Nutritionist",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A person who studies or advises on food and nutrition.",
+      "situation": "The nutritionist recommended cutting sugar from my diet completely.",
+      "gap": "The ______ recommended cutting sugar from my diet completely.",
+      "excludeFromSameOptionsWith": [
+        "Dietitian"
+      ]
+    },
+    {
+      "word": "Consumer",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A person who buys or uses goods or services.",
+      "situation": "Consumers today are more aware of the ingredients in their food.",
+      "gap": "Today, the average ______ is more aware of the ingredients in their food.",
+      "relations": {
+        "confusableWords": [
+          "Consume"
+        ]
+      }
+    },
+    {
+      "word": "Livestock",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Farm animals kept for products such as meat or milk.",
+      "situation": "The farm raises livestock for both meat and dairy production.",
+      "gap": "The farm raises ______ for both meat and dairy production.",
+      "relations": {
+        "confusableWords": [
+          "Poultry"
+        ]
+      }
+    },
+    {
+      "word": "Dairy products",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun phrase"
+      ],
+      "meaning": "Foods made from milk.",
+      "situation": "Dairy products are rich in calcium, which is essential for strong bones.",
+      "gap": "______ are rich in calcium, which is essential for strong bones."
+    },
+    {
+      "word": "Immune system",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun phrase"
+      ],
+      "meaning": "The body's system for defending itself against infections and other threats.",
+      "situation": "Eating enough vitamins and minerals helps boost your immune system.",
+      "gap": "Eating enough vitamins and minerals helps boost your ______."
+    },
+    {
+      "word": "have a sweet tooth",
+      "type": "idiom",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb phrase"
+      ],
+      "meaning": "To particularly like sweet foods.",
+      "situation": "My father ate half of the cake alone — he has a sweet tooth.",
+      "gap": "My father ate half of the cake alone — he must ______.",
+      "relations": {
+        "confusableWords": [
+          "Crave"
+        ]
+      }
+    },
+    {
+      "word": "butter someone up",
+      "type": "phrasal",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "phrasal verb"
+      ],
+      "meaning": "To praise someone in order to gain their help or approval; informal.",
+      "situation": "He kept complimenting his boss, trying to butter her up before asking for a raise.",
+      "gap": "He kept complimenting his boss — he was trying to ______ before asking for a raise."
+    },
+    {
+      "word": "in a nutshell",
+      "type": "idiom",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adverbial phrase"
+      ],
+      "meaning": "In a brief summary.",
+      "situation": "In a nutshell, eating healthy means less sugar, more vegetables, and staying hydrated.",
+      "gap": "______, eating healthy means less sugar, more vegetables, and staying hydrated."
+    },
+    {
+      "word": "skin and bone",
+      "type": "binomial",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective phrase"
+      ],
+      "meaning": "Extremely thin; an informal expression that may sound unkind.",
+      "situation": "After 1 year in the army, he became skin and bone.",
+      "gap": "After 1 year in the army, he became ______."
+    },
+    {
+      "word": "Chaotic",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "meaning": "Very disorganized and difficult to control.",
+      "situation": "My room is always chaotic after a long week of work — clothes and papers everywhere.",
+      "gap": "My room is always ______ after a long week of work — clothes and papers everywhere."
+    },
+    {
+      "word": "Bring up",
+      "type": "phrasal",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "phrasal verb"
+      ],
+      "meaning": "To mention a subject in a conversation.",
+      "situation": "I didn't want to bring up the subject of money at dinner.",
+      "gap": "I didn't want to ______ the subject of money at dinner.",
+      "relations": {
+        "confusableWords": [
+          "Interpret"
+        ]
+      }
+    },
+    {
+      "word": "Interpret",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "meaning": "To understand or explain what something means.",
+      "situation": "She asked a psychologist to interpret her recurring dream about falling.",
+      "gap": "She asked a psychologist to ______ her recurring dream about falling.",
+      "relations": {
+        "confusableWords": [
+          "Interpretation",
+          "Bring up"
+        ]
+      }
+    },
+    {
+      "word": "Terrifying",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "meaning": "Causing extreme fear.",
+      "situation": "I had a terrifying nightmare about being chased through a dark forest.",
+      "gap": "I had a ______ nightmare about being chased through a dark forest."
+    },
+    {
+      "word": "Drool",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "meaning": "To let saliva run out of the mouth.",
+      "situation": "He fell asleep on the sofa and woke up to find he had drooled on the cushion.",
+      "gap": "He fell asleep on the sofa and started to ______ on the cushion.",
+      "relations": {
+        "confusableWords": [
+          "Saliva"
+        ]
+      }
+    },
+    {
+      "word": "Snoring",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "The act or sound of breathing noisily while asleep.",
+      "situation": "My father's snoring was so loud that nobody in the house could sleep.",
+      "gap": "My father's ______ was so loud that nobody in the house could sleep."
+    },
+    {
+      "word": "Stay up",
+      "type": "phrasal",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "phrasal verb"
+      ],
+      "meaning": "To remain awake instead of going to bed.",
+      "situation": "I stayed up until 3 AM watching a series and regretted it the next morning.",
+      "gap": "I shouldn't ______ until 3 AM watching a series.",
+      "relations": {
+        "confusableWords": [
+          "Insomnia"
+        ]
+      }
+    },
+    {
+      "word": "Insomnia",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Difficulty falling asleep, staying asleep, or getting enough sleep.",
+      "situation": "She has been suffering from insomnia for months and feels exhausted every day.",
+      "gap": "She has been suffering from ______ for months and feels exhausted every day.",
+      "relations": {
+        "confusableWords": [
+          "Sleep disorder",
+          "Stay up"
+        ]
+      }
+    },
+    {
+      "word": "Subconscious",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective",
+        "noun"
+      ],
+      "meaning": "Existing in the mind without being fully noticed or consciously controlled.",
+      "situation": "Many psychologists believe that dreams come from the subconscious mind.",
+      "gap": "Many psychologists believe that dreams come from the ______ mind."
+    },
+    {
+      "word": "Sleep disorder",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun phrase"
+      ],
+      "meaning": "A condition that affects normal sleep.",
+      "situation": "Insomnia and sleep apnea are two of the most common sleep disorders.",
+      "gap": "Insomnia is a common ______ that makes it hard to fall asleep.",
+      "relations": {
+        "confusableWords": [
+          "Insomnia"
+        ]
+      }
+    },
+    {
+      "word": "Daydream",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun",
+        "verb"
+      ],
+      "meaning": "To imagine pleasant things while awake instead of paying attention.",
+      "situation": "I was daydreaming about my next holiday instead of paying attention in the meeting.",
+      "gap": "I tend to ______ about my next holiday instead of paying attention in meetings.",
+      "relations": {
+        "confusableWords": [
+          "Zone out",
+          "Nightmare"
+        ]
+      }
+    },
+    {
+      "word": "Sleepover",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "An occasion when someone, especially a child, stays overnight at a friend's home.",
+      "situation": "My daughter is so excited about her first sleepover at her best friend's house.",
+      "gap": "My daughter is so excited about her first ______ at her best friend's house."
+    },
+    {
+      "word": "Interpretation",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "An explanation or understanding of what something means.",
+      "situation": "There are many different interpretations of what it means to dream about water.",
+      "gap": "There is more than one ______ of what it means to dream about water.",
+      "relations": {
+        "confusableWords": [
+          "Interpret"
+        ]
+      }
+    },
+    {
+      "word": "Nightmare",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "A frightening or upsetting dream while asleep.",
+      "situation": "She woke up screaming after having a nightmare about being trapped in a dark room.",
+      "gap": "She woke up screaming after having a ______ about being trapped in a dark room.",
+      "relations": {
+        "confusableWords": [
+          "Daydream"
+        ]
+      }
+    },
+    {
+      "word": "Saliva",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "The liquid naturally produced in the mouth.",
+      "situation": "Saliva production increases when you smell or see food you like.",
+      "gap": "______ production increases when you smell or see food you like.",
+      "relations": {
+        "confusableWords": [
+          "Drool"
+        ]
+      }
+    },
+    {
+      "word": "Sleep paralysis",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun phrase"
+      ],
+      "meaning": "A brief inability to move or speak while falling asleep or waking up.",
+      "situation": "He experienced sleep paralysis and felt like something was pressing on his chest.",
+      "gap": "He experienced ______ and felt like something was pressing on his chest.",
+      "relations": {
+        "confusableWords": [
+          "Coma"
+        ]
+      }
+    },
+    {
+      "word": "Sleepwalking",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Walking or doing other activities while still asleep.",
+      "situation": "His parents were worried when they discovered he had been sleepwalking every night.",
+      "gap": "His parents were worried when they discovered he had been ______ every night."
+    },
+    {
+      "word": "Sleep talking",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun phrase"
+      ],
+      "meaning": "Speaking while asleep.",
+      "situation": "My roommate scared me last night — he was sleep talking and saying strange things.",
+      "gap": "My roommate scared me last night — he was ______ and saying strange things."
+    },
+    {
+      "word": "Zone out",
+      "type": "phrasal",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "phrasal verb"
+      ],
+      "meaning": "To stop paying attention to what is happening around you; informal.",
+      "situation": "I zoned out completely during the lecture and missed everything the teacher said.",
+      "gap": "I always ______ during long lectures and miss what the teacher says.",
+      "relations": {
+        "confusableWords": [
+          "Daydream"
+        ]
+      }
+    },
+    {
+      "word": "catch some Z's",
+      "type": "idiom",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb phrase"
+      ],
+      "meaning": "To get some sleep; informal.",
+      "situation": "I worked all day — I really need to catch some Z's.",
+      "gap": "I worked all day — I really need to ______."
+    },
+    {
+      "word": "tossing and turning",
+      "type": "binomial",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb phrase"
+      ],
+      "meaning": "Moving around repeatedly in bed because you cannot settle or sleep comfortably.",
+      "situation": "I had an important meeting the next day — I kept tossing and turning all night.",
+      "gap": "I had an important meeting the next day — I kept ______ all night."
+    },
+    {
+      "word": "Your guess is as good as mine",
+      "type": "fyi",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "expression"
+      ],
+      "meaning": "I do not know the answer any more than you do.",
+      "situation": "A: Why did he quit his job? B: IDK — your guess is as good as mine.",
+      "gap": "A: Why did he quit his job? B: IDK — ______."
+    },
+    {
+      "word": "Make up for",
+      "type": "phrasal",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "phrasal verb"
+      ],
+      "meaning": "To compensate for a loss, problem, or missing thing.",
+      "situation": "I missed the gym yesterday, so I'll make up for it with a longer session today.",
+      "gap": "I missed the gym yesterday, so I'll ______ it with a longer session today."
+    },
+    {
+      "word": "Cough",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "meaning": "To force air out of the lungs suddenly, often with a sharp sound.",
+      "situation": "He has been coughing all night because of his cold.",
+      "gap": "His cold made him ______ all night."
+    },
+    {
+      "word": "Broken arm",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun phrase"
+      ],
+      "meaning": "An arm with a fractured bone.",
+      "situation": "He fell off his bike and ended up with a broken arm.",
+      "gap": "He fell off his bike and ended up with a ______."
+    },
+    {
+      "word": "Appointment",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "An arrangement to meet someone at a particular time.",
+      "situation": "I have a doctor's appointment tomorrow morning.",
+      "gap": "I have a doctor's ______ tomorrow morning."
+    },
+    {
+      "word": "Surgery",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Medical treatment performed by operating on the body.",
+      "situation": "He needs surgery to fix his broken knee.",
+      "gap": "He needs ______ to fix his broken knee.",
+      "excludeFromSameOptionsWith": [
+        "Operation"
+      ]
+    },
+    {
+      "word": "Runny Nose",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun phrase"
+      ],
+      "meaning": "A nose from which liquid mucus is coming out.",
+      "situation": "He has a runny nose and keeps sneezing all day.",
+      "gap": "He has a ______ and keeps sneezing all day.",
+      "relations": {
+        "confusableWords": [
+          "Stuffy Nose"
+        ]
+      }
+    },
+    {
+      "word": "Stuffy Nose",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun phrase"
+      ],
+      "meaning": "A nose that feels blocked and is difficult to breathe through.",
+      "situation": "I have a stuffy nose because of my allergies.",
+      "gap": "I have a ______ because of my allergies.",
+      "relations": {
+        "confusableWords": [
+          "Runny Nose"
+        ]
+      }
+    },
+    {
+      "word": "Swallow",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "meaning": "To move food, drink, or another substance from the mouth down the throat.",
+      "situation": "It hurts when I swallow because my throat is so sore.",
+      "gap": "It hurts when I ______ because my throat is so sore."
+    },
+    {
+      "word": "Sore throat",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun phrase"
+      ],
+      "meaning": "Pain or irritation in the throat.",
+      "situation": "I have a sore throat, so I've been drinking warm tea all day.",
+      "gap": "I have a ______, so I've been drinking warm tea all day."
+    },
+    {
+      "word": "Wrap",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "meaning": "To cover or surround something with material.",
+      "situation": "The nurse wrapped his ankle with a bandage.",
+      "gap": "The nurse had to ______ his ankle with a bandage."
+    },
+    {
+      "word": "Feverish",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "meaning": "Having or feeling as if you have a fever.",
+      "situation": "He felt feverish and had to stay in bed all day.",
+      "gap": "He felt ______ and had to stay in bed all day.",
+      "relations": {
+        "confusableWords": [
+          "Fever"
+        ]
+      }
+    },
+    {
+      "word": "Needles",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "meaning": "Thin hollow instruments used to inject substances into the body or draw fluid out.",
+      "situation": "She is afraid of needles and always gets nervous before an injection.",
+      "gap": "She is afraid of ______ and always gets nervous before an injection."
+    },
+    {
+      "word": "Book an appointment",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb phrase"
+      ],
+      "meaning": "To arrange a meeting or visit for a particular time.",
+      "situation": "I need to book an appointment with my dentist for next week.",
+      "gap": "I need to ______ with my dentist for next week.",
+      "hints": [
+        "Same meaning: make an appointment."
+      ]
+    },
+    {
+      "word": "Fill a prescription",
+      "type": "vocab",
+      "category": "Health Body",
+      "partsOfSpeech": [
+        "verb phrase"
+      ],
+      "meaning": "To supply the medicine that a doctor has ordered on a prescription.",
+      "situation": "The pharmacist can fill a prescription in about ten minutes.",
+      "gap": "The pharmacist can ______ in about ten minutes.",
+      "relations": {
+        "confusableWords": [
+          "Prescription"
+        ]
+      }
+    }
+  ]
+}
