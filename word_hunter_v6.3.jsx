@@ -31,16 +31,18 @@ function pickPoolVariant(pools,key,seed){
   const candidates=unlocked.length?unlocked:arr;
   return candidates.reduce((a,b)=>(a.attempts<=b.attempts?a:b));
 }
-// Sentence Build was removed from the game: the word field and the
-// buildSentence challenges are dropped wherever content comes in.
-function withoutSentenceBuild(content) {
+// Fields removed from the game, dropped wherever content comes in:
+// - Sentence Build (the word field and buildSentence challenges).
+// - `example`: `situation` is the example sentence now. An example is only
+//   kept, as the situation, when the word has no situation at all.
+function withoutRemovedFields(content) {
   const out = {...content};
-  if (Array.isArray(out.words)) out.words = out.words.map(({sentenceBuild, ...w}) => w);
+  if (Array.isArray(out.words)) out.words = out.words.map(({sentenceBuild, example, ...w}) => (!w.situation && example ? {...w, situation: example} : w));
   if (Array.isArray(out.challenges)) out.challenges = out.challenges.filter(c => !['buildSentence','build-sentence'].includes(c?.type || c?.mode));
   return out;
 }
 function mergeContent(old = {}, incoming = {}) {
-  old = withoutSentenceBuild(old); incoming = withoutSentenceBuild(incoming);
+  old = withoutRemovedFields(old); incoming = withoutRemovedFields(incoming);
   const out = {...old};
   for (const field of fields) {
     const key = field === 'words' ? 'word' : 'id';
@@ -201,7 +203,7 @@ function questionDifficulty(s={}){
 // Which content pool a practice mode draws its text from. Pools hold the
 // authored text (the "seed") plus AI-written variants, so the same word
 // doesn't show the exact same sentence every time.
-const POOL_FOR_MODE={meaning:'meaning',reverse:'meaning',typing:'typing',gap:'gap',gapTyping:'gap',situation:'situation'};
+const POOL_FOR_MODE={meaning:'meaning',reverse:'meaning',typing:'typing',gap:'gap',gapTyping:'gap'};
 // Least-used unlocked variant; ties broken at random so variants alternate.
 // Retired variants carry a far-future lockedUntil, so they're never picked
 // while anything else is available.
@@ -268,7 +270,9 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
     // have a correct answer, so typing evidence starts before 'Learned'.
     // Once a word is Learned, "definition → pick the word" is too easy to
     // tell you anything, so known words lean on typing and context instead.
-    let modes=st==='New'?['meaning','reverse']:st==='Familiar'?['reverse','gap','situation',...((s.correct||0)>=1?['gapTyping']:[])]:['typing','gapTyping','gap','situation'];
+    // No "situation" mode: the situation is the word's example sentence and
+    // contains the word, so the gap sentence is the context question.
+    let modes=st==='New'?['meaning','reverse']:st==='Familiar'?['reverse','gap',...((s.correct||0)>=1?['gapTyping']:[])]:['typing','gapTyping','gap'];
     if(['Learned','Mastered'].includes(st)){if(['phrasal','fyi'].includes(w.type)&&w.transformExample)modes.push('transform');}
     // Production gate: a word held at PRODUCTION_GATE_STEP (or already
     // Learned/Mastered) with zero correct productions only gets typing modes
@@ -354,7 +358,7 @@ function sessionEvidence(mastery,session,now=Date.now()){
 }
 function reinforcement(s){if(s.extraAdded||s.kind!=='practice')return s;const wrong=s.queue.filter((q,i)=>s.answers[i]&&!s.answers[i].correct&&!s.answers[i].reported).flatMap(q=>q.targets);const added=[];for(const q of s.reserves||[]){if(added.length>=2)break;if(!q.targets.some(t=>wrong.includes(t)))continue;if([...s.queue,...added].slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))))continue;added.push(q);}return {...s,queue:[...s.queue,...added],extraAdded:true};}
 
-return { norm, sentence, shuffleCopy, topic, fields, withoutSentenceBuild, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
+return { norm, sentence, shuffleCopy, topic, fields, withoutRemovedFields, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
 })();
 
 // Pronunciation: two independent sources, tried in order.
@@ -641,7 +645,7 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
       <div className="wh-flashcard-progress">Word {cardIndex+1} of {intro.length} — tap the card to flip</div>
       <div className={`wh-flashcard ${flipped?'flipped':''}`} onClick={()=>setFlipped(f=>!f)} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setFlipped(f=>!f);}}}>
         {!flipped?<div className="wh-flashcard-front"><SmartImage src={w.image} className="wh-flashcard-img"/><h3>{w.word}</h3><p className="wh-flashcard-hint">Tap to reveal meaning &amp; example</p></div>
-        :<div className="wh-flashcard-back"><SmartImage src={w.image} className="wh-flashcard-img"/><h3>{w.word}{w.partsOfSpeech?.length>0&&<span className="wh-pos-tag">{w.partsOfSpeech.join(" / ")}</span>}</h3><p><b>Meaning:</b> {w.meaning}</p><p><b>Situation:</b> {w.situation}</p>{w.example&&<p><b>Example:</b> {w.example}</p>}{w.plainForm&&<p>Plain form: {w.plainForm}</p>}</div>}
+        :<div className="wh-flashcard-back"><SmartImage src={w.image} className="wh-flashcard-img"/><h3>{w.word}{w.partsOfSpeech?.length>0&&<span className="wh-pos-tag">{w.partsOfSpeech.join(" / ")}</span>}</h3><p><b>Meaning:</b> {w.meaning}</p><p><b>Situation:</b> {w.situation}</p>{w.plainForm&&<p>Plain form: {w.plainForm}</p>}</div>}
       </div>
       {flipped&&<div className="wh-regen-area">
         {!regenState&&<button className="wh-back-btn wh-nav-btn" onClick={handleRegenerate}>Regenerate meaning &amp; example</button>}
@@ -1302,12 +1306,20 @@ function authoredChallengesForWord(word, type = null) {
   });
 }
 
-// Many authored situations are just the gap sentence with the word filled
-// in. Any question that shows the situation and asks for the word would
-// print the answer in the prompt, so those styles check this first.
+// The situation is the word's example sentence, so it normally contains the
+// word. True when `text` (the situation by default) contains the word.
 function situationLeaks(word, text = word?.situation) {
   const answer = normalizeAnswerText(word?.word);
   return !!answer && normalizeAnswerText(text).includes(answer);
+}
+
+// A sentence that points to the word without showing it, for questions
+// that ask "which word?": the gap sentence (word blanked out), or an older
+// scenario-style situation that never used the word. Null if neither works.
+function contextSentence(word) {
+  if (word?.gap && /_{2,}/.test(word.gap) && !situationLeaks(word, word.gap)) return word.gap;
+  if (word?.situation && !situationLeaks(word)) return word.situation;
+  return null;
 }
 
 function isStrongStoryFallback(word) {
@@ -1637,14 +1649,15 @@ function buildOppositeDirect(wordObj) {
   return { target, prompt: wordObj.word, options, answer: wordObj.opposite, type: "mcq" };
 }
 
-// Mode B — pick the side of the sentence: the word's own situation sentence
-// (already written to imply the word, not its opposite) becomes a two-option
-// choice between the word and its opposite.
+// Mode B — pick the side of the sentence: the word's gap sentence (written
+// for the word, not its opposite) becomes a two-option choice between the
+// word and its opposite.
 function buildOppositeSentence(wordObj) {
-  if (situationLeaks(wordObj)) return buildOppositeDirect(wordObj);
+  const context = contextSentence(wordObj);
+  if (!context) return buildOppositeDirect(wordObj);
   const target = { ...wordObj, key: wordObj.word, label: wordObj.word, explanation: `${wordObj.word} ↔ ${wordObj.opposite}` };
   const options = shuffle([wordObj.word, wordObj.opposite]);
-  return { target, prompt: wordObj.situation, options, answer: wordObj.word, type: "mcq" };
+  return { target, prompt: context, options, answer: wordObj.word, type: "mcq" };
 }
 
 // Mode C — "Opposite or not?": two words, judge whether they're a real pair.
@@ -1726,24 +1739,24 @@ function buildWhoAmIQuestion(wordObj) {
   return { target, prompt: `${riddle} Who am I?`, options, answer: wordObj.word, type: "mcq" };
 }
 
-// --- Two People / Select Two — combine two existing situations into one
-// harder question, without needing any new authored content. A "companion"
-// word from the same category supplies the second situation.
+// --- Two People / Select Two — combine two context sentences (usually the
+// gap sentences) into one harder question, without needing new authored
+// content. A "companion" word from the same category supplies the second.
 function pickCompanion(wordObj) {
-  const sourceSituation = normalizeAnswerText(wordObj.situation);
+  const source = normalizeAnswerText(contextSentence(wordObj));
   const pool = WORDS.filter((w) =>
     w.word !== wordObj.word &&
     w.category === wordObj.category &&
-    w.situation &&
-    !situationLeaks(w) &&
-    normalizeAnswerText(w.situation) !== sourceSituation &&
+    contextSentence(w) &&
+    normalizeAnswerText(contextSentence(w)) !== source &&
+    !situationLeaks(wordObj, contextSentence(w)) &&
     meaningSimilarity(w.meaning, wordObj.meaning) < 0.55
   );
   return pool.length ? shuffle(pool)[0] : null;
 }
 
 function canBuildTwoPerson(wordObj) {
-  return !situationLeaks(wordObj) && pickCompanion(wordObj) !== null;
+  return !!contextSentence(wordObj) && pickCompanion(wordObj) !== null;
 }
 
 function fillToFour(base, exclude) {
@@ -1758,20 +1771,23 @@ function fillToFour(base, exclude) {
 }
 
 function buildTwoPeopleQuestion(wordObj) {
-  const companion = situationLeaks(wordObj) ? null : pickCompanion(wordObj);
+  const mine = contextSentence(wordObj);
+  const companion = mine ? pickCompanion(wordObj) : null;
   if (!companion) return null;
+  const theirs = contextSentence(companion);
   const askFirst = Math.random() < 0.5;
   const distractors = sampleDistractors(wordObj, 3).filter((d) => d.word !== companion.word);
   const options = shuffle(fillToFour([wordObj.word, companion.word, ...distractors.map((d) => d.word)], new Set([wordObj.word, companion.word])));
   const prompt = askFirst
-    ? `Person A: "${wordObj.situation}"\n\nPerson B: "${companion.situation}"\n\nWhich word describes Person A?`
-    : `Person A: "${companion.situation}"\n\nPerson B: "${wordObj.situation}"\n\nWhich word describes Person B?`;
+    ? `Person A: "${mine}"\n\nPerson B: "${theirs}"\n\nWhich word belongs to Person A?`
+    : `Person A: "${theirs}"\n\nPerson B: "${mine}"\n\nWhich word belongs to Person B?`;
   const target = { ...wordObj, key: wordObj.word, label: wordObj.word, explanation: wordObj.meaning };
   return { target, prompt, options, answer: wordObj.word, type: "mcq" };
 }
 
 function buildSelectTwoQuestion(wordObj) {
-  const companion = situationLeaks(wordObj) ? null : pickCompanion(wordObj);
+  const mine = contextSentence(wordObj);
+  const companion = mine ? pickCompanion(wordObj) : null;
   if (!companion) return null;
   const distractors = sampleDistractors(wordObj, 3).filter((d) => d.word !== companion.word);
   const options = shuffle(fillToFour([wordObj.word, companion.word, ...distractors.map((d) => d.word)], new Set([wordObj.word, companion.word])));
@@ -1783,7 +1799,7 @@ function buildSelectTwoQuestion(wordObj) {
   };
   return {
     target,
-    prompt: `Two situations — pick the two words that fit:\n\n1) ${wordObj.situation}\n\n2) ${companion.situation}`,
+    prompt: `Two sentences — pick the two words that fit:\n\n1) ${mine}\n\n2) ${contextSentence(companion)}`,
     options,
     correctAnswers: [wordObj.word, companion.word],
     type: "multi",
@@ -1886,9 +1902,10 @@ function buildQuestionUnsafe(modeId, wordObj, pools, options = {}) {
   if (modeId === "idiomDetective") {
     if (!isIdiom(wordObj)) return buildQuestion("situation", wordObj, pools, options);
     if (difficulty <= 2) {
-      if (situationLeaks(wordObj)) return buildQuestion("gap", wordObj, pools, options);
+      const context = contextSentence(wordObj);
+      if (!context) return buildQuestion("gap", wordObj, pools, options);
       const distractors = hardDistractors(wordObj, 3, confusionPartner);
-      return { target, modeId, difficulty, type: "mcq", prompt: wordObj.situation, options: shuffle([wordObj.word, ...distractors.map((d) => d.word)]), answer: wordObj.word };
+      return { target, modeId, difficulty, type: "mcq", prompt: context, options: shuffle([wordObj.word, ...distractors.map((d) => d.word)]), answer: wordObj.word };
     }
     return { target, modeId, difficulty, type: "freeform", prompt: `In this situation, what does “${wordObj.word}” mean?\n${wordObj.situation}`, answer: wordObj.meaning, freeformKind: "idiomMeaning" };
   }
@@ -2247,7 +2264,7 @@ function findCategoryDuplicates(names, counts) {
 // ---- Content Health: find weak word entries and fix them with AI ----
 const PARTS_OF_SPEECH = ["noun", "verb", "adjective", "adverb", "noun phrase", "verb phrase", "adjective phrase", "adverbial phrase", "phrasal verb", "idiom", "expression", "binomial phrase", "proper noun", "interjection", "preposition", "conjunction"];
 const HEALTH_CHECKS = {
-  situation: { label: "Situation shows the word", help: "The situation sentence contains the word itself, so questions built on it give the answer away. AI rewrites it as a short scenario that implies the meaning without the word.", field: "situation", test: (w) => !!w.situation && situationLeaks(w) },
+  situation: { label: "Situation doesn't use the word", help: "The situation is the word's example sentence, so it should contain the word. AI rewrites missing or scenario-style situations as one natural example sentence that uses the word.", field: "situation", test: (w) => !w.situation || !situationLeaks(w) },
   meaning: { label: "Weak meaning", help: "Very short, \"Opposite of …\", or contains the word. Hard to type the word from. AI writes one clear B1 definition.", field: "meaning", test: (w) => { const m = String(w.meaning || "").trim(); return !m || m.split(/\s+/).length < 4 || /^opposite of/i.test(m) || normalizeAnswerText(m).includes(normalizeAnswerText(w.word)); } },
   duplicate: { label: "Same meaning as another word", help: "Two words share the exact same definition, so a question has two right answers. AI rewrites each so they can be told apart.", field: "meaning", test: null },
   commonMistake: { label: "Missing common mistake", help: "Grammar Court questions need a typical learner mistake, its correction and a short why.", field: "commonMistake", test: (w) => !(w.commonMistake?.sentence && w.commonMistake?.correction && w.commonMistake?.why) },
@@ -2262,7 +2279,7 @@ function scanContentHealth(words) {
   return out;
 }
 const HEALTH_INSTRUCTIONS = {
-  situation: `For each word, write a NEW "situation": 1-2 short sentences (B1 English, use a person's name) describing a moment that clearly points to this word's meaning. The word/phrase itself, and any form of it (plural, past tense, -ing), must NOT appear. It must fit this word better than the "siblings" listed. Return {"results":[{"word":"...","value":"the new situation"}]}.`,
+  situation: `For each word, write a NEW "situation": ONE natural example sentence (B1 English) that uses the word/phrase exactly as written, in a context that makes its meaning clear. Keep the same sense as the current meaning. Return {"results":[{"word":"...","value":"the new example sentence"}]}.`,
   meaning: `For each word, write a NEW "meaning": ONE clear sentence, B1 English, precise enough that a learner could type the exact word from it. Never use the word/phrase itself or "opposite of". Keep the same sense as the current meaning and situation. If "sameMeaningAs" is given, make the definitions clearly different from those words. Return {"results":[{"word":"...","value":"the new meaning"}]}.`,
   commonMistake: `For each word, write a typical B1 learner mistake when using it: "sentence" (the wrong sentence), "correction" (the same sentence fixed), "why" (one short simple reason). The mistake must be about using THIS word (form, preposition, collocation or meaning). Return {"results":[{"word":"...","value":{"sentence":"...","correction":"...","why":"..."}}]}.`,
   partsOfSpeech: `For each word, list its part(s) of speech for the meaning given, using ONLY these values: ${PARTS_OF_SPEECH.join(", ")}. Return {"results":[{"word":"...","value":["noun"]}]}.`,
@@ -2285,7 +2302,7 @@ async function aiFixWordBatch(kind, words, allWords) {
     if (instructionKind === "situation") {
       const text = String(v || "").trim();
       if (text.split(/\s+/).length < 6) return problem("Too short.");
-      if (situationLeaks(w, text)) return problem("Still contains the word.");
+      if (!situationLeaks(w, text)) return problem("Doesn't use the word.");
       return { word: w.word, ok: true, field: "situation", before: w.situation, after: text };
     }
     if (instructionKind === "meaning") {
@@ -2293,7 +2310,13 @@ async function aiFixWordBatch(kind, words, allWords) {
       if (text.split(/\s+/).length < 4) return problem("Too short.");
       if (normalizeAnswerText(text).includes(normalizeAnswerText(w.word))) return problem("Contains the word.");
       if (/^opposite of/i.test(text)) return problem("Still an \"opposite of\" definition.");
-      return { word: w.word, ok: true, field: "meaning", before: w.meaning, after: text };
+      // 'Opposite of "Heave".' carries real information: keep it by moving
+      // the named word into the opposite field (when it's a known word and
+      // no opposite is set yet) instead of losing it with the old meaning.
+      const named = String(w.meaning || "").trim().match(/^opposite of\s*["“']?(.+?)["”']?\s*\.?$/i)?.[1];
+      const oppositeWord = named && allWords.find((x) => normalizeAnswerText(x.word) === normalizeAnswerText(named) && x.word !== w.word)?.word;
+      const extra = oppositeWord && !w.opposite ? { opposite: oppositeWord } : null;
+      return { word: w.word, ok: true, field: "meaning", before: w.meaning, after: text, ...(extra ? { extra } : {}) };
     }
     if (instructionKind === "commonMistake") {
       const cm = v && typeof v === "object" ? { sentence: String(v.sentence || "").trim(), correction: String(v.correction || "").trim(), why: String(v.why || "").trim() } : null;
@@ -2932,7 +2955,13 @@ function ContentHealthPanel({ content, onUpdate, onMergeCategories, onRemoveEmpt
     const chosen = review.items.filter((it) => it.ok && it.selected);
     if (!chosen.length) { setReview(null); return; }
     const byWord = new Map(chosen.map((it) => [it.word, it]));
-    onUpdate("words", words.map((w) => (byWord.has(w.word) ? { ...w, [byWord.get(w.word).field]: byWord.get(w.word).after } : w)));
+    // Opposites go both ways: the named word gets this one back if it has none.
+    const reverse = new Map(chosen.filter((it) => it.extra?.opposite).map((it) => [it.extra.opposite, it.word]));
+    onUpdate("words", words.map((w) => {
+      let next = byWord.has(w.word) ? { ...w, [byWord.get(w.word).field]: byWord.get(w.word).after, ...(byWord.get(w.word).extra || {}) } : w;
+      if (reverse.has(w.word) && !next.opposite) next = { ...next, opposite: reverse.get(w.word) };
+      return next;
+    }));
     setNotice(`Applied ${chosen.length} fix${chosen.length === 1 ? "" : "es"}.`);
     setReview(null);
   }
@@ -2957,7 +2986,7 @@ function ContentHealthPanel({ content, onUpdate, onMergeCategories, onRemoveEmpt
         <h4>Review: {HEALTH_CHECKS[review.kind].label} — {selectedCount} selected</h4>
         {review.items.map((it, i) => <label key={it.word} className={`wh-health-item ${it.ok ? "" : "failed"}`}>
           <input type="checkbox" disabled={!it.ok} checked={!!it.selected} onChange={() => toggle(i)} />
-          <div><b>{it.word}</b>{it.ok ? <><p className="before">{formatHealthValue(it.before)}</p><p className="after">{formatHealthValue(it.after)}</p></> : <p className="before">Skipped: {it.reason}</p>}</div>
+          <div><b>{it.word}</b>{it.ok ? <><p className="before">{formatHealthValue(it.before)}</p><p className="after">{formatHealthValue(it.after)}</p>{it.extra?.opposite && <p className="after">+ Opposite: {it.extra.opposite}</p>}</> : <p className="before">Skipped: {it.reason}</p>}</div>
         </label>)}
         <div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={() => setReview(null)}>Discard all</button><button className="wh-import-btn primary" disabled={!selectedCount} onClick={apply}>Apply {selectedCount} selected</button></div>
       </div>}
@@ -3810,7 +3839,7 @@ export default function WordHunter() {
         const customRes = await storage.get(CUSTOM_CONTENT_KEY, false);
         if (customRes && customRes.value) {
           hadAnyData = true;
-          const custom = V2.withoutSentenceBuild(JSON.parse(customRes.value));
+          const custom = V2.withoutRemovedFields(JSON.parse(customRes.value));
           setCustomCombos(custom.combos || []); setCustomStories(custom.stories || []); contentNoteRef.current=custom.note||"";
           setCustomWords(custom.words || []);
           setCustomGrammar(custom.grammar || []);
