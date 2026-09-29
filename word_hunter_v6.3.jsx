@@ -275,12 +275,14 @@ function collocationQuestion(w, words, rng = Math.random, typing = false) {
 }
 // Picture Hunter: the word's picture, pick or type the word. A picture
 // uploaded in Admin (a data: URI in \`image\`) always shows, so it counts; an
-// outside photo link only counts when a drawing can stand in if it's blocked.
+// outside photo link counts when it was seen to load here (linkOk), or when a
+// drawing can stand in if it's blocked.
 // Options never include a word the picture could also show (pictureAvoid:
 // Needles / Injection, Knee / Joint) or another word from the same group.
-function pictureQuestion(w, words, rng = Math.random, typing = false) {
+function pictureQuestion(w, words, rng = Math.random, typing = false, linkOk = () => false) {
   const uploaded = typeof w.image === 'string' && /^data:image\/(png|jpe?g|webp|gif);base64,/i.test(w.image);
-  if (!isIllustration(w.illustration) && !uploaded) return null;
+  const link = typeof w.image === 'string' && /^https?:\/\//i.test(w.image) && linkOk(w.image);
+  if (!isIllustration(w.illustration) && !uploaded && !link) return null;
   const avoid = new Set((Array.isArray(w.pictureAvoid) ? w.pictureAvoid : []).map(norm));
   const base = { id: `${w.word}:picture`, mode: 'picture', targets: [w.word], answers: [w.word], prompt: typing ? 'Type the word for this picture.' : 'Which word matches the picture?', picture: isIllustration(w.illustration) ? w.illustration : null, photo: typeof w.image === 'string' ? w.image : null, sentences: [`picture: ${w.word}`], explanation: w.meaning || '', hints: w.hints || [], difficulty: 2 };
   if (typing) return { ...base, type: 'typing' };
@@ -703,7 +705,7 @@ function sessionEvidence(mastery,session,now=Date.now()){
 }
 function reinforcement(s){if(s.extraAdded||s.kind!=='practice')return s;const wrong=s.queue.filter((q,i)=>s.answers[i]&&!s.answers[i].correct&&!s.answers[i].reported).flatMap(q=>q.targets);const added=[];for(const q of s.reserves||[]){if(added.length>=2)break;if(!q.targets.some(t=>wrong.includes(t)))continue;if([...s.queue,...added].slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))))continue;const shown=new Set([...s.queue,...added].flatMap(questionSentences));if(questionSentences(q).some(t=>shown.has(t)))continue;added.push(q);}return {...s,queue:[...s.queue,...added],extraAdded:true};}
 
-return { norm, sentence, pictureQuestion, isIllustration, linkAntonyms, outsideAntonyms, antonymsOf, collocationQuestion, familyQuestion, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, questionSentences, seenRecently, SEEN_FRESH_HOURS, grammarQuestions, grammarQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
+return { norm, sentence, makeQuestion, pictureQuestion, isIllustration, linkAntonyms, outsideAntonyms, antonymsOf, collocationQuestion, familyQuestion, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, questionSentences, seenRecently, SEEN_FRESH_HOURS, grammarQuestions, grammarQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
 })();
 
 // Pronunciation: two independent sources, tried in order.
@@ -787,6 +789,28 @@ function imageFileToDataUrl(file, max = 256, quality = 0.82) {
     reader.readAsDataURL(file);
   });
 }
+// Photo links on words, tried once in the background: url -> "ok" | "bad" |
+// "pending". Picture Hunter only asks about a link-only picture that loaded.
+const IMAGE_LINKS = new Map();
+function checkImageLink(url, timeout = 10000) {
+  if (IMAGE_LINKS.has(url) && IMAGE_LINKS.get(url) !== "bad") return;
+  IMAGE_LINKS.set(url, "pending");
+  return new Promise((resolve) => {
+    const img = new Image();
+    let done = false;
+    const finish = (ok) => { if (done) return; done = true; IMAGE_LINKS.set(url, ok ? "ok" : "bad"); resolve(ok); };
+    img.referrerPolicy = "no-referrer";
+    img.onload = () => finish(img.naturalWidth > 0);
+    img.onerror = () => finish(false);
+    setTimeout(() => finish(false), timeout);
+    img.src = url;
+  });
+}
+function checkImageLinks(words) {
+  if (typeof Image === "undefined") return;
+  for (const w of words) if (typeof w.image === "string" && /^https?:\/\//i.test(w.image)) checkImageLink(w.image);
+}
+const imageLinkOk = (url) => IMAGE_LINKS.get(url) === "ok";
 // A word's picture: the photo link if it loads, otherwise its drawing; a
 // blocked or broken photo quietly falls back instead of showing an error.
 function WordPicture({ word, className = "wh-flashcard-img" }) {
@@ -794,7 +818,7 @@ function WordPicture({ word, className = "wh-flashcard-img" }) {
   const photo = typeof word?.photo === "string" ? word.photo : typeof word?.image === "string" ? word.image : null;
   const drawing = word?.picture || word?.illustration;
   useEffect(() => setFailed(false), [photo]);
-  if (photo && !failed) return <img src={photo} alt="" className={className} onError={() => setFailed(true)} />;
+  if (photo && !failed) return <img src={photo} alt="" referrerPolicy="no-referrer" className={className} onError={() => setFailed(true)} />;
   if (V2.isIllustration(drawing)) return <img src={`data:image/svg+xml;utf8,${encodeURIComponent(drawing)}`} alt="" className={`${className} wh-word-drawing`} />;
   return null;
 }
@@ -1576,6 +1600,7 @@ function mergeCustomData(customWords, customGrammar, customChallenges, levelOrde
   CHALLENGES = dedupeBy([...baseChallenges, ...(Array.isArray(customChallenges) ? customChallenges : [])], (c) => c && c.id);
   LEVEL_ORDER = levelOrder;
   rebuildDerived();
+  checkImageLinks(WORDS);
 }
 
 
@@ -3622,6 +3647,8 @@ function AdminControlCenter({content,mastery,confusions,reports,activeSession,se
   const [tab,setTab]=useState("dashboard");
   const [entity,setEntity]=useState("words");
   const [pictureNote,setPictureNote]=useState(null);
+  const [pictureLink,setPictureLink]=useState("");
+  const [pictureLinkBusy,setPictureLinkBusy]=useState(false);
   const [query,setQuery]=useState("");
   const [editor,setEditor]=useState(null);
   const [draft,setDraft]=useState("");
@@ -3814,7 +3841,7 @@ function AdminControlCenter({content,mastery,confusions,reports,activeSession,se
     <main className="wh-admin-main">
       <header className="wh-admin-top"><div><small>WORD HUNTER V7</small><h2>{tab==="dashboard"?"Command Dashboard":tab==="content"?"Content Manager":tab==="grammar"?"Grammar Rules":tab==="reports"?"Question Reports":tab==="health"?"Content Health":tab==="progress"?"Learning Progress":tab==="settings"?"Settings":"Data Center"}</h2></div><button className="wh-back-btn" onClick={onClose}>Close Admin</button></header>
       {tab==="dashboard"&&<><div className="wh-admin-kpis">{[[content.words.length,"Words"],[attempts,"Attempts"],[correct?Math.round(correct/Math.max(1,attempts)*100)+"%":"—","Accuracy"],[reports.filter(x=>!x.resolvedAt).length,"Open reports"],[missing,"Needs content"],[content.words.filter(w=>w._aiAdded).length,"AI-added"]].map(([value,label])=><article key={label}><b>{value}</b><span>{label}</span></article>)}</div><div className="wh-admin-grid"><article className="wh-admin-card"><h3>Mastery distribution</h3>{Object.entries(stages).map(([name,value])=><div className="wh-admin-meter" key={name}><span>{name}</span><i style={{width:`${content.words.length?value/content.words.length*100:0}%`}}/><b>{value}</b></div>)}</article><article className="wh-admin-card"><h3>Library health</h3><p>{content.grammar.length} grammar rules · {content.grammar.reduce((n,g)=>n+V2.grammarQuestions(g).length,0)} questions</p><p>{content.stories.length} stories · {content.combos.length} combos</p><p>{content.challenges.length} authored challenges</p><p>{new Set(content.words.map(w=>V2.topic(w.category))).size} levels/categories</p></article></div></>}
-      {tab==="content"&&<><div className="wh-admin-toolbar"><div className="wh-admin-entities">{Object.entries(entities).map(([id,item])=><button key={id} className={entity===id?"active":""} onClick={()=>{setEntity(id);setEditor(null);setCategoryFilter("");setCategoryBrowse("");setStubOnly(false);}}>{item.label} <span>{content[id]?.length||0}</span></button>)}</div>{categories.length>0&&<select value={categoryFilter} onChange={e=>setCategoryFilter(e.target.value)}><option value="">All categories</option>{categories.map(cat=><option key={cat} value={cat}>{cat}</option>)}</select>}<select value={categoryBrowse} onChange={e=>{setCategoryBrowse(e.target.value);setEditor(null);}} title="Show every word, grammar item, combo, challenge and story for one category, across all types"><option value="">Browse a category (all types)…</option>{allCategories.map(cat=><option key={cat} value={cat}>{cat}</option>)}</select><button className="wh-import-btn primary" disabled={categoryMergeBusy} onClick={handleSuggestCategoryMerges}><Sparkles size={13}/> {categoryMergeBusy?"Analyzing…":"Suggest category cleanup"}</button>{entity!=="levels"&&categoryFilter&&filtered.length>0&&<button onClick={()=>{setMoveTarget({entity,ids:filtered.map(({item})=>item[config.key])});setMoveInput("");}}>Move all {filtered.length} in "{categoryFilter}" to…</button>}{entity==="words"&&stubCount>0&&<label className="wh-admin-stub-toggle"><input type="checkbox" checked={stubOnly} onChange={e=>setStubOnly(e.target.checked)}/> Needs content only ({stubCount})</label>}{entity==="words"&&stubCount>0&&<button className="wh-import-btn primary" disabled={bulkFixBusy} onClick={handleBulkFixStubs}><Sparkles size={13}/> {bulkFixBusy?`Fixing ${bulkFixProgress?.done||0}/${bulkFixProgress?.total||stubCount}…`:`Fill ${stubCount} with AI`}</button>}<input value={query} onChange={e=>setQuery(e.target.value)} placeholder={`Search ${config.label.toLowerCase()}…`}/><button className="primary" onClick={()=>startEdit(null,null)}>+ Add</button></div>{bulkFixReport&&<div className="wh-import-hint"><b>AI content fill: {bulkFixReport.succeeded.length} filled, {bulkFixReport.failed.length} failed.</b>{bulkFixReport.failed.length>0&&<ul>{bulkFixReport.failed.map((f,i)=><li key={i}>{f.word}: {f.message}</li>)}</ul>}<div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={()=>setBulkFixReport(null)}>Dismiss</button></div></div>}{categoryMergeError&&<div className="wh-import-error">{categoryMergeError}</div>}{categoryMergeSuggestions&&<div className="wh-import-hint"><b>Suggested category merges:</b>{!categoryMergeSuggestions.length?<p>No confident duplicates found.</p>:categoryMergeSuggestions.map((m,i)=><div className="wh-admin-browse-row" key={i}><span><b>{m.canonical}</b><small>absorbs: {m.duplicates.join(", ")}</small></span><span>{appliedMerges.includes(m.canonical)?<i>Merged</i>:<button className="wh-import-btn primary" onClick={()=>applyCategoryMerge(m)}>Merge</button>}</span></div>)}<div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={()=>{setCategoryMergeSuggestions(null);setAppliedMerges([]);}}>Dismiss</button></div></div>}{editor?<div className="wh-admin-editor"><div className="wh-admin-editor-head"><h3>{editor.index===null?`Add ${config.label}`:`Edit ${editor.original?.[config.key]}`}</h3><button onClick={()=>setEditor(null)}>Cancel</button></div><p>Edit every supported field as structured JSON. IDs and word labels are stable progress keys.</p>{entity==="words"&&(()=>{let current=null;try{current=JSON.parse(draft);}catch{}const hasPicture=current&&(current.image||current.illustration);return hasPicture?<div className="wh-admin-picture"><WordPicture word={current} className="wh-admin-picture-img"/><div>{pictureNote&&<small>{pictureNote}</small>}{current.image&&<button onClick={()=>{const {image,...rest}=current;setDraft(JSON.stringify(rest,null,2));setPictureNote(current.illustration?"Picture removed — the drawing will show instead.":"Picture removed.");}}>Remove picture</button>}</div></div>:null;})()}<textarea value={draft} onChange={e=>setDraft(e.target.value)} spellCheck={false}/>{error&&<div className="wh-import-error">{error}</div>}<div className="wh-ai-actions"><button className="primary" onClick={saveEdit}>Validate &amp; Save</button>{entity==="words"&&<button disabled={editorBusy} onClick={fillWordWithAi}>{editorBusy?"Generating…":"Fill fields with AI"}</button>}{entity==="words"&&<label className="wh-admin-file-btn">Add picture<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={async e=>{const file=e.target.files?.[0];e.target.value="";if(!file)return;try{const current=JSON.parse(draft);const image=await imageFileToDataUrl(file);setDraft(JSON.stringify({...current,image},null,2));setError(null);setPictureNote(`Picture added (${Math.round(image.length*3/4/1024)} KB). Press Validate & Save to keep it.`);}catch(problem){setError(problem instanceof SyntaxError?"Fix the JSON first, then add the picture.":problem.message);}}}/></label>}<button onClick={()=>{try{setDraft(JSON.stringify(JSON.parse(draft),null,2));setError(null);}catch{setError("Invalid JSON.");}}}>Format JSON</button></div></div>:categoryBrowse?<div className="wh-admin-category-browse"><div className="wh-admin-category-browse-head"><h3>Everything in "{categoryBrowse}"</h3><button onClick={()=>setCategoryBrowse("")}>✕ Clear</button></div>{!categoryGroups.length?<p>Nothing tagged with this category yet.</p>:categoryGroups.map(group=><div className="wh-admin-card" key={group.id}><h4>{group.label} <span>{group.items.length}</span><button onClick={()=>{setMoveTarget({entity:group.id,ids:group.items.map(({item})=>item[entities[group.id].key])});setMoveInput("");}}>Move all {group.items.length} to…</button></h4>{group.items.map(({item,index})=><div className="wh-admin-browse-row" key={item[entities[group.id].key]||index}><span><b>{item[entities[group.id].key]}</b><small>{item.meaning||item.title||item.rule||item.prompt||""}</small></span><span><button onClick={()=>{setEntity(group.id);setCategoryFilter("");startEdit(item,index);}}>Edit</button><button onClick={()=>{setMoveTarget({entity:group.id,ids:[item[entities[group.id].key]]});setMoveInput("");}}>Move</button></span></div>)}</div>)}</div>:<div className="wh-admin-table"><div className="wh-admin-row head"><span>Item</span><span>Category / Type</span><span>Status</span><span>Actions</span></div>{filtered.map(({item,index})=>{const rec=entity==="words"?mastery[item.word]:null;const modesCount=rec?Object.values(rec.modes||{}).filter(m=>m.correct>0).length:0;return <div className="wh-admin-row" key={item[config.key]||index}><span><b>{item[config.key]}</b><small>{item.meaning||item.title||item.rule||item.prompt||""}</small></span><span>{entity==="levels"?`${content.words.filter(word=>V2.topic(word.category)===V2.topic(item.title)).length} words`:item.category||item.type||"—"}</span><span>{item._autoStub?<span className="wh-stub-badge" title="Auto-created from a missing reference during import — needs real content">⚠ Needs content</span>:entity==="words"?<span className="wh-status-stack"><b>{V2.stage(rec)}</b><small>{rec?.correct||0}/{rec?.total||0} · {modesCount} mode{modesCount===1?"":"s"}{item._aiAdded?" · AI-added":""}</small></span>:"Ready"}</span><span><button onClick={()=>startEdit(item,index)}>Edit</button>{entity!=="levels"&&<button onClick={()=>{setMoveTarget({entity,ids:[item[config.key]]});setMoveInput("");}}>Move</button>}<button className="danger" onClick={()=>remove(index)}>Delete</button></span></div>;})}</div>}</>}
+      {tab==="content"&&<><div className="wh-admin-toolbar"><div className="wh-admin-entities">{Object.entries(entities).map(([id,item])=><button key={id} className={entity===id?"active":""} onClick={()=>{setEntity(id);setEditor(null);setCategoryFilter("");setCategoryBrowse("");setStubOnly(false);}}>{item.label} <span>{content[id]?.length||0}</span></button>)}</div>{categories.length>0&&<select value={categoryFilter} onChange={e=>setCategoryFilter(e.target.value)}><option value="">All categories</option>{categories.map(cat=><option key={cat} value={cat}>{cat}</option>)}</select>}<select value={categoryBrowse} onChange={e=>{setCategoryBrowse(e.target.value);setEditor(null);}} title="Show every word, grammar item, combo, challenge and story for one category, across all types"><option value="">Browse a category (all types)…</option>{allCategories.map(cat=><option key={cat} value={cat}>{cat}</option>)}</select><button className="wh-import-btn primary" disabled={categoryMergeBusy} onClick={handleSuggestCategoryMerges}><Sparkles size={13}/> {categoryMergeBusy?"Analyzing…":"Suggest category cleanup"}</button>{entity!=="levels"&&categoryFilter&&filtered.length>0&&<button onClick={()=>{setMoveTarget({entity,ids:filtered.map(({item})=>item[config.key])});setMoveInput("");}}>Move all {filtered.length} in "{categoryFilter}" to…</button>}{entity==="words"&&stubCount>0&&<label className="wh-admin-stub-toggle"><input type="checkbox" checked={stubOnly} onChange={e=>setStubOnly(e.target.checked)}/> Needs content only ({stubCount})</label>}{entity==="words"&&stubCount>0&&<button className="wh-import-btn primary" disabled={bulkFixBusy} onClick={handleBulkFixStubs}><Sparkles size={13}/> {bulkFixBusy?`Fixing ${bulkFixProgress?.done||0}/${bulkFixProgress?.total||stubCount}…`:`Fill ${stubCount} with AI`}</button>}<input value={query} onChange={e=>setQuery(e.target.value)} placeholder={`Search ${config.label.toLowerCase()}…`}/><button className="primary" onClick={()=>startEdit(null,null)}>+ Add</button></div>{bulkFixReport&&<div className="wh-import-hint"><b>AI content fill: {bulkFixReport.succeeded.length} filled, {bulkFixReport.failed.length} failed.</b>{bulkFixReport.failed.length>0&&<ul>{bulkFixReport.failed.map((f,i)=><li key={i}>{f.word}: {f.message}</li>)}</ul>}<div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={()=>setBulkFixReport(null)}>Dismiss</button></div></div>}{categoryMergeError&&<div className="wh-import-error">{categoryMergeError}</div>}{categoryMergeSuggestions&&<div className="wh-import-hint"><b>Suggested category merges:</b>{!categoryMergeSuggestions.length?<p>No confident duplicates found.</p>:categoryMergeSuggestions.map((m,i)=><div className="wh-admin-browse-row" key={i}><span><b>{m.canonical}</b><small>absorbs: {m.duplicates.join(", ")}</small></span><span>{appliedMerges.includes(m.canonical)?<i>Merged</i>:<button className="wh-import-btn primary" onClick={()=>applyCategoryMerge(m)}>Merge</button>}</span></div>)}<div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={()=>{setCategoryMergeSuggestions(null);setAppliedMerges([]);}}>Dismiss</button></div></div>}{editor?<div className="wh-admin-editor"><div className="wh-admin-editor-head"><h3>{editor.index===null?`Add ${config.label}`:`Edit ${editor.original?.[config.key]}`}</h3><button onClick={()=>setEditor(null)}>Cancel</button></div><p>Edit every supported field as structured JSON. IDs and word labels are stable progress keys.</p>{entity==="words"&&(()=>{let current=null;try{current=JSON.parse(draft);}catch{}const hasPicture=current&&(current.image||current.illustration);return hasPicture?<div className="wh-admin-picture"><WordPicture word={current} className="wh-admin-picture-img"/><div>{pictureNote&&<small>{pictureNote}</small>}{current.image&&<button onClick={()=>{const {image,...rest}=current;setDraft(JSON.stringify(rest,null,2));setPictureNote(current.illustration?"Picture removed — the drawing will show instead.":"Picture removed.");}}>Remove picture</button>}</div></div>:null;})()}<textarea value={draft} onChange={e=>setDraft(e.target.value)} spellCheck={false}/>{error&&<div className="wh-import-error">{error}</div>}<div className="wh-ai-actions"><button className="primary" onClick={saveEdit}>Validate &amp; Save</button>{entity==="words"&&<button disabled={editorBusy} onClick={fillWordWithAi}>{editorBusy?"Generating…":"Fill fields with AI"}</button>}{entity==="words"&&<label className="wh-admin-file-btn">Add picture<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={async e=>{const file=e.target.files?.[0];e.target.value="";if(!file)return;try{const current=JSON.parse(draft);const image=await imageFileToDataUrl(file);setDraft(JSON.stringify({...current,image},null,2));setError(null);setPictureNote(`Picture added (${Math.round(image.length*3/4/1024)} KB). Press Validate & Save to keep it.`);}catch(problem){setError(problem instanceof SyntaxError?"Fix the JSON first, then add the picture.":problem.message);}}}/></label>}<button onClick={()=>{try{setDraft(JSON.stringify(JSON.parse(draft),null,2));setError(null);}catch{setError("Invalid JSON.");}}}>Format JSON</button></div>{entity==="words"&&<div className="wh-admin-link"><input value={pictureLink} onChange={e=>setPictureLink(e.target.value)} placeholder="…or paste a picture link (https://…)"/><button disabled={pictureLinkBusy||!pictureLink.trim()} onClick={async()=>{const url=pictureLink.trim();let current;try{current=JSON.parse(draft);}catch{setError("Fix the JSON first, then add the link.");return;}if(!/^https?:\/\/\S+$/i.test(url)){setError("The link must start with http:// or https://");return;}setPictureLinkBusy(true);setError(null);IMAGE_LINKS.delete(url);const ok=await checkImageLink(url);setPictureLinkBusy(false);if(!ok){setPictureNote(null);setError("This link didn't load here (broken, not a direct image link, or the site blocks it). Try the image's own address — right-click the picture → Copy image address.");return;}setDraft(JSON.stringify({...current,image:url},null,2));setPictureLink("");setPictureNote("Link works (takes no storage). Press Validate & Save to keep it.");}}>{pictureLinkBusy?"Checking…":"Use link"}</button></div>}</div>:categoryBrowse?<div className="wh-admin-category-browse"><div className="wh-admin-category-browse-head"><h3>Everything in "{categoryBrowse}"</h3><button onClick={()=>setCategoryBrowse("")}>✕ Clear</button></div>{!categoryGroups.length?<p>Nothing tagged with this category yet.</p>:categoryGroups.map(group=><div className="wh-admin-card" key={group.id}><h4>{group.label} <span>{group.items.length}</span><button onClick={()=>{setMoveTarget({entity:group.id,ids:group.items.map(({item})=>item[entities[group.id].key])});setMoveInput("");}}>Move all {group.items.length} to…</button></h4>{group.items.map(({item,index})=><div className="wh-admin-browse-row" key={item[entities[group.id].key]||index}><span><b>{item[entities[group.id].key]}</b><small>{item.meaning||item.title||item.rule||item.prompt||""}</small></span><span><button onClick={()=>{setEntity(group.id);setCategoryFilter("");startEdit(item,index);}}>Edit</button><button onClick={()=>{setMoveTarget({entity:group.id,ids:[item[entities[group.id].key]]});setMoveInput("");}}>Move</button></span></div>)}</div>)}</div>:<div className="wh-admin-table"><div className="wh-admin-row head"><span>Item</span><span>Category / Type</span><span>Status</span><span>Actions</span></div>{filtered.map(({item,index})=>{const rec=entity==="words"?mastery[item.word]:null;const modesCount=rec?Object.values(rec.modes||{}).filter(m=>m.correct>0).length:0;return <div className="wh-admin-row" key={item[config.key]||index}><span><b>{item[config.key]}</b><small>{item.meaning||item.title||item.rule||item.prompt||""}</small></span><span>{entity==="levels"?`${content.words.filter(word=>V2.topic(word.category)===V2.topic(item.title)).length} words`:item.category||item.type||"—"}</span><span>{item._autoStub?<span className="wh-stub-badge" title="Auto-created from a missing reference during import — needs real content">⚠ Needs content</span>:entity==="words"?<span className="wh-status-stack"><b>{V2.stage(rec)}</b><small>{rec?.correct||0}/{rec?.total||0} · {modesCount} mode{modesCount===1?"":"s"}{item._aiAdded?" · AI-added":""}</small></span>:"Ready"}</span><span><button onClick={()=>startEdit(item,index)}>Edit</button>{entity!=="levels"&&<button onClick={()=>{setMoveTarget({entity,ids:[item[config.key]]});setMoveInput("");}}>Move</button>}<button className="danger" onClick={()=>remove(index)}>Delete</button></span></div>;})}</div>}</>}
       {tab==="grammar"&&<GrammarPanel content={content} mastery={mastery} onUpdate={onUpdate}/>}
       {tab==="health"&&<ContentHealthPanel content={content} onUpdate={onUpdate} onMergeCategories={onMergeCategories} onRemoveEmptyLevels={onRemoveEmptyLevels}/>}
       {tab==="reports"&&<div className="wh-admin-card"><div className="wh-admin-editor-head"><h3>Reported questions</h3><button disabled={!reports.length} onClick={()=>{
@@ -3849,6 +3876,249 @@ function AdminControlCenter({content,mastery,confusions,reports,activeSession,se
 }
 
 /* ---------------------------------- APP ---------------------------------- */
+
+// --- Live Challenge: two or more players, each on their own device, answer
+// the same questions at the same time. It runs on the artifact's shared
+// storage (seen by everyone who opens the published link):
+//   live:CODE        the room: questions, state, players' answers — written
+//                    only by the host
+//   live:CODE:p:ID   one per player: name and answers — written only by
+//                    that player
+// Players poll the room; the host polls the players and moves the game on.
+// Answer times are measured on each player's own device, so clocks never
+// have to agree.
+const LIVE_POLL_MS = 1000, LIVE_REVEAL_MS = 4000, LIVE_GRACE_MS = 2500, LIVE_HOST_GONE_MS = 20000;
+const LIVE_CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const liveStore = {
+  async get(key) { try { const r = await window.storage.get(key, true); return r?.value ? JSON.parse(r.value) : null; } catch { return null; } },
+  async set(key, value) {
+    if (!window.storage?.set) throw new Error("Shared storage isn't available here.");
+    for (let attempt = 0; ; attempt++) {
+      try { return await window.storage.set(key, JSON.stringify(value), true); }
+      catch (problem) { if (attempt >= 2) throw problem; await new Promise((r) => setTimeout(r, 250 + Math.random() * 400)); }
+    }
+  },
+  async list(prefix) { try { const r = await window.storage.list(prefix, true); return (r?.keys || []).map((k) => (typeof k === "string" ? k : k?.key)).filter(Boolean); } catch { return []; } },
+};
+// Multiple-choice questions only: typed answers would turn a spelling slip
+// into a lost match. Each question carries everything it needs, because the
+// other players don't have the host's words.
+function liveQuestions(words, count, rng = Math.random) {
+  const out = [];
+  for (const w of shuffle(words)) {
+    if (out.length >= count) break;
+    for (const kind of shuffle(["meaning", "reverse", "gap", "picture", "collocation", "family"])) {
+      let q = null;
+      try {
+        q = kind === "picture" ? V2.pictureQuestion(w, WORDS, rng, false, imageLinkOk)
+          : kind === "collocation" ? V2.collocationQuestion(w, WORDS, rng, false)
+          : kind === "family" ? V2.familyQuestion(w, rng, false)
+          : kind === "gap" && !/_{2,}/.test(w.gap || "") ? null
+          : V2.makeQuestion(w, kind, WORDS, rng, 2);
+      } catch { q = null; }
+      if (!q || q.type !== "mcq" || !q.prompt || !Array.isArray(q.options) || q.options.length < 3 || !q.answers?.[0]) continue;
+      out.push({ mode: q.mode, prompt: q.prompt, options: q.options, answer: q.answers[0], word: w.word, explanation: q.explanation || "", picture: q.picture || null, photo: q.photo || null });
+      break;
+    }
+  }
+  return out;
+}
+// Word options start with a capital, as in the normal question box.
+function liveOption(opt, q) { const t = String(opt); return q.mode !== "meaning" && q.mode !== "collocation" && t.trim().split(/\s+/).length <= 4 && /^[a-z]/.test(t) ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
+// Kahoot-style: a right answer is worth 500, plus up to 500 more for speed.
+function livePoints(a, perMs) { return a?.correct ? 500 + Math.round(500 * Math.max(0, 1 - (a.ms || 0) / perMs)) : 0; }
+function liveBoard(room, upTo) {
+  const per = (room.seconds || 20) * 1000;
+  return (room.players || []).map((p) => {
+    let points = 0, correct = 0;
+    for (let i = 0; i <= upTo; i++) { const a = p.answers?.[i]; points += livePoints(a, per); if (a?.correct) correct++; }
+    return { id: p.id, name: p.name, points, correct };
+  }).sort((a, b) => b.points - a.points);
+}
+
+function LiveChallenge({ levels, onExit }) {
+  const [me] = useState(() => `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`);
+  const [name, setName] = useState("");
+  const [phase, setPhase] = useState("menu"); // menu | host | join | room
+  const [isHost, setIsHost] = useState(false);
+  const [code, setCode] = useState("");
+  const [room, setRoom] = useState(null);
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [levelIndex, setLevelIndex] = useState(0);
+  const [unit, setUnit] = useState("");
+  const [count, setCount] = useState(10);
+  const [seconds, setSeconds] = useState(20);
+  const [joinCode, setJoinCode] = useState("");
+  const [myAnswers, setMyAnswers] = useState({});
+  const [now, setNow] = useState(Date.now());
+  const roomRef = useRef(null), answersRef = useRef({}), shownAtRef = useRef({}), changedAtRef = useRef(Date.now());
+  const shared = !!(window.storage?.set && window.storage?.list);
+
+  useEffect(() => { storage.get("live-name").then((r) => { if (r?.value) setName(String(r.value)); }).catch(() => {}); }, []);
+  const rememberName = () => storage.set("live-name", name.trim()).catch(() => {});
+  const takeRoom = (r) => { if (JSON.stringify(r) !== JSON.stringify(roomRef.current)) changedAtRef.current = Date.now(); roomRef.current = r; setRoom(r); };
+
+  const level = levels[levelIndex];
+  const groups = level ? levelGroups(level).filter((g) => g.id) : [];
+  const words = level ? level.items.filter((it) => it.kind === "word").map((it) => it.obj).filter((w) => !unit || (groups[0]?.field === "unit" ? (w.units || []).includes(unit) : w.subCategory === unit)) : [];
+
+  async function createRoom() {
+    setError(null);
+    const questions = liveQuestions(words, count);
+    if (questions.length < 3) { setError("Not enough words with safe multiple-choice questions here. Pick another lesson."); return; }
+    setBusy(true);
+    try {
+      let c = "";
+      for (let tries = 0; tries < 6; tries++) { c = Array.from({ length: 4 }, () => LIVE_CODE_CHARS[Math.floor(Math.random() * LIVE_CODE_CHARS.length)]).join(""); if (!(await liveStore.get(`live:${c}`))) break; }
+      const title = unit ? `${level.title} · ${groups.find((g) => g.id === unit)?.title || unit}` : level.title;
+      const r = { v: 1, code: c, host: me, title, seconds, questions, state: "lobby", index: 0, phaseAt: Date.now(), players: [{ id: me, name: name.trim(), answers: {} }] };
+      await liveStore.set(`live:${c}:p:${me}`, { id: me, name: name.trim(), answers: {} });
+      await liveStore.set(`live:${c}`, r);
+      rememberName(); setIsHost(true); setCode(c); takeRoom(r); setPhase("room");
+    } catch (problem) { setError(`Couldn't create the challenge: ${problem.message || problem}`); }
+    setBusy(false);
+  }
+  async function joinRoom() {
+    setError(null);
+    const c = joinCode.trim().toUpperCase();
+    if (!/^[A-Z0-9]{4}$/.test(c)) { setError("The code is 4 letters/numbers."); return; }
+    setBusy(true);
+    try {
+      const r = await liveStore.get(`live:${c}`);
+      if (!r) setError("No challenge with this code. Check it with your friend.");
+      else if (r.state !== "lobby") setError("This challenge has already started.");
+      else { await liveStore.set(`live:${c}:p:${me}`, { id: me, name: name.trim(), answers: {} }); rememberName(); setIsHost(false); setCode(c); takeRoom(r); setPhase("room"); }
+    } catch (problem) { setError(`Couldn't join: ${problem.message || problem}`); }
+    setBusy(false);
+  }
+  async function startGame() {
+    const r = { ...roomRef.current, state: "question", index: 0, phaseAt: Date.now() };
+    try { await liveStore.set(`live:${code}`, r); takeRoom(r); } catch (problem) { setError(`Couldn't start: ${problem.message || problem}`); }
+  }
+
+  // Everyone: follow the room. The host also gathers the players' answers
+  // into it and moves on when all have answered or the time is up.
+  useEffect(() => {
+    if (phase !== "room" || !code) return;
+    let stopped = false, running = false;
+    const tick = async () => {
+      if (running || stopped) return; running = true;
+      try {
+        if (!isHost) { const r = await liveStore.get(`live:${code}`); if (r && !stopped) takeRoom(r); }
+        else {
+          const cur = roomRef.current; if (!cur || cur.state === "done") return;
+          const keys = await liveStore.list(`live:${code}:p:`);
+          const found = (await Promise.all(keys.map((k) => liveStore.get(k)))).filter((p) => p && p.id);
+          const players = cur.state === "lobby" ? found.map((p) => ({ id: p.id, name: p.name, answers: {} }))
+            : cur.players.map((p) => { const f = found.find((x) => x.id === p.id); return f ? { ...p, answers: f.answers || {} } : p; });
+          const next = { ...cur, players };
+          const per = cur.seconds * 1000, t = Date.now();
+          if (cur.state === "question") { const i = cur.index; if (players.every((p) => p.answers?.[i]) || t - cur.phaseAt > per + LIVE_GRACE_MS) { next.state = "reveal"; next.phaseAt = t; } }
+          else if (cur.state === "reveal" && t - cur.phaseAt > LIVE_REVEAL_MS) { if (cur.index + 1 >= cur.questions.length) { next.state = "done"; next.phaseAt = t; } else { next.state = "question"; next.index = cur.index + 1; next.phaseAt = t; } }
+          if (!stopped && JSON.stringify(next) !== JSON.stringify(cur)) { await liveStore.set(`live:${code}`, next); takeRoom(next); }
+        }
+      } catch (_) {} finally { running = false; }
+    };
+    tick();
+    const t = setInterval(tick, LIVE_POLL_MS);
+    return () => { stopped = true; clearInterval(t); };
+  }, [phase, code, isHost]);
+
+  const q = room?.state === "question" || room?.state === "reveal" ? room.questions[room.index] : null;
+  const per = (room?.seconds || 20) * 1000;
+  useEffect(() => { if (room?.state === "question" && !shownAtRef.current[room.index]) shownAtRef.current[room.index] = Date.now(); }, [room?.state, room?.index]);
+  useEffect(() => { if (phase !== "room") return; const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t); }, [phase]);
+  const shownAt = room ? shownAtRef.current[room.index] : null;
+  const timeLeft = room?.state === "question" && shownAt ? Math.max(0, per - (now - shownAt)) : 0;
+  const mine = room ? myAnswers[room.index] : null;
+
+  async function answer(choice) {
+    const cur = roomRef.current; if (!cur || cur.state !== "question") return;
+    const i = cur.index; if (answersRef.current[i]) return;
+    const qq = cur.questions[i];
+    const a = { choice, correct: choice != null && V2.norm(choice) === V2.norm(qq.answer), ms: Math.min(per, Date.now() - (shownAtRef.current[i] || Date.now())) };
+    const answers = { ...answersRef.current, [i]: a };
+    answersRef.current = answers; setMyAnswers(answers);
+    try { await liveStore.set(`live:${code}:p:${me}`, { id: me, name: name.trim(), answers }); } catch (_) {}
+  }
+  useEffect(() => { if (room?.state === "question" && shownAt && timeLeft <= 0 && !answersRef.current[room.index]) answer(null); }, [timeLeft, room?.state]);
+  useEffect(() => {
+    if (room?.state !== "question" || mine) return;
+    const onKey = (e) => { const n = Number(e.key); if (n >= 1 && n <= (q?.options.length || 0)) answer(q.options[n - 1]); };
+    window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
+  }, [room?.state, room?.index, mine]);
+
+  function leave() { setPhase("menu"); setRoom(null); roomRef.current = null; setCode(""); setMyAnswers({}); answersRef.current = {}; shownAtRef.current = {}; setIsHost(false); setError(null); }
+  const hostGone = !isHost && room && room.state !== "done" && room.state !== "lobby" && now - changedAtRef.current > per + LIVE_HOST_GONE_MS;
+  const nameOk = name.trim().length >= 2;
+
+  if (phase !== "room") return <div className="wh-card wh-live">
+    <div className="wh-live-head"><h2><Users size={18} /> Live Challenge</h2><button className="wh-back-btn" onClick={phase === "menu" ? onExit : () => { setPhase("menu"); setError(null); }}>{phase === "menu" ? "Back" : "← Back"}</button></div>
+    {!shared && <p className="wh-import-error">Shared storage isn't available in this preview. Open the game from its published link on both devices.</p>}
+    {phase === "menu" && <>
+      <p>Play the same questions with a friend at the same time, each on your own device. Right answers score 500 points, plus up to 500 more for speed.</p>
+      <label className="wh-live-field"><span>Your name</span><input value={name} maxLength={20} onChange={(e) => setName(e.target.value)} placeholder="e.g. Khaled" /></label>
+      <div className="wh-live-actions"><button className="wh-level-btn" disabled={!nameOk || !levels.length} onClick={() => setPhase("host")}>Create a challenge</button><button className="wh-level-btn" disabled={!nameOk} onClick={() => setPhase("join")}>Join with a code</button></div>
+      {!levels.length && <p><small>You need imported words to create a challenge. You can still join one.</small></p>}
+      <p><small>Everyone who opens this game's published link can see challenge names and scores.</small></p>
+    </>}
+    {phase === "host" && <>
+      <label className="wh-live-field"><span>Lesson</span><select value={levelIndex} onChange={(e) => { setLevelIndex(Number(e.target.value)); setUnit(""); }}>{levels.map((l, i) => <option key={l.title} value={i}>{l.title}</option>)}</select></label>
+      {groups.length > 1 && <label className="wh-live-field"><span>{groups[0].field === "unit" ? "Unit" : "Group"}</span><select value={unit} onChange={(e) => setUnit(e.target.value)}><option value="">All</option>{groups.map((g) => <option key={g.id} value={g.id}>{g.title}</option>)}</select></label>}
+      <label className="wh-live-field"><span>Questions</span><select value={count} onChange={(e) => setCount(Number(e.target.value))}>{[5, 10, 15, 20].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
+      <label className="wh-live-field"><span>Seconds per question</span><select value={seconds} onChange={(e) => setSeconds(Number(e.target.value))}>{[10, 15, 20, 30].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
+      <p><small>{words.length} words to pick from.</small></p>
+      <button className="wh-level-btn" disabled={busy || !shared} onClick={createRoom}>{busy ? "Creating…" : "Create"}</button>
+    </>}
+    {phase === "join" && <>
+      <label className="wh-live-field"><span>Challenge code</span><input className="wh-live-code-input" value={joinCode} maxLength={4} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} onKeyDown={(e) => { if (e.key === "Enter") joinRoom(); }} placeholder="ABCD" /></label>
+      <button className="wh-level-btn" disabled={busy || !shared || joinCode.trim().length !== 4} onClick={joinRoom}>{busy ? "Joining…" : "Join"}</button>
+    </>}
+    {error && <p className="wh-import-error">{error}</p>}
+  </div>;
+
+  if (!room) return null;
+  const board = liveBoard(room, room.state === "question" ? room.index - 1 : room.index);
+  const answeredIds = new Set((room.players || []).filter((p) => p.answers?.[room.index]).map((p) => p.id));
+  if (mine) answeredIds.add(me);
+  const Board = ({ final }) => <ol className="wh-live-board">{board.map((p, i) => <li key={p.id} className={p.id === me ? "me" : ""}><span>{final && i === 0 && board.length > 1 && p.points > (board[1]?.points || 0) ? "🏆 " : `${i + 1}. `}{p.name}{p.id === me ? " (you)" : ""}</span><span>{p.correct} right · <b>{p.points}</b></span></li>)}</ol>;
+
+  return <div className="wh-card wh-live">
+    <div className="wh-live-head"><h2><Users size={18} /> {room.title}</h2><button className="wh-back-btn" onClick={leave}>Leave</button></div>
+    {room.state === "lobby" && <>
+      <p>Share this code with your friend. They open the game, tap <b>Live Challenge → Join with a code</b>, and type it.</p>
+      <div className="wh-live-code">{room.code}</div>
+      <p><b>Players ({room.players.length})</b></p>
+      <ul className="wh-live-players">{room.players.map((p) => <li key={p.id}>{p.name}{p.id === room.host ? " · host" : ""}{p.id === me ? " (you)" : ""}</li>)}</ul>
+      <p><small>{room.questions.length} questions · {room.seconds}s each</small></p>
+      {isHost ? <button className="wh-level-btn" disabled={room.players.length < 2} onClick={startGame}>{room.players.length < 2 ? "Waiting for a friend to join…" : `Start (${room.players.length} players)`}</button> : <p>Waiting for the host to start…</p>}
+    </>}
+    {q && <>
+      <div className="wh-live-status"><span>Question {room.index + 1}/{room.questions.length}</span><span className={room.state === "question" && timeLeft <= 5000 ? "urgent" : ""}>{room.state === "question" ? `${Math.ceil(timeLeft / 1000)}s` : "Time's up"}</span></div>
+      <div className="wh-session-progress"><span style={{ width: `${room.state === "question" ? (timeLeft / per) * 100 : 0}%` }} /></div>
+      {(q.picture || q.photo) && <div className="wh-picture-q"><WordPicture word={q} className="wh-picture-img" /></div>}
+      <p className="wh-sentence">{q.mode === "meaning" ? <>What does <b>{q.prompt}</b> mean?</> : q.prompt}</p>
+      <div className="wh-options">{q.options.map((opt, i) => {
+        const reveal = room.state === "reveal";
+        const cls = reveal ? (V2.norm(opt) === V2.norm(q.answer) ? "correct" : mine?.choice === opt ? "wrong" : "") : mine?.choice === opt ? "picked" : "";
+        return <button key={opt} type="button" className={`wh-option ${cls}`} disabled={!!mine || reveal} onClick={() => answer(opt)}><span className="wh-shortcut-key" aria-hidden="true">{i + 1}</span>{liveOption(opt, q)}</button>;
+      })}</div>
+      {room.state === "question" && <p className="wh-live-waiting">{mine ? "Answer locked in. " : ""}{room.players.map((p) => <span key={p.id} className={answeredIds.has(p.id) ? "done" : ""}>{answeredIds.has(p.id) ? "✓" : "…"} {p.name}</span>)}</p>}
+      {room.state === "reveal" && <>
+        <div role="status" className={`wh-feedback ${mine?.correct ? "correct" : "wrong"}`}>{mine?.correct ? `Correct! +${livePoints(mine, per)}` : mine?.choice == null ? `Time's up — it was: ${q.answer}` : `It was: ${q.answer}`}</div>
+        {q.explanation && q.mode !== "meaning" && <p><small>{q.word}: {q.explanation}</small></p>}
+        <Board />
+      </>}
+    </>}
+    {room.state === "done" && <>
+      <div className="wh-results-stamp">Final score</div>
+      <Board final />
+      <div className="wh-live-actions"><button className="wh-level-btn" onClick={leave}>New challenge</button><button className="wh-back-btn" onClick={onExit}>Back to levels</button></div>
+    </>}
+    {hostGone && <p className="wh-import-error">The host seems to have left. You can leave this challenge.</p>}
+  </div>;
+}
 
 export default function WordHunter() {
   const [loaded, setLoaded] = useState(false);
@@ -3956,7 +4226,7 @@ export default function WordHunter() {
     const typed = stage === "Learned" || stage === "Mastered";
     const partners = V2.collocationQuestion(wordObj, WORDS, rng, typed) || (typed ? V2.collocationQuestion(wordObj, WORDS, rng, false) : null);
     const family = V2.familyQuestion(wordObj, rng, typed) || (typed ? V2.familyQuestion(wordObj, rng, false) : null);
-    const picture = V2.pictureQuestion(wordObj, WORDS, rng, typed);
+    const picture = V2.pictureQuestion(wordObj, WORDS, rng, typed, imageLinkOk);
     const modes = [...byStage.filter((m) => allowed.has(m) && (m !== "opposite" || wordObj.opposite)), ...(clues.length ? ["antonym"] : []), ...(partners ? ["collocation"] : []), ...(family ? ["family"] : []), ...(picture ? ["picture"] : [])];
     if (!modes.length) return null;
     const mode = modes[Math.floor(rng() * modes.length)];
@@ -5838,6 +6108,24 @@ export default function WordHunter() {
         .wh-admin-picture { display:flex; gap:12px; align-items:center; margin:8px 0; }
         .wh-admin-picture-img { width:96px; height:96px; object-fit:contain; border:1px solid #d7ddda; border-radius:6px; background:#fff; }
         .wh-admin-picture small { display:block; color:#56645f; margin-bottom:6px; }
+        .wh-live { padding:18px 20px; }
+        .wh-live-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
+        .wh-live-head h2 { display:flex; align-items:center; gap:8px; margin:0; font-size:18px; }
+        .wh-live-field { display:flex; flex-direction:column; gap:4px; margin:10px 0; font-size:13px; }
+        .wh-live-field input, .wh-live-field select { padding:9px 10px; border:1px solid #b9ab8c; border-radius:6px; font-size:15px; background:#fffdf8; }
+        .wh-live-code-input { text-transform:uppercase; letter-spacing:6px; font-size:22px !important; max-width:160px; }
+        .wh-live-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+        .wh-live-code { font:700 44px 'IBM Plex Mono',monospace; letter-spacing:10px; text-align:center; padding:14px; margin:10px 0; border:2px dashed var(--gold-soft); border-radius:10px; }
+        .wh-live-players { margin:4px 0 12px; padding-left:20px; }
+        .wh-live-status { display:flex; justify-content:space-between; font:600 13px 'IBM Plex Mono',monospace; margin-bottom:6px; }
+        .wh-live-status .urgent { color:var(--red); }
+        .wh-live-waiting { display:flex; flex-wrap:wrap; gap:10px; margin:14px 10px 0; font-size:13px; color:#6b6252; }
+        .wh-live-waiting .done { color:var(--green); font-weight:600; }
+        .wh-live-board { list-style:none; padding:0; margin:14px 0 0; }
+        .wh-live-board li { display:flex; justify-content:space-between; gap:10px; padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.08); }
+        .wh-live-board li.me { background:rgba(201,162,39,0.12); border-radius:6px; }
+        .wh-admin-link { display:flex; gap:8px; margin-top:8px; }
+        .wh-admin-link input { flex:1; min-width:0; padding:8px 10px; border:1px solid #8fa19b; border-radius:4px; font-size:13.3px; }
         .wh-admin-file-btn { border:1px solid #8fa19b; background:white; padding:8px 10px; border-radius:4px; cursor:pointer; font-size:13.3px; }
         .wh-picture-q { display:flex; justify-content:center; margin:4px 0 10px; }
         .wh-picture-img { width:140px; height:140px; object-fit:contain; background:#fbf7ef; border-radius:12px; padding:8px; }
@@ -6395,6 +6683,17 @@ export default function WordHunter() {
           </div>
         )}
 
+        {screen === "levels" && (section === "challenges" || section === "practice") && (
+          <div className="wh-speed-card wh-live-card">
+            <div className="wh-speed-card-icon"><Users size={22} /></div>
+            <div className="wh-speed-card-info">
+              <div className="wh-speed-card-title">Live Challenge</div>
+              <div className="wh-speed-card-meta">Play the same questions with a friend, each on your own device</div>
+            </div>
+            <button className="wh-speed-card-btn" onClick={() => setScreen("live")}><Play size={13} /> Play</button>
+          </div>
+        )}
+
         {screen === "levels" && section === "practice" && LEVELS.length > 0 && (
           <div className="wh-level-view-toggle" role="group" aria-label="Show levels">
             {[["lesson", "By lesson"], ["group", "By unit"]].map(([id, label]) => (
@@ -6811,6 +7110,8 @@ export default function WordHunter() {
             <div className="wh-results-actions"><button className="secondary" onClick={backToLevels}>Back to levels</button></div>
           </div>
         )}
+
+        {screen === "live" && <LiveChallenge levels={LEVELS} onExit={backToLevels} />}
 
         {screen === "speedResults" && (
           <div className="wh-results-card">
