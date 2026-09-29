@@ -582,7 +582,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
     const weak=Object.entries(s.modes||{}).filter(([,v])=>v.total>0).sort((a,b)=>a[1].correct/a[1].total-b[1].correct/b[1].total)[0]?.[0];
     modes=shuffleCopy(modes,rng).sort((a,b)=>(b===weak)-(a===weak));
     const cm=Array.isArray(w.commonMistakes)&&w.commonMistakes.length?w.commonMistakes[Math.floor(rng()*w.commonMistakes.length)]:w.commonMistake;
-    if(known(s)&&cm&&!isQuarantined(w.word,'grammarCourt'))candidates.push({id:`${w.word}:court`,mode:'grammarCourt',type:'mcq',prompt:`Choose the correct sentence. Context: ${w.situation}`,targets:[w.word],answers:[cm.correction],options:shuffleCopy([cm.sentence,cm.correction],rng),explanation:cm.why});
+    if(known(s)&&cm&&!isQuarantined(w.word,'grammarCourt'))candidates.push({id:`${w.word}:court`,mode:'grammarCourt',type:'mcq',prompt:'Which sentence is correct?',sentences:[cm.sentence,cm.correction],targets:[w.word],answers:[cm.correction],options:shuffleCopy([cm.sentence,cm.correction],rng),explanation:cm.why});
     for(const mode of modes){if(mode.includes('gap')&&!/_{2,}/.test(w.gap))continue;const q=makeQuestion(w,mode,content.words,rng,difficulty,pools,confusionBoost,opts.seen);if(q)candidates.push(q);}
     // Extra question styles (Who Am I, Opposites, Two People, …) come from
     // the caller so this module stays free of the legacy builders. Never for
