@@ -548,7 +548,9 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // confusable pairs.
   const confusedPairs=new Set(Object.keys(opts.confusions||{}).flatMap(key=>{const [a,b]=key.split('|');return a&&b?[`${norm(a)}|${norm(b)}`,`${norm(b)}|${norm(a)}`]:[];}));
   const confusionBoost=confusedPairs.size?(t,w)=>confusedPairs.has(`${norm(t.word)}|${norm(w.word)}`)?200:0:null;
-  const source=content.words.filter(w=>!category||topic(w.category)===topic(category));
+  // opts.subCategory narrows the round to one group of the lesson;
+  // opts.noGroup to the lesson's words that have no group.
+  const source=content.words.filter(w=>(!category||topic(w.category)===topic(category))&&(opts.subCategory?w.subCategory===opts.subCategory:opts.noGroup?!w.subCategory:true));
   const levelRank=w=>{const i=['A1','A2','B1','B2','C1','C2'].indexOf(String(w.level||'').toUpperCase());return i<0?2.5:i;};
   // New words come in level order (A2 before B1…), random within a level.
   const fresh=shuffleCopy(source.filter(w=>!known(mastery[w.word])),rng).sort((a,b)=>levelRank(a)-levelRank(b)).slice(0,newWordsPerRound);
@@ -644,7 +646,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   grammarQueue.splice(Math.floor(queue.length/4));
   const spots=grammarQueue.map((_,k)=>Math.max(1,Math.round(queue.length*(k+1)/(grammarQueue.length+1))));
   for(let k=grammarQueue.length-1;k>=0;k--)queue.splice(Math.min(spots[k],queue.length),0,grammarQueue[k]);
-  return {kind:'practice',id:`session-${Date.now()}-${rng()}`,title:category||'Practice',queue,introductions:fresh,index:0,answers:[],initialLength:queue.length,targetLength:questionsPerRound,reserves:candidates,extraAdded:false};
+  return {kind:'practice',id:`session-${Date.now()}-${rng()}`,title:opts.title||category||'Practice',queue,introductions:fresh,index:0,answers:[],initialLength:queue.length,targetLength:questionsPerRound,reserves:candidates,extraAdded:false};
 }
 function storySession(story,words,mastery={},rng=Math.random){const introductions=story.targetWords.map(w=>findWord(words,w)).filter(w=>!known(mastery[w.word]));const scoped=story.sourceCategories?.length?words.filter(w=>story.sourceCategories.includes(w.category)):words;const optionSource=scoped.length>=4?scoped:words;const queue=story.questions.map((q,i)=>activityQuestion(q,optionSource,`${story.id}:${i}`,rng));for(const g of story.grammarQuestions||[])queue.push({...g,options:shuffleCopy(g.options,rng)});return {id:`story-${story.id}-${Date.now()}`,sourceStoryId:story.id,kind:'story',title:story.title,text:story.text,queue,introductions,unfairTargets:introductions.map(w=>w.word),index:0,answers:[]};}
 function chainSession(group,words,mastery={},rng=Math.random){const queue=shuffleCopy(words.filter(w=>w.chainGroup===group&&w.opposite&&known(mastery[w.word])&&known(mastery[findWord(words,w.opposite)?.word])),rng).map((w,i)=>{const target=findWord(words,w.opposite);if(!target)return null;const options=optionWords([target],words,4,rng).map(x=>x.word);return options.length<2?null:{id:`chain:${i}`,mode:'opposite',type:'mcq',prompt:`What is the opposite of “${w.word}”?`,answers:[target.word],targets:[target.word],options,explanation:`${w.word} ↔ ${target.word}`};}).filter(Boolean);return {id:`chain-${Date.now()}`,kind:'chain',title:group,queue,introductions:[],index:0,answers:[]};}
@@ -1310,6 +1312,20 @@ function isItemMastered(stats, item) {
 
 function levelMasteredCount(level, mastery) {
   return level.items.filter((it) => isItemMastered(mastery[levelItemKey(it)], it)).length;
+}
+// A lesson's words split by subCategory, in the order they first appear;
+// words with no group go last, as "Other words". Grammar and challenges
+// stay with the lesson.
+function levelGroups(level) {
+  const groups = new Map();
+  for (const it of level.items) {
+    if (it.kind !== "word") continue;
+    const id = it.obj.subCategory || "";
+    if (!groups.has(id)) groups.set(id, { id, title: id ? it.obj.subCategoryTitle || id : "Other words", items: [] });
+    groups.get(id).items.push(it);
+  }
+  const list = [...groups.values()];
+  return [...list.filter((g) => g.id), ...list.filter((g) => !g.id)];
 }
 function levelStageBreakdown(level, mastery) {
   const counts = { New: 0, Familiar: 0, Learned: 0, Mastered: 0 };
@@ -3202,7 +3218,7 @@ const SCHEMA_VERSION = 6;
 // General settings — tunable knobs for round length and question mix.
 // Kept small and additive so old saves without a `settings` block just
 // fall back to these defaults.
-const DEFAULT_SETTINGS = { questionsPerRound: 12, newWordsPerRound: 3, weakReviewSize: 8, enablePairModes: true, sound: true, dailyGoal: 20 };
+const DEFAULT_SETTINGS = { questionsPerRound: 12, newWordsPerRound: 3, weakReviewSize: 8, enablePairModes: true, sound: true, dailyGoal: 20, levelView: "lesson" };
 function normalizeSettings(raw) {
   const s = raw && typeof raw === "object" ? raw : {};
   return {
@@ -3214,6 +3230,7 @@ function normalizeSettings(raw) {
     enablePairModes: s.enablePairModes !== false,
     sound: s.sound !== false,
     dailyGoal: Math.max(5, Math.min(100, Number(s.dailyGoal) || DEFAULT_SETTINGS.dailyGoal)),
+    levelView: s.levelView === "group" ? "group" : "lesson",
   };
 }
 const STORAGE_KEY = "progress-v6";
@@ -4553,17 +4570,19 @@ export default function WordHunter() {
   }, [toast]);
   useEffect(()=>{if(!askAiOpen)return;const close=event=>{if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();setAskAiOpen(false);}};window.addEventListener('keydown',close,true);return()=>window.removeEventListener('keydown',close,true);},[askAiOpen]);
 
-  function startLevel(index) {
+  // group (optional): one subCategory of the lesson, from levelGroups().
+  function startLevel(index, group = null) {
     const level = LEVELS[index]; if(!level) return;
     setCurrentLevelIndex(index);
+    const sessionTitle = group ? `${level.title} · ${group.title}` : level.title;
     // New-word intake follows the last round in this level: a strong round
     // (90%+) earns two extra new words, a rough one (under 60%) holds back
     // two so the missed words get room. 0 in Settings still means none.
-    const lastRound = sessionLogs.find((log) => log.kind === "practice" && log.title === level.title && log.total > 0);
+    const lastRound = sessionLogs.find((log) => log.kind === "practice" && log.title === sessionTitle && log.total > 0);
     const lastAccuracy = lastRound ? lastRound.correct / lastRound.total : null;
     const baseNew = settings.newWordsPerRound;
     const newWordsPerRound = baseNew === 0 || lastAccuracy === null ? baseNew : lastAccuracy >= 0.9 ? Math.min(10, baseNew + 2) : lastAccuracy < 0.6 ? Math.max(1, baseNew - 2) : baseNew;
-    const session = V2.practice(liveContent(), masteryRef.current, level.title, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound, pools: poolsRef.current, extraQuestion: buildPracticeExtra, confusions: confusionsRef.current, seen: progressExtrasRef.current.seenSentences || {} });
+    const session = V2.practice(liveContent(), masteryRef.current, level.title, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound, pools: poolsRef.current, extraQuestion: buildPracticeExtra, confusions: confusionsRef.current, seen: progressExtrasRef.current.seenSentences || {}, ...(group ? { title: sessionTitle, ...(group.id ? { subCategory: group.id } : { noGroup: true }) } : {}) });
     // Words whose gap sentences have all been read get new ones written now,
     // so the next rounds have fresh sentences instead of shrinking.
     const seenNow = progressExtrasRef.current.seenSentences || {};
@@ -5488,6 +5507,12 @@ export default function WordHunter() {
           background: var(--gold); opacity: 0.7;
         }
         .wh-level-card.locked { background: rgba(237,228,211,0.55); color: var(--text-dim); }
+        .wh-level-view-toggle { display:flex; gap:6px; margin:0 0 12px; }
+        .wh-level-view-toggle button { border:1px solid rgba(201,162,39,0.5); background:transparent; color:var(--text-dim, #bfb6a3); padding:6px 14px; border-radius:999px; cursor:pointer; font:inherit; font-size:13px; }
+        .wh-level-view-toggle button.active { background:var(--gold); color:var(--ink); border-color:var(--gold); font-weight:600; }
+        .wh-level-group-block { display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
+        .wh-level-group-heading { margin:4px 0 0; font-family:'Special Elite', monospace; font-size:16px; color:var(--gold); }
+        .wh-level-group-heading small { color:var(--text-dim, #bfb6a3); font-size:12px; margin-left:6px; }
         .wh-level-card.locked::before { background: rgba(28,26,23,0.15); }
         .wh-level-num {
           font-family: 'Special Elite', monospace; font-size: 22px; color: var(--gold-soft);
@@ -6295,7 +6320,55 @@ export default function WordHunter() {
           </div>
         )}
 
-        {screen === "levels" && section === "practice" && (
+        {screen === "levels" && section === "practice" && LEVELS.length > 0 && (
+          <div className="wh-level-view-toggle" role="group" aria-label="Show levels">
+            {[["lesson", "By lesson"], ["group", "By group"]].map(([id, label]) => (
+              <button key={id} className={settings.levelView === id ? "active" : ""} aria-pressed={settings.levelView === id} onClick={() => setSettings((prev) => ({ ...prev, levelView: id }))}>{label}</button>
+            ))}
+          </div>
+        )}
+
+        {/* By group: each lesson's subCategories as their own cards. */}
+        {screen === "levels" && section === "practice" && settings.levelView === "group" && (
+          <div className="wh-levels-list">
+            {LEVELS.map((level, i) => {
+              const unlocked = isLevelUnlocked(i);
+              const LevelIcon = TOPIC_ICONS[level.title] || BookOpen;
+              const groups = levelGroups(level);
+              if (!groups.length) return null;
+              return (
+                <div key={level.id} className="wh-level-group-block">
+                  <h3 className="wh-level-group-heading">{level.title} <small>{groups.filter((g) => g.id).length} groups</small></h3>
+                  {groups.map((g) => {
+                    const counts = levelStageBreakdown(g, mastery);
+                    return (
+                      <div key={g.id || "other"} className={`wh-level-card ${unlocked ? "" : "locked"}`}>
+                        <div className="wh-level-icon"><LevelIcon size={20} /></div>
+                        <div className="wh-level-info">
+                          <div className="wh-level-title">{g.title}</div>
+                          <div className="wh-level-meta">{g.items.length} word{g.items.length === 1 ? "" : "s"}</div>
+                          <div className="wh-level-stage-bar" aria-hidden="true">
+                            <span className="wh-level-stage-seg mastered" style={{ width: `${(counts.Mastered / g.items.length) * 100}%` }} />
+                            <span className="wh-level-stage-seg learned" style={{ width: `${(counts.Learned / g.items.length) * 100}%` }} />
+                            <span className="wh-level-stage-seg familiar" style={{ width: `${(counts.Familiar / g.items.length) * 100}%` }} />
+                          </div>
+                          <div className="wh-level-meta wh-level-stage-detail">
+                            {counts.Mastered} mastered · {counts.Learned} learned · {counts.Familiar} familiar · {counts.New} new
+                          </div>
+                        </div>
+                        <button className="wh-level-btn" disabled={!unlocked} onClick={() => startLevel(i, g)}>
+                          {unlocked ? <Play size={13} /> : <Lock size={13} />} {unlocked ? "Practice" : "Locked"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {screen === "levels" && section === "practice" && settings.levelView !== "group" && (
           <div className="wh-levels-list">
             {LEVELS.map((level, i) => {
               const unlocked = isLevelUnlocked(i);
