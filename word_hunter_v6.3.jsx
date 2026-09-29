@@ -244,6 +244,11 @@ function outsideAntonyms(w, words) {
   const self = norm(bareWord(w.word));
   return antonymsOf(w).filter(a => !findWord(words, a) && !findWord(words, bareWord(a)) && !norm(a).includes(self) && !self.includes(norm(a)));
 }
+// Part of speech family and shape of a word, for picking look-alike options.
+// Idioms and other expressions without a part of speech group by type.
+const posKey = w => basePos((w.partsOfSpeech || [])[0]) || (['idiom', 'binomial', 'fyi'].includes(w.type) ? 'expression' : 'other');
+const wordCount = w => Math.min(3, bareWord(w.word).trim().split(/\s+/).length);
+const isPluralNoun = w => wordCount(w) === 1 && /[^s]s$/i.test(bareWord(w.word).trim());
 // "noun phrase" → noun, "phrasal verb" → verb, "adverbial phrase" → adverb.
 function basePos(pos) {
   const p = norm(pos);
@@ -356,7 +361,11 @@ function optionWords(targets, words, count=4, rng=Math.random, opts=null) {
   // distractorGroup, which beats the mapper's cluster, which beats plain
   // type/category. A pair is confusable in either direction.
   const confusable=(t,w)=>(t.relations?.confusableWords||[]).some(x=>norm(x)===norm(w.word));
-  const ranked = shuffleCopy(words,rng).map(w=>({w,rank:Math.max(...chosen.map(t=>(confusable(t,w)?150:confusable(w,t)?120:0)+(group(t) && group(t)===group(w)?100:0)+(t.learningData?.cluster && t.learningData.cluster===w.learningData?.cluster?40:0)+(t.type===w.type?10:0)+(topic(t.category)===topic(w.category)?5:0)+(boost?boost(t,w):0)))})).sort((a,b)=>b.rank-a.rank);
+  // Options that can be ruled out by their form alone make a question easy,
+  // so the same part of speech ranks above the subCategory, and the same
+  // shape (one word vs a phrase, singular vs plural noun) counts too.
+  const shape=(t,w)=>(posKey(t)===posKey(w)?130:0)+(wordCount(t)===wordCount(w)?60:0)+(posKey(t)==='noun'&&posKey(w)==='noun'&&isPluralNoun(t)===isPluralNoun(w)?30:0);
+  const ranked = shuffleCopy(words,rng).map(w=>({w,rank:Math.max(...chosen.map(t=>(confusable(t,w)?150:confusable(w,t)?120:0)+shape(t,w)+(group(t) && group(t)===group(w)?100:0)+(t.learningData?.cluster && t.learningData.cluster===w.learningData?.cluster?40:0)+(t.type===w.type?10:0)+(topic(t.category)===topic(w.category)?5:0)+(boost?boost(t,w):0)))})).sort((a,b)=>b.rank-a.rank);
   const correct=[...chosen], fits=w=>chosen.every(t=>compatible(t,w) && norm(t.meaning)!==norm(w.meaning));
   const sameGroup=w=>correct.some(t=>group(t) && group(t)===group(w));
   let same=0; const later=[];
@@ -812,8 +821,11 @@ function AnswerControl({q,draft={},onChange,disabled,onSubmit}){
   const selected=draft.selected||[];
   if(q.type==='typing'&&q.modelOnly)return <textarea autoFocus className="wh-v2-input wh-v2-long-answer" aria-label="Your answer" disabled={disabled} value={draft.text??(q.freeformKind==='grammarFix'?q.sentence:'')} onChange={e=>onChange({...draft,text:e.target.value})} onKeyDown={e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();e.stopPropagation();if(!disabled&&(draft.text||'').trim())onSubmit?.();}}} placeholder={q.freeformKind==='grammarFix'?"Edit the sentence to fix it… (Ctrl + Enter to submit)":"Write your answer… (Ctrl + Enter to submit)"}/>;
   if(q.type==='typing')return <input autoFocus className="wh-v2-input" aria-label="Your answer" autoComplete="off" spellCheck={false} disabled={disabled} value={draft.text||''} onChange={e=>onChange({...draft,text:e.target.value})} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();e.stopPropagation();if(!disabled&&(draft.text||'').trim())onSubmit?.();}}} placeholder={`Type your answer… (or "${DONT_KNOW_TOKEN}" if you don't know)`}/>;
-  return <div className="wh-options">{(q.options||[]).map((opt,index)=><button type="button" className={`wh-option ${selected.includes(opt)?'picked':''}`} aria-pressed={selected.includes(opt)} key={opt} disabled={disabled} onClick={()=>onChange({...draft,selected:q.type==='multi'?(selected.includes(opt)?selected.filter(x=>x!==opt):selected.length<q.answers.length?[...selected,opt]:selected):[opt]})}><span className="wh-shortcut-key" aria-hidden="true">{index+1}</span>{opt}</button>)}</div>;
+  return <div className="wh-options">{(q.options||[]).map((opt,index)=><button type="button" className={`wh-option ${selected.includes(opt)?'picked':''}`} aria-pressed={selected.includes(opt)} key={opt} disabled={disabled} onClick={()=>onChange({...draft,selected:q.type==='multi'?(selected.includes(opt)?selected.filter(x=>x!==opt):selected.length<q.answers.length?[...selected,opt]:selected):[opt]})}><span className="wh-shortcut-key" aria-hidden="true">{index+1}</span>{showOption(opt,q)}</button>)}</div>;
 }
+// Word options start with a capital letter on screen (idioms are stored in
+// lowercase and would stand out). Display only: values and grading stay.
+function showOption(opt,q){const t=String(opt);return q.mode!=='meaning'&&!String(q.mode).startsWith('grammar')&&t.trim().split(/\s+/).length<=4&&/^[a-z]/.test(t)?t.charAt(0).toUpperCase()+t.slice(1):t;}
 // Click a word inside a story/prompt to get a small floating toolbar with
 // "Explain with AI" — avoids needing a drag-select gesture (which doesn't
 // work well on mobile and gave no feedback on a plain tap).
