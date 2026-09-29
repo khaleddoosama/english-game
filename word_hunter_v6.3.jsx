@@ -257,38 +257,21 @@ function basePos(pos) {
   const p = norm(pos);
   return p.includes('adverb') ? 'adverb' : p.includes('adjective') ? 'adjective' : p.includes('verb') ? 'verb' : p.includes('noun') ? 'noun' : null;
 }
-// Word Partners: the word's collocations with the word blanked ("have ______
-// · heart ______"). The blank covers the word, its singular or its stem
-// ("take a ______" for Pills); a collocation that can't be blanked cleanly
-// is skipped. Typed only when a blank stands for the word exactly as
-// written, since typing is graded on that text.
+// Word Partners: an authored sentence where the blank is the word that goes
+// WITH the lesson word ("I need to ______ an appointment" → make, not do /
+// take / give). The wrong options were checked to be wrong in that exact
+// sentence, so nothing is built from the collocation list automatically.
+// Typed once the word is Learned.
+function collocationChecks(w) {
+  return (Array.isArray(w.collocationChecks) ? w.collocationChecks : []).filter(c => c && typeof c.sentence === 'string' && (c.sentence.match(/_{2,}/g) || []).length === 1 && typeof c.answer === 'string' && c.answer.trim() && Array.isArray(c.wrong) && c.wrong.filter(x => typeof x === 'string' && x.trim()).length >= 2);
+}
 function collocationQuestion(w, words, rng = Math.random, typing = false) {
-  // Real word partners belong to nouns, verbs and adjectives of one or two
-  // words; idioms and adverbial phrases ("see someone ______") don't have them.
-  if (!['noun', 'verb', 'adjective'].includes(posKey(w)) || wordCount(w) > 2) return null;
-  const word = bareWord(w.word), lower = norm(word);
-  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const multi = /\s/.test(lower);
-  const stem = multi ? lower : lower.length > 5 ? lower.replace(/(es|s)$/, '').slice(0, Math.max(4, lower.length - 2)) : lower.replace(/s$/, '');
-  const re = multi ? new RegExp(`\\b${esc(lower)}s?\\b`, 'i') : new RegExp(`\\b${esc(stem)}[a-z]*\\b`, 'i');
-  const blanked = [];
-  for (const c of shuffleCopy((Array.isArray(w.collocations) ? w.collocations : []).filter(c => typeof c === 'string' && c.trim()), rng)) {
-    const m = c.match(re);
-    if (!m) continue;
-    const text = c.replace(re, '______').trim();
-    if (text === '______' || norm(text).includes(stem) || (text.match(/_{2,}/g) || []).length !== 1) continue;
-    // Skip one that just repeats another ("______ of" next to "a ______ of").
-    if (blanked.some(x => norm(x.text).includes(norm(text)) || norm(text).includes(norm(x.text)))) continue;
-    blanked.push({ text, exact: norm(m[0]) === lower });
-  }
-  const pool = typing ? blanked.filter(b => b.exact) : blanked;
-  // Two phrases, so the pair points at one word.
-  if (pool.length < 2) return null;
-  const shown = pool.slice(0, 2).map(b => b.text);
-  const base = { id: `${w.word}:collocation`, mode: 'collocation', targets: [w.word], answers: [w.word], prompt: `Which word completes both phrases?\n“${shown[0]}”   ·   “${shown[1]}”`, explanation: `${(w.collocations || []).join(' · ')}. ${w.meaning || ''}`.trim(), hints: w.hints || [], difficulty: 2 };
+  const checks = collocationChecks(w);
+  if (!checks.length) return null;
+  const i = Math.floor(rng() * checks.length), c = checks[i];
+  const base = { id: `${w.word}:collocation:${i}`, mode: 'collocation', targets: [w.word], answers: [c.answer.trim()], prompt: `Which word fits?\n${c.sentence.trim()}`, explanation: [c.explanation, c.sentence.replace(/_{2,}/, c.answer.trim())].filter(Boolean).join(' '), hints: [], difficulty: 2 };
   if (typing) return { ...base, type: 'typing' };
-  const options = optionWords([w], words, 4, rng).map(x => x.word);
-  return options.length >= 2 ? { ...base, type: 'mcq', options } : null;
+  return { ...base, type: 'mcq', options: shuffleCopy([c.answer.trim(), ...c.wrong.map(x => x.trim()).filter(Boolean).slice(0, 3)], rng) };
 }
 // Word Family: the word and its family members (Surgery, surgeon,
 // surgical); ask for the part of speech only one of them has, so every
@@ -432,7 +415,7 @@ function validateContent(data, existing={}) {
     for(const k of ['opposite','chainGroup','distractorGroup','plainForm'])if(w[k]!==undefined)text(w[k],`${p}.${k}`);
     if(w.opposite && norm(w.opposite)!=='none')refs([w.opposite],`${p}.opposite`);
     if(w.excludeFromSameOptionsWith!==undefined)refs(w.excludeFromSameOptionsWith,`${p}.excludeFromSameOptionsWith`,0);
-    if(w.units!==undefined&&(!Array.isArray(w.units)||w.units.some(u=>typeof u!=='string')))err(`${p}.units`,'expected an array of strings');if(w.antonyms!==undefined&&(!Array.isArray(w.antonyms)||w.antonyms.some(a=>typeof a!=='string')))err(`${p}.antonyms`,'expected an array of strings');if(w.hints!==undefined){if(!Array.isArray(w.hints))err(`${p}.hints`,'expected array');else w.hints.forEach((h,j)=>text(h,`${p}.hints[${j}]`));}
+    if(w.collocationChecks!==undefined){if(!Array.isArray(w.collocationChecks))err(`${p}.collocationChecks`,'expected array');else w.collocationChecks.forEach((c,j)=>{const cp=`${p}.collocationChecks[${j}]`;if(!c||typeof c!=='object')return err(cp,'expected an object');if(typeof c.sentence!=='string'||(c.sentence.match(/_{2,}/g)||[]).length!==1)err(`${cp}.sentence`,'needs exactly one ______');text(c.answer,`${cp}.answer`);if(!Array.isArray(c.wrong)||c.wrong.filter(x=>typeof x==='string'&&x.trim()).length<2)err(`${cp}.wrong`,'expected at least two wrong options');else if(c.wrong.some(x=>norm(x)===norm(c.answer)))err(`${cp}.wrong`,'a wrong option equals the answer');});}if(w.units!==undefined&&(!Array.isArray(w.units)||w.units.some(u=>typeof u!=='string')))err(`${p}.units`,'expected an array of strings');if(w.antonyms!==undefined&&(!Array.isArray(w.antonyms)||w.antonyms.some(a=>typeof a!=='string')))err(`${p}.antonyms`,'expected an array of strings');if(w.hints!==undefined){if(!Array.isArray(w.hints))err(`${p}.hints`,'expected array');else w.hints.forEach((h,j)=>text(h,`${p}.hints[${j}]`));}
     for(const [f,ks] of [['transformExample',['before','after']],['commonMistake',['sentence','correction','why']]])if(w[f]!==undefined){if(!obj(w[f]))err(`${p}.${f}`,'expected object');else ks.forEach(k=>text(w[f][k],`${p}.${f}.${k}`));}
     if(w.transformExample&&!['phrasal','fyi'].includes(w.type))err(`${p}.transformExample`,'only phrasal/fyi');
   });
@@ -849,7 +832,7 @@ function AnswerControl({q,draft={},onChange,disabled,onSubmit}){
 }
 // Word options start with a capital letter on screen (idioms are stored in
 // lowercase and would stand out). Display only: values and grading stay.
-function showOption(opt,q){const t=String(opt);return q.mode!=='meaning'&&!String(q.mode).startsWith('grammar')&&t.trim().split(/\s+/).length<=4&&/^[a-z]/.test(t)?t.charAt(0).toUpperCase()+t.slice(1):t;}
+function showOption(opt,q){const t=String(opt);return q.mode!=='meaning'&&q.mode!=='collocation'&&!String(q.mode).startsWith('grammar')&&t.trim().split(/\s+/).length<=4&&/^[a-z]/.test(t)?t.charAt(0).toUpperCase()+t.slice(1):t;}
 // Click a word inside a story/prompt to get a small floating toolbar with
 // "Explain with AI" — avoids needing a drag-select gesture (which doesn't
 // work well on mobile and gave no feedback on a plain tap).
