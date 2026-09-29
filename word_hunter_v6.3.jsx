@@ -112,8 +112,12 @@ function normalizeV3(data, existing = {}) {
     if (gaps[0]) out.gap = gaps[0]; else delete out.gap;
     if (commonMistakes[0]) out.commonMistake = commonMistakes[0]; else delete out.commonMistake;
     const links = isObj(w.links) ? w.links : {};
+    // antonyms is the only source of opposites. An older links.opposite is
+    // folded in; an antonym written as a word id becomes that word.
     const opposite = resolve(links.opposite, `${p}.links.opposite`, w.id);
-    if (opposite) out.opposite = opposite; else delete out.opposite;
+    const antonyms = [...new Set([...strings(w.antonyms).map(a => idToWord.get(norm(a)) || a), ...(opposite ? [opposite] : [])])];
+    if (antonyms.length) out.antonyms = antonyms; else delete out.antonyms;
+    delete out.opposite;
     const excl = strings(links.excludeWith).map((id, j) => resolve(id, `${p}.links.excludeWith[${j}]`, w.id)).filter(Boolean);
     if (excl.length) out.excludeFromSameOptionsWith = excl; else delete out.excludeFromSameOptionsWith;
     const conf = strings(links.confusableWith).map((id, j) => resolve(id, `${p}.links.confusableWith[${j}]`, w.id)).filter(Boolean);
@@ -179,7 +183,7 @@ function mergeContent(old = {}, incoming = {}) {
     }
     out[field] = list;
   }
-  out.words = healOpposites(out.words || []);
+  out.words = healOpposites(linkAntonyms(out.words || []));
   out.words = healMissingWordRefs(out);
   return out;
 }
@@ -211,6 +215,34 @@ function healMissingWordRefs(merged) {
     }
   }
   return extra.length ? [...words, ...extra] : words;
+}
+// antonyms is the source of opposites: an antonym that is another word in
+// the game becomes that word's `opposite`, both ways (Opposite Battle,
+// Opposite Chain). Other antonyms stay plain text for the Opposite Clue
+// question. An older stored `opposite` counts as an antonym.
+const antonymsOf = w => (Array.isArray(w?.antonyms) ? w.antonyms : []).filter(a => typeof a === 'string' && a.trim()).map(a => a.trim());
+function linkAntonyms(words) {
+  const byName = new Map(words.map(w => [norm(bareWord(w.word)), w]));
+  const all = words.map(w => [...new Set([...antonymsOf(w), ...(typeof w.opposite === 'string' && w.opposite.trim() && norm(w.opposite) !== 'none' ? [w.opposite.trim()] : [])])]);
+  const pair = new Map();
+  words.forEach((w, i) => {
+    for (const a of all[i]) {
+      const hit = byName.get(norm(bareWord(a)));
+      if (!hit || hit === w) continue;
+      if (!pair.has(w.word)) pair.set(w.word, hit.word);
+      if (!pair.has(hit.word)) pair.set(hit.word, w.word);
+    }
+  });
+  return words.map((w, i) => {
+    const { opposite, ...rest } = w;
+    const out = all[i].length ? { ...rest, antonyms: all[i] } : rest;
+    return pair.has(w.word) ? { ...out, opposite: pair.get(w.word) } : out;
+  });
+}
+// Antonyms that aren't words in the game and don't give the word away.
+function outsideAntonyms(w, words) {
+  const self = norm(bareWord(w.word));
+  return antonymsOf(w).filter(a => !findWord(words, a) && !findWord(words, bareWord(a)) && !norm(a).includes(self) && !self.includes(norm(a)));
 }
 // A word's `opposite` is just a string label pointing at another word's name.
 // If that name has no entry of its own, nothing crashes for MCQ opposite
@@ -320,7 +352,7 @@ function validateContent(data, existing={}) {
     for(const k of ['opposite','chainGroup','distractorGroup','plainForm'])if(w[k]!==undefined)text(w[k],`${p}.${k}`);
     if(w.opposite && norm(w.opposite)!=='none')refs([w.opposite],`${p}.opposite`);
     if(w.excludeFromSameOptionsWith!==undefined)refs(w.excludeFromSameOptionsWith,`${p}.excludeFromSameOptionsWith`,0);
-    if(w.hints!==undefined){if(!Array.isArray(w.hints))err(`${p}.hints`,'expected array');else w.hints.forEach((h,j)=>text(h,`${p}.hints[${j}]`));}
+    if(w.antonyms!==undefined&&(!Array.isArray(w.antonyms)||w.antonyms.some(a=>typeof a!=='string')))err(`${p}.antonyms`,'expected an array of strings');if(w.hints!==undefined){if(!Array.isArray(w.hints))err(`${p}.hints`,'expected array');else w.hints.forEach((h,j)=>text(h,`${p}.hints[${j}]`));}
     for(const [f,ks] of [['transformExample',['before','after']],['commonMistake',['sentence','correction','why']]])if(w[f]!==undefined){if(!obj(w[f]))err(`${p}.${f}`,'expected object');else ks.forEach(k=>text(w[f][k],`${p}.${f}.${k}`));}
     if(w.transformExample&&!['phrasal','fyi'].includes(w.type))err(`${p}.transformExample`,'only phrasal/fyi');
   });
@@ -513,7 +545,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
     const list=grammarQuestions(g);const turn=(mastery[grammarKey]?.total||0)%list.length;
     return grammarQuestion(g,list[turn],turn,rng);
   }).filter(Boolean);
-  const queue=[],counts={}, weights={meaning:3,reverse:3,gap:3,gapTyping:3,situation:2,typing:3,order:2,transform:2,multi:1,grammarCourt:1,whoami:2,opposite:2,twopeople:2,selecttwo:2,idiomDetective:2,story:2};
+  const queue=[],counts={}, weights={meaning:3,reverse:3,gap:3,gapTyping:3,situation:2,typing:3,order:2,transform:2,multi:1,grammarCourt:1,whoami:2,opposite:2,antonym:2,twopeople:2,selecttwo:2,idiomDetective:2,story:2};
   const wordSlots=questionsPerRound-grammarQueue.length;
   // Don't show a sentence the learner read in the last SEEN_FRESH_HOURS;
   // Two People / Select Two only ever use sentences never shown before.
@@ -580,7 +612,7 @@ function sessionEvidence(mastery,session,now=Date.now()){
 }
 function reinforcement(s){if(s.extraAdded||s.kind!=='practice')return s;const wrong=s.queue.filter((q,i)=>s.answers[i]&&!s.answers[i].correct&&!s.answers[i].reported).flatMap(q=>q.targets);const added=[];for(const q of s.reserves||[]){if(added.length>=2)break;if(!q.targets.some(t=>wrong.includes(t)))continue;if([...s.queue,...added].slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))))continue;const shown=new Set([...s.queue,...added].flatMap(questionSentences));if(questionSentences(q).some(t=>shown.has(t)))continue;added.push(q);}return {...s,queue:[...s.queue,...added],extraAdded:true};}
 
-return { norm, sentence, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, questionSentences, seenRecently, SEEN_FRESH_HOURS, grammarQuestions, grammarQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
+return { norm, sentence, linkAntonyms, outsideAntonyms, antonymsOf, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, questionSentences, seenRecently, SEEN_FRESH_HOURS, grammarQuestions, grammarQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
 })();
 
 // Pronunciation: two independent sources, tried in order.
@@ -782,7 +814,7 @@ function playCue(kind,combo=0){
   }catch{}
 }
 // Friendly names for the V2-only modes MODE_META doesn't cover.
-const MODE_LABELS_V2={reverse:"Name the Word",grammarCourt:"Grammar Court",grammarChoose:"Grammar",grammarJudge:"Right or Wrong?",grammarFix:"Fix the Sentence",multi:"Combo",transform:"Transform"};
+const MODE_LABELS_V2={reverse:"Name the Word",antonym:"Opposite Clue",grammarCourt:"Grammar Court",grammarChoose:"Grammar",grammarJudge:"Right or Wrong?",grammarFix:"Fix the Sentence",multi:"Combo",transform:"Transform"};
 // Correct answers in a row ending at index i (reported/skipped ones don't break it).
 function comboAt(answers,i){let n=0;for(let j=i;j>=0;j--){const a=answers[j];if(!a||a.reported)continue;if(!a.correct)break;n++;}return n;}
 function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onReport,onReviewReport,onWithdrawReport,onUpdateWord,onResult,onAskWord,sound=true,onToggleSound}){
@@ -1392,7 +1424,7 @@ function mergeCustomData(customWords, customGrammar, customChallenges, levelOrde
   const baseWords = INCLUDE_BUILTIN_IN_PLAY ? BUILTIN_WORDS : [];
   const baseGrammar = INCLUDE_BUILTIN_IN_PLAY ? BUILTIN_GRAMMAR : [];
   const baseChallenges = INCLUDE_BUILTIN_IN_PLAY ? BUILTIN_CHALLENGES : [];
-  WORDS = dedupeBy([...baseWords, ...customWords], (w) => w.word && w.word.trim().toLowerCase());
+  WORDS = V2.linkAntonyms(dedupeBy([...baseWords, ...customWords], (w) => w.word && w.word.trim().toLowerCase()));
   GRAMMAR = dedupeBy([...baseGrammar, ...customGrammar], (g) => g.id);
   CHALLENGES = dedupeBy([...baseChallenges, ...(Array.isArray(customChallenges) ? customChallenges : [])], (c) => c && c.id);
   LEVEL_ORDER = levelOrder;
@@ -1854,11 +1886,24 @@ function resolvePoolMode(modeId, wordObj, wordPools) {
 
 // --- Opposite Battle: four sub-modes, all built from data we already have ---
 
+// True when a and b are opposites through either word's antonyms
+// (Good is the opposite of both Sick and Ill).
+function areOpposites(a, b) {
+  if (!a || !b) return false;
+  const has = (x, y) => x.opposite === y.word || V2.antonymsOf(x).some((t) => V2.norm(V2.bareWord(t)) === V2.norm(V2.bareWord(y.word)));
+  return has(a, b) || has(b, a);
+}
+// A wrong option for "opposite of X" must not be another opposite of X, or
+// clash with the right answer (synonym / never-together).
+function safeOppositeDistractor(wordObj, answerObj, d) {
+  return d.word !== wordObj.word && d.word !== answerObj?.word && !areOpposites(wordObj, d) && (!answerObj || V2.compatible(answerObj, d));
+}
 // Mode A — direct match: word shown, pick its opposite from 4 options.
 function buildOppositeDirect(wordObj) {
-  const distractors = sampleDistractors(wordObj, 3).filter((d) => d.word !== wordObj.opposite);
+  const answerObj = findWordByLabel(wordObj.opposite);
+  const distractors = sampleDistractors(wordObj, 5).filter((d) => safeOppositeDistractor(wordObj, answerObj, d)).slice(0, 3);
   while (distractors.length < 3) {
-    const extra = shuffle(WORDS.filter((w) => w.word !== wordObj.word && w.word !== wordObj.opposite && !distractors.includes(w)))[0];
+    const extra = shuffle(WORDS.filter((w) => safeOppositeDistractor(wordObj, answerObj, w) && !distractors.includes(w)))[0];
     if (!extra) break;
     distractors.push(extra);
   }
@@ -1888,9 +1933,9 @@ function buildOppositePairJudgment(wordObj) {
     partner = wordObj.opposite;
   } else {
     const sameGroup = WORDS.filter(
-      (w) => w.word !== wordObj.word && w.word !== wordObj.opposite && w.category === wordObj.category && w.type === wordObj.type
+      (w) => w.word !== wordObj.word && !areOpposites(wordObj, w) && w.category === wordObj.category && w.type === wordObj.type
     );
-    const pool = sameGroup.length ? sameGroup : WORDS.filter((w) => w.word !== wordObj.word && w.word !== wordObj.opposite);
+    const pool = sameGroup.length ? sameGroup : WORDS.filter((w) => w.word !== wordObj.word && !areOpposites(wordObj, w));
     partner = shuffle(pool)[0]?.word;
   }
   if (!partner) return buildOppositeDirect(wordObj);
@@ -2497,6 +2542,7 @@ function findCategoryDuplicates(names, counts) {
 
 // ---- Content Health: find weak word entries and fix them with AI ----
 const PARTS_OF_SPEECH = ["noun", "verb", "adjective", "adverb", "noun phrase", "verb phrase", "adjective phrase", "adverbial phrase", "phrasal verb", "idiom", "expression", "binomial phrase", "proper noun", "interjection", "preposition", "conjunction"];
+const antonymsOfWord = (w) => V2.antonymsOf(w);
 const HEALTH_CHECKS = {
   situation: { label: "Situation doesn't use the word", help: "The situation is the word's example sentence, so it should contain the word. AI rewrites missing or scenario-style situations as one natural example sentence that uses the word.", field: "situation", test: (w) => !w.situation || !situationLeaks(w) },
   meaning: { label: "Weak meaning", help: "Very short, \"Opposite of …\", or contains the word. Hard to type the word from. AI writes one clear B1 definition.", field: "meaning", test: (w) => { const m = String(w.meaning || "").trim(); return !m || m.split(/\s+/).length < 4 || /^opposite of/i.test(m) || normalizeAnswerText(m).includes(normalizeAnswerText(w.word)); } },
@@ -2566,7 +2612,7 @@ async function aiFixWordBatch(kind, words, allWords) {
       // no opposite is set yet) instead of losing it with the old meaning.
       const named = String(w.meaning || "").trim().match(/^opposite of\s*["“']?(.+?)["”']?\s*\.?$/i)?.[1];
       const oppositeWord = named && allWords.find((x) => normalizeAnswerText(x.word) === normalizeAnswerText(named) && x.word !== w.word)?.word;
-      const extra = oppositeWord && !w.opposite ? { opposite: oppositeWord } : null;
+      const extra = oppositeWord && !antonymsOfWord(w).some((a) => normalizeAnswerText(a) === normalizeAnswerText(oppositeWord)) ? { antonyms: [...antonymsOfWord(w), oppositeWord] } : null;
       return { word: w.word, ok: true, field: "meaning", before: w.meaning, after: text, ...(extra ? { extra } : {}) };
     }
     if (instructionKind === "commonMistake") {
@@ -3211,8 +3257,6 @@ function ContentHealthPanel({ content, onUpdate, onMergeCategories, onRemoveEmpt
     const fine = new Set(review.fine || []);
     if (!chosen.length && !fine.size) { setReview(null); return; }
     const byWord = new Map(chosen.map((it) => [it.word, it]));
-    // Opposites go both ways: the named word gets this one back if it has none.
-    const reverse = new Map(chosen.filter((it) => it.extra?.opposite).map((it) => [it.extra.opposite, it.word]));
     onUpdate("words", words.map((w) => {
       let next = byWord.has(w.word) ? { ...w, [byWord.get(w.word).field]: byWord.get(w.word).after, ...(byWord.get(w.word).extra || {}) } : w;
       // v3 lists feed the questions, so the fix goes into them too.
@@ -3221,7 +3265,6 @@ function ContentHealthPanel({ content, onUpdate, onMergeCategories, onRemoveEmpt
       if (fix?.field === "commonMistake" && Array.isArray(w.commonMistakes)) next.commonMistakes = [fix.after, ...w.commonMistakes];
       if (fix?.field === "gaps") { next.gap = fix.after[0]; next.gapsCheckedFor = gapsKey(fix.after); }
       if (fine.has(w.word)) next = { ...next, gapsCheckedFor: gapsKey(gapsOf(w)) };
-      if (reverse.has(w.word) && !next.opposite) next = { ...next, opposite: reverse.get(w.word) };
       return next;
     }));
     setNotice(`Applied ${chosen.length} fix${chosen.length === 1 ? "" : "es"}.${fine.size ? ` ${fine.size} word${fine.size === 1 ? "" : "s"} marked as checked (gaps were clear).` : ""}`);
@@ -3249,7 +3292,7 @@ function ContentHealthPanel({ content, onUpdate, onMergeCategories, onRemoveEmpt
         {review.fine?.length > 0 && <p className="wh-import-hint">{review.fine.length} word{review.fine.length === 1 ? "" : "s"} had clear gaps: {review.fine.join(", ")}. They're marked as checked when you apply.</p>}
         {review.items.map((it, i) => <label key={it.word} className={`wh-health-item ${it.ok ? "" : "failed"}`}>
           <input type="checkbox" disabled={!it.ok} checked={!!it.selected} onChange={() => toggle(i)} />
-          <div><b>{it.word}</b>{it.ok ? <><p className="before">{formatHealthValue(it.shownBefore ?? it.before)}</p><p className="after">{formatHealthValue(it.shownAfter ?? it.after)}</p>{it.reason && <p><small>{it.reason}</small></p>}{it.extra?.opposite && <p className="after">+ Opposite: {it.extra.opposite}</p>}</> : <p className="before">Skipped: {it.reason}</p>}</div>
+          <div><b>{it.word}</b>{it.ok ? <><p className="before">{formatHealthValue(it.shownBefore ?? it.before)}</p><p className="after">{formatHealthValue(it.shownAfter ?? it.after)}</p>{it.reason && <p><small>{it.reason}</small></p>}{it.extra?.antonyms && <p className="after">+ Opposite: {it.extra.antonyms.at(-1)}</p>}</> : <p className="before">Skipped: {it.reason}</p>}</div>
         </label>)}
         <div className="wh-import-actions"><button className="wh-import-btn secondary" onClick={() => setReview(null)}>Discard all</button><button className="wh-import-btn primary" disabled={!selectedCount && !review.fine?.length} onClick={apply}>{selectedCount ? `Apply ${selectedCount} selected` : `Mark ${review.fine?.length || 0} as checked`}</button></div>
       </div>}
@@ -3754,9 +3797,21 @@ export default function WordHunter() {
   function buildPracticeExtra(wordObj, stage, rng = Math.random) {
     const allowed = new Set(getAllowedModes(wordObj));
     const byStage = stage === "Familiar" ? ["whoami", "idiomDetective", "story", "opposite"] : ["whoami", "idiomDetective", "story", "opposite", "twopeople", "selecttwo"];
-    const modes = byStage.filter((m) => allowed.has(m) && (m !== "opposite" || wordObj.opposite));
+    const clues = V2.outsideAntonyms(wordObj, WORDS);
+    const modes = [...byStage.filter((m) => allowed.has(m) && (m !== "opposite" || wordObj.opposite)), ...(clues.length ? ["antonym"] : [])];
     if (!modes.length) return null;
     const mode = modes[Math.floor(rng() * modes.length)];
+    // Opposite Clue: an antonym from outside the game points at this word
+    // ("The opposite of “shrink” is…" → Swell). Typed once the word is Learned.
+    if (mode === "antonym") {
+      const clue = clues[Math.floor(rng() * clues.length)];
+      const base = { id: `${wordObj.word}:antonym`, mode: "antonym", targets: [wordObj.word], answers: [wordObj.word], prompt: `The opposite of “${clue}” is…`, explanation: `${wordObj.word} ↔ ${clue}. ${wordObj.meaning || ""}`.trim(), hints: wordObj.hints || [], difficulty: 2 };
+      if (stage === "Learned" || stage === "Mastered") return { ...base, type: "typing" };
+      // No other word the clue is also the opposite of.
+      const options = V2.optionWords([wordObj], WORDS, 6, rng).filter((x) => x.word === wordObj.word || !V2.antonymsOf(x).some((a) => V2.norm(a) === V2.norm(clue))).slice(0, 4).map((x) => x.word);
+      if (!options.includes(wordObj.word)) return null;
+      return options.length >= 2 ? { ...base, type: "mcq", options } : null;
+    }
     try {
       // Two People / Select Two only use sentences never shown before: any
       // gap sentence of the word (authored or AI-written) not yet seen.
