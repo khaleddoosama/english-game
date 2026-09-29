@@ -244,6 +244,64 @@ function outsideAntonyms(w, words) {
   const self = norm(bareWord(w.word));
   return antonymsOf(w).filter(a => !findWord(words, a) && !findWord(words, bareWord(a)) && !norm(a).includes(self) && !self.includes(norm(a)));
 }
+// "noun phrase" → noun, "phrasal verb" → verb, "adverbial phrase" → adverb.
+function basePos(pos) {
+  const p = norm(pos);
+  return p.includes('adverb') ? 'adverb' : p.includes('adjective') ? 'adjective' : p.includes('verb') ? 'verb' : p.includes('noun') ? 'noun' : null;
+}
+// Word Partners: the word's collocations with the word blanked ("have ______
+// · heart ______"). The blank covers the word, its singular or its stem
+// ("take a ______" for Pills); a collocation that can't be blanked cleanly
+// is skipped. Typed only when a blank stands for the word exactly as
+// written, since typing is graded on that text.
+function collocationQuestion(w, words, rng = Math.random, typing = false) {
+  const word = bareWord(w.word), lower = norm(word);
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const multi = /\s/.test(lower);
+  const stem = multi ? lower : lower.length > 5 ? lower.replace(/(es|s)$/, '').slice(0, Math.max(4, lower.length - 2)) : lower.replace(/s$/, '');
+  const re = multi ? new RegExp(`\\b${esc(lower)}s?\\b`, 'i') : new RegExp(`\\b${esc(stem)}[a-z]*\\b`, 'i');
+  const blanked = [];
+  for (const c of shuffleCopy((Array.isArray(w.collocations) ? w.collocations : []).filter(c => typeof c === 'string' && c.trim()), rng)) {
+    const m = c.match(re);
+    if (!m) continue;
+    const text = c.replace(re, '______').trim();
+    if (text === '______' || norm(text).includes(stem) || (text.match(/_{2,}/g) || []).length !== 1) continue;
+    // Skip one that just repeats another ("______ of" next to "a ______ of").
+    if (blanked.some(x => norm(x.text).includes(norm(text)) || norm(text).includes(norm(x.text)))) continue;
+    blanked.push({ text, exact: norm(m[0]) === lower });
+  }
+  const pool = typing ? blanked.filter(b => b.exact) : blanked;
+  if (!pool.length) return null;
+  const shown = pool.slice(0, 2).map(b => b.text);
+  const base = { id: `${w.word}:collocation`, mode: 'collocation', targets: [w.word], answers: [w.word], prompt: `${shown.length > 1 ? 'Which word goes with both?' : 'Which word completes it?'}\n${shown.join('   ·   ')}`, explanation: `${(w.collocations || []).join(' · ')}. ${w.meaning || ''}`.trim(), hints: w.hints || [], difficulty: 2 };
+  if (typing) return { ...base, type: 'typing' };
+  const options = optionWords([w], words, 4, rng).map(x => x.word);
+  return options.length >= 2 ? { ...base, type: 'mcq', options } : null;
+}
+// Word Family: the word and its family members (Surgery, surgeon,
+// surgical); ask for the part of speech only one of them has, so every
+// option — they all share the stem — has to be read. Typed version: write
+// that family member.
+function familyQuestion(w, rng = Math.random, typing = false) {
+  const own = basePos((w.partsOfSpeech || [])[0]);
+  const seen = new Set();
+  const opts = [...(own ? [{ word: w.word, pos: own, self: true }] : []), ...(Array.isArray(w.wordFamily) ? w.wordFamily : []).filter(f => f && typeof f.word === 'string' && f.word.trim()).map(f => ({ word: f.word.trim(), pos: basePos(f.pos) }))]
+    .filter(o => o.pos && !seen.has(norm(o.word)) && seen.add(norm(o.word)));
+  // A member that is just part of the word (benign / Benign tumor, dozen /
+  // Dozens of times) is too easy to spot, so it's left out.
+  const letters = x => norm(x).replace(/[^a-z]/g, '');
+  const self = letters(w.word);
+  const family = opts.filter(o => o.self || !(self.includes(letters(o.word)) || letters(o.word).includes(self)));
+  if (family.length < (typing ? 2 : 3)) return null;
+  const count = {}; family.forEach(o => { count[o.pos] = (count[o.pos] || 0) + 1; });
+  // The answer is always a family member: the word itself is in the prompt.
+  const unique = shuffleCopy(family.filter(o => count[o.pos] === 1 && !o.self), rng);
+  const pick = unique[0];
+  if (!pick) return null;
+  const base = { id: `${w.word}:family`, mode: 'family', targets: [w.word], answers: [pick.word], explanation: family.map(o => `${o.word} (${o.pos})`).join(' · '), hints: [], difficulty: 2 };
+  if (typing) return { ...base, type: 'typing', prompt: `Write the ${pick.pos} in the word family of “${w.word}”.` };
+  return { ...base, type: 'mcq', prompt: `Word family of “${w.word}”: which one is the ${pick.pos}?`, options: shuffleCopy(family.map(o => o.word), rng) };
+}
 // A word's `opposite` is just a string label pointing at another word's name.
 // If that name has no entry of its own, nothing crashes for MCQ opposite
 // questions (the label is shown as-is), but Opposite Chain and any mode that
@@ -545,7 +603,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
     const list=grammarQuestions(g);const turn=(mastery[grammarKey]?.total||0)%list.length;
     return grammarQuestion(g,list[turn],turn,rng);
   }).filter(Boolean);
-  const queue=[],counts={}, weights={meaning:3,reverse:3,gap:3,gapTyping:3,situation:2,typing:3,order:2,transform:2,multi:1,grammarCourt:1,whoami:2,opposite:2,antonym:2,twopeople:2,selecttwo:2,idiomDetective:2,story:2};
+  const queue=[],counts={}, weights={meaning:3,reverse:3,gap:3,gapTyping:3,situation:2,typing:3,order:2,transform:2,multi:1,grammarCourt:1,whoami:2,opposite:2,antonym:2,collocation:2,family:2,twopeople:2,selecttwo:2,idiomDetective:2,story:2};
   const wordSlots=questionsPerRound-grammarQueue.length;
   // Don't show a sentence the learner read in the last SEEN_FRESH_HOURS;
   // Two People / Select Two only ever use sentences never shown before.
@@ -612,7 +670,7 @@ function sessionEvidence(mastery,session,now=Date.now()){
 }
 function reinforcement(s){if(s.extraAdded||s.kind!=='practice')return s;const wrong=s.queue.filter((q,i)=>s.answers[i]&&!s.answers[i].correct&&!s.answers[i].reported).flatMap(q=>q.targets);const added=[];for(const q of s.reserves||[]){if(added.length>=2)break;if(!q.targets.some(t=>wrong.includes(t)))continue;if([...s.queue,...added].slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))))continue;const shown=new Set([...s.queue,...added].flatMap(questionSentences));if(questionSentences(q).some(t=>shown.has(t)))continue;added.push(q);}return {...s,queue:[...s.queue,...added],extraAdded:true};}
 
-return { norm, sentence, linkAntonyms, outsideAntonyms, antonymsOf, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, questionSentences, seenRecently, SEEN_FRESH_HOURS, grammarQuestions, grammarQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
+return { norm, sentence, linkAntonyms, outsideAntonyms, antonymsOf, collocationQuestion, familyQuestion, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, questionSentences, seenRecently, SEEN_FRESH_HOURS, grammarQuestions, grammarQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
 })();
 
 // Pronunciation: two independent sources, tried in order.
@@ -814,7 +872,7 @@ function playCue(kind,combo=0){
   }catch{}
 }
 // Friendly names for the V2-only modes MODE_META doesn't cover.
-const MODE_LABELS_V2={reverse:"Name the Word",antonym:"Opposite Clue",grammarCourt:"Grammar Court",grammarChoose:"Grammar",grammarJudge:"Right or Wrong?",grammarFix:"Fix the Sentence",multi:"Combo",transform:"Transform"};
+const MODE_LABELS_V2={reverse:"Name the Word",antonym:"Opposite Clue",collocation:"Word Partners",family:"Word Family",grammarCourt:"Grammar Court",grammarChoose:"Grammar",grammarJudge:"Right or Wrong?",grammarFix:"Fix the Sentence",multi:"Combo",transform:"Transform"};
 // Correct answers in a row ending at index i (reported/skipped ones don't break it).
 function comboAt(answers,i){let n=0;for(let j=i;j>=0;j--){const a=answers[j];if(!a||a.reported)continue;if(!a.correct)break;n++;}return n;}
 function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onReport,onReviewReport,onWithdrawReport,onUpdateWord,onResult,onAskWord,sound=true,onToggleSound}){
@@ -3798,9 +3856,16 @@ export default function WordHunter() {
     const allowed = new Set(getAllowedModes(wordObj));
     const byStage = stage === "Familiar" ? ["whoami", "idiomDetective", "story", "opposite"] : ["whoami", "idiomDetective", "story", "opposite", "twopeople", "selecttwo"];
     const clues = V2.outsideAntonyms(wordObj, WORDS);
-    const modes = [...byStage.filter((m) => allowed.has(m) && (m !== "opposite" || wordObj.opposite)), ...(clues.length ? ["antonym"] : [])];
+    // Word Partners / Word Family come from collocations and wordFamily;
+    // typed once the word is Learned.
+    const typed = stage === "Learned" || stage === "Mastered";
+    const partners = V2.collocationQuestion(wordObj, WORDS, rng, typed) || (typed ? V2.collocationQuestion(wordObj, WORDS, rng, false) : null);
+    const family = V2.familyQuestion(wordObj, rng, typed) || (typed ? V2.familyQuestion(wordObj, rng, false) : null);
+    const modes = [...byStage.filter((m) => allowed.has(m) && (m !== "opposite" || wordObj.opposite)), ...(clues.length ? ["antonym"] : []), ...(partners ? ["collocation"] : []), ...(family ? ["family"] : [])];
     if (!modes.length) return null;
     const mode = modes[Math.floor(rng() * modes.length)];
+    if (mode === "collocation") return partners;
+    if (mode === "family") return family;
     // Opposite Clue: an antonym from outside the game points at this word
     // ("The opposite of “shrink” is…" → Swell). Typed once the word is Learned.
     if (mode === "antonym") {
