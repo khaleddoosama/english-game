@@ -179,6 +179,11 @@
       },
       "units": [
         "Sports"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"58\" cy=\"14\" r=\"8\" fill=\"#f2c9a0\"/><path d=\"M56 22 L46 48 L60 64 L56 84 M46 48 L28 60 M52 30 L70 40 L78 30 M52 30 L34 32 L26 22\"/><path d=\"M8 50 H20 M4 60 H18 M12 70 H24\" stroke=\"#d9d4cc\"/></svg>",
+      "pictureAvoid": [
+        "Blocking",
+        "Heave"
       ]
     },
     {
@@ -664,6 +669,11 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M28 12 V36 Q28 54 46 54 Q64 54 64 36 V12\"/><path d=\"M46 54 V66 Q46 82 62 82 Q74 82 74 70\"/><circle cx=\"74\" cy=\"64\" r=\"8\" fill=\"#d9d4cc\"/><circle cx=\"28\" cy=\"12\" r=\"3\" fill=\"#3a3027\"/><circle cx=\"64\" cy=\"12\" r=\"3\" fill=\"#3a3027\"/></svg>",
+      "pictureAvoid": [
+        "Appointment",
+        "Examine"
       ]
     },
     {
@@ -1180,6 +1190,10 @@
           ],
           "explanation": "Get a bruise."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"20\" y=\"10\" width=\"40\" height=\"80\" rx=\"18\" fill=\"#f2c9a0\"/><ellipse cx=\"40\" cy=\"48\" rx=\"12\" ry=\"9\" fill=\"#7d4fa0\" stroke=\"none\" opacity=\".85\"/><ellipse cx=\"40\" cy=\"48\" rx=\"6\" ry=\"4\" fill=\"#4b2a63\" stroke=\"none\"/></svg>",
+      "pictureAvoid": [
+        "Injury"
       ]
     },
     {
@@ -1553,6 +1567,13 @@
           ],
           "explanation": "Come out in a rash = a rash appears."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"20\" y=\"10\" width=\"40\" height=\"80\" rx=\"18\" fill=\"#f2c9a0\"/><circle cx=\"32\" cy=\"30\" r=\"3\" fill=\"#c0392b\" stroke=\"none\"/><circle cx=\"44\" cy=\"34\" r=\"3\" fill=\"#c0392b\" stroke=\"none\"/><circle cx=\"38\" cy=\"42\" r=\"3\" fill=\"#c0392b\" stroke=\"none\"/><circle cx=\"50\" cy=\"46\" r=\"3\" fill=\"#c0392b\" stroke=\"none\"/><circle cx=\"30\" cy=\"50\" r=\"3\" fill=\"#c0392b\" stroke=\"none\"/><circle cx=\"42\" cy=\"54\" r=\"3\" fill=\"#c0392b\" stroke=\"none\"/><circle cx=\"34\" cy=\"62\" r=\"3\" fill=\"#c0392b\" stroke=\"none\"/><circle cx=\"48\" cy=\"62\" r=\"3\" fill=\"#c0392b\" stroke=\"none\"/><circle cx=\"40\" cy=\"70\" r=\"3\" fill=\"#c0392b\" stroke=\"none\"/></svg>",
+      "pictureAvoid": [
+        "Allergies",
+        "Allergy",
+        "Bandage",
+        "Ointment"
       ]
     },
     {
@@ -1665,6 +1686,12 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M30 8 V50 Q24 62 26 72 Q28 84 46 84 H74 Q82 84 82 78 Q82 72 74 70 H54 Q60 58 50 48 V8\" fill=\"#f2c9a0\"/><path d=\"M20 58 Q14 66 20 74 M60 44 Q68 52 62 60\" stroke=\"#c0392b\"/></svg>",
+      "pictureAvoid": [
+        "Injury",
+        "Sprain",
+        "Swell"
       ]
     },
     {
@@ -2218,6 +2245,12 @@
           ],
           "explanation": "Take tablets, like take medicine."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"14\" y=\"20\" width=\"68\" height=\"56\" rx=\"8\" fill=\"#d9d4cc\"/><circle cx=\"32\" cy=\"36\" r=\"9\" fill=\"#ffffff\"/><path d=\"M26 36 H38\"/><circle cx=\"64\" cy=\"36\" r=\"9\" fill=\"#ffffff\"/><path d=\"M58 36 H70\"/><circle cx=\"32\" cy=\"62\" r=\"9\" fill=\"#ffffff\"/><path d=\"M26 62 H38\"/><circle cx=\"64\" cy=\"62\" r=\"9\" fill=\"#ffffff\"/><path d=\"M58 62 H70\"/></svg>",
+      "pictureAvoid": [
+        "Capsules",
+        "Painkiller",
+        "Pills"
       ]
     },
     {
@@ -2281,6 +2314,11 @@
           ],
           "explanation": "Ear drops go in the ear."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"38\" y=\"6\" width=\"20\" height=\"16\" rx=\"4\" fill=\"#3a3027\"/><path d=\"M40 22 H56 V52 L48 66 L40 52 Z\" fill=\"#ffffff\"/><path d=\"M48 70 Q40 80 48 86 Q56 80 48 70 Z\" fill=\"#3a7bd5\"/><path d=\"M30 78 Q26 84 30 88 Q34 84 30 78 Z\" fill=\"#3a7bd5\"/><path d=\"M66 78 Q62 84 66 88 Q70 84 66 78 Z\" fill=\"#3a7bd5\"/></svg>",
+      "pictureAvoid": [
+        "Bottle",
+        "Syrup"
       ]
     },
     {
@@ -2347,6 +2385,10 @@
           ],
           "explanation": "A nurse gives an injection; the patient has one."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"10\" y=\"44\" width=\"46\" height=\"18\" rx=\"9\" fill=\"#f2c9a0\"/><g transform=\"rotate(35 64 34)\"><rect x=\"54\" y=\"26\" width=\"30\" height=\"12\" rx=\"2\" fill=\"#ffffff\"/><path d=\"M54 32 H44 M84 32 H90 M90 28 V36\"/></g><circle cx=\"42\" cy=\"50\" r=\"3\" fill=\"#c0392b\" stroke=\"none\"/></svg>",
+      "pictureAvoid": [
+        "Needles"
       ]
     },
     {
@@ -2414,6 +2456,12 @@
           ],
           "explanation": "We take pills — we don't drink or make them."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"32\" cy=\"52\" r=\"14\" fill=\"#ffffff\"/><circle cx=\"62\" cy=\"40\" r=\"14\" fill=\"#e8b33a\"/><circle cx=\"58\" cy=\"70\" r=\"10\" fill=\"#f4a6a6\"/></svg>",
+      "pictureAvoid": [
+        "Capsules",
+        "Painkiller",
+        "Tablets"
       ]
     },
     {
@@ -2483,6 +2531,12 @@
           ],
           "explanation": "Swallow capsules whole."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><g transform=\"rotate(-35 48 48)\"><path d=\"M22 38 H48 V58 H22 A10 10 0 0 1 22 38 Z\" fill=\"#c0392b\"/><path d=\"M48 38 H74 A10 10 0 0 1 74 58 H48 Z\" fill=\"#ffffff\"/></g></svg>",
+      "pictureAvoid": [
+        "Painkiller",
+        "Pills",
+        "Tablets"
       ]
     },
     {
@@ -2603,6 +2657,11 @@
           ],
           "explanation": "Apply ointment to the skin."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 36 H62 L74 44 V52 L62 60 H14 Z\" fill=\"#ffffff\"/><rect x=\"74\" y=\"42\" width=\"10\" height=\"12\" rx=\"2\" fill=\"#3a7bd5\"/><path d=\"M14 36 V60\" stroke-width=\"4\"/><path d=\"M24 48 H56\" stroke=\"#3a7bd5\"/></svg>",
+      "pictureAvoid": [
+        "Bandage",
+        "Rash"
       ]
     },
     {
@@ -2663,6 +2722,11 @@
           ],
           "explanation": "Wear a cast, like wear a watch."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 52 H78\" stroke=\"#f2c9a0\" stroke-width=\"18\"/><rect x=\"30\" y=\"40\" width=\"40\" height=\"24\" rx=\"4\" fill=\"#ffffff\"/><path d=\"M38 46 L44 56 M52 46 L46 58 M60 48 L62 56\" stroke=\"#3a7bd5\" stroke-width=\"2\"/></svg>",
+      "pictureAvoid": [
+        "Broken arm",
+        "Fracture"
       ]
     },
     {
@@ -2810,6 +2874,11 @@
           ],
           "explanation": "Look + adjective: look pale."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"30\" cy=\"48\" r=\"18\" fill=\"#f2c9a0\"/><circle cx=\"68\" cy=\"48\" r=\"18\" fill=\"#f3efe9\"/><circle cx=\"24\" cy=\"44\" r=\"1.8\" fill=\"#3a3027\"/><circle cx=\"36\" cy=\"44\" r=\"1.8\" fill=\"#3a3027\"/><path d=\"M24 54 Q30 58 36 54\"/><circle cx=\"62\" cy=\"44\" r=\"1.8\" fill=\"#3a3027\"/><circle cx=\"74\" cy=\"44\" r=\"1.8\" fill=\"#3a3027\"/><path d=\"M62 56 H74\"/><path d=\"M44 48 H52 M49 45 L52 48 L49 51\"/></svg>",
+      "pictureAvoid": [
+        "Ill",
+        "Sick"
       ]
     },
     {
@@ -2877,6 +2946,12 @@
           ],
           "explanation": "Have a fever."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"40\" y=\"8\" width=\"16\" height=\"60\" rx=\"8\" fill=\"#ffffff\"/><circle cx=\"48\" cy=\"76\" r=\"12\" fill=\"#c0392b\"/><rect x=\"45\" y=\"20\" width=\"6\" height=\"52\" fill=\"#c0392b\" stroke=\"none\"/><path d=\"M60 22 H66 M60 32 H66 M60 42 H66\"/><path d=\"M74 16 Q80 22 74 28 M82 12 Q90 22 82 32\" stroke=\"#c0392b\"/></svg>",
+      "pictureAvoid": [
+        "Feverish",
+        "Ill",
+        "Sick"
       ]
     },
     {
@@ -2940,6 +3015,12 @@
           ],
           "explanation": "Treat a patient."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"10\" y=\"54\" width=\"76\" height=\"12\" rx=\"3\" fill=\"#ffffff\"/><path d=\"M10 50 V80 M86 58 V80\"/><circle cx=\"26\" cy=\"46\" r=\"9\" fill=\"#f2c9a0\"/><path d=\"M36 46 H82 Q86 46 86 54 H36 Z\" fill=\"#3a7bd5\" opacity=\".7\"/></svg>",
+      "pictureAvoid": [
+        "Coma",
+        "Operation",
+        "Surgery"
       ]
     },
     {
@@ -3005,6 +3086,11 @@
           ],
           "explanation": "Change a bandage = put on a clean one."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><g transform=\"rotate(-30 48 48)\"><rect x=\"8\" y=\"36\" width=\"80\" height=\"24\" rx=\"12\" fill=\"#f0d7b4\"/><rect x=\"34\" y=\"36\" width=\"28\" height=\"24\" fill=\"#ffffff\"/><circle cx=\"42\" cy=\"44\" r=\"1.5\" fill=\"#3a3027\" stroke=\"none\"/><circle cx=\"54\" cy=\"44\" r=\"1.5\" fill=\"#3a3027\" stroke=\"none\"/><circle cx=\"42\" cy=\"52\" r=\"1.5\" fill=\"#3a3027\" stroke=\"none\"/><circle cx=\"54\" cy=\"52\" r=\"1.5\" fill=\"#3a3027\" stroke=\"none\"/></g></svg>",
+      "pictureAvoid": [
+        "Ointment",
+        "Rash"
       ]
     },
     {
@@ -3065,6 +3151,11 @@
           ],
           "explanation": "A spoonful of syrup."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M34 14 H54 V24 Q64 30 64 40 V80 Q64 86 58 86 H30 Q24 86 24 80 V40 Q24 30 34 24 Z\" fill=\"#b5651d\" opacity=\".9\"/><rect x=\"30\" y=\"46\" width=\"28\" height=\"18\" rx=\"2\" fill=\"#ffffff\"/><path d=\"M62 70 L86 58\"/><ellipse cx=\"86\" cy=\"56\" rx=\"7\" ry=\"4\" fill=\"#b5651d\"/></svg>",
+      "pictureAvoid": [
+        "Bottle",
+        "Drops"
       ]
     },
     {
@@ -3183,6 +3274,13 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"48\" cy=\"46\" r=\"26\" fill=\"#f2c9a0\"/><path d=\"M34 38 L40 36 M56 36 L62 38\"/><path d=\"M48 42 L44 54 H52\"/><ellipse cx=\"48\" cy=\"62\" rx=\"6\" ry=\"4\" fill=\"#3a3027\"/><path d=\"M76 40 L88 34 M78 50 L90 50 M76 60 L88 66\" stroke=\"#3a7bd5\"/></svg>",
+      "pictureAvoid": [
+        "Cough",
+        "Runny Nose",
+        "Sick",
+        "Stuffy Nose"
       ]
     },
     {
@@ -3303,6 +3401,13 @@
           ],
           "explanation": "Feel dizzy."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"48\" cy=\"46\" r=\"26\" fill=\"#f2c9a0\"/><path d=\"M38 40 m-5 0 a5 5 0 1 0 5 -5 a3 3 0 1 0 -3 3\"/><path d=\"M58 40 m-5 0 a5 5 0 1 0 5 -5 a3 3 0 1 0 -3 3\"/><path d=\"M40 60 Q48 56 56 60\"/><path d=\"M26 14 Q48 4 70 14\" stroke=\"#e8b33a\" stroke-width=\"3\"/></svg>",
+      "pictureAvoid": [
+        "Ill",
+        "Lightheaded",
+        "Nauseous",
+        "Sick"
       ]
     },
     {
@@ -3593,7 +3698,8 @@
           ],
           "explanation": "A doctor writes a prescription."
         }
-      ]
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M24 10 H62 L74 22 V86 H24 Z\" fill=\"#ffffff\"/><path d=\"M34 32 V52 M34 32 H42 Q48 32 48 38 Q48 44 42 44 H34 M42 44 L52 56 M52 44 L42 56\" stroke=\"#3a7bd5\" stroke-width=\"3\"/><path d=\"M34 66 H64 M34 74 H56\"/></svg>"
     },
     {
       "id": "ill",
@@ -3897,6 +4003,11 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"36\" y=\"10\" width=\"24\" height=\"12\" rx=\"2\" fill=\"#ffffff\"/><path d=\"M32 22 H64 V82 Q64 88 58 88 H38 Q32 88 32 82 Z\" fill=\"#c98b4a\"/><rect x=\"36\" y=\"42\" width=\"24\" height=\"22\" rx=\"2\" fill=\"#ffffff\"/><path d=\"M42 53 H54 M48 47 V59\" stroke=\"#c0392b\"/></svg>",
+      "pictureAvoid": [
+        "Drops",
+        "Syrup"
       ]
     },
     {
@@ -4006,6 +4117,10 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 40 L48 14 L82 40\" fill=\"#ffffff\"/><rect x=\"20\" y=\"40\" width=\"56\" height=\"44\" fill=\"#ffffff\"/><rect x=\"40\" y=\"62\" width=\"16\" height=\"22\" fill=\"#d9d4cc\"/><path d=\"M48 44 V56 M42 50 H54\" stroke=\"#c0392b\" stroke-width=\"4\"/></svg>",
+      "pictureAvoid": [
+        "Pharmacy"
       ]
     },
     {
@@ -4060,6 +4175,10 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"16\" y=\"30\" width=\"64\" height=\"54\" fill=\"#ffffff\"/><path d=\"M12 30 H84 L78 16 H18 Z\" fill=\"#3b8d5a\"/><path d=\"M48 40 V64 M36 52 H60\" stroke=\"#3b8d5a\" stroke-width=\"7\"/><rect x=\"24\" y=\"70\" width=\"48\" height=\"14\" fill=\"#d9d4cc\"/></svg>",
+      "pictureAvoid": [
+        "Clinic"
       ]
     },
     {
@@ -4257,6 +4376,11 @@
           ],
           "explanation": "A hairline fracture = a very thin crack in a bone."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"14\" y=\"40\" width=\"68\" height=\"16\" rx=\"8\" fill=\"#ffffff\"/><circle cx=\"16\" cy=\"40\" r=\"7\" fill=\"#ffffff\"/><circle cx=\"16\" cy=\"56\" r=\"7\" fill=\"#ffffff\"/><circle cx=\"80\" cy=\"40\" r=\"7\" fill=\"#ffffff\"/><circle cx=\"80\" cy=\"56\" r=\"7\" fill=\"#ffffff\"/><path d=\"M46 36 L52 46 L44 50 L50 60\" stroke=\"#c0392b\" stroke-width=\"3\"/></svg>",
+      "pictureAvoid": [
+        "Broken arm",
+        "Cast"
       ]
     },
     {
@@ -4366,6 +4490,12 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M34 8 V58 Q34 70 46 72 H76 Q82 72 82 78 Q82 84 76 84 H30 Q22 84 22 72 V8\" fill=\"#f2c9a0\"/><circle cx=\"32\" cy=\"66\" r=\"11\" stroke=\"#c0392b\" stroke-width=\"3\"/><path d=\"M52 50 Q60 42 54 36 M50 58 Q62 58 64 48\" stroke=\"#c0392b\"/></svg>",
+      "pictureAvoid": [
+        "Injury",
+        "Swell",
+        "Swollen"
       ]
     },
     {
@@ -4479,6 +4609,12 @@
           ],
           "explanation": "Hit your elbow on something."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 30 L46 56 L80 26\" stroke=\"#f2c9a0\" stroke-width=\"16\"/><path d=\"M14 30 L46 56 L80 26\" stroke=\"#3a3027\" stroke-width=\"2\" opacity=\".35\"/><circle cx=\"46\" cy=\"56\" r=\"11\" fill=\"none\" stroke=\"#c0392b\" stroke-width=\"3.5\"/><path d=\"M40 78 L46 70 L52 78\" stroke=\"#c0392b\"/></svg>",
+      "pictureAvoid": [
+        "Joint",
+        "Knee",
+        "Thigh"
       ]
     },
     {
@@ -4543,6 +4679,12 @@
           ],
           "explanation": "Bend your knees."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M30 10 L42 50 L32 88\" stroke=\"#f2c9a0\" stroke-width=\"18\"/><circle cx=\"42\" cy=\"50\" r=\"12\" fill=\"none\" stroke=\"#c0392b\" stroke-width=\"3.5\"/><path d=\"M64 50 H56 M60 46 L56 50 L60 54\" stroke=\"#c0392b\"/></svg>",
+      "pictureAvoid": [
+        "Elbow",
+        "Joint",
+        "Thigh"
       ]
     },
     {
@@ -4697,6 +4839,13 @@
       },
       "units": [
         "Body-Parts"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 30 L40 44\" stroke=\"#d9d4cc\" stroke-width=\"12\"/><path d=\"M56 52 L84 66\" stroke=\"#d9d4cc\" stroke-width=\"12\"/><path d=\"M12 30 L40 44 M56 52 L84 66\" stroke=\"#3a3027\" stroke-width=\"2\" opacity=\".3\"/><circle cx=\"48\" cy=\"48\" r=\"10\" fill=\"#ffffff\"/><circle cx=\"48\" cy=\"48\" r=\"16\" stroke=\"#c0392b\" stroke-width=\"3\" stroke-dasharray=\"4 4\"/></svg>",
+      "pictureAvoid": [
+        "Anatomy",
+        "Elbow",
+        "Knee",
+        "Thigh"
       ]
     },
     {
@@ -4743,6 +4892,12 @@
       },
       "units": [
         "Body-Parts"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M40 8 L44 52 L40 90\" stroke=\"#f2c9a0\" stroke-width=\"20\"/><path d=\"M40 10 L44 48\" stroke=\"#c0392b\" stroke-width=\"20\" opacity=\".45\"/><path d=\"M62 30 H54 M58 26 L54 30 L58 34\" stroke=\"#c0392b\"/></svg>",
+      "pictureAvoid": [
+        "Elbow",
+        "Joint",
+        "Knee"
       ]
     },
     {
@@ -4794,6 +4949,10 @@
       },
       "units": [
         "Body-Parts"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"48\" cy=\"16\" r=\"9\" fill=\"#ffffff\"/><path d=\"M48 25 V62 M36 32 H60 M38 40 H58 M40 48 H56 M48 34 L30 58 M48 34 L66 58 M48 62 L38 88 M48 62 L58 88\"/></svg>",
+      "pictureAvoid": [
+        "Joint"
       ]
     },
     {
@@ -4848,6 +5007,13 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"48\" cy=\"46\" r=\"26\" fill=\"#b9d8a0\"/><path d=\"M36 40 L42 40 M54 40 L60 40\"/><path d=\"M38 62 Q43 56 48 62 Q53 68 58 62\"/><path d=\"M76 20 Q82 26 76 32\" stroke=\"#3b8d5a\"/></svg>",
+      "pictureAvoid": [
+        "Dizzy",
+        "Ill",
+        "Lightheaded",
+        "Sick"
       ]
     },
     {
@@ -5240,6 +5406,10 @@
       },
       "units": [
         "Healthy-Nutrition"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M30 30 Q40 10 62 20 Q80 30 70 52 Q62 66 48 60 L32 76\" fill=\"#d9a066\"/><path d=\"M32 76 L24 72 M32 76 L30 86\"/><circle cx=\"24\" cy=\"72\" r=\"4\" fill=\"#ffffff\"/><circle cx=\"30\" cy=\"86\" r=\"4\" fill=\"#ffffff\"/></svg>",
+      "pictureAvoid": [
+        "Livestock"
       ]
     },
     {
@@ -5766,6 +5936,10 @@
           ],
           "explanation": "Raise animals; grow plants."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"20\" y=\"36\" width=\"50\" height=\"28\" rx=\"10\" fill=\"#ffffff\"/><path d=\"M28 64 V80 M40 64 V80 M54 64 V80 M64 64 V80\"/><rect x=\"66\" y=\"28\" width=\"20\" height=\"18\" rx=\"6\" fill=\"#ffffff\"/><path d=\"M68 28 L64 20 M84 28 L88 20\"/><ellipse cx=\"40\" cy=\"46\" rx=\"8\" ry=\"6\" fill=\"#3a3027\" stroke=\"none\"/><circle cx=\"80\" cy=\"36\" r=\"1.8\" fill=\"#3a3027\"/></svg>",
+      "pictureAvoid": [
+        "Poultry"
       ]
     },
     {
@@ -5831,6 +6005,10 @@
           ],
           "explanation": "Avoid = stay away from."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 30 L30 18 H44 L50 30 V84 H20 Z\" fill=\"#ffffff\"/><path d=\"M20 44 H50\" stroke=\"#3a7bd5\"/><path d=\"M56 64 L86 50 V76 L56 84 Z\" fill=\"#e8b33a\"/><circle cx=\"68\" cy=\"70\" r=\"3\" fill=\"#ffffff\"/><circle cx=\"78\" cy=\"64\" r=\"2\" fill=\"#ffffff\"/></svg>",
+      "pictureAvoid": [
+        "Minerals"
       ]
     },
     {
@@ -6379,6 +6557,15 @@
       },
       "units": [
         "Dreams-and-Sleeping"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"48\" cy=\"46\" r=\"26\" fill=\"#f2c9a0\"/><path d=\"M34 40 Q38 44 42 40 M54 40 Q58 44 62 40\"/><path d=\"M42 58 Q48 62 54 58\"/><path d=\"M52 60 Q50 70 53 74 Q56 70 54 60 Z\" fill=\"#3a7bd5\"/></svg>",
+      "pictureAvoid": [
+        "Insomnia",
+        "Nightmare",
+        "Sleep paralysis",
+        "Sleep talking",
+        "Sleepwalking",
+        "Snoring"
       ]
     },
     {
@@ -6442,6 +6629,15 @@
           ],
           "explanation": "Keep someone awake (adjective)."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"48\" cy=\"46\" r=\"26\" fill=\"#f2c9a0\"/><path d=\"M34 40 Q38 44 42 40 M54 40 Q58 44 62 40\"/><ellipse cx=\"48\" cy=\"58\" rx=\"5\" ry=\"4\" fill=\"#3a3027\"/><path d=\"M66 14 H76 L66 24 H76 M78 4 H86 L78 12 H86\" stroke=\"#3a7bd5\"/></svg>",
+      "pictureAvoid": [
+        "Drool",
+        "Insomnia",
+        "Nightmare",
+        "Sleep paralysis",
+        "Sleep talking",
+        "Sleepwalking"
       ]
     },
     {
@@ -6575,6 +6771,15 @@
           ],
           "explanation": "Suffer from insomnia."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"10\" y=\"58\" width=\"76\" height=\"12\" rx=\"3\" fill=\"#ffffff\"/><circle cx=\"26\" cy=\"50\" r=\"9\" fill=\"#f2c9a0\"/><circle cx=\"23\" cy=\"48\" r=\"2\" fill=\"#3a3027\"/><circle cx=\"29\" cy=\"48\" r=\"2\" fill=\"#3a3027\"/><path d=\"M36 50 H82 V58 H36 Z\" fill=\"#3a7bd5\" opacity=\".6\"/><path d=\"M70 10 A12 12 0 1 0 82 28 A9 9 0 1 1 70 10 Z\" fill=\"#e8b33a\"/></svg>",
+      "pictureAvoid": [
+        "Drool",
+        "Nightmare",
+        "Sleep paralysis",
+        "Sleep talking",
+        "Sleepwalking",
+        "Snoring"
       ]
     },
     {
@@ -6736,6 +6941,11 @@
       },
       "units": [
         "Dreams-and-Sleeping"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"30\" cy=\"62\" r=\"14\" fill=\"#f2c9a0\"/><circle cx=\"26\" cy=\"60\" r=\"1.8\" fill=\"#3a3027\"/><circle cx=\"34\" cy=\"60\" r=\"1.8\" fill=\"#3a3027\"/><path d=\"M26 68 Q30 70 34 68\"/><circle cx=\"46\" cy=\"44\" r=\"3\"/><circle cx=\"54\" cy=\"36\" r=\"4\"/><path d=\"M58 28 Q56 14 70 14 Q80 8 86 18 Q94 24 86 32 Q84 40 72 38 Q62 40 58 28 Z\" fill=\"#ffffff\"/><path d=\"M68 28 L74 22 L80 28\" stroke=\"#3b8d5a\"/></svg>",
+      "pictureAvoid": [
+        "Subconscious",
+        "Zone out"
       ]
     },
     {
@@ -6913,6 +7123,15 @@
           ],
           "explanation": "In English we have a nightmare — we don't 'see' one."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 60 Q10 60 12 50 Q14 40 26 42 Q28 28 44 30 Q54 18 66 30 Q82 28 82 44 Q90 48 86 58 Q84 64 76 62 Z\" fill=\"#5b4a6b\"/><circle cx=\"40\" cy=\"46\" r=\"4\" fill=\"#e8b33a\" stroke=\"none\"/><circle cx=\"58\" cy=\"46\" r=\"4\" fill=\"#e8b33a\" stroke=\"none\"/><path d=\"M42 54 L46 58 L50 54 L54 58\" stroke=\"#ffffff\"/><path d=\"M32 74 Q48 90 64 74\" stroke=\"#3a3027\"/></svg>",
+      "pictureAvoid": [
+        "Drool",
+        "Insomnia",
+        "Sleep paralysis",
+        "Sleep talking",
+        "Sleepwalking",
+        "Snoring"
       ]
     },
     {
@@ -7073,6 +7292,15 @@
       },
       "units": [
         "Dreams-and-Sleeping"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"40\" cy=\"20\" r=\"9\" fill=\"#f2c9a0\"/><path d=\"M40 29 V58 M40 36 H70 M40 42 H70 M40 58 L30 84 M40 58 L52 84\"/><path d=\"M58 8 H66 L58 16 H66\" stroke=\"#3a7bd5\"/></svg>",
+      "pictureAvoid": [
+        "Drool",
+        "Insomnia",
+        "Nightmare",
+        "Sleep paralysis",
+        "Sleep talking",
+        "Snoring"
       ]
     },
     {
@@ -7420,6 +7648,15 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"48\" cy=\"46\" r=\"26\" fill=\"#f2c9a0\"/><circle cx=\"38\" cy=\"40\" r=\"2\" fill=\"#3a3027\"/><circle cx=\"58\" cy=\"40\" r=\"2\" fill=\"#3a3027\"/><circle cx=\"48\" cy=\"60\" r=\"7\" fill=\"#3a3027\"/><path d=\"M60 68 Q70 66 74 74 M62 76 Q70 78 72 86\" stroke=\"#d9d4cc\" stroke-width=\"3\"/></svg>",
+      "pictureAvoid": [
+        "Runny Nose",
+        "Sick",
+        "Sneeze",
+        "Sore throat",
+        "Stuffy Nose",
+        "Swallow"
       ]
     },
     {
@@ -7472,6 +7709,11 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 50 H78\" stroke=\"#f2c9a0\" stroke-width=\"16\"/><path d=\"M40 42 L46 50 L42 58 L50 50 L46 42\" stroke=\"#c0392b\" stroke-width=\"3\"/><path d=\"M20 20 L50 64 L80 20\" stroke=\"#3a7bd5\" stroke-width=\"4\"/></svg>",
+      "pictureAvoid": [
+        "Cast",
+        "Fracture"
       ]
     },
     {
@@ -7653,6 +7895,13 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"48\" cy=\"46\" r=\"26\" fill=\"#f2c9a0\"/><path d=\"M48 40 L42 56 H52\"/><path d=\"M44 60 Q41 68 44 72 Q47 68 44 60 Z\" fill=\"#3a7bd5\"/><circle cx=\"38\" cy=\"38\" r=\"2\" fill=\"#3a3027\"/><circle cx=\"58\" cy=\"38\" r=\"2\" fill=\"#3a3027\"/></svg>",
+      "pictureAvoid": [
+        "Cough",
+        "Sick",
+        "Sneeze",
+        "Stuffy Nose"
       ]
     },
     {
@@ -7805,6 +8054,11 @@
           ],
           "explanation": "Have a sore throat."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"48\" cy=\"30\" r=\"20\" fill=\"#f2c9a0\"/><path d=\"M38 48 V80 H58 V48\" fill=\"#f2c9a0\"/><path d=\"M40 60 H56\" stroke=\"#c0392b\" stroke-width=\"6\"/><path d=\"M64 56 L74 52 M64 64 L76 64 M32 56 L22 52 M32 64 L20 64\" stroke=\"#c0392b\"/></svg>",
+      "pictureAvoid": [
+        "Cough",
+        "Swallow"
       ]
     },
     {
@@ -7975,6 +8229,10 @@
           ],
           "explanation": "Afraid of — not 'afraid from'."
         }
+      ],
+      "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" fill=\"none\" stroke=\"#3a3027\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><g transform=\"rotate(-40 48 48)\"><rect x=\"20\" y=\"40\" width=\"44\" height=\"16\" rx=\"2\" fill=\"#ffffff\"/><path d=\"M28 40 V48 M36 40 V48 M44 40 V48 M52 40 V48\"/><path d=\"M64 48 H74 M74 44 V52\"/><path d=\"M20 48 H6\" stroke-width=\"2\"/><path d=\"M74 48 H86\"/></g></svg>",
+      "pictureAvoid": [
+        "Injection"
       ]
     },
     {
