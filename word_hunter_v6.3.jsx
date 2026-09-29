@@ -5666,7 +5666,7 @@ export default function WordHunter() {
         .wh-pos-tag { font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:normal; color:var(--text-dim); margin-left:8px; text-transform:lowercase; }
         .wh-flashcard-back p { margin: 0 0 8px; text-align: left; }
         .wh-flashcard-back p:last-child { margin-bottom: 0; }
-        .wh-flashcard-img { display:block; width:100%; max-height:160px; object-fit:cover; border-radius:6px; margin-bottom:12px; }
+        .wh-flashcard-img { display:block; width:160px; height:160px; max-width:100%; object-fit:contain; background:#fbf7ef; border-radius:10px; margin:0 auto 12px; }
         .wh-img-blocked { font:11px 'IBM Plex Mono',monospace; color:var(--text-dim); background:rgba(107,93,79,0.08); border:1px dashed rgba(107,93,79,0.4); border-radius:6px; padding:8px 10px; margin:0 0 12px; }
         .wh-img-blocked a { color:var(--gold-soft); }
         .wh-flashcard-nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 16px 0; }
