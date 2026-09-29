@@ -412,6 +412,18 @@
       },
       "units": [
         "Sports"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "He is completely obsessed ______ football.",
+          "answer": "with",
+          "wrong": [
+            "in",
+            "on",
+            "at"
+          ],
+          "explanation": "Obsessed with something."
+        }
       ]
     },
     {
@@ -467,6 +479,18 @@
       },
       "units": [
         "Sports"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "Our team finally ______ the playoffs this year.",
+          "answer": "made",
+          "wrong": [
+            "did",
+            "took",
+            "got"
+          ],
+          "explanation": "Make the playoffs = qualify for them."
+        }
       ]
     },
     {
@@ -693,6 +717,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "The baby started to ______ symptoms of a cold.",
+          "answer": "show",
+          "wrong": [
+            "make",
+            "do",
+            "give"
+          ],
+          "explanation": "Show symptoms."
+        }
       ]
     },
     {
@@ -752,6 +788,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "After the bee sting, her hand began to swell ______.",
+          "answer": "up",
+          "wrong": [
+            "down",
+            "off",
+            "over"
+          ],
+          "explanation": "Swell up = get bigger."
+        }
       ]
     },
     {
@@ -803,6 +851,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "Many people ______ type 2 diabetes without knowing it.",
+          "answer": "have",
+          "wrong": [
+            "make",
+            "do",
+            "take"
+          ],
+          "explanation": "Have diabetes."
+        }
       ]
     },
     {
@@ -912,6 +972,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "Millions of people ______ with a chronic disease.",
+          "answer": "live",
+          "wrong": [
+            "stay",
+            "sit",
+            "keep"
+          ],
+          "explanation": "Live with a long illness."
+        }
       ]
     },
     {
@@ -967,6 +1039,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "She has an allergy ______ peanuts.",
+          "answer": "to",
+          "wrong": [
+            "from",
+            "of",
+            "with"
+          ],
+          "explanation": "An allergy to something — not 'from'."
+        }
       ]
     },
     {
@@ -1021,6 +1105,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "People who ______ from hypertension should eat less salt.",
+          "answer": "suffer",
+          "wrong": [
+            "feel",
+            "hurt",
+            "pain"
+          ],
+          "explanation": "Suffer from an illness."
+        }
       ]
     },
     {
@@ -1072,6 +1168,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "He ______ a bruise on his leg from the football.",
+          "answer": "got",
+          "wrong": [
+            "made",
+            "did",
+            "took"
+          ],
+          "explanation": "Get a bruise."
+        }
       ]
     },
     {
@@ -1126,6 +1234,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "I ______ a bit lightheaded after giving blood.",
+          "answer": "felt",
+          "wrong": [
+            "had",
+            "made",
+            "did"
+          ],
+          "explanation": "Feel lightheaded (past: felt)."
+        }
       ]
     },
     {
@@ -1174,6 +1294,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "I'm sick and tired ______ waiting for the bus.",
+          "answer": "of",
+          "wrong": [
+            "from",
+            "with",
+            "about"
+          ],
+          "explanation": "Sick and tired of something."
+        }
       ]
     },
     {
@@ -1351,6 +1483,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "Don't worry — a small cut like this will heal ______.",
+          "answer": "quickly",
+          "wrong": [
+            "fastly",
+            "speedy",
+            "hurry"
+          ],
+          "explanation": "Heal quickly. ('Fastly' is not a word.)"
+        }
       ]
     },
     {
@@ -1397,6 +1541,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "The new soap made her come ______ in a rash.",
+          "answer": "out",
+          "wrong": [
+            "up",
+            "off",
+            "over"
+          ],
+          "explanation": "Come out in a rash = a rash appears."
+        }
       ]
     },
     {
@@ -1567,6 +1723,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "I always get ______ sickness on long car journeys.",
+          "answer": "travel",
+          "wrong": [
+            "drive",
+            "road",
+            "trip"
+          ],
+          "explanation": "Travel sickness (also motion sickness)."
+        }
       ]
     },
     {
@@ -1625,6 +1793,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "She missed school for a month because of a ______ illness.",
+          "answer": "serious",
+          "wrong": [
+            "heavy",
+            "big",
+            "strong"
+          ],
+          "explanation": "A serious illness — not a 'heavy' or 'big' one."
+        }
       ]
     },
     {
@@ -1681,6 +1861,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "Washing your hands stops the ______ of disease.",
+          "answer": "spread",
+          "wrong": [
+            "run",
+            "walk",
+            "fly"
+          ],
+          "explanation": "The spread of disease."
+        }
       ]
     },
     {
@@ -1885,6 +2077,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "My grandfather ______ a stroke last year and now walks with a stick.",
+          "answer": "had",
+          "wrong": [
+            "made",
+            "did",
+            "took"
+          ],
+          "explanation": "Have a stroke (past: had)."
+        }
       ]
     },
     {
@@ -1932,6 +2136,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "After the crash, he was ______ a coma for two weeks.",
+          "answer": "in",
+          "wrong": [
+            "on",
+            "at",
+            "under"
+          ],
+          "explanation": "Be in a coma."
+        }
       ]
     },
     {
@@ -1990,6 +2206,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "You should ______ these tablets after meals.",
+          "answer": "take",
+          "wrong": [
+            "make",
+            "do",
+            "put"
+          ],
+          "explanation": "Take tablets, like take medicine."
+        }
       ]
     },
     {
@@ -2041,6 +2269,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "The doctor gave me ______ drops for my ear infection.",
+          "answer": "ear",
+          "wrong": [
+            "eye",
+            "hand",
+            "foot"
+          ],
+          "explanation": "Ear drops go in the ear."
+        }
       ]
     },
     {
@@ -2095,6 +2335,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "The nurse will ______ you an injection in your arm.",
+          "answer": "give",
+          "wrong": [
+            "make",
+            "do",
+            "take"
+          ],
+          "explanation": "A nurse gives an injection; the patient has one."
+        }
       ]
     },
     {
@@ -2150,6 +2402,18 @@
       "units": [
         "Common-Health-Problems",
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "The doctor told me to ______ two pills a day.",
+          "answer": "take",
+          "wrong": [
+            "make",
+            "do",
+            "drink"
+          ],
+          "explanation": "We take pills — we don't drink or make them."
+        }
       ]
     },
     {
@@ -2207,6 +2471,18 @@
       "units": [
         "Common-Health-Problems",
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "Don't chew these capsules — ______ them whole with water.",
+          "answer": "swallow",
+          "wrong": [
+            "drink",
+            "bite",
+            "breathe"
+          ],
+          "explanation": "Swallow capsules whole."
+        }
       ]
     },
     {
@@ -2255,6 +2531,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "I had a bad headache, so I ______ a painkiller.",
+          "answer": "took",
+          "wrong": [
+            "made",
+            "did",
+            "gave"
+          ],
+          "explanation": "Take a painkiller (past: took)."
+        }
       ]
     },
     {
@@ -2303,6 +2591,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "______ the ointment to the burn twice a day.",
+          "answer": "Apply",
+          "wrong": [
+            "Make",
+            "Do",
+            "Drink"
+          ],
+          "explanation": "Apply ointment to the skin."
+        }
       ]
     },
     {
@@ -2351,6 +2651,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "After breaking his leg, he had to ______ a cast for six weeks.",
+          "answer": "wear",
+          "wrong": [
+            "dress",
+            "carry",
+            "put"
+          ],
+          "explanation": "Wear a cast, like wear a watch."
+        }
       ]
     },
     {
@@ -2419,6 +2731,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "I'll ______ in sick and stay home today.",
+          "answer": "call",
+          "wrong": [
+            "say",
+            "tell",
+            "speak"
+          ],
+          "explanation": "Call in sick = phone work to say you're ill."
+        }
       ]
     },
     {
@@ -2474,6 +2798,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "You ______ pale — are you OK?",
+          "answer": "look",
+          "wrong": [
+            "see",
+            "watch",
+            "show"
+          ],
+          "explanation": "Look + adjective: look pale."
+        }
       ]
     },
     {
@@ -2529,6 +2865,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "The baby ______ a high fever all night.",
+          "answer": "had",
+          "wrong": [
+            "made",
+            "did",
+            "took"
+          ],
+          "explanation": "Have a fever."
+        }
       ]
     },
     {
@@ -2580,6 +2928,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "The nurse ______ the patient with great care.",
+          "answer": "treated",
+          "wrong": [
+            "made",
+            "did",
+            "gave"
+          ],
+          "explanation": "Treat a patient."
+        }
       ]
     },
     {
@@ -2633,6 +2993,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "Every morning the nurse ______ the bandage on his arm.",
+          "answer": "changed",
+          "wrong": [
+            "made",
+            "did",
+            "took"
+          ],
+          "explanation": "Change a bandage = put on a clean one."
+        }
       ]
     },
     {
@@ -2681,6 +3053,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "Take one ______ of this cough syrup before bed.",
+          "answer": "spoonful",
+          "wrong": [
+            "plate",
+            "slice",
+            "piece"
+          ],
+          "explanation": "A spoonful of syrup."
+        }
       ]
     },
     {
@@ -2736,6 +3120,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "The patient will ______ an operation next week.",
+          "answer": "have",
+          "wrong": [
+            "make",
+            "take",
+            "give"
+          ],
+          "explanation": "A patient has an operation."
+        }
       ]
     },
     {
@@ -2895,6 +3291,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "Standing up too fast made me ______ dizzy.",
+          "answer": "feel",
+          "wrong": [
+            "do",
+            "have",
+            "take"
+          ],
+          "explanation": "Feel dizzy."
+        }
       ]
     },
     {
@@ -2951,6 +3359,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "I'm ______ a bit under the weather today.",
+          "answer": "feeling",
+          "wrong": [
+            "making",
+            "doing",
+            "having"
+          ],
+          "explanation": "Feel under the weather = feel a little ill."
+        }
       ]
     },
     {
@@ -3161,6 +3581,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "The doctor ______ a prescription for some antibiotics.",
+          "answer": "wrote",
+          "wrong": [
+            "made",
+            "did",
+            "took"
+          ],
+          "explanation": "A doctor writes a prescription."
+        }
       ]
     },
     {
@@ -3223,6 +3655,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "He ______ ill after eating the old chicken.",
+          "answer": "fell",
+          "wrong": [
+            "dropped",
+            "made",
+            "did"
+          ],
+          "explanation": "Fall ill = become ill."
+        }
       ]
     },
     {
@@ -3275,6 +3719,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "Half the class stayed home because they ______ the flu.",
+          "answer": "had",
+          "wrong": [
+            "made",
+            "did",
+            "took"
+          ],
+          "explanation": "Have the flu (or catch the flu)."
+        }
       ]
     },
     {
@@ -3383,6 +3839,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "The doctor asked me to breathe ______ and hold it.",
+          "answer": "in",
+          "wrong": [
+            "on",
+            "at",
+            "up"
+          ],
+          "explanation": "Breathe in = take air into your lungs."
+        }
       ]
     },
     {
@@ -3644,6 +4112,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "You ______ good — have you been on holiday?",
+          "answer": "look",
+          "wrong": [
+            "see",
+            "watch",
+            "show"
+          ],
+          "explanation": "Look + adjective: look good."
+        }
       ]
     },
     {
@@ -3697,6 +4177,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "Sitting still on long flights can cause a blood clot to ______.",
+          "answer": "form",
+          "wrong": [
+            "make",
+            "build",
+            "do"
+          ],
+          "explanation": "A blood clot forms."
+        }
       ]
     },
     {
@@ -3753,6 +4245,18 @@
       },
       "units": [
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "The X-ray showed a tiny ______ fracture.",
+          "answer": "hairline",
+          "wrong": [
+            "hair",
+            "line",
+            "head"
+          ],
+          "explanation": "A hairline fracture = a very thin crack in a bone."
+        }
       ]
     },
     {
@@ -3963,6 +4467,18 @@
       "units": [
         "Body-Parts",
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "He ______ his elbow on the door and it really hurt.",
+          "answer": "hit",
+          "wrong": [
+            "beat",
+            "kicked",
+            "touched"
+          ],
+          "explanation": "Hit your elbow on something."
+        }
       ]
     },
     {
@@ -4015,6 +4531,18 @@
       "units": [
         "Body-Parts",
         "Common-Health-Problems"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "______ your knees when you lift something heavy.",
+          "answer": "Bend",
+          "wrong": [
+            "Fold",
+            "Close",
+            "Turn"
+          ],
+          "explanation": "Bend your knees."
+        }
       ]
     },
     {
@@ -4527,6 +5055,18 @@
       },
       "units": [
         "Healthy-Nutrition"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "If you want to lose weight safely, ______ a dietitian.",
+          "answer": "see",
+          "wrong": [
+            "look",
+            "watch",
+            "view"
+          ],
+          "explanation": "See a dietitian = visit one for advice."
+        }
       ]
     },
     {
@@ -4578,6 +5118,18 @@
       },
       "units": [
         "Healthy-Nutrition"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "It can take a long time to ______ from anorexia.",
+          "answer": "recover",
+          "wrong": [
+            "return",
+            "repair",
+            "cure"
+          ],
+          "explanation": "Recover from an illness."
+        }
       ]
     },
     {
@@ -4792,6 +5344,18 @@
       },
       "units": [
         "Healthy-Nutrition"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "This restaurant is famous for its ______ portions.",
+          "answer": "large",
+          "wrong": [
+            "tall",
+            "long",
+            "high"
+          ],
+          "explanation": "Large (or big) portions."
+        }
       ]
     },
     {
@@ -4898,6 +5462,18 @@
       },
       "units": [
         "Healthy-Nutrition"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "Spinach is rich ______ minerals.",
+          "answer": "in",
+          "wrong": [
+            "of",
+            "with",
+            "by"
+          ],
+          "explanation": "Rich in something."
+        }
       ]
     },
     {
@@ -4997,6 +5573,18 @@
       },
       "units": [
         "Healthy-Nutrition"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "Doctors say we should cut ______ on saturated fats.",
+          "answer": "down",
+          "wrong": [
+            "off",
+            "out",
+            "up"
+          ],
+          "explanation": "Cut down on = eat less of."
+        }
       ]
     },
     {
@@ -5166,6 +5754,18 @@
       },
       "units": [
         "Healthy-Nutrition"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "The family ______ livestock on their farm.",
+          "answer": "raises",
+          "wrong": [
+            "grows",
+            "plants",
+            "builds"
+          ],
+          "explanation": "Raise animals; grow plants."
+        }
       ]
     },
     {
@@ -5219,6 +5819,18 @@
       },
       "units": [
         "Healthy-Nutrition"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "People who can't drink milk should ______ dairy products.",
+          "answer": "avoid",
+          "wrong": [
+            "escape",
+            "miss",
+            "prevent"
+          ],
+          "explanation": "Avoid = stay away from."
+        }
       ]
     },
     {
@@ -5274,6 +5886,18 @@
       },
       "units": [
         "Healthy-Nutrition"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "Fruit and good sleep help to ______ your immune system.",
+          "answer": "boost",
+          "wrong": [
+            "rise",
+            "grow",
+            "lift"
+          ],
+          "explanation": "Boost your immune system = make it stronger."
+        }
       ]
     },
     {
@@ -5806,6 +6430,18 @@
       },
       "units": [
         "Dreams-and-Sleeping"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "His loud snoring kept everyone ______.",
+          "answer": "awake",
+          "wrong": [
+            "wake",
+            "woken",
+            "waking"
+          ],
+          "explanation": "Keep someone awake (adjective)."
+        }
       ]
     },
     {
@@ -5859,6 +6495,18 @@
       },
       "units": [
         "Dreams-and-Sleeping"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "We ______ up late to watch the match.",
+          "answer": "stayed",
+          "wrong": [
+            "kept",
+            "made",
+            "put"
+          ],
+          "explanation": "Stay up late = not go to bed."
+        }
       ]
     },
     {
@@ -5915,6 +6563,18 @@
       },
       "units": [
         "Dreams-and-Sleeping"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "She has ______ from insomnia for years.",
+          "answer": "suffered",
+          "wrong": [
+            "felt",
+            "hurt",
+            "slept"
+          ],
+          "explanation": "Suffer from insomnia."
+        }
       ]
     },
     {
@@ -6122,6 +6782,18 @@
       },
       "units": [
         "Dreams-and-Sleeping"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "My daughter wants to ______ a sleepover for her birthday.",
+          "answer": "have",
+          "wrong": [
+            "make",
+            "do",
+            "take"
+          ],
+          "explanation": "Have a sleepover."
+        }
       ]
     },
     {
@@ -6229,6 +6901,18 @@
       },
       "units": [
         "Dreams-and-Sleeping"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "After the horror film, I ______ a terrible nightmare.",
+          "answer": "had",
+          "wrong": [
+            "made",
+            "did",
+            "saw"
+          ],
+          "explanation": "In English we have a nightmare — we don't 'see' one."
+        }
       ]
     },
     {
@@ -6839,6 +7523,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "I need to ______ an appointment with the dentist.",
+          "answer": "make",
+          "wrong": [
+            "do",
+            "take",
+            "give"
+          ],
+          "explanation": "Make an appointment (or book one). We don't 'do' or 'take' an appointment."
+        }
       ]
     },
     {
@@ -6898,6 +7594,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "He had to ______ surgery on his knee after the accident.",
+          "answer": "have",
+          "wrong": [
+            "make",
+            "do",
+            "take"
+          ],
+          "explanation": "The patient has surgery; the surgeon performs it."
+        }
       ]
     },
     {
@@ -7085,6 +7793,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "I ______ a sore throat, so I can't sing today.",
+          "answer": "have",
+          "wrong": [
+            "make",
+            "do",
+            "take"
+          ],
+          "explanation": "Have a sore throat."
+        }
       ]
     },
     {
@@ -7243,6 +7963,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "My little brother is afraid ______ needles.",
+          "answer": "of",
+          "wrong": [
+            "from",
+            "with",
+            "in"
+          ],
+          "explanation": "Afraid of — not 'afraid from'."
+        }
       ]
     },
     {
@@ -7292,6 +8024,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "I called the clinic to ______ an appointment for Monday.",
+          "answer": "book",
+          "wrong": [
+            "do",
+            "take",
+            "write"
+          ],
+          "explanation": "Book an appointment = arrange a time."
+        }
       ]
     },
     {
@@ -7341,6 +8085,18 @@
       },
       "units": [
         "Visiting-the-Doctor"
+      ],
+      "collocationChecks": [
+        {
+          "sentence": "The pharmacist will ______ your prescription in ten minutes.",
+          "answer": "fill",
+          "wrong": [
+            "make",
+            "do",
+            "write"
+          ],
+          "explanation": "A pharmacist fills a prescription; the doctor writes it."
+        }
       ]
     }
   ],
