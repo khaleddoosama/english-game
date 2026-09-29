@@ -419,7 +419,7 @@ function validateContent(data, existing={}) {
     for(const k of ['opposite','chainGroup','distractorGroup','plainForm'])if(w[k]!==undefined)text(w[k],`${p}.${k}`);
     if(w.opposite && norm(w.opposite)!=='none')refs([w.opposite],`${p}.opposite`);
     if(w.excludeFromSameOptionsWith!==undefined)refs(w.excludeFromSameOptionsWith,`${p}.excludeFromSameOptionsWith`,0);
-    if(w.antonyms!==undefined&&(!Array.isArray(w.antonyms)||w.antonyms.some(a=>typeof a!=='string')))err(`${p}.antonyms`,'expected an array of strings');if(w.hints!==undefined){if(!Array.isArray(w.hints))err(`${p}.hints`,'expected array');else w.hints.forEach((h,j)=>text(h,`${p}.hints[${j}]`));}
+    if(w.units!==undefined&&(!Array.isArray(w.units)||w.units.some(u=>typeof u!=='string')))err(`${p}.units`,'expected an array of strings');if(w.antonyms!==undefined&&(!Array.isArray(w.antonyms)||w.antonyms.some(a=>typeof a!=='string')))err(`${p}.antonyms`,'expected an array of strings');if(w.hints!==undefined){if(!Array.isArray(w.hints))err(`${p}.hints`,'expected array');else w.hints.forEach((h,j)=>text(h,`${p}.hints[${j}]`));}
     for(const [f,ks] of [['transformExample',['before','after']],['commonMistake',['sentence','correction','why']]])if(w[f]!==undefined){if(!obj(w[f]))err(`${p}.${f}`,'expected object');else ks.forEach(k=>text(w[f][k],`${p}.${f}.${k}`));}
     if(w.transformExample&&!['phrasal','fyi'].includes(w.type))err(`${p}.transformExample`,'only phrasal/fyi');
   });
@@ -548,9 +548,12 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // confusable pairs.
   const confusedPairs=new Set(Object.keys(opts.confusions||{}).flatMap(key=>{const [a,b]=key.split('|');return a&&b?[`${norm(a)}|${norm(b)}`,`${norm(b)}|${norm(a)}`]:[];}));
   const confusionBoost=confusedPairs.size?(t,w)=>confusedPairs.has(`${norm(t.word)}|${norm(w.word)}`)?200:0:null;
-  // opts.subCategory narrows the round to one group of the lesson;
-  // opts.noGroup to the lesson's words that have no group.
-  const source=content.words.filter(w=>(!category||topic(w.category)===topic(category))&&(opts.subCategory?w.subCategory===opts.subCategory:opts.noGroup?!w.subCategory:true));
+  // opts.unit narrows the round to one course unit of the lesson (a word
+  // can be in more than one); opts.subCategory to one group; opts.noGroup
+  // ("unit" / "subCategory") to the lesson's words that have none.
+  const unitsOf=w=>Array.isArray(w.units)?w.units:[];
+  const inGroup=w=>opts.unit?unitsOf(w).includes(opts.unit):opts.subCategory?w.subCategory===opts.subCategory:opts.noGroup==='unit'?!unitsOf(w).length:opts.noGroup?!w.subCategory:true;
+  const source=content.words.filter(w=>(!category||topic(w.category)===topic(category))&&inGroup(w));
   const levelRank=w=>{const i=['A1','A2','B1','B2','C1','C2'].indexOf(String(w.level||'').toUpperCase());return i<0?2.5:i;};
   // New words come in level order (A2 before B1…), random within a level.
   const fresh=shuffleCopy(source.filter(w=>!known(mastery[w.word])),rng).sort((a,b)=>levelRank(a)-levelRank(b)).slice(0,newWordsPerRound);
@@ -606,7 +609,8 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // reviewed) and each rule steps through its own questions in turn.
   const grammarTopics=new Set((category?[category]:chosen.map(w=>w.category)).map(topic));
   const missedKey=key=>{const r=mastery[key]?.lastResult;return r&&r!=='correct'?1:0;};
-  const grammarPool=(content.grammar||[]).filter(g=>g&&g.id&&grammarTopics.has(topic(g.category))&&grammarQuestions(g).length);
+  // A unit round only asks that unit's grammar rules.
+  const grammarPool=(content.grammar||[]).filter(g=>g&&g.id&&grammarTopics.has(topic(g.category))&&(!opts.unit||unitsOf(g).includes(opts.unit))&&grammarQuestions(g).length);
   const grammarQueue=shuffleCopy(grammarPool,rng).sort((a,b)=>missedKey(`grammar:${b.id}`)-missedKey(`grammar:${a.id}`)||lastSeenKey(`grammar:${a.id}`)-lastSeenKey(`grammar:${b.id}`)).slice(0,questionsPerRound>=10?2:1).map(g=>{
     const grammarKey=`grammar:${g.id}`;
     // Old single-question rules keep their AI variant pool.
@@ -1313,16 +1317,19 @@ function isItemMastered(stats, item) {
 function levelMasteredCount(level, mastery) {
   return level.items.filter((it) => isItemMastered(mastery[levelItemKey(it)], it)).length;
 }
-// A lesson's words split by subCategory, in the order they first appear;
-// words with no group go last, as "Other words". Grammar and challenges
-// stay with the lesson.
+// A lesson's words split by course unit ("units", from the Anki tags), in
+// the order units first appear; a word in two units is in both. Lessons
+// without unit data fall back to subCategory. Words with none go last, as
+// "Other words".
 function levelGroups(level) {
+  const words = level.items.filter((it) => it.kind === "word");
+  const field = words.some((it) => Array.isArray(it.obj.units) && it.obj.units.length) ? "unit" : "subCategory";
   const groups = new Map();
-  for (const it of level.items) {
-    if (it.kind !== "word") continue;
-    const id = it.obj.subCategory || "";
-    if (!groups.has(id)) groups.set(id, { id, title: id ? it.obj.subCategoryTitle || id : "Other words", items: [] });
-    groups.get(id).items.push(it);
+  const add = (id, title, it) => { if (!groups.has(id)) groups.set(id, { id, field, title, items: [] }); groups.get(id).items.push(it); };
+  for (const it of words) {
+    const ids = field === "unit" ? (it.obj.units || []) : it.obj.subCategory ? [it.obj.subCategory] : [];
+    if (!ids.length) add("", "Other words", it);
+    for (const id of ids) add(id, field === "unit" ? String(id).replace(/-/g, " ") : it.obj.subCategoryTitle || id, it);
   }
   const list = [...groups.values()];
   return [...list.filter((g) => g.id), ...list.filter((g) => !g.id)];
@@ -4582,7 +4589,7 @@ export default function WordHunter() {
     const lastAccuracy = lastRound ? lastRound.correct / lastRound.total : null;
     const baseNew = settings.newWordsPerRound;
     const newWordsPerRound = baseNew === 0 || lastAccuracy === null ? baseNew : lastAccuracy >= 0.9 ? Math.min(10, baseNew + 2) : lastAccuracy < 0.6 ? Math.max(1, baseNew - 2) : baseNew;
-    const session = V2.practice(liveContent(), masteryRef.current, level.title, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound, pools: poolsRef.current, extraQuestion: buildPracticeExtra, confusions: confusionsRef.current, seen: progressExtrasRef.current.seenSentences || {}, ...(group ? { title: sessionTitle, ...(group.id ? { subCategory: group.id } : { noGroup: true }) } : {}) });
+    const session = V2.practice(liveContent(), masteryRef.current, level.title, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound, pools: poolsRef.current, extraQuestion: buildPracticeExtra, confusions: confusionsRef.current, seen: progressExtrasRef.current.seenSentences || {}, ...(group ? { title: sessionTitle, ...(group.id ? { [group.field === "unit" ? "unit" : "subCategory"]: group.id } : { noGroup: group.field }) } : {}) });
     // Words whose gap sentences have all been read get new ones written now,
     // so the next rounds have fresh sentences instead of shrinking.
     const seenNow = progressExtrasRef.current.seenSentences || {};
@@ -6322,13 +6329,13 @@ export default function WordHunter() {
 
         {screen === "levels" && section === "practice" && LEVELS.length > 0 && (
           <div className="wh-level-view-toggle" role="group" aria-label="Show levels">
-            {[["lesson", "By lesson"], ["group", "By group"]].map(([id, label]) => (
+            {[["lesson", "By lesson"], ["group", "By unit"]].map(([id, label]) => (
               <button key={id} className={settings.levelView === id ? "active" : ""} aria-pressed={settings.levelView === id} onClick={() => setSettings((prev) => ({ ...prev, levelView: id }))}>{label}</button>
             ))}
           </div>
         )}
 
-        {/* By group: each lesson's subCategories as their own cards. */}
+        {/* By unit: each lesson's course units as their own cards. */}
         {screen === "levels" && section === "practice" && settings.levelView === "group" && (
           <div className="wh-levels-list">
             {LEVELS.map((level, i) => {
@@ -6338,7 +6345,7 @@ export default function WordHunter() {
               if (!groups.length) return null;
               return (
                 <div key={level.id} className="wh-level-group-block">
-                  <h3 className="wh-level-group-heading">{level.title} <small>{groups.filter((g) => g.id).length} groups</small></h3>
+                  <h3 className="wh-level-group-heading">{level.title} <small>{groups.filter((g) => g.id).length} units</small></h3>
                   {groups.map((g) => {
                     const counts = levelStageBreakdown(g, mastery);
                     return (

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 3,
   "kind": "content",
-  "note": "Health-Body lesson, content v3 (136 words). Meanings, lesson sentences and links come from the vocabulary analysis; gaps, hints, common mistakes, collocations, word family, synonyms/antonyms, register and most levels were written for this file. Also 5 grammar rules (be about to, going to, past simple, so that + can/could, verbs + -ing), each with choose / judge / fix questions.",
+  "note": "Health-Body lesson, content v3 (136 words). Meanings, lesson sentences and links come from the vocabulary analysis; gaps, hints, common mistakes, collocations, word family, synonyms/antonyms, register and most levels were written for this file. Also 5 grammar rules (be about to, going to, past simple, so that + can/could, verbs + -ing), each with choose / judge / fix questions. Each word and grammar rule lists its course unit(s) in \"units\" (from the Anki tags).",
   "categories": [
     {
       "id": "health-body",
@@ -176,7 +176,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Sports"
+      ]
     },
     {
       "id": "ton",
@@ -230,7 +233,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Sports"
+      ]
     },
     {
       "id": "addicting",
@@ -290,7 +296,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Sports"
+      ]
     },
     {
       "id": "from-time-to-time",
@@ -339,7 +348,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Sports"
+      ]
     },
     {
       "id": "obsessed",
@@ -397,7 +409,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Sports"
+      ]
     },
     {
       "id": "playoffs",
@@ -449,7 +464,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Sports"
+      ]
     },
     {
       "id": "dozens-of-times",
@@ -503,7 +521,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Sports"
+      ]
     },
     {
       "id": "cure",
@@ -562,7 +583,10 @@
         "excludeWith": [
           "heal"
         ]
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "check-up",
@@ -613,7 +637,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "symptoms",
@@ -663,7 +690,10 @@
           "sign"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "swell",
@@ -719,7 +749,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "diabetes",
@@ -767,7 +800,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "benign-tumor",
@@ -818,7 +854,10 @@
       "links": {
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "chronic-disease",
@@ -870,7 +909,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "allergy",
@@ -922,7 +964,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "hypertension",
@@ -973,7 +1018,10 @@
       "links": {
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "bruise",
@@ -1021,7 +1069,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "lightheaded",
@@ -1072,7 +1123,10 @@
         "excludeWith": [
           "dizzy"
         ]
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "sick-and-tired",
@@ -1117,7 +1171,10 @@
           "sick"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "mixed-up",
@@ -1173,7 +1230,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "blow-up",
@@ -1225,7 +1285,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "heal",
@@ -1285,7 +1348,10 @@
         "excludeWith": [
           "cure"
         ]
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "rash",
@@ -1328,7 +1394,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "sign",
@@ -1380,7 +1449,10 @@
           "symptoms"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "swollen",
@@ -1434,7 +1506,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "sickness",
@@ -1489,7 +1564,10 @@
           "disease",
           "illness"
         ]
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "illness",
@@ -1544,7 +1622,10 @@
           "disease",
           "sickness"
         ]
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "disease",
@@ -1597,7 +1678,10 @@
           "illness",
           "sickness"
         ]
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "malignant-tumor",
@@ -1648,7 +1732,10 @@
       "links": {
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "allergic-to",
@@ -1696,7 +1783,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "hypotension",
@@ -1746,7 +1836,10 @@
       "links": {
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "stroke",
@@ -1789,7 +1882,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "coma",
@@ -1833,7 +1929,10 @@
           "sleep-paralysis"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "tablets",
@@ -1888,7 +1987,10 @@
         "excludeWith": [
           "pills"
         ]
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "drops",
@@ -1936,7 +2038,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "injection",
@@ -1987,7 +2092,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "pills",
@@ -2038,7 +2146,11 @@
           "capsules",
           "tablets"
         ]
-      }
+      },
+      "units": [
+        "Common-Health-Problems",
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "capsules",
@@ -2091,7 +2203,11 @@
         "excludeWith": [
           "pills"
         ]
-      }
+      },
+      "units": [
+        "Common-Health-Problems",
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "painkiller",
@@ -2136,7 +2252,10 @@
           "capsules"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "ointment",
@@ -2181,7 +2300,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "cast",
@@ -2226,7 +2348,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "sick",
@@ -2291,7 +2416,10 @@
           "ill",
           "under-the-weather"
         ]
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "pale",
@@ -2343,7 +2471,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "fever",
@@ -2395,7 +2526,10 @@
           "feverish"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "patient",
@@ -2443,7 +2577,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "bandage",
@@ -2493,7 +2630,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "syrup",
@@ -2538,7 +2678,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "operation",
@@ -2590,7 +2733,10 @@
         "excludeWith": [
           "surgery"
         ]
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "sneeze",
@@ -2638,7 +2784,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "examine",
@@ -2688,7 +2837,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "dizzy",
@@ -2740,7 +2892,10 @@
         "excludeWith": [
           "lightheaded"
         ]
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "under-the-weather",
@@ -2793,7 +2948,10 @@
           "ill",
           "sick"
         ]
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "got-the-sniffles",
@@ -2843,7 +3001,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "safe-and-sound",
@@ -2891,7 +3052,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "sniff",
@@ -2941,7 +3105,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "prescription",
@@ -2991,7 +3158,10 @@
           "fill-a-prescription"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "ill",
@@ -3050,7 +3220,10 @@
           "sick",
           "under-the-weather"
         ]
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "flu",
@@ -3099,7 +3272,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "injury",
@@ -3153,7 +3329,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "breathe",
@@ -3201,7 +3380,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "bottle",
@@ -3244,7 +3426,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "ache",
@@ -3299,7 +3484,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "clinic",
@@ -3347,7 +3535,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "pharmacy",
@@ -3398,7 +3589,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "good",
@@ -3447,7 +3641,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "blood-clot",
@@ -3497,7 +3694,10 @@
           "embolism"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "fracture",
@@ -3550,7 +3750,10 @@
           "strain"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "allergies",
@@ -3602,7 +3805,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "sprain",
@@ -3653,7 +3859,10 @@
           "fracture"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "acute-disease",
@@ -3704,7 +3913,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "elbow",
@@ -3747,7 +3959,11 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Body-Parts",
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "knee",
@@ -3795,7 +4011,11 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Body-Parts",
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "strain",
@@ -3848,7 +4068,10 @@
           "fracture"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "diabetic",
@@ -3897,7 +4120,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "joint",
@@ -3940,7 +4166,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Body-Parts"
+      ]
     },
     {
       "id": "thigh",
@@ -3983,7 +4212,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Body-Parts"
+      ]
     },
     {
       "id": "anatomy",
@@ -4031,7 +4263,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Body-Parts"
+      ]
     },
     {
       "id": "nauseous",
@@ -4082,7 +4317,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Common-Health-Problems"
+      ]
     },
     {
       "id": "embolism",
@@ -4126,7 +4364,10 @@
           "blood-clot"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "blocking",
@@ -4173,7 +4414,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Sports"
+      ]
     },
     {
       "id": "heave",
@@ -4221,7 +4465,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Sports"
+      ]
     },
     {
       "id": "dietitian",
@@ -4277,7 +4524,10 @@
         "excludeWith": [
           "nutritionist"
         ]
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "anorexia",
@@ -4325,7 +4575,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "consume",
@@ -4384,7 +4637,10 @@
           "consumer"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "poultry",
@@ -4429,7 +4685,10 @@
           "livestock"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "bulimia",
@@ -4477,7 +4736,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "portions",
@@ -4527,7 +4789,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "crave",
@@ -4579,7 +4844,10 @@
           "have-a-sweet-tooth"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "minerals",
@@ -4627,7 +4895,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "supplement",
@@ -4675,7 +4946,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "saturated-fats",
@@ -4720,7 +4994,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "nutritionist",
@@ -4776,7 +5053,10 @@
         "excludeWith": [
           "dietitian"
         ]
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "consumer",
@@ -4834,7 +5114,10 @@
           "consume"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "livestock",
@@ -4880,7 +5163,10 @@
           "poultry"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "dairy-products",
@@ -4930,7 +5216,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "immune-system",
@@ -4982,7 +5271,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "have-a-sweet-tooth",
@@ -5028,7 +5320,10 @@
           "crave"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "butter-someone-up",
@@ -5075,7 +5370,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "in-a-nutshell",
@@ -5122,7 +5420,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "skin-and-bone",
@@ -5167,7 +5468,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "chaotic",
@@ -5220,7 +5524,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "bring-up",
@@ -5270,7 +5577,10 @@
           "interpret"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Healthy-Nutrition"
+      ]
     },
     {
       "id": "interpret",
@@ -5328,7 +5638,10 @@
           "bring-up"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "terrifying",
@@ -5388,7 +5701,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "drool",
@@ -5436,7 +5752,10 @@
           "saliva"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "snoring",
@@ -5484,7 +5803,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "stay-up",
@@ -5534,7 +5856,10 @@
           "insomnia"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "insomnia",
@@ -5587,7 +5912,10 @@
           "sleep-disorder"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "subconscious",
@@ -5638,7 +5966,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "sleep-disorder",
@@ -5683,7 +6014,10 @@
           "insomnia"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "daydream",
@@ -5739,7 +6073,10 @@
           "zone-out"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "sleepover",
@@ -5782,7 +6119,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "interpretation",
@@ -5834,7 +6174,10 @@
           "interpret"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "nightmare",
@@ -5883,7 +6226,10 @@
           "daydream"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "saliva",
@@ -5934,7 +6280,10 @@
           "drool"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "sleep-paralysis",
@@ -5983,7 +6332,10 @@
           "coma"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "sleepwalking",
@@ -6034,7 +6386,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "sleep-talking",
@@ -6081,7 +6436,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "zone-out",
@@ -6130,7 +6488,10 @@
           "daydream"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "catch-some-z-s",
@@ -6177,7 +6538,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "tossing-and-turning",
@@ -6226,7 +6590,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "your-guess-is-as-good-as-mine",
@@ -6268,7 +6635,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "make-up-for",
@@ -6312,7 +6682,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Dreams-and-Sleeping"
+      ]
     },
     {
       "id": "cough",
@@ -6360,7 +6733,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "broken-arm",
@@ -6409,7 +6785,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "appointment",
@@ -6457,7 +6836,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "surgery",
@@ -6513,7 +6895,10 @@
         "excludeWith": [
           "operation"
         ]
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "runny-nose",
@@ -6557,7 +6942,10 @@
           "stuffy-nose"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "stuffy-nose",
@@ -6603,7 +6991,10 @@
           "runny-nose"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "swallow",
@@ -6646,7 +7037,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "sore-throat",
@@ -6688,7 +7082,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "wrap",
@@ -6740,7 +7137,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "feverish",
@@ -6789,7 +7189,10 @@
           "fever"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "needles",
@@ -6837,7 +7240,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "book-an-appointment",
@@ -6883,7 +7289,10 @@
         "opposite": null,
         "confusableWith": [],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     },
     {
       "id": "fill-a-prescription",
@@ -6929,7 +7338,10 @@
           "prescription"
         ],
         "excludeWith": []
-      }
+      },
+      "units": [
+        "Visiting-the-Doctor"
+      ]
     }
   ],
   "grammar": [
@@ -7005,6 +7417,9 @@
           "answer": "Are you about to leave the hospital?",
           "explanation": "Don't drop to: about to + base verb."
         }
+      ],
+      "units": [
+        "Common-Health-Problems"
       ]
     },
     {
@@ -7082,6 +7497,9 @@
           "answer": "They are going to visit their grandmother in hospital.",
           "explanation": "Don't forget are before going to."
         }
+      ],
+      "units": [
+        "Common-Health-Problems"
       ]
     },
     {
@@ -7160,6 +7578,9 @@
           "answer": "They didn't go to the gym yesterday.",
           "explanation": "After didn't, use the base verb: go."
         }
+      ],
+      "units": [
+        "Visiting-the-Doctor"
       ]
     },
     {
@@ -7236,6 +7657,9 @@
           "answer": "I drink water so that I can stay hydrated.",
           "explanation": "After can, use the base verb without to."
         }
+      ],
+      "units": [
+        "Healthy-Nutrition"
       ]
     },
     {
@@ -7313,6 +7737,9 @@
           "answer": "Have you finished taking the antibiotics?",
           "explanation": "Finish + -ing."
         }
+      ],
+      "units": [
+        "Dreams-and-Sleeping"
       ]
     }
   ]
