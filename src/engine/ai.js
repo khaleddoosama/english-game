@@ -1,6 +1,7 @@
 import { V2 } from "./v2";
 import { WORDS } from "./data";
 import { findWordByLabel, getWordPools, levenshtein, semanticRelation, situationLeaks } from "./questions";
+import { callAiText } from "../lib/ai";
 /* ----------------------------- CONTENT GENERATION --------------------------- */
 // Asks the model for fresh gap/situation sentences or reworded meaning clues
 // for whichever (word, poolType) pairs just ran out of unlocked variants.
@@ -23,7 +24,7 @@ export async function validateGeneratedContent(requests, generated) {
   const locallyValid = generated.map((item, index) => ({ item, index, local: localGeneratedVariantCheck(requests[index] || {}, item?.text) })).filter((x) => x.local);
   if (!locallyValid.length) return [];
   try {
-    const review = await callClaudeJson(`You are the quality-control layer for generated English-learning questions. Return ONLY JSON with shape {"results":[{"index":0,"valid":true,"confidence":"high|medium|low","reason":"brief"}]}. Reject a variant if context is vague, grammar is broken, the clue reveals the answer, the expected answer is ambiguous, distractors/sibling words could fit equally well, or the situation is culturally strange without reason. Be conservative; valid must be false when confidence is low.`, {
+    const review = await callAiJson(`You are the quality-control layer for generated English-learning questions. Return ONLY JSON with shape {"results":[{"index":0,"valid":true,"confidence":"high|medium|low","reason":"brief"}]}. Reject a variant if context is vague, grammar is broken, the clue reveals the answer, the expected answer is ambiguous, distractors/sibling words could fit equally well, or the situation is culturally strange without reason. Be conservative; valid must be false when confidence is low.`, {
       requests: locallyValid.map(({ index }) => ({ index, ...requests[index], generatedText: generated[index]?.text })),
     }, 900);
     const verdicts = new Map((Array.isArray(review?.results) ? review.results : []).map((v) => [Number(v.index), v]));
@@ -59,33 +60,11 @@ For every request, avoid closely repeating anything listed in "existing" — wri
 Respond with ONLY a raw JSON array, no markdown fences, no commentary, matching this exact shape and the same order as the input:
 [{"word": "...", "poolType": "...", "text": "..."}]`;
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1000,
-      messages: [{ role: "user", content: `${instructions}\n\nRequests:\n${JSON.stringify(requests)}` }],
-    }),
-  });
-
-  const data = await response.json();
-  const text = data.content
-    .filter((block) => block.type === "text")
-    .map((block) => block.text)
-    .join("");
-  const clean = text.replace(/```json|```/g, "").trim();
-  const parsed = JSON.parse(clean);
+  const parsed = parseJsonLoose(await callAiText(`${instructions}\n\nRequests:\n${JSON.stringify(requests)}`));
   if (!Array.isArray(parsed)) throw new Error("Unexpected generation response shape");
   return validateGeneratedContent(requests, parsed);
 }
 
-
-export function extractClaudeText(data) {
-  return Array.isArray(data?.content)
-    ? data.content.filter((block) => block?.type === "text").map((block) => block.text || "").join("")
-    : "";
-}
 
 // Scans for the first complete top-level JSON object/array in a string,
 // tracking string literals (so a brace inside quoted text doesn't throw off
@@ -123,25 +102,18 @@ export function parseJsonLoose(text) {
   throw new Error("Invalid AI JSON");
 }
 
-export async function callClaudeJson(instructions, payload, maxTokens = 800) {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: maxTokens,
-      messages: [{ role: "user", content: `${instructions}\n\nINPUT JSON:\n${JSON.stringify(payload)}` }],
-    }),
-  });
-  if (!response.ok) throw new Error(`AI request failed (${response.status})`);
-  const data = await response.json();
-  return parseJsonLoose(extractClaudeText(data));
+// Every AI call goes through /api/ai (Gemini, key kept on the server).
+// maxTokens is kept for call-site compatibility; the server sizes output.
+export async function callAiJson(instructions, payload, maxTokens = 800, opts = {}) {
+  return parseJsonLoose(await callAiText(`${instructions}\n\nINPUT JSON:\n${JSON.stringify(payload)}`, opts));
 }
+// Content-authoring tools: the server refuses these for players.
+export const callAiJsonAdmin = (instructions, payload, maxTokens) => callAiJson(instructions, payload, maxTokens, { adminOnly: true });
 
 export async function askAiForWord(rawTerm, existingWord = null) {
   const term=String(rawTerm||"").trim().replace(/^[^A-Za-z]+|[^A-Za-z' -]+$/g,"").replace(/\s+/g," ").slice(0,80);
   if(!term)throw new Error("Select or type an English word first.");
-  const result=await callClaudeJson(`You are the Word Hunter vocabulary coach. Use English only and B1-or-easier supporting language. Explain the requested word or short phrase accurately in its most likely meaning. If an existingEntry is given, its partsOfSpeech (if present) is authoritative — keep those exact values. A word can have more than one (e.g. a noun that is also used as a verb) — list every part of speech that applies to this meaning. Return ONLY JSON with this shape: {"word":"canonical form","type":"vocab|idiom|binomial|phrasal|fyi","partsOfSpeech":["noun"],"category":"short topic","meaning":"simple definition","pronunciation":"easy readable pronunciation","situation":"one natural example sentence","gap":"the same kind of example with the target replaced by exactly ______","nearWords":[{"word":"...","difference":"..."}],"commonMistake":{"sentence":"...","correction":"...","why":"..."},"hints":["...","..."]}. Never include Arabic. The gap must not reveal the answer.`,{term,existingEntry:existingWord||null},1000);
+  const result=await callAiJson(`You are the Word Hunter vocabulary coach. Use English only and B1-or-easier supporting language. Explain the requested word or short phrase accurately in its most likely meaning. If an existingEntry is given, its partsOfSpeech (if present) is authoritative — keep those exact values. A word can have more than one (e.g. a noun that is also used as a verb) — list every part of speech that applies to this meaning. Return ONLY JSON with this shape: {"word":"canonical form","type":"vocab|idiom|binomial|phrasal|fyi","partsOfSpeech":["noun"],"category":"short topic","meaning":"simple definition","pronunciation":"easy readable pronunciation","situation":"one natural example sentence","gap":"the same kind of example with the target replaced by exactly ______","nearWords":[{"word":"...","difference":"..."}],"commonMistake":{"sentence":"...","correction":"...","why":"..."},"hints":["...","..."]}. Never include Arabic. The gap must not reveal the answer.`,{term,existingEntry:existingWord||null},1000);
   const partsOfSpeech=Array.isArray(existingWord?.partsOfSpeech)&&existingWord.partsOfSpeech.length?existingWord.partsOfSpeech:(Array.isArray(result.partsOfSpeech)?result.partsOfSpeech.map(String).filter(Boolean):[]);
   const entry={word:String(result.word||term).trim(),type:["vocab","idiom","binomial","phrasal","fyi"].includes(result.type)?result.type:"vocab",partsOfSpeech,category:String(result.category||"AI Discoveries").trim(),meaning:String(result.meaning||"").trim(),situation:String(result.situation||"").trim(),gap:String(result.gap||"").trim(),hints:Array.isArray(result.hints)?result.hints.map(String).filter(Boolean).slice(0,3):[]};
   if(result.commonMistake?.sentence&&result.commonMistake?.correction&&result.commonMistake?.why)entry.commonMistake={sentence:String(result.commonMistake.sentence),correction:String(result.commonMistake.correction),why:String(result.commonMistake.why)};
@@ -153,7 +125,7 @@ export async function aiFixImportJson(rawText, errorText) {
   const clean = String(rawText || "").trim();
   if (!clean) throw new Error("Nothing to fix — paste or upload JSON first.");
   if (clean.length > 60000) throw new Error("This file is too large for AI auto-fix in one pass — split it into smaller chunks and fix each separately.");
-  const result = await callClaudeJson(
+  const result = await callAiJsonAdmin(
     `You are repairing a JSON document for the "Word Hunter" English vocabulary game's Admin import. The document below failed validation. You are given the exact validator error messages and the raw text the person pasted or uploaded (it may not even be valid JSON yet — fix syntax errors too if present).
 Rules:
 - Fix ONLY what the listed errors require. Do not rewrite, rephrase, reorder, or "improve" any field, sentence, or value that wasn't flagged.
@@ -176,7 +148,7 @@ Return ONLY JSON with this exact shape: {"fixed": <the complete corrected JSON d
 // never a whole document — so the fix stays small and reviewable.
 export async function suggestReportFix(report, sourceItem, sourceEntity) {
   const singular = sourceEntity === "words" ? "word" : sourceEntity.slice(0, -1);
-  const result = await callClaudeJson(
+  const result = await callAiJsonAdmin(
     `You are the content-quality reviewer for "Word Hunter", an English vocabulary game. A learner reported a specific question as having a problem. You are given the report (why they flagged it, the question type/mode, the exact prompt they saw, the options shown, and the correct answer(s)) plus the exact authored ${singular} entry that generated that question. Propose a corrected version of ONLY the field(s) that need to change to fix the reported problem — leave every other field exactly as given. The "word" or "id" field is a stable progress key and must NEVER change.
 Common causes worth checking: the situation/gap/prompt text accidentally contains or reveals the answer word itself; the meaning is ambiguous, wrong, or too close to another word's meaning; a gap sentence has more than one blank or more than one plausible correct word; a grammar rule's options don't clearly have exactly one correct answer; a commonMistake example doesn't match its paired situation.
 If the report's reason doesn't map to an obvious fix, make your best conservative improvement to the field(s) most likely responsible and explain your reasoning in "changes" — never leave "fixed" identical to the input with an empty "changes" list.
@@ -215,7 +187,7 @@ export function locateReportSource(content, report) {
 export async function reviewReportedQuestion(report, source) {
   const singular = source ? (source.entity === "words" ? "word" : source.entity.slice(0, -1)) : null;
   const keyField = source?.entity === "words" ? "word" : "id";
-  const result = await callClaudeJson(
+  const result = await callAiJson(
     `You are the content-quality reviewer for "Word Hunter", an English vocabulary game. A learner just reported a question. You get the report (the reason they picked, "details" = what they wrote in their own words, the question mode/type, the exact prompt, the options shown, the correct answer(s), and the learner's own answer if they had already answered) plus, when available, the authored ${singular || "content"} entry that generated the question.
 "details" is the learner's real complaint and matters most. It may be in Arabic or mixed Arabic/English: read it carefully and answer THAT complaint, not a generic one.
 Judge the question exactly as the learner saw it. The learner does NOT know which vocabulary entry the question came from, so "the question is about word X" is never a reason to reject an answer. For a typing or gap question, if the learner's answer fits the sentence naturally, correctly and with a sensible meaning (for example "elbow" in "He had surgery on his left ______."), the question is "flawed" (more than one correct answer) and learnerAnswerAcceptable is true; the fix adds context so only the target word fits.
@@ -312,7 +284,7 @@ export async function aiFixWordBatch(kind, words, allWords) {
     siblings: allWords.filter((x) => x.category === w.category && x.word !== w.word).slice(0, 25).map((x) => x.word),
     ...(kind === "duplicate" ? { sameMeaningAs: allWords.filter((x) => x.word !== w.word && normalizeAnswerText(x.meaning) === normalizeAnswerText(w.meaning)).map((x) => x.word) } : {}),
   }));
-  const raw = await callClaudeJson(`You improve content for "Word Hunter", an English vocabulary game for B1 learners. English only. ${HEALTH_INSTRUCTIONS[instructionKind]} Return ONLY that JSON, one result per input word, same order.`, { words: payload }, 2500);
+  const raw = await callAiJsonAdmin(`You improve content for "Word Hunter", an English vocabulary game for B1 learners. English only. ${HEALTH_INSTRUCTIONS[instructionKind]} Return ONLY that JSON, one result per input word, same order.`, { words: payload }, 2500);
   const results = Array.isArray(raw?.results) ? raw.results : [];
   return words.map((w) => {
     const hit = results.find((r) => normalizeAnswerText(r?.word) === normalizeAnswerText(w.word));
@@ -368,7 +340,7 @@ export async function aiFixWordBatch(kind, words, allWords) {
 // Returns only groups the model is confident about; the admin still
 // applies each merge explicitly via applyCategoryMerge in AdminControlCenter.
 export async function suggestCategoryMerges(categories) {
-  const result = await callClaudeJson(
+  const result = await callAiJsonAdmin(
     `You are cleaning up the category taxonomy for "Word Hunter", an English vocabulary game's admin panel. You are given every distinct category name currently in use. Find groups of names that are clearly the SAME topic written differently — different punctuation, spacing, capitalization, word order, singular/plural, or an abbreviation (e.g. "Environment-Nature" vs "Environment & Nature"). Do NOT merge categories that are merely related but distinct topics (e.g. "Food" and "Cooking" stay separate; "Personality" and "Emotions" stay separate). Only propose a merge when confident a content author would consider them literally the same category. For each group, pick whichever existing name is best-formatted as the canonical one — never invent a new name not already in the list. Return ONLY JSON with shape {"merges": [{"canonical": "exact existing name", "duplicates": ["exact existing name", "..."]}]}. Omit any category with no duplicates — only include groups of 2+ names.`,
     { categories },
     2000
@@ -414,7 +386,7 @@ export function validateEvaluation(raw, kind) {
 export const REGENERATE_CONTRACT = `You write vocabulary content for an English-learning game aimed at B1-level (intermediate) learners. Rewrite the meaning and example sentence for the given word or phrase. Hard rules: the meaning must be ONE simple sentence using only A2-B1 vocabulary and grammar, and it must NOT contain the target word/phrase itself. The example must be ONE natural sentence, also B1-level or simpler, that clearly shows the word/phrase used with its intended meaning. If partsOfSpeech is given, the new meaning and example must use the word as that exact part of speech — do not drift to a different sense (e.g. a different meaning of the same spelling) or a different grammatical role. Do not reuse the current meaning or example verbatim — produce a genuinely different phrasing. Return ONLY one JSON object with this exact shape: {"meaning":"...","situation":"..."}`;
 
 export async function regenerateWordExplanation(word) {
-  const raw = await callClaudeJson(REGENERATE_CONTRACT, {
+  const raw = await callAiJsonAdmin(REGENERATE_CONTRACT, {
     word: word.word,
     type: word.type,
     partsOfSpeech: word.partsOfSpeech || [],
@@ -517,7 +489,7 @@ export async function generateStory(targetWords, selectedCategories=[], grammarR
     return alt || w; // fall back to original if no swap available
   });
 
-  const raw = await callClaudeJson(STORY_GENERATION_CONTRACT, {
+  const raw = await callAiJsonAdmin(STORY_GENERATION_CONTRACT, {
     selectedCategories,
     targetWords: activeTargets.map(w => ({ word: w.word, type: w.type, category: w.category, meaning: w.meaning, exampleContext: w.situation })),
     grammarRules: grammarRules.map(g => ({ rule: g.rule, category: g.category })),
@@ -604,12 +576,12 @@ export async function evaluateFreeForm(question, answerText) {
       ? "The requested target phrasal verb should be used. A different valid equivalent may be acknowledged in feedback, but targetWordUsed must be false unless the requested target itself is present."
       : "Judge whether the target word is actually used with the intended meaning in a meaningful natural sentence; reject random word stuffing.",
   };
-  const raw = await callClaudeJson(FREEFORM_EVALUATION_CONTRACT, payload);
+  const raw = await callAiJson(FREEFORM_EVALUATION_CONTRACT, payload);
   return validateEvaluation(raw, kind);
 }
 
 export async function evaluateAlternativeGap(question, answerText) {
-  const raw = await callClaudeJson(`${FREEFORM_EVALUATION_CONTRACT}\nFor this task, targetWordUsed may be false. The learner typed a word that is not the intended one. Judge ONLY the sentence exactly as the learner saw it: the learner cannot know which vocabulary word the question was written for, so never reject an answer because it has a different meaning from intendedTarget. If the learner's word makes the gap sentence grammatically correct, natural and sensible (for example "elbow" in "He had surgery on his left ______."), set correct to true and semanticUse to "correct", even though it is a different word. Reject it only when the sentence becomes ungrammatical, unnatural or does not make sense. In feedback, say the answer fits and name the word the question was practising.`, {
+  const raw = await callAiJson(`${FREEFORM_EVALUATION_CONTRACT}\nFor this task, targetWordUsed may be false. The learner typed a word that is not the intended one. Judge ONLY the sentence exactly as the learner saw it: the learner cannot know which vocabulary word the question was written for, so never reject an answer because it has a different meaning from intendedTarget. If the learner's word makes the gap sentence grammatically correct, natural and sensible (for example "elbow" in "He had surgery on his left ______."), set correct to true and semanticUse to "correct", even though it is a different word. Reject it only when the sentence becomes ungrammatical, unnatural or does not make sense. In feedback, say the answer fits and name the word the question was practising.`, {
     kind: "gapAlternative",
     sentenceWithGap: question.prompt,
     intendedTarget: question.answer,
@@ -626,7 +598,7 @@ export async function evaluateAlternativeGap(question, answerText) {
 export async function generateComboVariant(combo) {
   const instructions = `Use B1-or-easier English. You write short "compare two things" exercise scenarios for an English vocabulary game. You are given two target words (a contrasting/opposite pair) and an existing situation+question. Write ONE brand-new situation testing the SAME two words with a DIFFERENT concrete example — same underlying contrast, fresh context, different characters/setting than the existing one. End with a short question asking the learner which word applies to which part. Do not use either target word inside the situation text itself. Respond with ONLY raw JSON, no markdown fences: {"situation":"...","prompt":"..."}`;
   const payload = { targetWords: combo.words, existingSituation: combo.situation, existingPrompt: combo.prompt, ruleExplanation: combo.explanation || "" };
-  const raw = await callClaudeJson(instructions, payload, 500);
+  const raw = await callAiJson(instructions, payload, 500);
   const situation = String(raw?.situation || "").trim();
   const prompt = String(raw?.prompt || "").trim();
   if (!situation || !prompt) throw new Error("AI returned an incomplete combo variant.");
@@ -639,7 +611,7 @@ export async function generateComboVariant(combo) {
 export async function generateGrammarVariant(g) {
   const instructions = `Use B1-or-easier English. You write short grammar-correction multiple-choice questions for an English vocabulary game. You are given an existing question testing one grammar rule (a common-mistake sentence and its correction). Write ONE brand-new example testing the SAME rule with different wording/context — not the same sentence reworded slightly. Respond with ONLY raw JSON, no markdown fences: {"prompt":"...","options":["<wrong sentence>","<correct sentence>"],"answer":"<must exactly match the correct sentence in options>","explanation":"one short sentence on why"}`;
   const payload = { existingPrompt: g.prompt, existingOptions: g.options, existingAnswer: g.answer, existingExplanation: g.explanation || "" };
-  const raw = await callClaudeJson(instructions, payload, 500);
+  const raw = await callAiJson(instructions, payload, 500);
   const prompt = String(raw?.prompt || "").trim();
   const options = Array.isArray(raw?.options) ? raw.options.map(String).map((s) => s.trim()).filter(Boolean) : [];
   const answer = String(raw?.answer || "").trim();
@@ -649,7 +621,7 @@ export async function generateGrammarVariant(g) {
 }
 
 export async function evaluateFinalReport(words, reportText) {
-  const raw = await callClaudeJson(`Use B1-or-easier explanations. You are a conservative English-learning evaluator for Word Hunter's FINAL CASE. Return ONLY JSON. Evaluate each evidence word separately for genuine semantic use; string presence alone is not enough. Minor grammar errors are allowed when meaning remains clear. Do not automatically pass all words.
+  const raw = await callAiJson(`Use B1-or-easier explanations. You are a conservative English-learning evaluator for Word Hunter's FINAL CASE. Return ONLY JSON. Evaluate each evidence word separately for genuine semantic use; string presence alone is not enough. Minor grammar errors are allowed when meaning remains clear. Do not automatically pass all words.
 Required shape:
 {"confidence":"high|medium|low","understandable":true,"quality":"Strong Evidence|Good Evidence|Almost|Needs Work","words":[{"word":"...","used":true,"semanticUse":"correct|partly_correct|incorrect","productionSuccess":true,"feedback":"brief"}],"feedback":"one concise improvement suggestion"}`, {
     evidenceWords: words.map((w) => ({ word: w.word, meaning: w.meaning })),
@@ -699,7 +671,7 @@ export function spellingDistanceInfo(guess, expected) {
 }
 
 export async function evaluateGrammarCorrection(question, correction) {
-  const raw = await callClaudeJson(`You are the judge in Word Hunter's GRAMMAR COURT. Return ONLY JSON: {"correct":true,"confidence":"high|medium|low","feedback":"brief","suggestedCorrection":"optional"}. Accept any grammatically correct correction that fixes the relevant rule; do not require an exact string. Be conservative when the learner changes the sentence so much that the target rule is no longer being demonstrated.`, {
+  const raw = await callAiJson(`You are the judge in Word Hunter's GRAMMAR COURT. Return ONLY JSON: {"correct":true,"confidence":"high|medium|low","feedback":"brief","suggestedCorrection":"optional"}. Accept any grammatically correct correction that fixes the relevant rule; do not require an exact string. Be conservative when the learner changes the sentence so much that the target rule is no longer being demonstrated.`, {
     rule: question.target?.label,
     explanation: question.target?.explanation,
     evidence: question.prompt,
@@ -734,11 +706,11 @@ export function buildContrastiveFeedback(question, selectedValue) {
 }
 
 // Real-time, situation-grounded version of the "Key difference" line above.
-// The static version only contrasts dictionary meanings; this asks Claude to
+// The static version only contrasts dictionary meanings; this asks the AI to
 // explain specifically why the CORRECT word fits *this* evidence/situation
 // and why the chosen one doesn't, which is what was actually unclear.
 export async function explainWrongLead(question, chosenWord, correctWord) {
-  const raw = await callClaudeJson(
+  const raw = await callAiJson(
     `You are writing one short "why is this wrong" line inside an English vocabulary game called Word Hunter. The learner picked the wrong multiple-choice word for a piece of evidence (a situation or gap sentence). Explain, in ONE concrete sentence (max ~25 words), why the CORRECT word fits THIS SPECIFIC evidence and why the CHOSEN word doesn't — ground it in the situation, don't just restate two dictionary definitions. Return ONLY JSON: {"keyDifference":"one sentence"}`,
     {
       evidence: question.target?.situation || question.prompt || null,

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { V2 } from "../../engine/v2";
-import { callClaudeJson } from "../../engine/ai";
+import { callAiJsonAdmin } from "../../engine/ai";
 // ── Admin: grammar rules ─────────────────────────────────────────────────
 // Rules are edited as forms (no JSON). A rule saved from here is always in
 // the v3 shape: questions[] of choose / judge / fix.
@@ -29,7 +29,7 @@ export function grammarDraftErrors(d, others) {
   return errors;
 }
 export async function generateGrammarQuestions(rule, types, count, lessonWords) {
-  const raw = await callClaudeJson(`You write grammar practice for Word Hunter, an English game for Arabic-speaking learners (A2–B1). Use simple English only. Write ${count} NEW questions for the grammar rule in the input, using only these types: ${types.join(", ")}. Spread them across the types. Do not repeat or lightly reword existingQuestions. Where it fits naturally, use words or situations from lessonWords.
+  const raw = await callAiJsonAdmin(`You write grammar practice for Word Hunter, an English game for Arabic-speaking learners (A2–B1). Use simple English only. Write ${count} NEW questions for the grammar rule in the input, using only these types: ${types.join(", ")}. Spread them across the types. Do not repeat or lightly reword existingQuestions. Where it fits naturally, use words or situations from lessonWords.
 Types:
 - choose: {"type":"choose","prompt":"sentence with ______ or a short question","options":["3 or 4 short options"],"answer":"exactly one of the options","explanation":"one short sentence"}. Exactly one option may be correct.
 - judge: {"type":"judge","sentence":"...","correct":false,"fix":"the corrected sentence","explanation":"..."} for a sentence that breaks the rule, or {"type":"judge","sentence":"...","correct":true,"alternative":"a tempting WRONG rewrite of the same sentence","explanation":"..."} for a correct one. Mix correct and wrong sentences.

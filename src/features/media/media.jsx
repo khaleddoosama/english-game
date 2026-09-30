@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Volume2, X } from "lucide-react";
 import { V2 } from "../../engine/v2";
+import { speechUrl } from "../../lib/ai";
 // Pronunciation: two independent sources, tried in order.
 //  1. dictionaryapi.dev — free, no key, returns real human-recorded audio.
 //     May be blocked by a strict sandbox CSP, so failure is expected and fine.
@@ -59,7 +60,7 @@ export function speakWithBrowser(term) {
 // direct link to check, instead of just vanishing with no trace.
 // A picture chosen from the device → a small JPEG data URI (longest side
 // `max` px, white behind transparency) stored in the word's `image`, so it
-// shows inside a Claude artifact where outside image links are blocked.
+// shows everywhere without depending on an outside host.
 export function imageFileToDataUrl(file, max = 256, quality = 0.82) {
   return new Promise((resolve, reject) => {
     if (!file || !/^image\/(png|jpe?g|webp|gif)$/i.test(file.type)) return reject(new Error("Choose a PNG, JPG, WebP or GIF picture."));
@@ -121,8 +122,11 @@ export function SmartImage({ src, className }) {
   if (failed) return <p className="wh-img-blocked">Image didn't load here (broken link, or blocked by this sandbox). <a href={src} target="_blank" rel="noopener noreferrer">Open it directly to check →</a></p>;
   return <img src={src} alt="" className={className} onError={() => setFailed(true)} />;
 }
+// Pronunciation, best source first: a human recording (single words, from
+// dictionaryapi.dev), then Gemini's voice (phrases and sentences, cached on
+// the server after the first request), then the browser's own voice.
 export function PronunciationModal({ term, onClose }) {
-  const [status, setStatus] = useState("loading"); // loading | human | ttsOnly
+  const [status, setStatus] = useState("loading"); // loading | human | ai | ttsOnly
   const [audioUrl, setAudioUrl] = useState(null);
   const [isUS, setIsUS] = useState(false);
   const [ttsIsUS, setTtsIsUS] = useState(false);
@@ -133,17 +137,16 @@ export function PronunciationModal({ term, onClose }) {
     // Voice list loads asynchronously in most browsers; without this the
     // first call can run before any en-US voice is known.
     if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.getVoices();
+    const tryAiVoice = () => speechUrl(term)
+      .then((url) => { if (!cancelled) { setAudioUrl(url); setStatus("ai"); } })
+      .catch(() => { if (!cancelled) { setStatus("ttsOnly"); speak(); } });
     fetchWordAudio(term)
       .then((found) => {
         if (cancelled) return;
         if (found?.url) { setAudioUrl(found.url); setIsUS(found.isUS); setStatus("human"); }
-        else { setStatus("ttsOnly"); speak(); }
+        else tryAiVoice();
       })
-      .catch(() => {
-        if (cancelled) return;
-        setStatus("ttsOnly");
-        speak();
-      });
+      .catch(() => { if (!cancelled) tryAiVoice(); });
     return () => {
       cancelled = true;
       if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
@@ -152,10 +155,11 @@ export function PronunciationModal({ term, onClose }) {
   // Autoplay the human recording once it is available. Browsers can refuse
   // autoplay without a user gesture, so the visible Play button stays the
   // guaranteed path.
-  useEffect(() => { if (status === "human" && audioRef.current) audioRef.current.play().catch(() => {}); }, [status, audioUrl]);
+  useEffect(() => { if ((status === "human" || status === "ai") && audioRef.current) audioRef.current.play().catch(() => {}); }, [status, audioUrl]);
   const youglishUrl = `https://youglish.com/pronounce/${encodeURIComponent(term)}/english/us`;
   const accentNote = status === "human"
     ? (isUS ? "American recording" : "Non-US accent — no American recording found")
+    : status === "ai" ? "AI voice · American"
     : status === "ttsOnly"
       ? (ttsIsUS ? "Browser voice · American" : "Browser voice · no US voice on this device")
       : "Searching…";
@@ -169,15 +173,15 @@ export function PronunciationModal({ term, onClose }) {
         <button className="wh-icon-btn" onClick={onClose} aria-label="Close"><X size={18}/></button>
       </div>
 
-      <div className={`wh-say-badge ${status === "human" && isUS ? "is-us" : status === "loading" ? "is-loading" : "is-soft"}`}>
+      <div className={`wh-say-badge ${(status === "human" && isUS) || status === "ai" ? "is-us" : status === "loading" ? "is-loading" : "is-soft"}`}>
         <Volume2 size={12}/> {accentNote}
       </div>
 
       {status === "loading" && <div className="wh-say-body"><p className="wh-say-muted">Looking for an American recording…</p></div>}
 
-      {status === "human" && <div className="wh-say-body">
-        <audio ref={audioRef} src={audioUrl} controls className="wh-say-audio"/>
-        <button className="wh-say-secondary" onClick={speak}><Volume2 size={12}/> Computer voice instead</button>
+      {(status === "human" || status === "ai") && <div className="wh-say-body">
+        <audio ref={audioRef} src={audioUrl} controls preload="auto" className="wh-say-audio"/>
+        <button className="wh-say-secondary" onClick={speak}><Volume2 size={12}/> Browser voice instead</button>
       </div>}
 
       {status === "ttsOnly" && <div className="wh-say-body">

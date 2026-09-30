@@ -994,7 +994,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
     setStatus(correct ? "correct" : "wrong");
     registerResult(correct);
 
-    // Ask Claude for a sharper, situation-grounded explanation in the
+    // Ask the AI for a sharper, situation-grounded explanation in the
     // background and swap it in once ready; the static line above stays
     // visible in the meantime so feedback is never empty.
     if (detail) {
