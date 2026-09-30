@@ -3,16 +3,17 @@ import { ArrowLeft, Award, BarChart3, BookOpen, CheckCircle2, ClipboardCheck, Co
 import { V2 } from "../engine/v2";
 import { PronunciationModal, imageLinkOk } from "../features/media/media";
 import { SessionView } from "../features/session/SessionView";
-import { storage, storageSetWithRetry } from "../lib/legacyStorage";
+import { Splash } from "../features/auth/LoginPage";
 import { BADGES, BUILTIN_CHALLENGES, BUILTIN_GRAMMAR, BUILTIN_WORDS, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTERY_STAGE_RANK, PRODUCTION_MODES, RECENT_RESULT_LIMIT, TOPIC_ICONS, WORDS, confusionCount, formatAccuracy, formatStars, getMasteryStage, getStarsForAccuracy, levelGroups, levelItemKey, levelStageBreakdown, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setLastChallengeId, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildEntryQuestion, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, entryFileMeta, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, uniqueStrings, v2SessionFromEntries } from "../engine/questions";
 import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, locateReportSource, normalizeAnswerText, reviewReportedQuestion, spellingDistanceInfo } from "../engine/ai";
-import { CUSTOM_CONTENT_KEY, DEFAULT_SETTINGS, LEGACY_V3_STORAGE_KEY, LEGACY_V4_STORAGE_KEY, LEGACY_V5_STORAGE_KEY, SCHEMA_VERSION, STORAGE_KEY, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
+import { DEFAULT_SETTINGS, SCHEMA_VERSION, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
 import { AdminControlCenter } from "../features/admin/AdminControlCenter";
 import { LiveChallenge } from "../features/live/LiveChallenge";
-export default function WordHunter() {
+export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const [loaded, setLoaded] = useState(false);
   const [storageWarning, setStorageWarning] = useState(null);
+  const [loadError, setLoadError] = useState(null);
   const [customCombos, setCustomCombos] = useState([]);
   const [customStories, setCustomStories] = useState([]);
   const [askAiOpen,setAskAiOpen]=useState(false);
@@ -679,40 +680,35 @@ export default function WordHunter() {
   // Load saved progress AND any previously imported custom content once on
   // mount. Custom content must be merged first so LEVELS/BADGES are already
   // correct by the time we compute badge state from the saved mastery.
+  // A failed load stops here (with a retry) instead of starting from empty
+  // progress, which the next save would otherwise write over the real one.
   useEffect(() => {
     (async () => {
       let levelOrder = LEVEL_ORDER;
       let hadAnyData = false;
+      let custom = null, raw = null;
       try {
-        const customRes = await storage.get(CUSTOM_CONTENT_KEY, false);
-        if (customRes && customRes.value) {
-          hadAnyData = true;
-          const custom = V2.withoutRemovedFields(JSON.parse(customRes.value));
-          setCustomCombos(custom.combos || []); setCustomStories(custom.stories || []); contentNoteRef.current=custom.note||"";
-          setCustomWords(custom.words || []);
-          setCustomGrammar(custom.grammar || []);
-          setCustomChallenges(Array.isArray(custom.challenges) ? custom.challenges : []);
-          levelOrder = custom.levelOrder || LEVEL_ORDER;
-          mergeCustomData(custom.words || [], custom.grammar || [], custom.challenges || [], levelOrder);
-        }
+        [custom, raw] = await Promise.all([repo.loadContent(), repo.loadProgress()]);
       } catch (e) {
-        // no custom content yet — built-in content only
+        console.error("Could not load game data:", e);
+        setLoadError(e?.message || "Network error");
+        return;
+      }
+      if (custom) {
+        hadAnyData = true;
+        custom = V2.withoutRemovedFields(custom);
+        setCustomCombos(custom.combos || []); setCustomStories(custom.stories || []); contentNoteRef.current=custom.note||"";
+        setCustomWords(custom.words || []);
+        setCustomGrammar(custom.grammar || []);
+        setCustomChallenges(Array.isArray(custom.challenges) ? custom.challenges : []);
+        levelOrder = custom.levelOrder || LEVEL_ORDER;
+        mergeCustomData(custom.words || [], custom.grammar || [], custom.challenges || [], levelOrder);
       }
 
       try {
-        let raw = null;
-        let sourceKey = null;
-        for (const key of [STORAGE_KEY, LEGACY_V5_STORAGE_KEY, LEGACY_V4_STORAGE_KEY, LEGACY_V3_STORAGE_KEY]) {
-          try {
-            const res = await storage.get(key, false);
-            if (res && res.value) { raw = JSON.parse(res.value); sourceKey = key; hadAnyData = true; break; }
-          } catch (_) {}
-        }
+        if (raw) hadAnyData = true;
         const data = raw ? migrateProgressData(raw) : emptyProgressData();
         progressExtrasRef.current = data; setActiveSession(data.activeSession || null);setDailyProgress(data.dailyProgress||null);setQuestionReports(Array.isArray(data.reports)?data.reports:[]);setSolvedStories(Array.isArray(data.solvedStories)?data.solvedStories:[]);setSessionLogs(Array.isArray(data.sessionLogs)?data.sessionLogs:[]);
-        if (raw && sourceKey !== STORAGE_KEY) {
-          try { await storage.set(STORAGE_KEY, JSON.stringify(data), false); } catch (_) {}
-        }
         setScore(data.score); setStreak(data.streak); setBestStreak(data.bestStreak); setAttempted(data.attempted);
         setMastery(data.mastery); masteryRef.current = data.mastery;
         setLevelsCleared(data.levelsCleared); setLevelStats(data.levelStats); setPools(data.pools); poolsRef.current = data.pools;
@@ -723,66 +719,41 @@ export default function WordHunter() {
         setSettings(normalizeSettings(data.settings));
         seenBadgesRef.current = new Set(BADGES.filter((b) => getBadgeProgress(b, { mastery: data.mastery, bestStreak: data.bestStreak }).earned).map((b) => b.id));
       } catch (e) {
-        console.error("Could not load progress:", e);
+        console.error("Could not read progress:", e);
         seenBadgesRef.current = new Set();
       } finally {
         setDataVersion((v) => v + 1);
         setLoaded(true);
-        if (!hadAnyData) setShowFreshCopyPrompt(true);
+        // Only the admin can bring content in; a player with no content just sees empty levels.
+        if (!hadAnyData && isAdmin) setShowFreshCopyPrompt(true);
       }
     })();
-  }, []);
+  }, [repo]);
 
-  // Save progress whenever it changes (after initial load).
-  // Debounced: `activeSession` changes on nearly every keystroke while
-  // playing (draft updates, hint reveals, answers), so firing storage.set()
-  // on every render was queuing overlapping writes to the same key — the
-  // backend rejects the "losing" one with a 409 Conflict. Waiting for
-  // things to go quiet for 600ms collapses a whole typing burst into one
-  // write. The in-flight guard skips a save if the previous one hasn't
-  // resolved yet; the next state change will schedule another debounced
-  // save anyway, so nothing is lost.
-  const progressSavingRef = useRef(false);
+  // Save progress whenever it changes (after initial load). Debounced so a
+  // burst of typing collapses into one save; the repo sends only what
+  // changed and queues the newest state while a save is in flight.
   useEffect(() => {
     if (!loaded) return;
-    const handle = setTimeout(async () => {
-      if (progressSavingRef.current) return;
-      progressSavingRef.current = true;
-      try {
-        await storageSetWithRetry(
-          STORAGE_KEY,
-          JSON.stringify({ ...progressExtrasRef.current, activeSession, schemaVersion: SCHEMA_VERSION, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings })
-        );
-      } catch (e) {
-        console.error("Could not save progress:", e);
-        setStorageWarning("Progress could not be saved. Keep a Full backup before closing this preview. Claude persistent storage is available in published artifacts.");
-      } finally {
-        progressSavingRef.current = false;
-      }
+    const handle = setTimeout(() => {
+      repo.saveProgress({ ...progressExtrasRef.current, activeSession, schemaVersion: SCHEMA_VERSION, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings })
+        .catch((e) => console.error("Could not save progress:", e));
     }, 600);
     return () => clearTimeout(handle);
   }, [loaded, activeSession, questionReports, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings, liveSeenTick]);
 
-  // Save imported custom content whenever it changes (separate from progress
-  // so a progress reset never touches imported vocabulary). Same debounce +
-  // in-flight guard as the progress save, for the same 409-conflict reason.
-  const contentSavingRef = useRef(false);
+  // Save content whenever it changes (admin only — players read content,
+  // they never write it). Separate from progress so a progress reset never
+  // touches imported vocabulary.
+  const contentSavingRef = useRef(Promise.resolve());
   useEffect(() => {
-    if (!loaded) return;
-    const handle = setTimeout(async () => {
-      if (contentSavingRef.current) return;
-      contentSavingRef.current = true;
-      try {
-        await storageSetWithRetry(
-          CUSTOM_CONTENT_KEY,
-          JSON.stringify({ schemaVersion: 2, kind: "content", note: contentNoteRef.current, combos: customCombos, stories: customStories, words: customWords, grammar: customGrammar, challenges: customChallenges, levelOrder: LEVEL_ORDER })
-        );
-      } catch (e) {
-        console.error("Could not save custom content:", e);
-        setStorageWarning("Content could not be saved. Keep a Full backup before closing this preview. Claude persistent storage is available in published artifacts.");
-      } finally {
-        contentSavingRef.current = false;
-      }
+    if (!loaded || !isAdmin) return;
+    const handle = setTimeout(() => {
+      const content = { note: contentNoteRef.current, combos: customCombos, stories: customStories, words: customWords, grammar: customGrammar, challenges: customChallenges, levelOrder: LEVEL_ORDER };
+      contentSavingRef.current = contentSavingRef.current.then(() => repo.saveContent(content)).catch((e) => {
+        console.error("Could not save content:", e);
+        setStorageWarning("Content could not be saved to the server. Check your connection; your last change will be saved with the next edit. Take a Full Backup if this keeps happening.");
+      });
     }, 600);
     return () => clearTimeout(handle);
   }, [loaded, customCombos, customStories, customWords, customGrammar, customChallenges, dataVersion]);
@@ -1288,7 +1259,7 @@ export default function WordHunter() {
 
   async function handleReset() {
     progressExtrasRef.current={};setActiveSession(null);setDailyProgress(null);
-    try { await storage.delete(STORAGE_KEY, false); } catch (_) {}
+    try { await repo.resetProgress(); } catch (e) { console.error("Could not reset progress:", e); setStorageWarning("Progress couldn't be reset on the server. Check your connection and try again."); }
     const empty = emptyProgressData();
     setScore(0); setStreak(0); setBestStreak(0); setAttempted(0);
     setMastery({}); masteryRef.current = {};
@@ -1298,7 +1269,7 @@ export default function WordHunter() {
     setBestSpeedScore(0); setBestSpeedCombo(0); pendingGenRef.current = new Set(); seenBadgesRef.current = new Set();
     setSolvedStories([]);setSessionLogs([]);
     setScreen("levels"); setCurrentLevelIndex(null); setBadgesOpen(false); setDashboardOpen(false);
-    // Custom content is intentionally stored under CUSTOM_CONTENT_KEY and is never deleted here.
+    // Content is intentionally left alone here.
   }
   // Full factory reset: progress AND every imported word/grammar/pun/story/
   // combo, plus the level order they built. Distinct from handleReset, which
@@ -1309,7 +1280,7 @@ export default function WordHunter() {
     setCustomWords([]); setCustomGrammar([]); setCustomChallenges([]);
     setCustomCombos([]); setCustomStories([]);
     setDataVersion((v) => v + 1);
-    try { await storage.delete(CUSTOM_CONTENT_KEY, false); } catch (_) {}
+    try { await repo.wipeContent(); } catch (e) { console.error("Could not clear content:", e); }
   }
 
   // Step 1: parse the pasted export and figure out what's genuinely new
@@ -1474,6 +1445,17 @@ export default function WordHunter() {
   const fileMeta = currentEntry ? entryFileMeta(currentEntry) : null;
   const FileIcon = fileMeta ? fileMeta.icon : Search;
 
+  if (loadError) return (
+    <main className="splash" role="alert">
+      <div className="splash-inner">
+        <h1 className="auth-title">Word <span>Hunter</span></h1>
+        <p className="load-error">Couldn't load your game ({loadError}). Your saved progress is safe — nothing was changed.</p>
+        <button className="auth-submit" onClick={() => window.location.reload()}>Try again</button>
+      </div>
+    </main>
+  );
+  if (!loaded) return <Splash />;
+
   return (
     <div className="wh-root">
 
@@ -1507,7 +1489,7 @@ export default function WordHunter() {
             <button className="wh-icon-btn" onClick={() => { setDashboardOpen((v) => !v); setBadgesOpen(false); setImportOpen(false); }} title="View stats dashboard">
               <BarChart3 size={13} /> Stats
             </button>
-            <button className="wh-icon-btn" onClick={()=>{setScreen("admin");setBadgesOpen(false);setDashboardOpen(false);setImportOpen(false);}} title="Open Content and Learning Control Center"><ListChecks size={13}/> Admin</button>
+            {isAdmin&&<button className="wh-icon-btn" onClick={()=>{setScreen("admin");setBadgesOpen(false);setDashboardOpen(false);setImportOpen(false);}} title="Open Content and Learning Control Center"><ListChecks size={13}/> Admin</button>}
             <button className="wh-icon-btn" onClick={handleQuickBackup} title="Copy a full backup to your clipboard in one click">
               {quickBackupCopied ? <><ClipboardCheck size={13} /> Copied</> : <><Copy size={13} /> Quick Backup</>}
             </button>
@@ -1530,11 +1512,11 @@ export default function WordHunter() {
               <p><b>Meaning:</b> {askAiResult.meaning}</p><p><b>Example:</b> {askAiResult.situation}</p>
               {!!askAiResult.nearWords?.length&&<><b>Close words:</b>{askAiResult.nearWords.map(item=><p key={item.word}><b>{item.word}:</b> {item.difference}</p>)}</>}
               {askAiResult.commonMistake&&<p><b>Common mistake:</b> {askAiResult.commonMistake.sentence}<br/><b>Better:</b> {askAiResult.commonMistake.correction}<br/>{askAiResult.commonMistake.why}</p>}
-              <div className="wh-ai-actions"><button className="wh-back-btn" onClick={()=>setListenTerm(askAiResult.word)}><Volume2 size={13}/> Listen</button>{askAiResult.alreadyInCollection?<span className="wh-results-unlock">Already in your collection</span>:<button className="wh-level-btn" onClick={()=>addAiWord()}>Add to Collection</button>}</div>
+              <div className="wh-ai-actions"><button className="wh-back-btn" onClick={()=>setListenTerm(askAiResult.word)}><Volume2 size={13}/> Listen</button>{askAiResult.alreadyInCollection?<span className="wh-results-unlock">Already in your collection</span>:isAdmin?<button className="wh-level-btn" onClick={()=>addAiWord()}>Add to Collection</button>:null}</div>
             </article>}
           </aside>
         </div>}
-        {screen==="admin"&&<AdminControlCenter content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onResolveReport={resolveQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} onOpenImport={()=>{setScreen("levels");setContentPanelView("review");setImportOpen(true);}} onExport={mode=>{handleExport(mode);setScreen("levels");setContentPanelView("export");setImportOpen(true);}}/>}
+        {screen==="admin"&&isAdmin&&<AdminControlCenter content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onResolveReport={resolveQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} onOpenImport={()=>{setScreen("levels");setContentPanelView("review");setImportOpen(true);}} onExport={mode=>{handleExport(mode);setScreen("levels");setContentPanelView("export");setImportOpen(true);}}/>}
         {confirmAction && (
           <div className="wh-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmAction(null); }}>
           <div className="wh-panel wh-confirm-panel" role="alertdialog">
@@ -1812,7 +1794,7 @@ export default function WordHunter() {
           {activeSession&&!activeSession.completed&&<button className="wh-level-btn" onClick={()=>setScreen("session")}>Resume {activeSession.title} ({Math.min(activeSession.index+1,activeSession.queue.length)}/{activeSession.queue.length})</button>}
           {section==="practice"&&(()=>{const day=todayProgress(dailyProgress);const goal=settings.dailyGoal;const done=day.answered>=goal;return <div className={`wh-daily-goal ${done?"done":""}`}><div className="wh-daily-goal-head"><b>{done?<><CheckCircle2 size={15}/> Daily goal reached</>:<><Target size={15}/> Today's goal</>}</b><span>{day.answered} / {goal} questions{day.answered?` · ${Math.round(day.correct/day.answered*100)}% correct`:""}</span></div><div className="wh-daily-goal-bar"><span style={{width:`${Math.min(100,day.answered/goal*100)}%`}}/></div>{done&&day.answered>goal&&<small>+{day.answered-goal} bonus questions today</small>}</div>;})()}
           {section==="stories"&&<div className="wh-panel"><h2>Stories</h2>
-            <div className="wh-story-builder"><h3>Generate a mixed-category story</h3><p className="wh-regen-meta">Choose one or more categories. Weak words are selected first and distributed across your choices.</p><div className="wh-category-multiselect">{LEVEL_ORDER.filter(category=>WORDS.some(word=>word.category===category)).map(category=><label key={category} className={`wh-category-choice ${selectedStoryCategories.includes(category)?"selected":""}`}><input type="checkbox" checked={selectedStoryCategories.includes(category)} onChange={()=>toggleStoryCategory(category)}/><span>{category}</span><small>{WORDS.filter(word=>word.category===category).length}</small></label>)}</div>{storyGenState!=="loading"&&<button className="wh-level-btn" disabled={!selectedStoryCategories.length} onClick={handleGenerateStory}>✨ Generate from {selectedStoryCategories.length||0} categor{selectedStoryCategories.length===1?"y":"ies"}</button>}{storyGenError&&storyGenState!=="loading"&&<p className="wh-regen-status error">{storyGenError}</p>}</div>
+            {isAdmin&&<div className="wh-story-builder"><h3>Generate a mixed-category story</h3><p className="wh-regen-meta">Choose one or more categories. Weak words are selected first and distributed across your choices.</p><div className="wh-category-multiselect">{LEVEL_ORDER.filter(category=>WORDS.some(word=>word.category===category)).map(category=><label key={category} className={`wh-category-choice ${selectedStoryCategories.includes(category)?"selected":""}`}><input type="checkbox" checked={selectedStoryCategories.includes(category)} onChange={()=>toggleStoryCategory(category)}/><span>{category}</span><small>{WORDS.filter(word=>word.category===category).length}</small></label>)}</div>{storyGenState!=="loading"&&<button className="wh-level-btn" disabled={!selectedStoryCategories.length} onClick={handleGenerateStory}>✨ Generate from {selectedStoryCategories.length||0} categor{selectedStoryCategories.length===1?"y":"ies"}</button>}{storyGenError&&storyGenState!=="loading"&&<p className="wh-regen-status error">{storyGenError}</p>}</div>}
             {storyGenState==="loading"&&<p className="wh-regen-status">Writing and checking a new story…</p>}
             {storyGenState&&typeof storyGenState==="object"&&<div className="wh-regen-preview">
               <p className="wh-regen-label">New story — preview</p>
@@ -1828,7 +1810,7 @@ export default function WordHunter() {
             {!customStories.length&&<p>No authored stories loaded. Import a Content v2 file to add them.</p>}{[...customStories].sort((a,b)=>a.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length-b.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length).map(story=>{const fresh=story.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length;const record=solvedStories.find(e=>e.id===story.id);return <article className="wh-v2-learn" key={story.id}><strong>{story.title}{record&&<span className="wh-story-solved-flag"><CheckCircle2 size={13}/> Solved · {record.correct}/{record.total}</span>}</strong><p>{story.questions.length}{story.grammarQuestions?.length?` + ${story.grammarQuestions.length} grammar`:""} questions · {fresh?`${fresh} new words: preview first`:"Ready for review"}</p><button className="wh-level-btn" onClick={()=>launchStory(story)}>{record?"Play again":"Open story"}</button></article>;})}</div>}
           {section==="challenges"&&<div className="wh-panel"><h2>Opposite Chain</h2>{[...new Set(WORDS.filter(w=>w.chainGroup&&w.opposite).map(w=>w.chainGroup))].map(group=><button key={group} className="wh-level-btn" onClick={()=>launchChain(group)}>{group}</button>)}<h2>Authored Challenges</h2>{!CHALLENGES.length&&<p>No authored challenges loaded.</p>}{CHALLENGES.map(c=><button key={c.id} className="wh-level-btn" onClick={()=>launchAuthoredChallenge(c)}>{c.label||c.id}</button>)}</div>}
         </>}
-        {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={reportSessionQuestion} onReviewReport={reviewQuestionReport} onWithdrawReport={deleteQuestionReport} onUpdateWord={updateWordFields} sound={settings.sound} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onResult={recordSessionResult} onAskWord={openAskAi}/>}
+        {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={reportSessionQuestion} onReviewReport={reviewQuestionReport} onWithdrawReport={deleteQuestionReport} onUpdateWord={isAdmin?updateWordFields:undefined} sound={settings.sound} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onResult={recordSessionResult} onAskWord={openAskAi}/>}
 
 
         {screen === "levels" && (section === "challenges" || section === "practice") && (
@@ -2280,7 +2262,7 @@ export default function WordHunter() {
           </div>
         )}
 
-        {screen === "live" && <LiveChallenge levels={LEVELS} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} />}
+        {screen === "live" && <LiveChallenge playerName={profile?.username || ""} levels={LEVELS} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} />}
 
         {screen === "speedResults" && (
           <div className="wh-results-card">

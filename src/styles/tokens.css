@@ -1,0 +1,32 @@
+/* Design tokens. The game's detective palette, shared by every screen. */
+:root {
+  --ink: #1c1a17;
+  --ink-soft: #2a2620;
+  --ink-raised: #332e26;
+  --paper: #ede4d3;
+  --paper-dim: #ded2ba;
+  --gold: #c9a227;
+  --gold-soft: #a6841f;
+  --green: #4f7942;
+  --red: #b33a3a;
+  --text-dim: #8a7a67;
+  --line: rgba(201, 162, 39, 0.28);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px;
+  --font-body: 'Libre Franklin', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-display: 'Special Elite', 'IBM Plex Mono', monospace;
+  --nav-height: 64px;
+  color-scheme: dark;
+}
+
+* { -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--ink); color: var(--paper); font-family: var(--font-body); }
+body { min-height: 100dvh; }
+button, input, select, textarea { font: inherit; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

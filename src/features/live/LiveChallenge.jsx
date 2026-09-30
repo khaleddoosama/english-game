@@ -2,12 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Users } from "lucide-react";
 import { V2 } from "../../engine/v2";
 import { WordPicture } from "../media/media";
-import { storage } from "../../lib/legacyStorage";
 import { levelGroups } from "../../engine/data";
 import { LIVE_CODE_CHARS, LIVE_GRACE_MS, LIVE_HOST_GONE_MS, LIVE_POLL_MS, LIVE_REVEAL_MS, liveBoard, liveOption, livePoints, liveQuestions, liveStore } from "./liveEngine";
-export function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({}), onSeen = () => {}, onRefresh = () => {} }) {
+export function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({}), onSeen = () => {}, onRefresh = () => {}, playerName = "" }) {
   const [me] = useState(() => `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(playerName);
   const [phase, setPhase] = useState("menu"); // menu | host | join | room
   const [isHost, setIsHost] = useState(false);
   const [code, setCode] = useState("");
@@ -24,8 +23,7 @@ export function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({
   const roomRef = useRef(null), answersRef = useRef({}), shownAtRef = useRef({}), changedAtRef = useRef(Date.now());
   const shared = !!(window.storage?.set && window.storage?.list);
 
-  useEffect(() => { storage.get("live-name").then((r) => { if (r?.value) setName(String(r.value)); }).catch(() => {}); }, []);
-  const rememberName = () => storage.set("live-name", name.trim()).catch(() => {});
+  const rememberName = () => {};
   const takeRoom = (r) => { if (JSON.stringify(r) !== JSON.stringify(roomRef.current)) changedAtRef.current = Date.now(); roomRef.current = r; setRoom(r); };
 
   const level = levels[levelIndex];

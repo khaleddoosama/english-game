@@ -183,7 +183,7 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
         :<div className="wh-flashcard-back"><WordPicture word={w}/><h3>{w.word}{w.partsOfSpeech?.length>0&&<span className="wh-pos-tag">{w.partsOfSpeech.join(" / ")}</span>}</h3><p><b>Meaning:</b> {w.meaning}</p><p><b>Situation:</b> {w.situation}</p>{w.plainForm&&<p>Plain form: {w.plainForm}</p>}</div>}
       </div>
       {flipped&&<div className="wh-regen-area">
-        {!regenState&&<button className="wh-back-btn wh-nav-btn" onClick={handleRegenerate}>Regenerate meaning &amp; example</button>}
+        {!regenState&&onUpdateWord&&<button className="wh-back-btn wh-nav-btn" onClick={handleRegenerate}>Regenerate meaning &amp; example</button>}
         {regenState==='loading'&&<p className="wh-regen-status">Generating a new version…</p>}
         {regenState==='error'&&<p className="wh-regen-status error">Couldn't generate a new version. <button className="wh-back-btn wh-nav-btn" onClick={handleRegenerate}>Try again</button></p>}
         {regenState&&typeof regenState==='object'&&<div className="wh-regen-preview">
