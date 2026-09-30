@@ -14,6 +14,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const [loaded, setLoaded] = useState(false);
   const [storageWarning, setStorageWarning] = useState(null);
   const [loadError, setLoadError] = useState(null);
+  const livePlayer = useMemo(() => (profile && profile.id !== "local"
+    ? { id: profile.id, name: profile.username }
+    : { id: `tab-${Math.random().toString(36).slice(2, 8)}`, name: `Player ${Math.floor(Math.random() * 90 + 10)}` }), [profile?.id, profile?.username]);
   const [customCombos, setCustomCombos] = useState([]);
   const [customStories, setCustomStories] = useState([]);
   const [askAiOpen,setAskAiOpen]=useState(false);
@@ -2262,7 +2265,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
           </div>
         )}
 
-        {screen === "live" && <LiveChallenge playerName={profile?.username || ""} levels={LEVELS} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} />}
+        {screen === "live" && <LiveChallenge player={livePlayer} levels={LEVELS} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} />}
 
         {screen === "speedResults" && (
           <div className="wh-results-card">

@@ -3,14 +3,36 @@ import { Users } from "lucide-react";
 import { V2 } from "../../engine/v2";
 import { WordPicture } from "../media/media";
 import { levelGroups } from "../../engine/data";
-import { LIVE_CODE_CHARS, LIVE_GRACE_MS, LIVE_HOST_GONE_MS, LIVE_POLL_MS, LIVE_REVEAL_MS, liveBoard, liveOption, livePoints, liveQuestions, liveStore } from "./liveEngine";
-export function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({}), onSeen = () => {}, onRefresh = () => {}, playerName = "" }) {
-  const [me] = useState(() => `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`);
-  const [name, setName] = useState(playerName);
+import { LIVE_GRACE_MS, LIVE_REVEAL_MS, liveBoard, liveOption, livePoints, liveQuestions } from "./liveEngine";
+import { liveRooms, openLiveChannel } from "./transport";
+
+// Live Challenge: two or more players, each on their own device, answer the
+// same questions at the same time. The room's questions are stored once
+// (live_rooms); everything else travels over a realtime channel:
+//   presence  who is in the room (a player who closes the app drops out at once)
+//   "room"    host -> everyone: state, question index, players' answers
+//   "answer"  player -> host: one answer with the time it took on their device
+//   "sync"    a (re)joining player asks the host for the current state
+// The host runs the clock and moves the game on. Answer times are measured on
+// each player's own device, so clocks never have to agree.
+const HOST_GONE_MS = 5000;
+
+function preloadPictures(questions) {
+  if (typeof Image === "undefined") return;
+  for (const q of questions || []) {
+    const src = typeof q.photo === "string" ? q.photo : null;
+    if (src && /^https?:/.test(src)) { const img = new Image(); img.decoding = "async"; img.referrerPolicy = "no-referrer"; img.src = src; }
+  }
+}
+
+export function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({}), onSeen = () => {}, onRefresh = () => {}, player }) {
+  const me = player.id;
+  const name = player.name;
   const [phase, setPhase] = useState("menu"); // menu | host | join | room
   const [isHost, setIsHost] = useState(false);
   const [code, setCode] = useState("");
   const [room, setRoom] = useState(null);
+  const [present, setPresent] = useState([]);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [levelIndex, setLevelIndex] = useState(0);
@@ -20,15 +42,82 @@ export function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({
   const [joinCode, setJoinCode] = useState("");
   const [myAnswers, setMyAnswers] = useState({});
   const [now, setNow] = useState(Date.now());
-  const roomRef = useRef(null), answersRef = useRef({}), shownAtRef = useRef({}), changedAtRef = useRef(Date.now());
-  const shared = !!(window.storage?.set && window.storage?.list);
-
-  const rememberName = () => {};
-  const takeRoom = (r) => { if (JSON.stringify(r) !== JSON.stringify(roomRef.current)) changedAtRef.current = Date.now(); roomRef.current = r; setRoom(r); };
+  const roomRef = useRef(null), answersRef = useRef({}), shownAtRef = useRef({}), channelRef = useRef(null);
+  const seqRef = useRef(0), presentRef = useRef([]), hostSeenAtRef = useRef(Date.now()), savedRef = useRef(false);
+  const takeRoom = (r) => { roomRef.current = r; setRoom(r); };
 
   const level = levels[levelIndex];
   const groups = level ? levelGroups(level).filter((g) => g.id) : [];
   const words = level ? level.items.filter((it) => it.kind === "word").map((it) => it.obj).filter((w) => !unit || (groups[0]?.field === "unit" ? (w.units || []).includes(unit) : w.subCategory === unit)) : [];
+
+  // --- host: the only writer of room state -----------------------------
+  function broadcast(r) {
+    seqRef.current += 1;
+    const { questions, ...state } = r;
+    channelRef.current?.send("room", { ...state, seq: seqRef.current });
+  }
+  function hostUpdate(mutate) {
+    const cur = roomRef.current;
+    if (!cur) return;
+    const next = mutate(cur);
+    if (!next || next === cur) return;
+    takeRoom(next);
+    broadcast(next);
+  }
+  function hostSeesPresence(list) {
+    hostUpdate((cur) => {
+      if (cur.state === "lobby") {
+        const players = list.map((p) => ({ id: p.id, name: p.name, answers: {} }));
+        if (!players.some((p) => p.id === me)) players.unshift({ id: me, name, answers: {} });
+        return JSON.stringify(players.map((p) => p.id)) === JSON.stringify(cur.players.map((p) => p.id)) ? cur : { ...cur, players };
+      }
+      return { ...cur }; // re-broadcast so everyone sees who dropped out
+    });
+    maybeReveal();
+  }
+  function hostTakesAnswer({ id, index, answer }) {
+    hostUpdate((cur) => {
+      if (cur.state !== "question" || index !== cur.index) return cur;
+      const players = cur.players.map((p) => (p.id === id && !p.answers?.[index] ? { ...p, answers: { ...p.answers, [index]: answer } } : p));
+      return { ...cur, players };
+    });
+    maybeReveal();
+  }
+  // Everyone still here has answered: reveal without waiting for the clock.
+  function maybeReveal() {
+    const cur = roomRef.current;
+    if (!cur || cur.state !== "question") return;
+    const here = new Set(presentRef.current.map((p) => p.id)); here.add(me);
+    const waiting = cur.players.filter((p) => here.has(p.id) && !p.answers?.[cur.index]);
+    if (!waiting.length) hostUpdate((r) => ({ ...r, state: "reveal", phaseAt: Date.now() }));
+  }
+
+  function connect(r, host) {
+    channelRef.current?.close();
+    savedRef.current = false; seqRef.current = 0; hostSeenAtRef.current = Date.now();
+    takeRoom(r); setIsHost(host); setCode(r.code); setPhase("room");
+    preloadPictures(r.questions);
+    const channel = openLiveChannel(r.code, { id: me, name, host }, {
+      onPresence(list) {
+        presentRef.current = list; setPresent(list);
+        if (list.some((p) => p.id === roomRef.current?.host)) hostSeenAtRef.current = Date.now();
+        if (host) hostSeesPresence(list);
+      },
+      onEvent(event, payload) {
+        if (host) {
+          if (event === "answer") hostTakesAnswer(payload);
+          else if (event === "sync") broadcast(roomRef.current);
+        } else if (event === "room" && payload.seq > seqRef.current) {
+          seqRef.current = payload.seq;
+          hostSeenAtRef.current = Date.now();
+          takeRoom({ ...roomRef.current, ...payload });
+        }
+      },
+    });
+    channelRef.current = channel;
+    channel.ready.then(() => { if (!host) channel.send("sync", {}); }).catch((problem) => setError(`Live connection failed: ${problem.message || problem}`));
+  }
+  useEffect(() => () => channelRef.current?.close(), []);
 
   async function createRoom() {
     setError(null);
@@ -36,13 +125,9 @@ export function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({
     if (questions.length < 3) { setError("Not enough words with safe multiple-choice questions here. Pick another lesson."); return; }
     setBusy(true);
     try {
-      let c = "";
-      for (let tries = 0; tries < 6; tries++) { c = Array.from({ length: 4 }, () => LIVE_CODE_CHARS[Math.floor(Math.random() * LIVE_CODE_CHARS.length)]).join(""); if (!(await liveStore.get(`live:${c}`))) break; }
       const title = unit ? `${level.title} · ${groups.find((g) => g.id === unit)?.title || unit}` : level.title;
-      const r = { v: 1, code: c, host: me, title, seconds, questions, state: "lobby", index: 0, phaseAt: Date.now(), players: [{ id: me, name: name.trim(), answers: {} }] };
-      await liveStore.set(`live:${c}:p:${me}`, { id: me, name: name.trim(), answers: {} });
-      await liveStore.set(`live:${c}`, r);
-      rememberName(); setIsHost(true); setCode(c); takeRoom(r); setPhase("room");
+      const c = await liveRooms.create({ title, seconds, questions, hostId: me });
+      connect({ v: 2, code: c, host: me, title, seconds, questions, state: "lobby", index: 0, phaseAt: Date.now(), players: [{ id: me, name, answers: {} }] }, true);
       onRefresh(words);
     } catch (problem) { setError(`Couldn't create the challenge: ${problem.message || problem}`); }
     setBusy(false);
@@ -53,50 +138,39 @@ export function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({
     if (!/^[A-Z0-9]{4}$/.test(c)) { setError("The code is 4 letters/numbers."); return; }
     setBusy(true);
     try {
-      const r = await liveStore.get(`live:${c}`);
-      if (!r) setError("No challenge with this code. Check it with your friend.");
-      else if (r.state !== "lobby") setError("This challenge has already started.");
-      else { await liveStore.set(`live:${c}:p:${me}`, { id: me, name: name.trim(), answers: {} }); rememberName(); setIsHost(false); setCode(c); takeRoom(r); setPhase("room"); }
+      const stored = await liveRooms.get(c);
+      if (!stored) setError("No challenge with this code. Check it with your friend.");
+      else if (stored.state !== "lobby") setError("This challenge has already started.");
+      else connect({ v: 2, code: c, host: stored.host_id, title: stored.title, seconds: stored.seconds, questions: stored.questions, state: "lobby", index: 0, phaseAt: Date.now(), players: [] }, false);
     } catch (problem) { setError(`Couldn't join: ${problem.message || problem}`); }
     setBusy(false);
   }
-  async function startGame() {
-    const r = { ...roomRef.current, state: "question", index: 0, phaseAt: Date.now() };
-    try { await liveStore.set(`live:${code}`, r); takeRoom(r); } catch (problem) { setError(`Couldn't start: ${problem.message || problem}`); }
+  function startGame() {
+    hostUpdate((cur) => ({ ...cur, state: "question", index: 0, phaseAt: Date.now() }));
+    liveRooms.setState(code, "playing").catch(() => {});
   }
 
-  // Everyone: follow the room. The host also gathers the players' answers
-  // into it and moves on when all have answered or the time is up.
+  // Host clock: time's up -> reveal; reveal shown -> next question or done.
   useEffect(() => {
-    if (phase !== "room" || !code) return;
-    let stopped = false, running = false;
-    const tick = async () => {
-      if (running || stopped) return; running = true;
-      try {
-        if (!isHost) { const r = await liveStore.get(`live:${code}`); if (r && !stopped) takeRoom(r); }
-        else {
-          const cur = roomRef.current; if (!cur || cur.state === "done") return;
-          const keys = await liveStore.list(`live:${code}:p:`);
-          const found = (await Promise.all(keys.map((k) => liveStore.get(k)))).filter((p) => p && p.id);
-          const players = cur.state === "lobby" ? found.map((p) => ({ id: p.id, name: p.name, answers: {} }))
-            : cur.players.map((p) => { const f = found.find((x) => x.id === p.id); return f ? { ...p, answers: f.answers || {} } : p; });
-          const next = { ...cur, players };
-          const per = cur.seconds * 1000, t = Date.now();
-          if (cur.state === "question") { const i = cur.index; if (players.every((p) => p.answers?.[i]) || t - cur.phaseAt > per + LIVE_GRACE_MS) { next.state = "reveal"; next.phaseAt = t; } }
-          else if (cur.state === "reveal" && t - cur.phaseAt > LIVE_REVEAL_MS) { if (cur.index + 1 >= cur.questions.length) { next.state = "done"; next.phaseAt = t; } else { next.state = "question"; next.index = cur.index + 1; next.phaseAt = t; } }
-          if (!stopped && JSON.stringify(next) !== JSON.stringify(cur)) { await liveStore.set(`live:${code}`, next); takeRoom(next); }
-        }
-      } catch (_) {} finally { running = false; }
-    };
-    tick();
-    const t = setInterval(tick, LIVE_POLL_MS);
-    return () => { stopped = true; clearInterval(t); };
-  }, [phase, code, isHost]);
+    if (phase !== "room") return;
+    const t = setInterval(() => {
+      setNow(Date.now());
+      if (!isHost) return;
+      const cur = roomRef.current;
+      if (!cur) return;
+      const per = cur.seconds * 1000, t0 = Date.now();
+      if (cur.state === "question" && t0 - cur.phaseAt > per + LIVE_GRACE_MS) hostUpdate((r) => ({ ...r, state: "reveal", phaseAt: t0 }));
+      else if (cur.state === "reveal" && t0 - cur.phaseAt > LIVE_REVEAL_MS) {
+        hostUpdate((r) => (r.index + 1 >= r.questions.length ? { ...r, state: "done", phaseAt: t0 } : { ...r, state: "question", index: r.index + 1, phaseAt: t0 }));
+        if (cur.index + 1 >= cur.questions.length) liveRooms.setState(code, "done").catch(() => {});
+      }
+    }, 250);
+    return () => clearInterval(t);
+  }, [phase, isHost, code]);
 
   const q = room?.state === "question" || room?.state === "reveal" ? room.questions[room.index] : null;
   const per = (room?.seconds || 20) * 1000;
   useEffect(() => { if (room?.state === "question" && !shownAtRef.current[room.index]) shownAtRef.current[room.index] = Date.now(); }, [room?.state, room?.index]);
-  useEffect(() => { if (phase !== "room") return; const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t); }, [phase]);
   // Every player remembers the sentences a question showed, so neither the
   // next match nor their normal rounds bring them straight back.
   const markedRef = useRef(new Set());
@@ -108,18 +182,27 @@ export function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({
     const qq = room.questions[room.index];
     if (qq?.sentences?.length) onSeen({ mode: qq.mode, prompt: qq.prompt, sentences: qq.sentences });
   }, [room?.state, room?.index]);
+  // Final result goes to the leaderboard once.
+  useEffect(() => {
+    if (room?.state !== "done" || savedRef.current) return;
+    savedRef.current = true;
+    const board = liveBoard(room, room.questions.length - 1);
+    const rank = board.findIndex((p) => p.id === me) + 1;
+    const mine = board[rank - 1];
+    if (mine) liveRooms.saveResult({ room_code: room.code, title: room.title, points: mine.points, correct: mine.correct, total: room.questions.length, rank, players: board.length });
+  }, [room?.state]);
   const shownAt = room ? shownAtRef.current[room.index] : null;
   const timeLeft = room?.state === "question" && shownAt ? Math.max(0, per - (now - shownAt)) : 0;
   const mine = room ? myAnswers[room.index] : null;
 
-  async function answer(choice) {
+  function answer(choice) {
     const cur = roomRef.current; if (!cur || cur.state !== "question") return;
     const i = cur.index; if (answersRef.current[i]) return;
     const qq = cur.questions[i];
     const a = { choice, correct: choice != null && V2.norm(choice) === V2.norm(qq.answer), ms: Math.min(per, Date.now() - (shownAtRef.current[i] || Date.now())) };
-    const answers = { ...answersRef.current, [i]: a };
-    answersRef.current = answers; setMyAnswers(answers);
-    try { await liveStore.set(`live:${code}:p:${me}`, { id: me, name: name.trim(), answers }); } catch (_) {}
+    answersRef.current = { ...answersRef.current, [i]: a }; setMyAnswers(answersRef.current);
+    if (isHost) hostTakesAnswer({ id: me, index: i, answer: a });
+    else channelRef.current?.send("answer", { id: me, index: i, answer: a });
   }
   useEffect(() => { if (room?.state === "question" && shownAt && timeLeft <= 0 && !answersRef.current[room.index]) answer(null); }, [timeLeft, room?.state]);
   useEffect(() => {
@@ -128,19 +211,17 @@ export function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
   }, [room?.state, room?.index, mine]);
 
-  function leave() { setPhase("menu"); setRoom(null); roomRef.current = null; setCode(""); setMyAnswers({}); answersRef.current = {}; shownAtRef.current = {}; setIsHost(false); setError(null); }
-  const hostGone = !isHost && room && room.state !== "done" && room.state !== "lobby" && now - changedAtRef.current > per + LIVE_HOST_GONE_MS;
-  const nameOk = name.trim().length >= 2;
+  function leave() { channelRef.current?.close(); channelRef.current = null; setPhase("menu"); takeRoom(null); setCode(""); setMyAnswers({}); answersRef.current = {}; shownAtRef.current = {}; setIsHost(false); setError(null); setPresent([]); }
+  const hostGone = !isHost && room && room.state !== "done" && now - hostSeenAtRef.current > HOST_GONE_MS && !present.some((p) => p.id === room.host);
+  const hereIds = new Set(present.map((p) => p.id));
 
   if (phase !== "room") return <div className="wh-card wh-live">
     <div className="wh-live-head"><h2><Users size={18} /> Live Challenge</h2><button className="wh-back-btn" onClick={phase === "menu" ? onExit : () => { setPhase("menu"); setError(null); }}>{phase === "menu" ? "Back" : "← Back"}</button></div>
-    {!shared && <p className="wh-import-error">Shared storage isn't available in this preview. Open the game from its published link on both devices.</p>}
     {phase === "menu" && <>
       <p>Play the same questions with a friend at the same time, each on your own device. Right answers score 500 points, plus up to 500 more for speed.</p>
-      <label className="wh-live-field"><span>Your name</span><input value={name} maxLength={20} onChange={(e) => setName(e.target.value)} placeholder="e.g. Khaled" /></label>
-      <div className="wh-live-actions"><button className="wh-level-btn" disabled={!nameOk || !levels.length} onClick={() => setPhase("host")}>Create a challenge</button><button className="wh-level-btn" disabled={!nameOk} onClick={() => setPhase("join")}>Join with a code</button></div>
-      {!levels.length && <p><small>You need imported words to create a challenge. You can still join one.</small></p>}
-      <p><small>Everyone who opens this game's published link can see challenge names and scores.</small></p>
+      <p className="wh-live-you">Playing as <b>{name}</b></p>
+      <div className="wh-live-actions"><button className="wh-level-btn" disabled={!levels.length} onClick={() => setPhase("host")}>Create a challenge</button><button className="wh-level-btn" onClick={() => setPhase("join")}>Join with a code</button></div>
+      {!levels.length && <p><small>There are no words yet to build a challenge from. You can still join one.</small></p>}
     </>}
     {phase === "host" && <>
       <label className="wh-live-field"><span>Lesson</span><select value={levelIndex} onChange={(e) => { setLevelIndex(Number(e.target.value)); setUnit(""); }}>{levels.map((l, i) => <option key={l.title} value={i}>{l.title}</option>)}</select></label>
@@ -148,11 +229,11 @@ export function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({
       <label className="wh-live-field"><span>Questions</span><select value={count} onChange={(e) => setCount(Number(e.target.value))}>{[5, 10, 15, 20].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
       <label className="wh-live-field"><span>Seconds per question</span><select value={seconds} onChange={(e) => setSeconds(Number(e.target.value))}>{[10, 15, 20, 30].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
       <p><small>{words.length} words to pick from.</small></p>
-      <button className="wh-level-btn" disabled={busy || !shared} onClick={createRoom}>{busy ? "Creating…" : "Create"}</button>
+      <button className="wh-level-btn" disabled={busy} onClick={createRoom}>{busy ? "Creating…" : "Create"}</button>
     </>}
     {phase === "join" && <>
-      <label className="wh-live-field"><span>Challenge code</span><input className="wh-live-code-input" value={joinCode} maxLength={4} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} onKeyDown={(e) => { if (e.key === "Enter") joinRoom(); }} placeholder="ABCD" /></label>
-      <button className="wh-level-btn" disabled={busy || !shared || joinCode.trim().length !== 4} onClick={joinRoom}>{busy ? "Joining…" : "Join"}</button>
+      <label className="wh-live-field"><span>Challenge code</span><input className="wh-live-code-input" value={joinCode} maxLength={4} autoCapitalize="characters" onChange={(e) => setJoinCode(e.target.value.toUpperCase())} onKeyDown={(e) => { if (e.key === "Enter") joinRoom(); }} placeholder="ABCD" /></label>
+      <button className="wh-level-btn" disabled={busy || joinCode.trim().length !== 4} onClick={joinRoom}>{busy ? "Joining…" : "Join"}</button>
     </>}
     {error && <p className="wh-import-error">{error}</p>}
   </div>;
@@ -161,6 +242,7 @@ export function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({
   const board = liveBoard(room, room.state === "question" ? room.index - 1 : room.index);
   const answeredIds = new Set((room.players || []).filter((p) => p.answers?.[room.index]).map((p) => p.id));
   if (mine) answeredIds.add(me);
+  const lobbyPlayers = isHost || room.players.length ? room.players : present.map((p) => ({ id: p.id, name: p.name }));
   const Board = ({ final }) => <ol className="wh-live-board">{board.map((p, i) => <li key={p.id} className={p.id === me ? "me" : ""}><span>{final && i === 0 && board.length > 1 && p.points > (board[1]?.points || 0) ? "🏆 " : `${i + 1}. `}{p.name}{p.id === me ? " (you)" : ""}</span><span>{p.correct} right · <b>{p.points}</b></span></li>)}</ol>;
 
   return <div className="wh-card wh-live">
@@ -168,8 +250,8 @@ export function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({
     {room.state === "lobby" && <>
       <p>Share this code with your friend. They open the game, tap <b>Live Challenge → Join with a code</b>, and type it.</p>
       <div className="wh-live-code">{room.code}</div>
-      <p><b>Players ({room.players.length})</b></p>
-      <ul className="wh-live-players">{room.players.map((p) => <li key={p.id}>{p.name}{p.id === room.host ? " · host" : ""}{p.id === me ? " (you)" : ""}</li>)}</ul>
+      <p><b>Players ({lobbyPlayers.length})</b></p>
+      <ul className="wh-live-players">{lobbyPlayers.map((p) => <li key={p.id}>{p.name}{p.id === room.host ? " · host" : ""}{p.id === me ? " (you)" : ""}</li>)}</ul>
       <p><small>{room.questions.length} questions · {room.seconds}s each</small></p>
       {isHost ? <button className="wh-level-btn" disabled={room.players.length < 2} onClick={startGame}>{room.players.length < 2 ? "Waiting for a friend to join…" : `Start (${room.players.length} players)`}</button> : <p>Waiting for the host to start…</p>}
     </>}
@@ -183,7 +265,7 @@ export function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({
         const cls = reveal ? (V2.norm(opt) === V2.norm(q.answer) ? "correct" : mine?.choice === opt ? "wrong" : "") : mine?.choice === opt ? "picked" : "";
         return <button key={opt} type="button" className={`wh-option ${cls}`} disabled={!!mine || reveal} onClick={() => answer(opt)}><span className="wh-shortcut-key" aria-hidden="true">{i + 1}</span>{liveOption(opt, q)}</button>;
       })}</div>
-      {room.state === "question" && <p className="wh-live-waiting">{mine ? "Answer locked in. " : ""}{room.players.map((p) => <span key={p.id} className={answeredIds.has(p.id) ? "done" : ""}>{answeredIds.has(p.id) ? "✓" : "…"} {p.name}</span>)}</p>}
+      {room.state === "question" && <p className="wh-live-waiting">{mine ? "Answer locked in. " : ""}{room.players.map((p) => <span key={p.id} className={answeredIds.has(p.id) ? "done" : hereIds.has(p.id) || p.id === me ? "" : "away"}>{answeredIds.has(p.id) ? "✓" : hereIds.has(p.id) || p.id === me ? "…" : "✕"} {p.name}</span>)}</p>}
       {room.state === "reveal" && <>
         <div role="status" className={`wh-feedback ${mine?.correct ? "correct" : "wrong"}`}>{mine?.correct ? `Correct! +${livePoints(mine, per)}` : mine?.choice == null ? `Time's up — it was: ${q.answer}` : `It was: ${q.answer}`}</div>
         {q.explanation && q.mode !== "meaning" && <p><small>{q.word}: {q.explanation}</small></p>}
@@ -195,6 +277,7 @@ export function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({
       <Board final />
       <div className="wh-live-actions"><button className="wh-level-btn" onClick={leave}>New challenge</button><button className="wh-back-btn" onClick={onExit}>Back to levels</button></div>
     </>}
-    {hostGone && <p className="wh-import-error">The host seems to have left. You can leave this challenge.</p>}
+    {hostGone && <p className="wh-import-error">The host has left. You can leave this challenge.</p>}
+    {error && <p className="wh-import-error">{error}</p>}
   </div>;
 }

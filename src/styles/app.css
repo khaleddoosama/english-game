@@ -725,3 +725,5 @@
   .wh-admin-toolbar>input { min-width:0;width:100%;margin-left:0; }
   .wh-admin-toolbar>select { width:100%; }
 }
+.wh-live-you { font-family: var(--font-mono); font-size: 13px; color: var(--paper-dim); }
+.wh-live-waiting span.away { opacity: 0.45; text-decoration: line-through; }

@@ -2,31 +2,9 @@ import { V2 } from "../../engine/v2";
 import { imageLinkOk } from "../media/media";
 import { WORDS } from "../../engine/data";
 import { shuffle } from "../../engine/questions";
-/* ---------------------------------- APP ---------------------------------- */
-
-// --- Live Challenge: two or more players, each on their own device, answer
-// the same questions at the same time. It runs on the artifact's shared
-// storage (seen by everyone who opens the published link):
-//   live:CODE        the room: questions, state, players' answers — written
-//                    only by the host
-//   live:CODE:p:ID   one per player: name and answers — written only by
-//                    that player
-// Players poll the room; the host polls the players and moves the game on.
-// Answer times are measured on each player's own device, so clocks never
-// have to agree.
-export const LIVE_POLL_MS = 1000, LIVE_REVEAL_MS = 4000, LIVE_GRACE_MS = 2500, LIVE_HOST_GONE_MS = 20000;
-export const LIVE_CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-export const liveStore = {
-  async get(key) { try { const r = await window.storage.get(key, true); return r?.value ? JSON.parse(r.value) : null; } catch { return null; } },
-  async set(key, value) {
-    if (!window.storage?.set) throw new Error("Shared storage isn't available here.");
-    for (let attempt = 0; ; attempt++) {
-      try { return await window.storage.set(key, JSON.stringify(value), true); }
-      catch (problem) { if (attempt >= 2) throw problem; await new Promise((r) => setTimeout(r, 250 + Math.random() * 400)); }
-    }
-  },
-  async list(prefix) { try { const r = await window.storage.list(prefix, true); return (r?.keys || []).map((k) => (typeof k === "string" ? k : k?.key)).filter(Boolean); } catch { return []; } },
-};
+// Live Challenge scoring and question building (no transport here; see
+// transport.js for the realtime channel and LiveChallenge.jsx for the flow).
+export const LIVE_REVEAL_MS = 4000, LIVE_GRACE_MS = 2500;
 // Multiple-choice questions only: typed answers would turn a spelling slip
 // into a lost match. Each question carries everything it needs, because the
 // other players don't have the host's words.
