@@ -3903,25 +3903,42 @@ const liveStore = {
 // Multiple-choice questions only: typed answers would turn a spelling slip
 // into a lost match. Each question carries everything it needs, because the
 // other players don't have the host's words.
-function liveQuestions(words, count, rng = Math.random) {
-  const out = [];
+// Fresh first: sentences come from the word's pools (the AI-written ones
+// too), and a question whose sentence the host never read beats one read
+// long ago, which beats one read in the last 20 hours. Definition questions
+// (meaning / reverse) aren't tracked, so they count as fresh.
+function liveQuestions(words, count, { pools = null, seen = {}, rng = Math.random } = {}) {
+  const build = (w, kind) => {
+    try {
+      return kind === "picture" ? V2.pictureQuestion(w, WORDS, rng, false, imageLinkOk)
+        : kind === "collocation" ? V2.collocationQuestion(w, WORDS, rng, false)
+        : kind === "family" ? V2.familyQuestion(w, rng, false)
+        : kind === "gap" && !/_{2,}/.test(w.gap || "") && !(pools?.[w.word]?.gap || []).length ? null
+        : V2.makeQuestion(w, kind, WORDS, rng, 2, pools, null, seen);
+    } catch { return null; }
+  };
+  const now = Date.now();
+  const freshness = (q) => { // 0 never read · 1 read over 20h ago · 2 read recently
+    const keys = V2.questionSentences(q);
+    if (!keys.length) return 0;
+    const last = Math.max(...keys.map((k) => Number(seen?.[k] || 0)));
+    return !last ? 0 : now - last >= V2.SEEN_FRESH_HOURS * 3600000 ? 1 : 2;
+  };
+  const picks = [];
   for (const w of shuffle(words)) {
-    if (out.length >= count) break;
-    for (const kind of shuffle(["meaning", "reverse", "gap", "picture", "collocation", "family"])) {
-      let q = null;
-      try {
-        q = kind === "picture" ? V2.pictureQuestion(w, WORDS, rng, false, imageLinkOk)
-          : kind === "collocation" ? V2.collocationQuestion(w, WORDS, rng, false)
-          : kind === "family" ? V2.familyQuestion(w, rng, false)
-          : kind === "gap" && !/_{2,}/.test(w.gap || "") ? null
-          : V2.makeQuestion(w, kind, WORDS, rng, 2);
-      } catch { q = null; }
-      if (!q || q.type !== "mcq" || !q.prompt || !Array.isArray(q.options) || q.options.length < 3 || !q.answers?.[0]) continue;
-      out.push({ mode: q.mode, prompt: q.prompt, options: q.options, answer: q.answers[0], word: w.word, explanation: q.explanation || "", picture: q.picture || null, photo: q.photo || null });
-      break;
-    }
+    const options = ["meaning", "reverse", "gap", "picture", "collocation", "family"]
+      .map((kind) => build(w, kind))
+      .filter((q) => q && q.type === "mcq" && q.prompt && Array.isArray(q.options) && q.options.length >= 3 && q.answers?.[0])
+      .map((q) => ({ q, tier: freshness(q), last: Math.max(0, ...V2.questionSentences(q).map((k) => Number(seen?.[k] || 0))) }));
+    if (!options.length) continue;
+    const best = Math.min(...options.map((o) => o.tier));
+    const pool = options.filter((o) => o.tier === best);
+    const pick = best === 0 ? pool[Math.floor(rng() * pool.length)] : pool.sort((a, b) => a.last - b.last)[0];
+    picks.push({ w, ...pick });
   }
-  return out;
+  // Words with a fresh question first; stale ones only fill the gaps.
+  picks.sort((a, b) => a.tier - b.tier);
+  return picks.slice(0, count).map(({ w, q }) => ({ mode: q.mode, prompt: q.prompt, options: q.options, answer: q.answers[0], word: w.word, explanation: q.explanation || "", picture: q.picture || null, photo: q.photo || null, sentences: V2.questionSentences(q) }));
 }
 // Word options start with a capital, as in the normal question box.
 function liveOption(opt, q) { const t = String(opt); return q.mode !== "meaning" && q.mode !== "collocation" && t.trim().split(/\s+/).length <= 4 && /^[a-z]/.test(t) ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
@@ -3936,7 +3953,7 @@ function liveBoard(room, upTo) {
   }).sort((a, b) => b.points - a.points);
 }
 
-function LiveChallenge({ levels, onExit }) {
+function LiveChallenge({ levels, onExit, pools = null, getSeen = () => ({}), onSeen = () => {}, onRefresh = () => {} }) {
   const [me] = useState(() => `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`);
   const [name, setName] = useState("");
   const [phase, setPhase] = useState("menu"); // menu | host | join | room
@@ -3965,7 +3982,7 @@ function LiveChallenge({ levels, onExit }) {
 
   async function createRoom() {
     setError(null);
-    const questions = liveQuestions(words, count);
+    const questions = liveQuestions(words, count, { pools, seen: getSeen() });
     if (questions.length < 3) { setError("Not enough words with safe multiple-choice questions here. Pick another lesson."); return; }
     setBusy(true);
     try {
@@ -3976,6 +3993,7 @@ function LiveChallenge({ levels, onExit }) {
       await liveStore.set(`live:${c}:p:${me}`, { id: me, name: name.trim(), answers: {} });
       await liveStore.set(`live:${c}`, r);
       rememberName(); setIsHost(true); setCode(c); takeRoom(r); setPhase("room");
+      onRefresh(words);
     } catch (problem) { setError(`Couldn't create the challenge: ${problem.message || problem}`); }
     setBusy(false);
   }
@@ -4029,6 +4047,17 @@ function LiveChallenge({ levels, onExit }) {
   const per = (room?.seconds || 20) * 1000;
   useEffect(() => { if (room?.state === "question" && !shownAtRef.current[room.index]) shownAtRef.current[room.index] = Date.now(); }, [room?.state, room?.index]);
   useEffect(() => { if (phase !== "room") return; const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t); }, [phase]);
+  // Every player remembers the sentences a question showed, so neither the
+  // next match nor their normal rounds bring them straight back.
+  const markedRef = useRef(new Set());
+  useEffect(() => {
+    if (!room || (room.state !== "reveal" && room.state !== "done")) return;
+    const key = `${room.code}:${room.index}`;
+    if (markedRef.current.has(key)) return;
+    markedRef.current.add(key);
+    const qq = room.questions[room.index];
+    if (qq?.sentences?.length) onSeen({ mode: qq.mode, prompt: qq.prompt, sentences: qq.sentences });
+  }, [room?.state, room?.index]);
   const shownAt = room ? shownAtRef.current[room.index] : null;
   const timeLeft = room?.state === "question" && shownAt ? Math.max(0, per - (now - shownAt)) : 0;
   const mine = room ? myAnswers[room.index] : null;
@@ -4275,6 +4304,14 @@ export default function WordHunter() {
   // sessions contribute to score, streaks, attempts and confusion learning.
   // Remember every sentence the learner has read (answered or reported) so
   // practice keeps it away for a while. The newest 4000 are kept.
+  // Live Challenge: words in the chosen lesson whose gap sentences have all
+  // been read get new ones written in the background, for the next matches.
+  const [liveSeenTick, setLiveSeenTick] = useState(0);
+  function refreshLiveSentences(words) {
+    const seenNow = progressExtrasRef.current.seenSentences || {};
+    const exhausted = words.filter((w) => /_{2,}/.test(w.gap || "") && V2.poolItems(w, "gap", poolsRef.current?.[w.word]?.gap).every((it) => V2.seenRecently(seenNow, it.text))).slice(0, 8);
+    if (exhausted.length) triggerGeneration(exhausted.map((w) => ({ word: w.word, poolType: "gap" })), poolsRef.current);
+  }
   function markSentencesSeen(q) {
     const read = V2.questionSentences(q);
     if (!read.length) return;
@@ -4863,7 +4900,7 @@ export default function WordHunter() {
       }
     }, 600);
     return () => clearTimeout(handle);
-  }, [loaded, activeSession, questionReports, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings]);
+  }, [loaded, activeSession, questionReports, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings, liveSeenTick]);
 
   // Save imported custom content whenever it changes (separate from progress
   // so a progress reset never touches imported vocabulary). Same debounce +
@@ -7111,7 +7148,7 @@ export default function WordHunter() {
           </div>
         )}
 
-        {screen === "live" && <LiveChallenge levels={LEVELS} onExit={backToLevels} />}
+        {screen === "live" && <LiveChallenge levels={LEVELS} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} />}
 
         {screen === "speedResults" && (
           <div className="wh-results-card">
