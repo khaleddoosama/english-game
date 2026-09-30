@@ -37,7 +37,7 @@ function splitSections(data) {
 }
 
 // Monday of this week, local time, as YYYY-MM-DD.
-function weekStart(now = new Date()) {
+export function weekStart(now = new Date()) {
   const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

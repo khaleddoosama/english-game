@@ -1,15 +1,21 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Award, BarChart3, BookOpen, CheckCircle2, ClipboardCheck, Copy, Download, Flag, Flame, HelpCircle, ListChecks, Lock, Play, Search, Sparkles, Target, Trash2, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
 import { V2 } from "../engine/v2";
 import { PronunciationModal, imageLinkOk } from "../features/media/media";
 import { SessionView } from "../features/session/SessionView";
 import { Splash } from "../features/auth/LoginPage";
-import { BADGES, BUILTIN_CHALLENGES, BUILTIN_GRAMMAR, BUILTIN_WORDS, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTERY_STAGE_RANK, PRODUCTION_MODES, RECENT_RESULT_LIMIT, TOPIC_ICONS, WORDS, confusionCount, formatAccuracy, formatStars, getMasteryStage, getStarsForAccuracy, levelGroups, levelItemKey, levelStageBreakdown, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setLastChallengeId, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
+import { BADGES, BUILTIN_CHALLENGES, BUILTIN_GRAMMAR, BUILTIN_WORDS, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTERY_STAGE_RANK, PRODUCTION_MODES, RECENT_RESULT_LIMIT, TOPIC_ICONS, WORDS, confusionCount, formatAccuracy, formatStars, getMasteryStage, getStarsForAccuracy, isWordKey, levelGroups, levelItemKey, levelStageBreakdown, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setLastChallengeId, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildEntryQuestion, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, entryFileMeta, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, uniqueStrings, v2SessionFromEntries } from "../engine/questions";
 import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, locateReportSource, normalizeAnswerText, reviewReportedQuestion, spellingDistanceInfo } from "../engine/ai";
 import { DEFAULT_SETTINGS, SCHEMA_VERSION, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
-import { AdminControlCenter } from "../features/admin/AdminControlCenter";
-import { LiveChallenge } from "../features/live/LiveChallenge";
+import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
+// Screens most players open rarely load on demand, keeping the first
+// download small: Admin (and all its tools), Live, Leaderboard, Profile.
+const AdminControlCenter = lazy(() => import("../features/admin/AdminControlCenter").then((m) => ({ default: m.AdminControlCenter })));
+const LiveChallenge = lazy(() => import("../features/live/LiveChallenge").then((m) => ({ default: m.LiveChallenge })));
+const Leaderboard = lazy(() => import("../features/social/Leaderboard"));
+const ProfilePage = lazy(() => import("../features/social/ProfilePage"));
+
 export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const [loaded, setLoaded] = useState(false);
   const [storageWarning, setStorageWarning] = useState(null);
@@ -1310,14 +1316,24 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
     }
   }
 
-  async function handleQuickBackup() {
-    // One click, no need to open Data Center at all — for the "I'm about
-    // to publish a new version" moment when speed matters most.
+  function backupPayload() {
     const content = V2.contentOnly(liveContent());
-    const payload = {
+    return {
       ...progressExtrasRef.current, ...content, kind: "backup", schemaVersion: SCHEMA_VERSION, contentSchemaVersion: 2,
       activeSession, levelOrder: LEVEL_ORDER, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings,
     };
+  }
+  function downloadBackup() {
+    const blob = new Blob([JSON.stringify(backupPayload())], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `word-hunter-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  async function handleQuickBackup() {
+    // One click, no need to open Data Center at all.
+    const payload = backupPayload();
     try {
       await navigator.clipboard.writeText(JSON.stringify(payload));
       setQuickBackupCopied(true);
@@ -1448,6 +1464,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const fileMeta = currentEntry ? entryFileMeta(currentEntry) : null;
   const FileIcon = fileMeta ? fileMeta.icon : Search;
 
+  const masteredWordCount = Object.entries(mastery).filter(([key, stats]) => isWordKey(key) && V2.stage(stats) === "Mastered").length;
+  const showNav = !["session", "playing", "finalReport", "speed"].includes(screen);
+
   if (loadError) return (
     <main className="splash" role="alert">
       <div className="splash-inner">
@@ -1460,7 +1479,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   if (!loaded) return <Splash />;
 
   return (
-    <div className="wh-root">
+    <div className={`wh-root${showNav ? " has-nav" : ""}`}>
 
       <div className={`wh-container${screen === "admin" ? " wh-container-admin" : ""}`}>
         {toast && (
@@ -1473,36 +1492,31 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
         )}
 
         {storageWarning && <div className="wh-panel wh-storage-warning" role="status"><span>{storageWarning}</span><button className="wh-warning-close" aria-label="Dismiss" onClick={()=>setStorageWarning(null)}><X size={14} /></button></div>}
-        <div className="wh-header">
-          <div>
-            <h1 className="wh-title">
-              WORD <span>HUNTER</span>
-            </h1>
-            <div className="wh-sub">{totalLevelsCleared}/{LEVELS.length} levels cleared · V7.1 unified engine</div>
+        <header className="wh-header ui-header">
+          <div className="ui-header-top">
+            <div>
+              <h1 className="wh-title">WORD <span>HUNTER</span></h1>
+              <div className="wh-sub">{profile?.username && profile.id !== "local" ? `Hi ${profile.username} · ` : ""}{totalLevelsCleared}/{LEVELS.length} levels cleared</div>
+            </div>
+            <SyncStatus repo={repo} />
           </div>
-          <div className="wh-stats">
-            <span>Score {score}</span>
-            <span className="wh-stat-streak" title="Answer streak">
-              <Flame size={14} /> {streak}
-            </span>
-            <span title="Study streak">Study {studyStreak}d</span>
-            <button className="wh-icon-btn" onClick={() => { setBadgesOpen((v) => !v); setDashboardOpen(false); }} title="View badges">
+          <div className="wh-stats ui-stat-row">
+            <span className="ui-stat" title="Score"><b>{score}</b> pts</span>
+            <span className="ui-stat wh-stat-streak" title="Answer streak"><Flame size={14} /> {streak}</span>
+            <span className="ui-stat" title="Study streak (days in a row)"><b>{studyStreak}</b>d streak</span>
+            <button className="wh-icon-btn ui-stat" onClick={() => { setBadgesOpen((v) => !v); setDashboardOpen(false); }} title="View badges">
               <Trophy size={13} /> {earnedBadgesCount}/{BADGES.length}
             </button>
-            <button className="wh-icon-btn" onClick={() => { setDashboardOpen((v) => !v); setBadgesOpen(false); setImportOpen(false); }} title="View stats dashboard">
+            <button className="wh-icon-btn ui-stat" onClick={() => { setDashboardOpen((v) => !v); setBadgesOpen(false); setImportOpen(false); }} title="View stats dashboard">
               <BarChart3 size={13} /> Stats
             </button>
-            {isAdmin&&<button className="wh-icon-btn" onClick={()=>{setScreen("admin");setBadgesOpen(false);setDashboardOpen(false);setImportOpen(false);}} title="Open Content and Learning Control Center"><ListChecks size={13}/> Admin</button>}
-            <button className="wh-icon-btn" onClick={handleQuickBackup} title="Copy a full backup to your clipboard in one click">
-              {quickBackupCopied ? <><ClipboardCheck size={13} /> Copied</> : <><Copy size={13} /> Quick Backup</>}
-            </button>
-            <div className="wh-ask-bar">
-              <input value={askAiTerm} onChange={event=>setAskAiTerm(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();openAskAi(askAiTerm);}}} placeholder="Ask about a word…" aria-label="Ask AI about a word" />
-              <button className="wh-icon-btn" onClick={()=>openAskAi(askAiTerm)} title="Ask AI"><HelpCircle size={13}/> Ask AI</button>
-              <button className="wh-icon-btn" onClick={()=>{const term=askAiTerm.trim();if(term)setListenTerm(term);}} title="Hear it pronounced"><Volume2 size={13}/> Listen</button>
-            </div>
           </div>
-        </div>
+          <div className="wh-ask-bar">
+            <input value={askAiTerm} onChange={event=>setAskAiTerm(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();openAskAi(askAiTerm);}}} placeholder="Look up a word…" aria-label="Ask AI about a word" enterKeyHint="search" />
+            <button className="wh-icon-btn" onClick={()=>openAskAi(askAiTerm)} title="Ask AI"><HelpCircle size={15}/><span className="ui-hide-narrow"> Ask AI</span></button>
+            <button className="wh-icon-btn" onClick={()=>{const term=askAiTerm.trim();if(term)setListenTerm(term);}} title="Hear it pronounced" aria-label="Listen"><Volume2 size={15}/></button>
+          </div>
+        </header>
         {listenTerm&&<PronunciationModal term={listenTerm} onClose={()=>setListenTerm(null)}/>}
         {askAiOpen&&<div className="wh-ai-drawer" role="dialog" aria-modal="true" aria-label="Ask AI about a word" onMouseDown={event=>{if(event.target===event.currentTarget)setAskAiOpen(false);}}>
           <aside className="wh-ai-drawer-card">
@@ -1519,7 +1533,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
             </article>}
           </aside>
         </div>}
-        {screen==="admin"&&isAdmin&&<AdminControlCenter content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onResolveReport={resolveQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} onOpenImport={()=>{setScreen("levels");setContentPanelView("review");setImportOpen(true);}} onExport={mode=>{handleExport(mode);setScreen("levels");setContentPanelView("export");setImportOpen(true);}}/>}
+        {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminControlCenter content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onResolveReport={resolveQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} onOpenImport={()=>{setScreen("levels");setContentPanelView("review");setImportOpen(true);}} onExport={mode=>{handleExport(mode);setScreen("levels");setContentPanelView("export");setImportOpen(true);}}/></Suspense>}
         {confirmAction && (
           <div className="wh-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmAction(null); }}>
           <div className="wh-panel wh-confirm-panel" role="alertdialog">
@@ -1905,13 +1919,13 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
               const LevelIcon = TOPIC_ICONS[level.title] || BookOpen;
               return (
                 <div key={level.id} className={`wh-level-card ${unlocked ? "" : "locked"}`}>
-                  <button
+                  {isAdmin && <button
                     className="wh-level-delete-btn"
                     title="Delete category"
                     onClick={(e) => { e.stopPropagation(); setDeleteCategoryTarget(level); }}
                   >
                     <Trash2 size={14} />
-                  </button>
+                  </button>}
                   <div className="wh-level-num">{String(i + 1).padStart(2, "0")}</div>
                   <div className="wh-level-icon"><LevelIcon size={20} /></div>
                   <div className="wh-level-info">
@@ -2265,7 +2279,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
           </div>
         )}
 
-        {screen === "live" && <LiveChallenge player={livePlayer} levels={LEVELS} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} />}
+        {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge player={livePlayer} levels={LEVELS} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} /></Suspense>}
+        {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} /></Suspense>}
+        {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => { setScreen("levels"); setDashboardOpen(true); setBadgesOpen(false); }} /></Suspense>}
 
         {screen === "speedResults" && (
           <div className="wh-results-card">
@@ -2284,7 +2300,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
           </div>
         )}
       </div>
+      {showNav && <BottomNav screen={screen} isAdmin={isAdmin} onNavigate={(id) => { setBadgesOpen(false); setDashboardOpen(false); setImportOpen(false); setScreen(id); window.scrollTo({ top: 0 }); }} />}
     </div>
   );
 }
-

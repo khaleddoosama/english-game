@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#1c1a17"/>
+  <g transform="translate(51 51) scale(0.8)">
+    <circle cx="226" cy="222" r="118" fill="none" stroke="#c9a227" stroke-width="36"/>
+    <line x1="312" y1="310" x2="410" y2="408" stroke="#c9a227" stroke-width="48" stroke-linecap="round"/>
+    <text x="226" y="268" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="140" fill="#ede4d3">W</text>
+  </g>
+</svg>
