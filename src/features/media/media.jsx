@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Volume2, X } from "lucide-react";
 import { V2 } from "../../engine/v2";
 import { speechUrl } from "../../lib/ai";
+import { isStoredImage } from "../../lib/images";
 // Pronunciation: two independent sources, tried in order.
 //  1. dictionaryapi.dev — free, no key, returns real human-recorded audio.
 //     May be blocked by a strict sandbox CSP, so failure is expected and fine.
@@ -54,35 +55,8 @@ export function speakWithBrowser(term) {
   window.speechSynthesis.speak(utterance);
   return !!voice;
 }
-// Shows an image, but never fails silently: if the browser can't load it
-// (broken link, or this sandbox blocking the domain — the same class of
-// restriction that blocks the YouGlish script), it says so visibly with a
-// direct link to check, instead of just vanishing with no trace.
-// A picture chosen from the device → a small JPEG data URI (longest side
-// `max` px, white behind transparency) stored in the word's `image`, so it
-// shows everywhere without depending on an outside host.
-export function imageFileToDataUrl(file, max = 256, quality = 0.82) {
-  return new Promise((resolve, reject) => {
-    if (!file || !/^image\/(png|jpe?g|webp|gif)$/i.test(file.type)) return reject(new Error("Choose a PNG, JPG, WebP or GIF picture."));
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Couldn't read that file."));
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = () => reject(new Error("That file isn't a picture the browser can open."));
-      img.onload = () => {
-        const scale = Math.min(1, max / Math.max(img.width, img.height));
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.max(1, Math.round(img.width * scale)); canvas.height = Math.max(1, Math.round(img.height * scale));
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
-      };
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
+// Pictures chosen from the device are resized and uploaded by
+// lib/images.js; words keep only the URL.
 // Photo links on words, tried once in the background: url -> "ok" | "bad" |
 // "pending". Picture Hunter only asks about a link-only picture that loaded.
 export const IMAGE_LINKS = new Map();
@@ -102,25 +76,20 @@ export function checkImageLink(url, timeout = 10000) {
 }
 export function checkImageLinks(words) {
   if (typeof Image === "undefined") return;
-  for (const w of words) if (typeof w.image === "string" && /^https?:\/\//i.test(w.image)) checkImageLink(w.image);
+  for (const w of words) if (typeof w.image === "string" && /^https?:\/\//i.test(w.image) && !isStoredImage(w.image)) checkImageLink(w.image);
 }
-export const imageLinkOk = (url) => IMAGE_LINKS.get(url) === "ok";
+// Pictures in our own storage always load; outside links count once seen loading.
+export const imageLinkOk = (url) => isStoredImage(url) || IMAGE_LINKS.get(url) === "ok";
 // A word's picture: the photo link if it loads, otherwise its drawing; a
 // blocked or broken photo quietly falls back instead of showing an error.
-export function WordPicture({ word, className = "wh-flashcard-img" }) {
+export function WordPicture({ word, className = "wh-flashcard-img", lazy = false }) {
   const [failed, setFailed] = useState(false);
   const photo = typeof word?.photo === "string" ? word.photo : typeof word?.image === "string" ? word.image : null;
   const drawing = word?.picture || word?.illustration;
   useEffect(() => setFailed(false), [photo]);
-  if (photo && !failed) return <img src={photo} alt="" referrerPolicy="no-referrer" className={className} onError={() => setFailed(true)} />;
-  if (V2.isIllustration(drawing)) return <img src={`data:image/svg+xml;utf8,${encodeURIComponent(drawing)}`} alt="" className={`${className} wh-word-drawing`} />;
+  if (photo && !failed) return <img src={photo} alt="" referrerPolicy="no-referrer" decoding="async" loading={lazy ? "lazy" : "eager"} className={className} onError={() => setFailed(true)} />;
+  if (V2.isIllustration(drawing)) return <img src={`data:image/svg+xml;utf8,${encodeURIComponent(drawing)}`} alt="" decoding="async" className={`${className} wh-word-drawing`} />;
   return null;
-}
-export function SmartImage({ src, className }) {
-  const [failed, setFailed] = useState(false);
-  if (!src) return null;
-  if (failed) return <p className="wh-img-blocked">Image didn't load here (broken link, or blocked by this sandbox). <a href={src} target="_blank" rel="noopener noreferrer">Open it directly to check →</a></p>;
-  return <img src={src} alt="" className={className} onError={() => setFailed(true)} />;
 }
 // Pronunciation, best source first: a human recording (single words, from
 // dictionaryapi.dev), then Gemini's voice (phrases and sentences, cached on

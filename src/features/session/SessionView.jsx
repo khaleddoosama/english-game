@@ -5,6 +5,7 @@ import { PronunciationModal, WordPicture } from "../media/media";
 import { MODE_META } from "../../engine/data";
 import { SPEED_SECONDS, speedStats } from "../../engine/questions";
 import { evaluateAlternativeGap, evaluateFreeForm, regenerateWordExplanation } from "../../engine/ai";
+import { preloadImage } from "../../lib/images";
 // Embedded shared answer controls for all new sessions.
 export const SessionView = (() => {
 const { grade, sentence, reinforcement } = V2;
@@ -105,6 +106,9 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
   useEffect(()=>{if(s?.index)cardRef.current?.scrollIntoView({behavior:'smooth',block:'start'});},[s?.index]);
   const save=patch=>s&&onChange({...s,...patch});
   const q=s?.queue?.[s.index];const draft=s?.draft||{};
+  // Fetch the next question's picture (and this word's reward picture) while
+  // the learner is still answering, so it appears instantly.
+  useEffect(()=>{const next=s?.queue?.[(s?.index||0)+1];if(next?.photo)preloadImage(next.photo);const w=q?V2.findWord(words,q.targets?.[0]):null;if(w?.image)preloadImage(w.image);},[s?.index]);
   // Only shown after a correct answer — by then the word is already known,
   // so an image here is a reward/reinforcement, never a hint toward it.
   const correctWord=result?.correct&&!result.reported&&q?.mode!=='picture'?V2.findWord(words,q?.targets?.[0]):null;
