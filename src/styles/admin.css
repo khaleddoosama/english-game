@@ -311,3 +311,8 @@
   .adm-audit-sum { grid-column: 2 / -1; white-space: normal; }
   .adm-audit-detail { padding-left: 14px; }
 }
+.adm-spacer { height: 14px; }
+.adm-sql-help { margin-top: 18px; padding: 12px 14px; border: 1px solid var(--adm-line); border-radius: 10px; background: var(--adm-card); font-size: 13px; }
+.adm-sql-help summary { cursor: pointer; font-weight: 600; }
+.adm-sql-help ul { padding-left: 18px; line-height: 1.6; }
+.adm-sql-help code { font: 12px var(--font-mono); background: #f1f2ef; padding: 1px 5px; border-radius: 4px; }

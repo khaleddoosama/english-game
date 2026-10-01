@@ -2,7 +2,7 @@
 // reports with paginated tables and bulk actions, an audit log, and the
 // classic tools (editor, grammar, health, settings, data) embedded as-is.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, BookOpen, Database, Flag, HeartPulse, History, LayoutDashboard, RefreshCw, Scale, Settings, Sparkles, Swords, Users, Wrench } from "lucide-react";
+import { ArrowLeft, ShieldCheck, BookOpen, Database, Flag, HeartPulse, History, LayoutDashboard, RefreshCw, Scale, Settings, Sparkles, Swords, Users, Wrench } from "lucide-react";
 import { AdminControlCenter } from "./AdminControlCenter";
 import { createAdminApi } from "./adminApi";
 import { RangePicker, useAsync } from "./adminUi";
@@ -13,6 +13,7 @@ import { Words } from "./sections/Words";
 import { Reports } from "./sections/Reports";
 import { AiUsage, LiveMatches } from "./sections/Activity";
 import { AuditLog } from "./sections/AuditLog";
+import { DataQuality } from "./sections/DataQuality";
 import "../../styles/admin.css";
 
 const NAV = [
@@ -27,6 +28,7 @@ const NAV = [
     { id: "reports", label: "Reports", icon: Flag, desc: "Questions players flagged" },
     { id: "grammar", label: "Grammar", icon: Scale, desc: "Grammar rules and their questions", classic: "grammar" },
     { id: "editor", label: "Content editor", icon: Wrench, desc: "Edit any item, categories, stories, combos and challenges", classic: "content" },
+    { id: "quality", label: "Data quality", icon: ShieldCheck, desc: "Problems in the data, word completeness and accuracy by type" },
     { id: "health", label: "Content health", icon: HeartPulse, desc: "Find and fix weak content with AI", classic: "health" },
   ] },
   { group: "System", items: [
@@ -125,6 +127,7 @@ export function AdminPanel(props) {
         {section === "words" && <Words content={content} wordStats={wordStats} mastery={mastery} onUpdate={onUpdate} onEdit={editWord} onCreate={createWord} />}
         {section === "reports" && <Reports reports={reports} content={content} onResolve={onResolveReport} onReopen={onReopenReport} onDelete={onDeleteReport} onRetire={onRetireVariant} onReviewReport={onReviewReport} onUpdate={onUpdate}
           openKey={item} onOpen={(key) => navigate(pathFor("admin", { section: "reports", item: key }) + window.location.search)} onOpenWord={editWord} onOpenPlayer={openPlayerByName} />}
+        {section === "quality" && <DataQuality api={api} tick={tick} onOpenWord={editWord} onOpenReport={(id) => setSection("reports", id)} onOpenPlayer={openPlayerByName} onNavigate={setSection} />}
         {section === "audit" && <AuditLog api={api} tick={tick} content={content} onUpdate={onUpdate} players={players} onOpenWord={editWord} onOpenReport={(id) => setSection("reports", id)} onOpenPlayer={openPlayerByName} />}
         {current.classic && <div className="adm-classic">
           <AdminControlCenter {...props} embedded tab={current.classic} focus={focus} />
