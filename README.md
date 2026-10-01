@@ -96,7 +96,10 @@ Migrations live in `supabase/migrations` (apply in order). They create:
 
 Each feature has SQL tests in `supabase/tests/*.sql`. Run one as
 `begin; <file>; rollback;`: it ends by raising `… TESTS PASSED`, and the
-rollback leaves nothing behind.
+rollback leaves nothing behind. `supabase/ci/run-tests.sh` applies every
+migration to an empty Postgres (with stand-ins for Supabase's own schemas)
+and runs all the SQL tests; GitHub Actions (`.github/workflows/ci.yml`)
+runs it, the unit tests and the build on every push.
 
 Accounts are **username + password**. Sign-up goes through the
 `register_player` function, so no email is involved. The admin account is
