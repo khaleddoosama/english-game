@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Award, BarChart3, BookOpen, CheckCircle2, ClipboardCheck, Copy, Download, Flag, Flame, HelpCircle, ListChecks, Lock, Play, Search, Sparkles, Target, Trash2, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
+import { ArrowLeft, Award, BarChart3, Settings as SettingsIcon, Wrench, BookOpen, CheckCircle2, ClipboardCheck, Copy, Download, Flag, Flame, HelpCircle, ListChecks, Lock, Play, Search, Sparkles, Target, Trash2, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
 import { V2 } from "../engine/v2";
 import { PronunciationModal, imageLinkOk } from "../features/media/media";
 import { SessionView } from "../features/session/SessionView";
@@ -10,6 +10,7 @@ import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequir
 import { DEFAULT_SETTINGS, SCHEMA_VERSION, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
+import { getAppSettings, useAppSettings } from "../lib/appSettings";
 // Screens most players open rarely load on demand, keeping the first
 // download small: Admin (and all its tools), Live, Leaderboard, Profile.
 // Local mode (no accounts): each browser tab is its own player, kept for
@@ -30,9 +31,16 @@ const AdminPanel = lazy(() => import("../features/admin/AdminPanel").then((m) =>
 const LiveChallenge = lazy(() => import("../features/live/LiveChallenge").then((m) => ({ default: m.LiveChallenge })));
 const Leaderboard = lazy(() => import("../features/social/Leaderboard"));
 const ProfilePage = lazy(() => import("../features/social/ProfilePage"));
+const SettingsPage = lazy(() => import("../features/settings/SettingsPage"));
 
 export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const [loaded, setLoaded] = useState(false);
+  const app = useAppSettings();
+  // The announcement can be hidden per message (a new message shows again).
+  const announcementKey = `wh-announcement-hidden:${app.announcement.length}:${app.announcement.slice(0, 40)}`;
+  const [announcementHidden, setAnnouncementHidden] = useState(false);
+  useEffect(() => { try { setAnnouncementHidden(localStorage.getItem(announcementKey) === "1"); } catch {} }, [announcementKey]);
+  const hideAnnouncement = () => { setAnnouncementHidden(true); try { localStorage.setItem(announcementKey, "1"); } catch {} };
   const [storageWarning, setStorageWarning] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const livePlayer = useMemo(() => (profile && profile.id !== "local"
@@ -770,7 +778,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
         studyRef.current = { studyStreak: data.studyStreak, bestStudyStreak: data.bestStudyStreak, lastStudyDate: data.lastStudyDate };
         setBestSpeedScore(data.bestSpeedScore); setBestSpeedCombo(data.bestSpeedCombo);
         setConfusions(data.confusions); confusionsRef.current = data.confusions;
-        setSettings(normalizeSettings(data.settings));
+        // A new player starts with the admin's defaults (Admin -> Settings).
+        setSettings(normalizeSettings(raw?.settings ? data.settings : { ...getAppSettings().newPlayerDefaults }));
         seenBadgesRef.current = new Set(BADGES.filter((b) => getBadgeProgress(b, { mastery: data.mastery, bestStreak: data.bestStreak }).earned).map((b) => b.id));
       } catch (e) {
         console.error("Could not read progress:", e);
@@ -1308,7 +1317,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
       queue.push(speedQuestionV2(raw, i));
     }
     if (!queue.length) { setToast({ text: "No short questions with safe options are available." }); return; }
-    launchSession({ kind: "speed", id: `speed-${Date.now()}`, title: "Speed Round", queue, index: 0, answers: [], introductions: [], deadline: Date.now() + SPEED_SECONDS * 1000 });
+    launchSession({ kind: "speed", id: `speed-${Date.now()}`, title: "Speed Round", queue, index: 0, answers: [], introductions: [], seconds: settings.speedSeconds || SPEED_SECONDS, deadline: Date.now() + (settings.speedSeconds || SPEED_SECONDS) * 1000 });
   }
 
   async function handleReset() {
@@ -1517,8 +1526,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   useEffect(() => {
     if (!loaded) return;
     const nothingToPlay = route.screen === "play" && playScreen === "session" && (!activeSession || activeSession.completed);
-    if (route.screen === "notFound" || (route.screen === "admin" && !isAdmin) || nothingToPlay) navigate("/", { replace: true });
-  }, [loaded, route, playScreen, activeSession, isAdmin]);
+    const hiddenBoard = route.screen === "leaderboard" && !app.leaderboard && !isAdmin;
+    if (route.screen === "notFound" || (route.screen === "admin" && !isAdmin) || nothingToPlay || hiddenBoard) navigate("/", { replace: true });
+  }, [loaded, route, playScreen, activeSession, isAdmin, app.leaderboard]);
 
   if (loadError) return (
     <main className="splash" role="alert">
@@ -1530,9 +1540,19 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
     </main>
   );
   if (!loaded) return <Splash />;
+  // Maintenance (Admin -> Settings): players wait, the admin plays on.
+  if (app.maintenance && !isAdmin) return (
+    <main className="splash" role="status">
+      <div className="splash-inner">
+        <h1 className="auth-title">Word <span>Hunter</span></h1>
+        <p className="load-error"><Wrench size={16} /> {app.maintenanceMessage || "We're improving the game. Please come back a little later."}</p>
+        <button className="auth-submit" onClick={() => window.location.reload()}>Try again</button>
+      </div>
+    </main>
+  );
 
   return (
-    <div className={`wh-root${showNav ? " has-nav" : ""}${screen === "admin" ? " screen-admin" : ""}`}>
+    <div className={`wh-root${showNav ? " has-nav" : ""}${screen === "admin" ? " screen-admin" : ""}${settings.textSize !== "normal" ? ` text-${settings.textSize}` : ""}${settings.shortcuts ? "" : " no-shortcuts"}${settings.reduceMotion ? " reduce-motion" : ""}`}>
 
       <div className={`wh-container${screen === "admin" ? " wh-container-admin" : ""}`}>
         {toast && (
@@ -1562,6 +1582,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
             </button>
             <button className="wh-icon-btn ui-stat" onClick={() => setScreen(dashboardOpen ? "levels" : "stats")} aria-pressed={dashboardOpen} title="View stats dashboard">
               <BarChart3 size={13} /> Stats
+            </button>
+            <button className="wh-icon-btn ui-stat" onClick={() => setScreen(screen === "settings" ? "levels" : "settings")} aria-pressed={screen === "settings"} title="Settings" aria-label="Settings">
+              <SettingsIcon size={13} />
             </button>
           </div>
           <div className="wh-ask-bar">
@@ -1853,6 +1876,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
         )}
 
         {screen === "levels" && <>
+          {app.announcement && !announcementHidden && <div className={`wh-announcement ${app.announcementTone}`} role="status"><p>{app.announcement}</p><button aria-label="Hide this message" onClick={hideAnnouncement}><X size={15} /></button></div>}
           {showFreshCopyPrompt && <div className="wh-fresh-copy-banner">
             <p><b>Fresh copy detected.</b> No saved progress or content found here — if you have a backup from a previous version, restore it now before you start playing.</p>
             <div className="wh-regen-actions">
@@ -1880,7 +1904,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
             {!customStories.length&&<p>No authored stories loaded. Import a Content v2 file to add them.</p>}{[...customStories].sort((a,b)=>a.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length-b.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length).map(story=>{const fresh=story.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length;const record=solvedStories.find(e=>e.id===story.id);return <article className="wh-v2-learn" key={story.id}><strong>{story.title}{record&&<span className="wh-story-solved-flag"><CheckCircle2 size={13}/> Solved · {record.correct}/{record.total}</span>}</strong><p>{story.questions.length}{story.grammarQuestions?.length?` + ${story.grammarQuestions.length} grammar`:""} questions · {fresh?`${fresh} new words: preview first`:"Ready for review"}</p><button className="wh-level-btn" onClick={()=>launchStory(story)}>{record?"Play again":"Open story"}</button></article>;})}</div>}
           {section==="challenges"&&<div className="wh-panel"><h2>Opposite Chain</h2>{[...new Set(WORDS.filter(w=>w.chainGroup&&w.opposite).map(w=>w.chainGroup))].map(group=><button key={group} className="wh-level-btn" onClick={()=>launchChain(group)}>{group}</button>)}<h2>Authored Challenges</h2>{!CHALLENGES.length&&<p>No authored challenges loaded.</p>}{CHALLENGES.map(c=><button key={c.id} className="wh-level-btn" onClick={()=>launchAuthoredChallenge(c)}>{c.label||c.id}</button>)}</div>}
         </>}
-        {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={reportSessionQuestion} onReviewReport={reviewQuestionReport} onWithdrawReport={deleteQuestionReport} onUpdateWord={isAdmin?updateWordFields:undefined} sound={settings.sound} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onResult={recordSessionResult} onAskWord={openAskAi}/>}
+        {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={reportSessionQuestion} onReviewReport={reviewQuestionReport} onWithdrawReport={deleteQuestionReport} onUpdateWord={isAdmin?updateWordFields:undefined} sound={settings.sound} prefs={{ autoAdvanceMs: settings.autoAdvanceMs, hints: settings.hints, speakWord: settings.speakWord }} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onResult={recordSessionResult} onAskWord={openAskAi}/>}
 
 
         {screen === "levels" && (section === "challenges" || section === "practice") && (
@@ -2332,7 +2356,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
           </div>
         )}
 
-        {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge player={livePlayer} levels={LEVELS} code={route.code} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} /></Suspense>}
+        {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge player={livePlayer} levels={LEVELS} code={route.code} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} limits={{ maxPlayers: isAdmin ? 10 : app.liveMaxPlayers, canCreate: isAdmin || app.liveCreate !== "admin", defaultCount: settings.liveQuestions ?? app.liveDefaultQuestions, defaultSeconds: settings.liveSeconds ?? app.liveDefaultSeconds, maxHours: isAdmin ? 168 : app.liveMaxHours }} /></Suspense>}
+        {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} /></Suspense>}
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} /></Suspense>}
         {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
 
@@ -2353,7 +2378,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
           </div>
         )}
       </div>
-      {showNav && <BottomNav screen={screen} isAdmin={isAdmin} onNavigate={(id) => setScreen(id)} />}
+      {showNav && <BottomNav screen={screen} isAdmin={isAdmin} showRanks={isAdmin || app.leaderboard} onNavigate={(id) => setScreen(id)} />}
     </div>
   );
 }

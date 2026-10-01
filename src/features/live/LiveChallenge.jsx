@@ -131,7 +131,8 @@ function CreateForm({ api, levels, pools, getSeen, onRefresh, onCancel, onCreate
   const [seconds, setSeconds] = useState(limits.defaultSeconds ?? 20);
   const [maxPlayers, setMaxPlayers] = useState(cap);
   const [startMode, setStartMode] = useState("together");
-  const [hours, setHours] = useState(24);
+  const hourOptions = HOURS.filter(([h]) => h <= (limits.maxHours || 168));
+  const [hours, setHours] = useState(Math.min(24, hourOptions.at(-1)?.[0] || 24));
   const [kinds, setKinds] = useState(LIVE_KINDS.map((k) => k.id));
   const [reveal, setReveal] = useState(true);
   const [title, setTitle] = useState("");
@@ -184,7 +185,7 @@ function CreateForm({ api, levels, pools, getSeen, onRefresh, onCancel, onCreate
         <small className="lv-hint">2 for a duel, more for a group. The challenge closes when it's full.</small>
       </div>
       <Segmented label="Start" value={startMode} onChange={setStartMode} options={[["together", "Together, when I press Start"], ["anytime", "Anytime, as each player opens it"]]} />
-      <Segmented label="The link works for" value={hours} onChange={setHours} options={HOURS} />
+      <Segmented label="The link works for" value={hours} onChange={setHours} options={hourOptions} />
       <div className="lv-field">
         <span>Question types</span>
         <div className="lv-chips">

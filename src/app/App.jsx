@@ -4,6 +4,11 @@ import { isLocalMode } from "../lib/supabase";
 import { createLocalRepo, createSupabaseRepo } from "../lib/repo";
 import { LoginPage, Splash } from "../features/auth/LoginPage";
 import WordHunter from "./WordHunter";
+import { loadAppSettings } from "../lib/appSettings";
+
+// App-wide settings (sign-ups, maintenance, announcement…) load once at
+// start; the cached copy is used meanwhile and offline.
+loadAppSettings();
 
 function Game({ user, profile }) {
   const isAdmin = profile?.role === "admin";

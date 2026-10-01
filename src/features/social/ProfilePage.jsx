@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { navigate } from "../../lib/router";
 import { formatMs } from "../live/liveRules";
-import { Award, Copy, Download, KeyRound, LogOut, Users } from "lucide-react";
+import { Award, Copy, Download, KeyRound, LogOut, SlidersHorizontal, Users } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { isLocalMode } from "../../lib/supabase";
 import { fetchLiveHistory } from "./socialApi";
@@ -41,7 +41,10 @@ export default function ProfilePage({ stats, onCopyBackup, onDownloadBackup, onO
         </div>
       </header>
       <div className="ui-tiles">{tiles.map(([label, value]) => <div key={label} className="ui-tile"><b>{value}</b><span>{label}</span></div>)}</div>
-      <button className="ui-row-btn" onClick={onOpenStats}><Award size={16} /> Full stats &amp; weak words</button>
+      <div className="ui-row-actions">
+        <button className="ui-row-btn" onClick={onOpenStats}><Award size={16} /> Full stats &amp; weak words</button>
+        <button className="ui-row-btn" onClick={() => navigate("/settings")}><SlidersHorizontal size={16} /> Settings</button>
+      </div>
 
       <h3 className="ui-section-title"><Users size={16} /> Recent live matches</h3>
       {history === null ? <div className="ui-skeleton-row" /> : history.length === 0 ? <p className="ui-muted">No live matches yet. Create a challenge from the Live tab and send the link to your friends.</p> : (

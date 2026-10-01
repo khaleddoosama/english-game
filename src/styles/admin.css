@@ -316,3 +316,24 @@
 .adm-sql-help summary { cursor: pointer; font-weight: 600; }
 .adm-sql-help ul { padding-left: 18px; line-height: 1.6; }
 .adm-sql-help code { font: 12px var(--font-mono); background: #f1f2ef; padding: 1px 5px; border-radius: 4px; }
+
+/* ---------------------------------------------------- app settings */
+.adm-set-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+.adm-settings .adm-card { display: grid; gap: 10px; align-content: start; }
+.adm-settings .adm-card h3 { display: flex; align-items: center; gap: 8px; }
+.adm-settings .adm-card p { margin: 0; font-size: 13px; }
+.adm-set-field { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--adm-line); }
+.adm-set-field > span { display: grid; gap: 2px; font-size: 13.5px; }
+.adm-set-field > span b { font-weight: 500; }
+.adm-set-field > span small { color: var(--adm-muted); font-size: 12px; }
+.adm-switch { position: relative; width: 42px; height: 24px; border-radius: 999px; border: 1px solid var(--adm-line-strong); background: #e6e8e4; cursor: pointer; padding: 0; flex-shrink: 0; }
+.adm-switch i { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s ease; }
+.adm-switch.on { background: var(--adm-good); border-color: var(--adm-good); }
+.adm-switch.on i { transform: translateX(18px); }
+.adm-num { width: 90px; text-align: right; }
+.adm-textarea { width: 100%; min-height: 70px; resize: vertical; box-sizing: border-box; font: 13px/1.45 var(--font-body); }
+.adm-preview.wh-announcement { color: #ede4d3; background: #2a2620; }
+.adm-savebar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 8px; margin-top: 16px; padding: 12px 14px; border: 1px solid var(--adm-line); border-radius: 12px; background: rgba(255,255,255,.96); backdrop-filter: blur(4px); }
+.adm-savebar > span { flex: 1; color: var(--adm-muted); font-size: 13px; }
+.adm-savebar.dirty { border-color: var(--adm-accent); box-shadow: 0 6px 20px rgba(0,0,0,.08); }
+.adm-savebar.dirty > span { color: var(--adm-warn); font-weight: 600; }

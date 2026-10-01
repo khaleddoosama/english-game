@@ -1,5 +1,6 @@
 // Live matches, AI usage and the admin audit log.
 import { useMemo } from "react";
+import { useAppSettings } from "../../../lib/appSettings";
 import { DataTable } from "../DataTable";
 import { BarList, ChartCard, ColumnChart, SimpleTable, formatNumber } from "../charts";
 import { Badge, Kpi, Notice, fmtDate, longDay, relTime, shortDay } from "../adminUi";
@@ -74,6 +75,7 @@ export function LiveMatches({ matches, challenges = { data: [] }, activity, rang
 }
 
 export function AiUsage({ usage, activity, range, overview }) {
+  const limit = useAppSettings().aiDailyLimit;
   const rows = usage.data || [];
   const perDay = dayRows(activity, "ai_calls");
   const perPlayer = useMemo(() => {
@@ -90,7 +92,7 @@ export function AiUsage({ usage, activity, range, overview }) {
   return (
     <div className={`adm-section ${usage.loading ? "is-refreshing" : ""}`}>
       {usage.error && <Notice tone="error">{usage.error}</Notice>}
-      <Notice>Players get {150} AI calls a day (change with <code>PLAYER_DAILY_AI_CALLS</code> on Vercel). The admin is unlimited. Each call is one Gemini request.</Notice>
+      <Notice>Players get {limit} AI calls a day; change it, or turn AI off for players, in Settings. The admin is unlimited. Each call is one Gemini request.</Notice>
       <div className="adm-kpis compact">
         <Kpi label="Today" value={overview.data?.ai_calls_today ?? "—"} />
         <Kpi label={`${range} days`} value={total} trend={perDay.map((r) => r.value)} />

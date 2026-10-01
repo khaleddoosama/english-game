@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { Cloud, CloudOff, Home, ListChecks, Loader2, Trophy, TriangleAlert, User, Users } from "lucide-react";
 
 // Fixed bottom navigation: the game's main places, one tap away on a phone.
-export function BottomNav({ screen, onNavigate, isAdmin }) {
+export function BottomNav({ screen, onNavigate, isAdmin, showRanks = true }) {
   const items = [
     { id: "levels", label: "Home", icon: Home },
     { id: "live", label: "Live", icon: Users },
-    { id: "leaderboard", label: "Ranks", icon: Trophy },
+    ...(showRanks ? [{ id: "leaderboard", label: "Ranks", icon: Trophy }] : []),
     { id: "profile", label: "Profile", icon: User },
     ...(isAdmin ? [{ id: "admin", label: "Admin", icon: ListChecks }] : []),
   ];

@@ -14,6 +14,7 @@ import { Reports } from "./sections/Reports";
 import { AiUsage, LiveMatches } from "./sections/Activity";
 import { AuditLog } from "./sections/AuditLog";
 import { DataQuality } from "./sections/DataQuality";
+import { AppSettings } from "./sections/AppSettings";
 import "../../styles/admin.css";
 
 const NAV = [
@@ -33,7 +34,7 @@ const NAV = [
   ] },
   { group: "System", items: [
     { id: "audit", label: "Activity log", icon: History, desc: "Every change: who, when, which item, and each field before and after" },
-    { id: "settings", label: "Game settings", icon: Settings, desc: "Round size, daily goal, sound", classic: "settings" },
+    { id: "settings", label: "Settings", icon: Settings, desc: "Rules for the whole app: access, announcement, AI, Live Challenge, leaderboard, new players" },
     { id: "data", label: "Data & backup", icon: Database, desc: "Import, export, reset", classic: "data" },
   ] },
 ];
@@ -117,7 +118,7 @@ export function AdminPanel(props) {
           </div>
           <div className="adm-top-actions">
             {showsRange && <RangePicker value={range} onChange={setRange} />}
-            {!current.classic && <button className="adm-btn ghost" onClick={refresh} title={`Updated ${new Date(refreshedAt).toLocaleTimeString()}`}><RefreshCw size={15} className={overview.loading || activity.loading ? "spin" : ""} /> Refresh</button>}
+            {!current.classic && section !== "settings" && <button className="adm-btn ghost" onClick={refresh} title={`Updated ${new Date(refreshedAt).toLocaleTimeString()}`}><RefreshCw size={15} className={overview.loading || activity.loading ? "spin" : ""} /> Refresh</button>}
           </div>
         </header>
         {section === "overview" && <Overview range={range} overview={overview} activity={activity} wordStats={wordStats} players={players} content={content} onOpenWord={editWord} onOpenPlayer={openPlayerByName} onNavigate={setSection} />}
@@ -127,6 +128,7 @@ export function AdminPanel(props) {
         {section === "words" && <Words content={content} wordStats={wordStats} mastery={mastery} onUpdate={onUpdate} onEdit={editWord} onCreate={createWord} />}
         {section === "reports" && <Reports reports={reports} content={content} onResolve={onResolveReport} onReopen={onReopenReport} onDelete={onDeleteReport} onRetire={onRetireVariant} onReviewReport={onReviewReport} onUpdate={onUpdate}
           openKey={item} onOpen={(key) => navigate(pathFor("admin", { section: "reports", item: key }) + window.location.search)} onOpenWord={editWord} onOpenPlayer={openPlayerByName} />}
+        {section === "settings" && <AppSettings />}
         {section === "quality" && <DataQuality api={api} tick={tick} onOpenWord={editWord} onOpenReport={(id) => setSection("reports", id)} onOpenPlayer={openPlayerByName} onNavigate={setSection} />}
         {section === "audit" && <AuditLog api={api} tick={tick} content={content} onUpdate={onUpdate} players={players} onOpenWord={editWord} onOpenReport={(id) => setSection("reports", id)} onOpenPlayer={openPlayerByName} />}
         {current.classic && <div className="adm-classic">

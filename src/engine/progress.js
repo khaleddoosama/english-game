@@ -114,7 +114,20 @@ export const SCHEMA_VERSION = 6;
 // General settings — tunable knobs for round length and question mix.
 // Kept small and additive so old saves without a `settings` block just
 // fall back to these defaults.
-export const DEFAULT_SETTINGS = { questionsPerRound: 12, newWordsPerRound: 3, weakReviewSize: 8, enablePairModes: true, sound: true, dailyGoal: 20, levelView: "lesson" };
+export const DEFAULT_SETTINGS = {
+  questionsPerRound: 12, newWordsPerRound: 3, weakReviewSize: 8, enablePairModes: true, sound: true, dailyGoal: 20, levelView: "lesson",
+  // Play: auto-advance after a right answer (ms, 0 = off), hints, the word
+  // read aloud after answering, Speed Round length.
+  autoAdvanceMs: 0, hints: true, speakWord: false, speedSeconds: 60,
+  // Display: text size, number shortcuts on options, calmer animations.
+  textSize: "normal", shortcuts: true, reduceMotion: false,
+  // Defaults for challenges I create.
+  // null: use the admin's defaults (app settings).
+  liveQuestions: null, liveSeconds: null,
+};
+export const AUTO_ADVANCE_OPTIONS = [0, 1000, 2000, 3000];
+export const SPEED_SECONDS_OPTIONS = [30, 45, 60, 90, 120];
+export const TEXT_SIZES = ["normal", "large", "xlarge"];
 export function normalizeSettings(raw) {
   const s = raw && typeof raw === "object" ? raw : {};
   return {
@@ -127,6 +140,15 @@ export function normalizeSettings(raw) {
     sound: s.sound !== false,
     dailyGoal: Math.max(5, Math.min(100, Number(s.dailyGoal) || DEFAULT_SETTINGS.dailyGoal)),
     levelView: s.levelView === "group" ? "group" : "lesson",
+    autoAdvanceMs: AUTO_ADVANCE_OPTIONS.includes(Number(s.autoAdvanceMs)) ? Number(s.autoAdvanceMs) : DEFAULT_SETTINGS.autoAdvanceMs,
+    hints: s.hints !== false,
+    speakWord: s.speakWord === true,
+    speedSeconds: SPEED_SECONDS_OPTIONS.includes(Number(s.speedSeconds)) ? Number(s.speedSeconds) : DEFAULT_SETTINGS.speedSeconds,
+    textSize: TEXT_SIZES.includes(s.textSize) ? s.textSize : "normal",
+    shortcuts: s.shortcuts !== false,
+    reduceMotion: s.reduceMotion === true,
+    liveQuestions: s.liveQuestions != null && [5, 10, 15, 20, 25, 30].includes(Number(s.liveQuestions)) ? Number(s.liveQuestions) : null,
+    liveSeconds: s.liveSeconds != null && [0, 10, 15, 20, 30, 45, 60].includes(Number(s.liveSeconds)) ? Number(s.liveSeconds) : null,
   };
 }
 export const STORAGE_KEY = "progress-v6";

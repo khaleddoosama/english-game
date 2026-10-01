@@ -17,7 +17,7 @@ export async function POST(request) {
   const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/tts/${path}`;
   const cached = await fetch(publicUrl, { method: "HEAD" }).catch(() => null);
   if (cached?.ok) return json(200, { url: publicUrl, cached: true });
-  const denied = await gate(request);
+  const denied = await gate(request, { kind: "tts" });
   if (denied) return denied;
   let audio;
   try { audio = await speak(text); } catch (e) {

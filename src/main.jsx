@@ -7,6 +7,7 @@ import "./styles/tokens.css";
 import "./styles/app.css";
 import "./styles/auth.css";
 import "./styles/ui.css";
+import "./styles/settings.css";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
