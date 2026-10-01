@@ -65,6 +65,28 @@ Accounts are **username + password**. Sign-up goes through the
 `word-hunter-backup.json` → tick *Also restore progress* → *Restore backup*.
 That loads all content for every player and the admin's own progress.
 
+## Admin panel
+
+Signed in as an admin, the **Admin** tab opens:
+
+- **Overview** — KPIs and charts (answers, accuracy and active players per
+  day, how the class does on each word, hardest words, words per category,
+  top players) over 7 / 30 / 90 days; every chart has a table view
+- **Players** — search, filter, sort, paginate, CSV; a player drawer with
+  their charts, weakest words and sessions; make admin, set password, reset
+  progress, delete (single or bulk)
+- **Live matches**, **AI usage**, **Activity log** (every content save and
+  account change, with who did it)
+- **Words** — 989+ words paginated with filters (category, type, quality
+  issues, class accuracy), bulk move / export / delete, click to edit
+- **Reports** — filter by status, AI verdict and player; bulk resolve,
+  export, delete; *Review & fix* opens the AI review tools
+- The classic tools stay: content editor, grammar, content health,
+  settings, data & backup
+
+Analytics come from `admin_*` database functions (migration 0006); each
+refuses anyone who isn't an admin.
+
 ## Layout
 
 ```

@@ -132,3 +132,7 @@
 @media (min-width: 900px) {
   .ui-bottom-nav { left: 50%; right: auto; transform: translateX(-50%); bottom: 16px; border: 1px solid var(--line); border-radius: 16px; width: min(560px, calc(100% - 32px)); padding: 6px; }
 }
+
+/* Admin has its own navigation and tools: keep the game header to its title. */
+.wh-root.screen-admin .ui-stat-row, .wh-root.screen-admin .wh-ask-bar { display: none; }
+.wh-root.screen-admin .ui-header { margin-bottom: 14px; }
