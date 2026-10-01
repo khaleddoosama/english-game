@@ -2,7 +2,7 @@
 // reports with paginated tables and bulk actions, an audit log, and the
 // classic tools (editor, grammar, health, settings, data) embedded as-is.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ShieldCheck, BookOpen, Database, Flag, HeartPulse, History, LayoutDashboard, RefreshCw, Scale, Settings, Sparkles, Swords, Users, Wrench } from "lucide-react";
+import { ArrowLeft, ShieldCheck, BookOpen, FolderTree, Library as LibraryIcon, Database, Flag, HeartPulse, History, LayoutDashboard, RefreshCw, Scale, Settings, Sparkles, Swords, Users } from "lucide-react";
 import { AdminControlCenter } from "./AdminControlCenter";
 import { createAdminApi } from "./adminApi";
 import { RangePicker, useAsync } from "./adminUi";
@@ -15,6 +15,8 @@ import { AiUsage, LiveMatches } from "./sections/Activity";
 import { AuditLog } from "./sections/AuditLog";
 import { DataQuality } from "./sections/DataQuality";
 import { AppSettings } from "./sections/AppSettings";
+import { Categories } from "./sections/Categories";
+import { Library } from "./sections/Library";
 import "../../styles/admin.css";
 
 const NAV = [
@@ -25,10 +27,11 @@ const NAV = [
     { id: "ai", label: "AI usage", icon: Sparkles, desc: "Gemini calls by day and player" },
   ] },
   { group: "Content", items: [
-    { id: "words", label: "Words", icon: BookOpen, desc: "Browse, filter, fix and organise the vocabulary" },
+    { id: "words", label: "Words", icon: BookOpen, desc: "Browse, filter, edit and organise the vocabulary" },
+    { id: "categories", label: "Categories", icon: FolderTree, desc: "The lessons: order, rename, merge and clean up" },
     { id: "reports", label: "Reports", icon: Flag, desc: "Questions players flagged" },
+    { id: "library", label: "Stories & more", icon: LibraryIcon, desc: "Stories, combos and challenges" },
     { id: "grammar", label: "Grammar", icon: Scale, desc: "Grammar rules and their questions", classic: "grammar" },
-    { id: "editor", label: "Content editor", icon: Wrench, desc: "Edit any item, categories, stories, combos and challenges", classic: "content" },
     { id: "quality", label: "Data quality", icon: ShieldCheck, desc: "Problems in the data, word completeness and accuracy by type" },
     { id: "health", label: "Content health", icon: HeartPulse, desc: "Find and fix weak content with AI", classic: "health" },
   ] },
@@ -69,7 +72,8 @@ export function AdminPanel(props) {
   const location = useLocation();
   // Remembered so the Admin tab reopens this page with its filters.
   useEffect(() => { try { localStorage.setItem("wh-admin-path", location.href); } catch {} }, [location.href]);
-  const focus = useMemo(() => (section === "editor" && item ? (item === "new" ? { entity: "words", create: true } : { entity: "words", key: item }) : null), [section, item]);
+  // Old links to the removed content editor open the word instead.
+  useEffect(() => { if (route.section === "editor") navigate(pathFor("admin", { section: "words", item: route.item }), { replace: true }); }, [route.section]);
   const local = useRef(null);
   local.current = { content, mastery, sessionLogs: props.sessionLogs, profile, reports, score: props.score, studyStreak: props.studyStreak, bestStudyStreak: props.bestStudyStreak };
   const api = useMemo(() => createAdminApi(local), []);
@@ -87,8 +91,8 @@ export function AdminPanel(props) {
   const refresh = () => { setTick((t) => t + 1); setRefreshedAt(Date.now()); };
   const current = ALL.find((x) => x.id === section) || HIDDEN[section] || ALL[0];
   const openReports = reports.filter((r) => !r.resolvedAt).length;
-  const editWord = (word) => setSection("editor", word);
-  const createWord = () => setSection("editor", "new");
+  const editWord = (word) => setSection("words", word);
+  const keepQuery = (sec, sub) => navigate(pathFor("admin", { section: sec, item: sub }) + window.location.search);
   const openPlayerByName = (name) => setSection("players", name);
   const showsRange = ["overview", "live", "ai"].includes(section);
 
@@ -125,14 +129,17 @@ export function AdminPanel(props) {
         {section === "players" && <Players api={api} players={players} me={profile?.id || "local"} onChanged={refresh} openName={item} onOpen={(name) => (name ? navigate(pathFor("admin", { section: "players", item: name }) + window.location.search) : navigate(pathFor("admin", { section: "players" }) + window.location.search))} />}
         {section === "live" && <LiveSection api={api} tick={tick} activity={activity} range={range} />}
         {section === "ai" && <AiSection api={api} tick={tick} activity={activity} range={range} overview={overview} />}
-        {section === "words" && <Words content={content} wordStats={wordStats} mastery={mastery} onUpdate={onUpdate} onEdit={editWord} onCreate={createWord} />}
+        {section === "words" && <Words content={content} wordStats={wordStats} mastery={mastery} onUpdate={onUpdate} onRenameWord={props.onRenameWord} openWord={item} onOpen={(w) => keepQuery("words", w)} />}
+        {section === "categories" && <Categories content={content} onUpdate={onUpdate} onMerge={props.onMergeCategories} onRemoveEmpty={props.onRemoveEmptyLevels} openName={item} onOpen={(n) => keepQuery("categories", n)} onOpenWord={editWord}
+          onNavigate={(sec, id, type) => navigate(pathFor("admin", { section: sec, item: sec === "library" ? id : null }) + (type ? `?type=${type}` : sec === "grammar" && id ? `?q=${encodeURIComponent(id)}` : ""))} />}
+        {section === "library" && <Library content={content} onUpdate={onUpdate} openId={item} onOpen={(id) => keepQuery("library", id)} />}
         {section === "reports" && <Reports reports={reports} content={content} onResolve={onResolveReport} onReopen={onReopenReport} onDelete={onDeleteReport} onRetire={onRetireVariant} onReviewReport={onReviewReport} onUpdate={onUpdate}
           openKey={item} onOpen={(key) => navigate(pathFor("admin", { section: "reports", item: key }) + window.location.search)} onOpenWord={editWord} onOpenPlayer={openPlayerByName} />}
         {section === "settings" && <AppSettings />}
         {section === "quality" && <DataQuality api={api} tick={tick} onOpenWord={editWord} onOpenReport={(id) => setSection("reports", id)} onOpenPlayer={openPlayerByName} onNavigate={setSection} />}
         {section === "audit" && <AuditLog api={api} tick={tick} content={content} onUpdate={onUpdate} players={players} onOpenWord={editWord} onOpenReport={(id) => setSection("reports", id)} onOpenPlayer={openPlayerByName} />}
         {current.classic && <div className="adm-classic">
-          <AdminControlCenter {...props} embedded tab={current.classic} focus={focus} />
+          <AdminControlCenter {...props} embedded tab={current.classic} />
         </div>}
       </main>
     </section>

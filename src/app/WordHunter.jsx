@@ -387,6 +387,12 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
     const reports=(progressExtrasRef.current.reports||[]).map(item=>sameReport(item,report)?{...item,resolvedAt:Date.now()}:item);
     progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);setActiveSession(session=>session?{...session}:session);
   }
+  // Admin renamed a word in the editor: progress keyed by the old name moves.
+  function renameWord(from, nextWord){
+    const next=customWords.map(w=>V2.norm(w.word)===V2.norm(from)?nextWord:w);
+    mergeCustomData(next,customGrammar,customChallenges,LEVEL_ORDER);setCustomWords(next);
+    migrateRenamedProgress({words:[{from,to:nextWord.word}],categories:[]});setDataVersion(v=>v+1);
+  }
   function reopenQuestionReport(report){
     const reports=(progressExtrasRef.current.reports||[]).map(item=>sameReport(item,report)?{...item,resolvedAt:null}:item);
     progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);
@@ -796,13 +802,30 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   // Save progress whenever it changes (after initial load). Debounced so a
   // burst of typing collapses into one save; the repo sends only what
   // changed and queues the newest state while a save is in flight.
+  // Debounced saves register here so leaving the page (reload, closing
+  // the tab, switching apps on a phone) runs them at once instead of
+  // losing the last 600 ms of changes.
+  const pendingSavesRef = useRef({});
+  useEffect(() => {
+    const flush = () => Object.values(pendingSavesRef.current).forEach((run) => run());
+    const onHide = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onHide);
+    return () => { window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", onHide); };
+  }, []);
+  function debouncedSave(name, run, ms = 600) {
+    let done = false;
+    const once = () => { if (done) return; done = true; if (pendingSavesRef.current[name] === once) delete pendingSavesRef.current[name]; run(); };
+    pendingSavesRef.current[name] = once;
+    const handle = setTimeout(once, ms);
+    return () => clearTimeout(handle);
+  }
   useEffect(() => {
     if (!loaded) return;
-    const handle = setTimeout(() => {
+    return debouncedSave("progress", () => {
       repo.saveProgress({ ...progressExtrasRef.current, activeSession, schemaVersion: SCHEMA_VERSION, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings })
         .catch((e) => console.error("Could not save progress:", e));
-    }, 600);
-    return () => clearTimeout(handle);
+    });
   }, [loaded, activeSession, questionReports, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings, liveSeenTick]);
 
   // Save content whenever it changes (admin only — players read content,
@@ -811,14 +834,13 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const contentSavingRef = useRef(Promise.resolve());
   useEffect(() => {
     if (!loaded || !isAdmin) return;
-    const handle = setTimeout(() => {
+    return debouncedSave("content", () => {
       const content = { note: contentNoteRef.current, combos: customCombos, stories: customStories, words: customWords, grammar: customGrammar, challenges: customChallenges, levelOrder: LEVEL_ORDER };
       contentSavingRef.current = contentSavingRef.current.then(() => repo.saveContent(content)).catch((e) => {
         console.error("Could not save content:", e);
         setStorageWarning("Content could not be saved to the server. Check your connection; your last change will be saved with the next edit. Take a Full Backup if this keeps happening.");
       });
-    }, 600);
-    return () => clearTimeout(handle);
+    });
   }, [loaded, customCombos, customStories, customWords, customGrammar, customChallenges, dataVersion]);
 
   // Detect newly earned badges and surface a small celebration toast
@@ -1609,7 +1631,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
             </article>}
           </aside>
         </div>}
-        {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onResolveReport={resolveQuestionReport} onReopenReport={reopenQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} onOpenImport={()=>{setContentPanelView("review");setScreen("data");}} onExport={mode=>{handleExport(mode);setContentPanelView("export");setScreen("data");}}/></Suspense>}
+        {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onRenameWord={renameWord} onResolveReport={resolveQuestionReport} onReopenReport={reopenQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} onOpenImport={()=>{setContentPanelView("review");setScreen("data");}} onExport={mode=>{handleExport(mode);setContentPanelView("export");setScreen("data");}}/></Suspense>}
         {confirmAction && (
           <div className="wh-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmAction(null); }}>
           <div className="wh-panel wh-confirm-panel" role="alertdialog">

@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "../../../lib/router";
-import { FileJson, FolderInput, Image as ImageIcon, Plus, Trash2 } from "lucide-react";
+import { FileJson, FolderInput, Image as ImageIcon, Plus, Sparkles, Trash2 } from "lucide-react";
+import { askAiForWord } from "../../../engine/ai";
+import { WordEditor } from "../editors/WordEditor";
 import { V2 } from "../../../engine/v2";
 import { DataTable, downloadText } from "../DataTable";
 import { formatNumber, formatPercent } from "../charts";
-import { Badge, ConfirmDialog, Kpi, Notice } from "../adminUi";
+import { Badge, ConfirmDialog, Drawer, Kpi, Notice } from "../adminUi";
 
 // What a word is missing, in the order an editor would fix it.
 export function wordIssues(w) {
@@ -29,7 +31,10 @@ const ISSUE_FILTERS = [
   { id: "unplayed", label: "Never answered" },
 ];
 
-export function Words({ content, wordStats, mastery, onUpdate, onEdit, onCreate }) {
+// openWord: the word in the address (/admin/words/<word>, or "new").
+export function Words({ content, wordStats, mastery, onUpdate, onRenameWord, openWord, onOpen }) {
+  const onEdit = (word) => onOpen(word);
+  const onCreate = () => onOpen("new");
   // Filters live in the address: /admin/words?category=Food&hasPicture=false
   const [filters, setFilters] = useQuery({ category: "", type: "", issue: "", hasPicture: "" });
   const { category, type, issue, hasPicture: pictureFilter } = filters;
@@ -77,9 +82,40 @@ export function Words({ content, wordStats, mastery, onUpdate, onEdit, onCreate 
   }
 
   const attention = enriched.filter((r) => r.issues.length).length;
+  const stubs = words.filter((w) => w._autoStub);
+  const [fill, setFill] = useState(null); // { done, total, failed: [] }
+  // Stub words (made from a missing reference during an import) get real
+  // content from AI, one at a time; one save at the end.
+  async function fillStubs() {
+    let next = [...words];
+    const failed = [];
+    setFill({ done: 0, total: stubs.length, failed });
+    for (const stub of stubs) {
+      try {
+        const g = await askAiForWord(stub.word, stub);
+        const updated = { ...stub, type: g.type, category: stub.category || g.category, meaning: g.meaning, situation: g.situation, gap: g.gap, hints: g.hints, ...(g.commonMistake ? { commonMistake: g.commonMistake } : {}) };
+        delete updated._autoStub;
+        if (/[\u0600-\u06FF]/.test(JSON.stringify(updated))) throw new Error("AI answered with non-English text.");
+        const problems = V2.validateContent({ schemaVersion: 2, kind: "content", words: [updated] }, content);
+        if (problems.length) throw new Error(problems[0]);
+        next = next.map((w) => (w.word === stub.word ? updated : w));
+      } catch (e) { failed.push({ word: stub.word, message: e.message || "AI failed" }); }
+      setFill((f) => ({ ...f, done: f.done + 1, failed: [...failed] }));
+    }
+    if (next.some((w, i) => w !== words[i])) onUpdate("words", next);
+  }
+  const editing = openWord === "new" ? null : openWord ? words.find((w) => V2.norm(w.word) === V2.norm(openWord)) : undefined;
+  function saveWord(next, original) {
+    if (next.category && !(content.levels || []).some((l) => l.title === next.category)) onUpdate("levels", [...(content.levels || []), { id: `cat-${next.category}`, title: next.category }]);
+    if (!original) onUpdate("words", [...words, next]);
+    else if (V2.norm(original.word) !== V2.norm(next.word) && onRenameWord) onRenameWord(original.word, next);
+    else onUpdate("words", words.map((w) => (w === original ? next : w)));
+    onOpen(null);
+  }
   return (
     <div className={`adm-section ${wordStats.loading ? "is-refreshing" : ""}`}>
       {wordStats.error && <Notice tone="error">{wordStats.error}</Notice>}
+      {fill && fill.done >= fill.total && <Notice tone={fill.failed.length ? "error" : "info"}>AI filled {fill.total - fill.failed.length} of {fill.total} stub words.{fill.failed.length ? ` Failed: ${fill.failed.map((f) => `${f.word} (${f.message})`).join("; ")}` : ""}</Notice>}
       <div className="adm-kpis compact">
         <Kpi label="Words" value={words.length} sub={`${categories.length} categories`} />
         <Kpi label="Needs attention" value={attention} tone={attention ? "attention" : ""} />
@@ -96,7 +132,10 @@ export function Words({ content, wordStats, mastery, onUpdate, onEdit, onCreate 
           <select className="adm-select" value={pictureFilter} onChange={(e) => setPicture(e.target.value)} aria-label="Picture"><option value="">Any picture</option><option value="true">Has a picture</option><option value="false">No picture</option></select>
           <select className="adm-select" value={issue} onChange={(e) => setIssue(e.target.value)} aria-label="Quality filter">{ISSUE_FILTERS.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}</select>
         </>}
-        toolbar={<button className="adm-btn primary" onClick={onCreate}><Plus size={15} /> New word</button>}
+        toolbar={<>
+          {stubs.length > 0 && <button className="adm-btn ghost" disabled={fill && fill.done < fill.total} onClick={fillStubs}><Sparkles size={15} /> {fill && fill.done < fill.total ? `Filling ${fill.done}/${fill.total}…` : `Fill ${stubs.length} stub${stubs.length === 1 ? "" : "s"} with AI`}</button>}
+          <button className="adm-btn primary" onClick={onCreate}><Plus size={15} /> New word</button>
+        </>}
         bulkActions={(sel, clear) => <>
           <button className="adm-btn ghost" onClick={() => { setMoveTo({ rows: sel, clear }); setMoveInput(""); }}><FolderInput size={15} /> Move to…</button>
           <button className="adm-btn ghost" onClick={() => downloadText(`word-hunter-words-${sel.length}.json`, JSON.stringify({ schemaVersion: 2, kind: "content", words: sel.map((r) => r.w) }, null, 2), "application/json")}><FileJson size={15} /> Export JSON</button>
@@ -104,6 +143,9 @@ export function Words({ content, wordStats, mastery, onUpdate, onEdit, onCreate 
         </>}
         emptyText="No words yet. Import a backup from Data, or add one."
       />
+      {editing !== undefined && editing !== null || openWord === "new" ? <WordEditor key={openWord} word={editing || null} content={content} stats={editing ? stats.get(editing.word) : null}
+        onSave={saveWord} onDelete={(w) => { onUpdate("words", words.filter((x) => x !== w)); onOpen(null); }} onClose={() => onOpen(null)} /> : null}
+      {openWord && openWord !== "new" && !editing && <Drawer title="Word not found" onClose={() => onOpen(null)}><p>No word called “{openWord}”. It may have been renamed or deleted; the Activity log shows what happened.</p></Drawer>}
       {moveTo && <ConfirmDialog title={`Move ${moveTo.rows.length} word${moveTo.rows.length === 1 ? "" : "s"}`} confirmLabel="Move"
         body={<label className="adm-field"><span>Category</span><input list="adm-cats" value={moveInput} onChange={(e) => setMoveInput(e.target.value)} placeholder="Pick or type a category" autoFocus /><datalist id="adm-cats">{categories.map((c) => <option key={c} value={c} />)}</datalist><small className="adm-muted">A new name becomes a new level.</small></label>}
         onCancel={() => setMoveTo(null)} onConfirm={() => { if (!moveInput.trim()) return; moveRows(moveTo.rows, moveInput); moveTo.clear(); setMoveTo(null); }} />}
