@@ -3,7 +3,7 @@
 // they answer. Local mode (no Supabase): the same interface over
 // localStorage, so the game can be played and tested in several tabs.
 import { isLocalMode, supabase } from "../../lib/supabase";
-import { MAX_PLAYERS, MIN_PLAYERS, judgeAnswer, isSettled, randomCode, rankPlayers, splitQuestions, validateQuestions } from "./liveRules";
+import { MAX_PLAYERS, MIN_PLAYERS, answerSlack, judgeAnswer, isSettled, randomCode, rankPlayers, splitQuestions, validateQuestions, visibleQuestions } from "./liveRules";
 
 export class LiveError extends Error {
   constructor(message, code) { super(message); this.code = code; }
@@ -64,7 +64,7 @@ export function createLocalLiveApi({ storage, me, now = () => Date.now(), clock 
   function settle(c) {
     if (!c || c.state === "done" || !isSettled(c, players(c), now())) return c;
     const ranked = rankPlayers(players(c));
-    Object.assign(c, { state: "done", ended_at: iso(now()), results: ranked.map((p) => ({ user_id: p.user_id, rank: p.rank, correct: p.correct, total_ms: p.total_ms, finished: !!p.finished_at, players: ranked.length })) });
+    Object.assign(c, { state: "done", ended_at: iso(now()), results: ranked.map((p) => ({ user_id: p.user_id, rank: p.rank, correct: p.correct, total_ms: p.total_ms, finished: !!p.finished_at, players: ranked.length, is_host: p.user_id === c.host_id })) });
     save(c);
     return c;
   }
@@ -77,7 +77,7 @@ export function createLocalLiveApi({ storage, me, now = () => Date.now(), clock 
       code: c.code, title: c.title, host_id: c.host_id, host: c.host, question_count: c.question_count, seconds: c.seconds,
       max_players: c.max_players, start_mode: c.start_mode, settings: c.settings, state: c.state, created_at: c.created_at,
       started_at: c.started_at, ended_at: c.ended_at, expires_at: c.expires_at, now: iso(now()), member,
-      questions: member ? c.questions : null,
+      questions: member ? visibleQuestions(c.questions, c.state, prog(c.code, uid)) : null,
       key: member && c.state === "done" ? c.key : null,
       players: players(c).map((p) => ({ ...p, rank: rankOf(p.user_id) })),
       my_answers: member ? prog(c.code, uid).answers : null,
@@ -137,19 +137,21 @@ export function createLocalLiveApi({ storage, me, now = () => Date.now(), clock 
       const c = mustGet(code), uid = me().id;
       if (!c.members.some((m) => m.user_id === uid)) fail("Join the challenge first.", "42501");
       const p = prog(c.code, uid), key = c.key[idx];
+      const next = c.questions[idx + 1] ?? null;
       const prev = p.answers.find((a) => a.idx === idx);
-      if (prev) return { ...prev, ...key, me: publicRow(p) };
+      if (prev) return { ...prev, ...key, me: publicRow(p), next };
       if (c.state !== "playing" || Date.parse(c.expires_at) < now()) { settle(c); fail("This challenge has ended.", "55000"); }
       if (p.finished_at) fail("You've answered every question.", "55000");
       if (idx !== p.answered) fail("Answer the questions in order.", "22023");
-      if (!p.started_at) { p.started_at = iso(now()); p.last_at = clock(); }
-      const result = judgeAnswer({ choice, answer: key.answer, claimedMs: ms, elapsedMs: clock() - p.last_at, seconds: c.seconds });
+      if (!p.started_at) fail("Press Start first.", "55000");
+      const slack = answerSlack(p.answers.find((a) => a.idx === idx - 1), c.settings?.reveal !== false);
+      const result = judgeAnswer({ choice, answer: key.answer, claimedMs: ms, elapsedMs: clock() - p.last_at, seconds: c.seconds, slack });
       p.answers.push({ idx, ...result });
       p.answered += 1; p.correct += result.correct ? 1 : 0; p.total_ms += result.ms; p.last_at = clock();
       if (p.answered >= c.question_count) p.finished_at = iso(now());
       saveProg(c.code, uid, p);
       const after = settle(load(c.code));
-      return { idx, ...result, ...key, me: publicRow(p), done: after.state === "done" };
+      return { idx, ...result, ...key, me: publicRow(p), next, done: after.state === "done" };
     },
     async end(code) {
       const c = mustGet(code);

@@ -49,6 +49,7 @@
 .ui-page { display: grid; gap: 14px; animation: ui-fade-in 0.2s ease-out; }
 .ui-page-head h2, .ui-profile-head h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-family: var(--font-display); font-size: 24px; color: var(--paper); }
 .ui-muted { margin: 0; color: var(--text-dim); font-size: 14px; line-height: 1.5; }
+.ui-rank-note { font-size: 12.5px; margin: 2px 0 6px; }
 .ui-ok { margin: 0; color: #9dbb8f; font-size: 14px; }
 .ui-section-title { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font: 600 12px var(--font-mono); letter-spacing: 1.2px; text-transform: uppercase; color: var(--gold); }
 

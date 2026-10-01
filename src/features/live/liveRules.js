@@ -1,17 +1,34 @@
 // Live Challenge rules, shared by the local (offline/test) backend and the
-// UI. The server applies the same rules in SQL (migration 0008):
+// UI. The server applies the same rules in SQL (migrations 0008, 0020):
 //  - 2 to 10 players, 3 to 50 questions, answered in order at each
 //    player's own pace;
 //  - the winner has the most right answers; a tie goes to whoever finished,
-//    then to the fastest total time.
+//    then to the fastest total time;
+//  - a player sees no question before pressing Start, then one at a time;
+//  - the creator wrote the questions, so their run doesn't count toward
+//    Live wins.
 export const LIVE_CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 export const LIVE_CODE_RE = /^[A-Z0-9]{6}$/;
 export const MIN_PLAYERS = 2, MAX_PLAYERS = 10, MIN_QUESTIONS = 3, MAX_QUESTIONS = 50;
-// Time allowed between answers for the feedback card and the network,
-// on top of what the device measured (see clampAnswerMs).
-export const ANSWER_SLACK_MS = 4000;
+// Time allowed for the network and drawing the question, on top of what
+// the device measured (see clampAnswerMs).
+export const NETWORK_SLACK_MS = 1500;
 // How long the right/wrong card stays before the next question.
 export const FEEDBACK_MS = { correct: 900, wrong: 1800 };
+// The server's clock runs from the previous answer, so the time between two
+// answers also covers the card shown after the previous one.
+export function answerSlack(previous, reveal = true) {
+  if (!previous) return NETWORK_SLACK_MS;
+  return NETWORK_SLACK_MS + (previous.correct || !reveal ? FEEDBACK_MS.correct : FEEDBACK_MS.wrong);
+}
+
+// What a player may see of the questions: nothing before pressing Start,
+// then the ones answered and the current one; all once it's over.
+export function visibleQuestions(questions, state, progress) {
+  if (state === "done") return questions;
+  if (!progress?.started_at) return null;
+  return questions.slice(0, (progress.answered || 0) + 1);
+}
 
 export const randomCode = (rng = Math.random) => Array.from({ length: 6 }, () => LIVE_CODE_CHARS[Math.floor(rng() * LIVE_CODE_CHARS.length)]).join("");
 
@@ -33,16 +50,16 @@ export const sameAnswer = (a, b) => a != null && b != null && String(a).trim().t
 // server only knows how long since the previous answer (which also covers
 // the feedback card and the network). Trust the device, but never more
 // than the elapsed time and never less than elapsed minus the slack.
-export function clampAnswerMs(claimed, elapsed) {
+export function clampAnswerMs(claimed, elapsed, slack = NETWORK_SLACK_MS) {
   const e = Math.max(0, Math.floor(elapsed));
   const c = Number.isFinite(claimed) ? claimed : e;
-  return Math.min(Math.max(c, 0, e - ANSWER_SLACK_MS), e);
+  return Math.min(Math.max(c, 0, e - slack), e);
 }
 
 // Scores one answer. seconds = 0 means no time limit; over the limit
 // counts as no answer.
-export function judgeAnswer({ choice, answer, claimedMs, elapsedMs, seconds }) {
-  let ms = clampAnswerMs(claimedMs, elapsedMs);
+export function judgeAnswer({ choice, answer, claimedMs, elapsedMs, seconds, slack }) {
+  let ms = clampAnswerMs(claimedMs, elapsedMs, slack);
   let picked = choice == null || String(choice).trim() === "" ? null : String(choice).trim();
   let correct = sameAnswer(picked, answer);
   if (seconds > 0 && ms > seconds * 1000) { ms = seconds * 1000; correct = false; picked = null; }

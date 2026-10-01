@@ -218,7 +218,19 @@ function ChallengeRoom({ api, code, player, onHome, onSeen }) {
   const [channelState, setChannelState] = useState("connecting");
   const [localMe, setLocalMe] = useState(null); // newest of my own rows, from answer results
   const channelRef = useRef(null), viewRef = useRef(null);
-  const keep = (v) => { viewRef.current = v; setView(v); };
+  // Questions arrive one at a time (with Start, then with each answer); a
+  // slower reply never takes back a question already shown.
+  const keep = (v) => {
+    const cur = viewRef.current, have = v?.questions?.length || 0;
+    if (cur?.code === v?.code && v?.state !== "done" && (cur?.questions?.length || 0) > have) v = { ...v, questions: [...(v.questions || []), ...cur.questions.slice(have)] };
+    viewRef.current = v; setView(v);
+  };
+  const addQuestion = (i, q) => {
+    const cur = viewRef.current;
+    if (!cur || !q || cur.questions?.[i]) return;
+    const questions = [...(cur.questions || [])]; questions[i] = q;
+    keep({ ...cur, questions });
+  };
 
   const refresh = useCallback(async () => {
     try { keep(await api.view(code)); setLoadError(null); }
@@ -285,7 +297,7 @@ function ChallengeRoom({ api, code, player, onHome, onSeen }) {
     onRemove={(id) => act(() => api.removePlayer(code, id), () => { send("left", { user_id: id }); refresh(); })} />;
   if (view.state === "done") return <Results {...common} onHome={onHome} />;
   if (!me?.started_at) return <Ready {...common} onBegin={() => act(() => api.begin(code))} onLeave={() => act(() => api.leave(code), onHome)} />;
-  if (!me.finished_at) return <Play {...common} api={api} code={code} onSeen={onSeen}
+  if (!me.finished_at) return <Play {...common} api={api} code={code} onSeen={onSeen} onNext={addQuestion}
     onProgress={(row, done) => { setLocalMe(row); send("progress", { user_id: player.id, answered: row.answered, correct: row.correct, total_ms: row.total_ms, finished_at: row.finished_at, started_at: row.started_at }); if (done) { send("end"); refresh(); } else if (row.finished_at) refresh(); }}
     onFailed={refresh} />;
   return <Waiting {...common} onEnd={() => act(() => api.end(code), () => { send("end"); refresh(); })} />;
@@ -358,6 +370,7 @@ function Lobby({ view, player, online, busy, error, isHost, onStart, onLeave, on
       <Rules view={view} />
       <ShareBox view={view} />
       <PlayerList view={view} player={player} online={online} isHost={isHost} onRemove={onRemove} />
+      {isHost && <p className="lv-note">You made these questions, so you can play along, but your result won't count toward Live wins.</p>}
       {isHost
         ? <div className="lv-row"><button className="lv-btn gold big" disabled={busy || !enough} onClick={onStart}><PlayIcon size={16} /> {enough ? `Start for ${view.players.length} players` : "Waiting for someone to join…"}</button><button className="lv-btn ghost" disabled={busy} onClick={onLeave}>Cancel challenge</button></div>
         : <div className="lv-row"><p className="lv-wait">Waiting for <b>{view.host}</b> to start…</p><button className="lv-btn ghost" disabled={busy} onClick={onLeave}><LogOut size={14} /> Leave</button></div>}
@@ -405,9 +418,9 @@ function Race({ view, player, online }) {
   );
 }
 
-function Play({ view, me, player, online, api, code, onSeen, onProgress, onFailed }) {
+function Play({ view, me, player, online, api, code, onSeen, onNext, onProgress, onFailed }) {
   const idx = me.answered;
-  const q = view.questions[idx];
+  const q = view.questions?.[idx];
   const reveal = view.settings?.reveal !== false;
   const [feedback, setFeedback] = useState(null);
   const [pending, setPending] = useState(null);
@@ -430,6 +443,7 @@ function Play({ view, me, player, online, api, code, onSeen, onProgress, onFaile
     try {
       const r = await withRetry(() => api.answer(code, idx, choice, ms));
       if (r.sentences?.length) onSeen({ mode: q.mode, prompt: q.prompt, sentences: r.sentences });
+      if (r.next) onNext(idx + 1, r.next); // its picture loads while the card shows
       setFeedback({ ...r, choice });
       setTimeout(() => { setFeedback(null); setPending(null); onProgress(r.me, r.done); }, r.correct ? FEEDBACK_MS.correct : reveal ? FEEDBACK_MS.wrong : FEEDBACK_MS.correct);
     } catch (e) {
@@ -442,7 +456,8 @@ function Play({ view, me, player, online, api, code, onSeen, onProgress, onFaile
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
-  if (!q) return null;
+  useEffect(() => { if (!q) onFailed(); }, [q, idx]); // ask the server for the current question
+  if (!q) return <section className="wh-card lv-center" aria-busy="true"><p className="lv-muted">Loading the question…</p></section>;
   const picked = feedback?.choice ?? pending?.choice;
   return (
     <div className="lv-play">
@@ -506,13 +521,13 @@ function Results({ view, player, onHome }) {
         <tbody>{ranked.map((p) => (
           <tr key={p.user_id} className={p.user_id === player.id ? "me" : ""}>
             <td>{p.rank === 1 ? "🏆" : p.rank}</td>
-            <td>{p.username}{!p.finished_at && <small> (didn't finish)</small>}</td>
+            <td>{p.username}{p.user_id === view.host_id && <small> (made the questions)</small>}{!p.finished_at && <small> (didn't finish)</small>}</td>
             <td className="num">{p.correct}/{view.question_count}</td>
             <td className="num">{formatMs(p.total_ms)}</td>
           </tr>
         ))}</tbody>
       </table>}
-      <p className="lv-note">Most right answers wins. A tie goes to whoever finished, then to the fastest total time.</p>
+      <p className="lv-note">Most right answers wins. A tie goes to whoever finished, then to the fastest total time. The creator made the questions, so their result doesn't count toward Live wins on the leaderboard.</p>
       {view.key && <>
         <button className="lv-btn ghost" onClick={() => setShowReview((v) => !v)}>{showReview ? "Hide my answers" : "Review my answers"}</button>
         {showReview && <ol className="lv-review">{view.questions.map((q, i) => {

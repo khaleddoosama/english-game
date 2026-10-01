@@ -3,10 +3,12 @@ import { Trophy } from "lucide-react";
 import { isLocalMode } from "../../lib/supabase";
 import { fetchLeaderboard } from "./socialApi";
 
+// Practice points are counted by each player's game and sent with their
+// progress; Live answers are checked by the server. Each tab says which.
 const TABS = [
-  { id: "week", label: "This week", value: (p) => p.week_score, unit: "pts" },
-  { id: "all", label: "All time", value: (p) => p.score, unit: "pts" },
-  { id: "live", label: "Live wins", value: (p) => p.live_wins, unit: "wins", extra: (p) => `${p.live_played} played` },
+  { id: "week", label: "This week", value: (p) => p.week_score, unit: "pts", note: "Practice points, counted by each player's game. For fun between friends; Live wins are checked by the server." },
+  { id: "all", label: "All time", value: (p) => p.score, unit: "pts", note: "Practice points, counted by each player's game. For fun between friends; Live wins are checked by the server." },
+  { id: "live", label: "Live wins", value: (p) => p.live_wins, unit: "wins", extra: (p) => `${p.live_played} played`, note: "Answers checked and timed by the server. A challenge's creator made its questions, so their own result doesn't count as a win." },
 ];
 
 export default function Leaderboard({ me, hiddenForPlayers = false }) {
@@ -31,6 +33,7 @@ export default function Leaderboard({ me, hiddenForPlayers = false }) {
       {error && <p className="wh-import-error">{error}</p>}
       {!rows && !error && !isLocalMode && <ol className="ui-rank-list">{[0, 1, 2, 3, 4].map((i) => <li key={i} className="ui-skeleton-row" />)}</ol>}
       {rows && !rows.length && <p className="ui-muted">{tab === "week" ? "No points yet this week — play a round to take first place." : tab === "live" ? "No live matches yet." : "Nobody has scored yet."}</p>}
+      {!isLocalMode && <p className="ui-muted ui-rank-note">{t.note}</p>}
       {rows && rows.length > 0 && <ol className="ui-rank-list">
         {rows.map((p, i) => (
           <li key={p.id} className={p.id === me ? "is-me" : ""}>

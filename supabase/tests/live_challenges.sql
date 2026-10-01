@@ -46,7 +46,7 @@ begin
   begin perform public.live_start(v_code); raise exception 'FAIL: non-host started';
   exception when sqlstate '42501' then report := report || 'only host starts; '; end;
   v := public.live_join(v_code);
-  if jsonb_array_length(v -> 'players') <> 2 or jsonb_array_length(v -> 'questions') <> 3 then raise exception 'FAIL: join %', v; end if;
+  if jsonb_array_length(v -> 'players') <> 2 or v -> 'questions' <> 'null'::jsonb then raise exception 'FAIL: join % (no questions in the waiting room)', v; end if;
   perform public.live_join(v_code); -- joining twice is harmless
   perform set_config('request.jwt.claims', json_build_object('sub', c, 'role', 'authenticated')::text, true);
   perform public.live_join(v_code);
@@ -121,8 +121,10 @@ begin
   from public.live_results r2 join public.profiles p on p.id = r2.user_id where r2.room_code = v_code;
   if t <> 't_alice#1(3) t_cara#2(2) t_bob#3(2)' then raise exception 'FAIL: ranking %', t; end if;
   report := report || 'ranking ' || t || '; ';
+  -- alice made the questions: first place, but not a Live win (0020).
   select live_wins || '/' || live_played into t from public.profiles where id = a;
-  if t <> '1/1' then raise exception 'FAIL: winner counters %', t; end if;
+  if t <> '0/1' then raise exception 'FAIL: creator counters %', t; end if;
+  if not (select is_host from public.live_results where room_code = v_code and user_id = a) then raise exception 'FAIL: creator not marked'; end if;
   r := public.live_mine();
   if (r -> 0 ->> 'rank')::integer <> 2 or r -> 0 ->> 'state' <> 'done' then raise exception 'FAIL: live_mine %', r; end if;
 
@@ -131,12 +133,14 @@ begin
   v_any := public.live_create('Any', 0, 2, 'anytime', '{}', qs, 2);
   v := public.live_view(v_any);
   if v ->> 'state' <> 'playing' then raise exception 'FAIL: anytime not open: %', v ->> 'state'; end if;
+  perform public.live_begin(v_any);
   perform public.live_answer(v_any, 0, 'Apple', 100);
   perform public.live_answer(v_any, 1, 'Bread', 100);
   r := public.live_answer(v_any, 2, 'Cheese', 100);
   if (r ->> 'done')::boolean then raise exception 'FAIL: anytime ended before others joined'; end if;
   perform set_config('request.jwt.claims', json_build_object('sub', d, 'role', 'authenticated')::text, true);
   perform public.live_join(v_any);
+  perform public.live_begin(v_any);
   perform public.live_answer(v_any, 0, 'Apple', 100);
   perform public.live_answer(v_any, 1, 'Bread', 100);
   r := public.live_answer(v_any, 2, 'Cheese', 100);
@@ -168,6 +172,7 @@ begin
   exception when sqlstate '42501' then null; end;
   perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
   perform public.live_start(v_code);
+  perform public.live_begin(v_code);
   perform public.live_answer(v_code, 0, 'Apple', 100);
   perform public.live_end(v_code);
   select count(*) into n from public.live_results where room_code = v_code;

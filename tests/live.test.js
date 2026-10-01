@@ -2,7 +2,7 @@
 // rules the server applies; supabase/tests/live_challenges.sql covers the
 // SQL side).
 import { beforeEach, describe, expect, it } from "vitest";
-import { ANSWER_SLACK_MS, challengeLink, clampAnswerMs, codeFromInput, formatMs, isSettled, judgeAnswer, rankPlayers, splitQuestions, validateQuestions } from "../src/features/live/liveRules.js";
+import { FEEDBACK_MS, NETWORK_SLACK_MS, answerSlack, challengeLink, clampAnswerMs, codeFromInput, formatMs, isSettled, judgeAnswer, rankPlayers, splitQuestions, validateQuestions, visibleQuestions } from "../src/features/live/liveRules.js";
 import { createLocalLiveApi, withRetry } from "../src/features/live/liveApi.js";
 
 const Q = (answer, extra = {}) => ({ mode: "meaning", prompt: `p-${answer}`, options: ["Apple", "Bread", "Cheese"], answer, word: answer.toLowerCase(), explanation: `about ${answer}`, sentences: [`s-${answer}`], ...extra });
@@ -35,9 +35,26 @@ describe("live rules", () => {
   it("keeps device times honest", () => {
     expect(clampAnswerMs(1200, 1500)).toBe(1200);             // normal
     expect(clampAnswerMs(999999, 1500)).toBe(1500);           // can't take longer than elapsed
-    expect(clampAnswerMs(10, 20000)).toBe(20000 - ANSWER_SLACK_MS); // can't claim to be much faster
+    expect(clampAnswerMs(10, 20000)).toBe(20000 - NETWORK_SLACK_MS); // can't claim to be much faster
+    expect(clampAnswerMs(10, 20000, 3300)).toBe(16700);
     expect(clampAnswerMs(-5, 300)).toBe(0);
     expect(clampAnswerMs(undefined, 800)).toBe(800);
+  });
+
+  it("allows the network plus the card shown after the previous answer", () => {
+    expect(answerSlack(null)).toBe(1500);
+    expect(answerSlack({ correct: true })).toBe(1500 + FEEDBACK_MS.correct);
+    expect(answerSlack({ correct: false })).toBe(1500 + FEEDBACK_MS.wrong);
+    expect(answerSlack({ correct: false }, false)).toBe(1500 + FEEDBACK_MS.correct); // no reveal: the short card
+  });
+
+  it("shows no question before Start, then one at a time, then all", () => {
+    const qs = ["q0", "q1", "q2"];
+    expect(visibleQuestions(qs, "lobby", null)).toBeNull();
+    expect(visibleQuestions(qs, "playing", { started_at: null, answered: 0 })).toBeNull();
+    expect(visibleQuestions(qs, "playing", { started_at: "x", answered: 0 })).toEqual(["q0"]);
+    expect(visibleQuestions(qs, "playing", { started_at: "x", answered: 2 })).toEqual(["q0", "q1", "q2"]);
+    expect(visibleQuestions(qs, "done", null)).toEqual(qs);
   });
 
   it("judges answers, ignoring case and spaces, and enforces the time limit", () => {
@@ -163,8 +180,8 @@ describe("a challenge from link to winner", () => {
     const code = await alice.create({ title: "T", seconds: 10, maxPlayers: 2, startMode: "together", questions: QS });
     await bob.join(code); await alice.start(code); await alice.begin(code);
     w.tick(2000);
-    const r1 = await alice.answer(code, 0, "Apple", 1); // claims 1 ms after 2 s: allowed (within slack)
-    expect(r1.ms).toBe(1);
+    const r1 = await alice.answer(code, 0, "Apple", 1); // claims 1 ms after 2 s: only 1.5 s of slack
+    expect(r1.ms).toBe(500);
     w.tick(30000);
     const r2 = await alice.answer(code, 1, "Bread", 100); // claims 0.1 s after 30 s: floored, then over the limit
     expect(r2).toMatchObject({ correct: false, ms: 10000, choice: null });
@@ -174,9 +191,11 @@ describe("a challenge from link to winner", () => {
     const alice = w.as("alice"), bob = w.as("bob");
     const code = await alice.create({ title: "Any", seconds: 0, maxPlayers: 2, startMode: "anytime", questions: QS, hours: 2 });
     expect((await alice.view(code)).state).toBe("playing");
+    await alice.begin(code);
     for (const [i, a] of ["Apple", "Bread", "Cheese"].entries()) { w.tick(1000); await alice.answer(code, i, a, 1000); }
     expect((await alice.view(code)).state).toBe("playing"); // a seat is still free
     await bob.join(code); // joining after others played is fine in anytime mode
+    await bob.begin(code);
     for (const [i, a] of ["Apple", "Apple", "Apple"].entries()) { w.tick(500); await bob.answer(code, i, a, 500); }
     const v = await alice.view(code);
     expect(v.state).toBe("done");
@@ -186,6 +205,7 @@ describe("a challenge from link to winner", () => {
   it("anytime challenges end when the link expires", async () => {
     const alice = w.as("alice"), bob = w.as("bob");
     const code = await alice.create({ title: "Exp", seconds: 0, maxPlayers: 5, startMode: "anytime", questions: QS, hours: 1 });
+    await alice.begin(code);
     await alice.answer(code, 0, "Apple", 100);
     w.tick(2 * 3600000);
     await expect(bob.join(code)).rejects.toThrow(/ended/);
@@ -213,6 +233,7 @@ describe("a challenge from link to winner", () => {
     const alice = w.as("alice"), bob = w.as("bob");
     const code = await alice.create({ title: "E", seconds: 20, maxPlayers: 3, startMode: "together", questions: QS });
     await bob.join(code); await alice.start(code);
+    await alice.begin(code);
     await alice.answer(code, 0, "Apple", 100);
     await expect(bob.end(code)).rejects.toThrow(/Only the creator/);
     await alice.end(code);
@@ -220,6 +241,33 @@ describe("a challenge from link to winner", () => {
     expect(v.state).toBe("done");
     expect(v.players.find((p) => p.user_id === "alice").rank).toBe(1);
     expect(v.players.find((p) => p.user_id === "bob").rank).toBeNull();
+  });
+
+  it("between friends: no early look at the questions, no answer before Start, the creator marked (review F06)", async () => {
+    const alice = w.as("alice"), bob = w.as("bob");
+    const code = await alice.create({ title: "Fair", seconds: 20, maxPlayers: 2, startMode: "together", settings: { reveal: true }, questions: QS });
+    expect((await bob.join(code)).questions).toBeNull(); // the waiting room shows nothing
+    await alice.start(code);
+    expect((await bob.view(code)).questions).toBeNull(); // nor before Start
+    await expect(bob.answer(code, 0, "Apple", 1)).rejects.toThrow(/Press Start first/);
+    const started = await bob.begin(code);
+    expect(started.questions.map((q) => q.prompt)).toEqual([QS[0].prompt]);
+    w.tick(3000);
+    const r = await bob.answer(code, 0, "Bread", 3000);
+    expect(r.next.prompt).toBe(QS[1].prompt); // the answer brings the next question
+    expect((await bob.view(code)).questions).toHaveLength(2);
+    // After a wrong answer the card stays longer, and that's allowed for.
+    w.tick(1800 + 1000 + 1200);
+    expect((await bob.answer(code, 1, "Bread", 1000)).ms).toBe(1000);
+    await alice.begin(code);
+    for (const [i, a] of ["Apple", "Bread", "Cheese"].entries()) { w.tick(1000); await alice.answer(code, i, a, 1000); }
+    w.tick(1000); await bob.answer(code, 2, "Cheese", 1000);
+    const done = await bob.view(code);
+    expect(done.questions).toHaveLength(3);
+    expect(done.players.find((p) => p.user_id === "alice").rank).toBe(1);
+    const stored = JSON.parse(w.storage.getItem(`live3:${code}`));
+    expect(stored.results.find((x) => x.user_id === "alice").is_host).toBe(true);
+    expect(stored.results.find((x) => x.user_id === "bob").is_host).toBe(false);
   });
 
   it("rejects bad setups", async () => {
