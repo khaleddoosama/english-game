@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "../../../lib/router";
 import { CheckCheck, FileJson, Trash2, Wrench } from "lucide-react";
 import { DataTable, downloadText } from "../DataTable";
 import { Badge, ConfirmDialog, Kpi, fmtDate, relTime } from "../adminUi";
@@ -6,9 +7,11 @@ import { Badge, ConfirmDialog, Kpi, fmtDate, relTime } from "../adminUi";
 const VERDICT_TONE = { flawed: "danger", repeated: "warning", fine: "success", unsure: "neutral" };
 
 export function Reports({ reports, onResolve, onDelete, onReview }) {
-  const [status, setStatus] = useState("open");
-  const [from, setFrom] = useState("");
-  const [verdict, setVerdict] = useState("");
+  const [f, setF] = useQuery({ status: "open", from: "", verdict: "" });
+  const { status, from, verdict } = f;
+  const setStatus = (v) => setF({ status: v, page: null });
+  const setFrom = (v) => setF({ from: v, page: null });
+  const setVerdict = (v) => setF({ verdict: v, page: null });
   const [confirm, setConfirm] = useState(null);
   const players = useMemo(() => [...new Set(reports.map((r) => r._from || "you"))].sort(), [reports]);
   const rows = useMemo(() => reports.map((r, i) => ({ ...r, _key: r.id || `idx-${i}`, _who: r._from || "you", _verdict: r.aiReview?.verdict || "" }))
@@ -38,7 +41,7 @@ export function Reports({ reports, onResolve, onDelete, onReview }) {
       <DataTable
         id="reports" columns={columns} rows={rows} rowKey={(r) => r._key} csvName="word-hunter-reports"
         searchText={(r) => `${r.prompt} ${(r.targetWords || []).join(" ")} ${r.reason || ""} ${r.details || ""}`} searchPlaceholder="Search reports…"
-        initialSort={{ key: "at", dir: "desc" }} resetKey={`${status}|${from}|${verdict}`} selectable onRowClick={onReview}
+        initialSort={{ key: "at", dir: "desc" }} resetKey={`${status}|${from}|${verdict}`} syncUrl selectable onRowClick={onReview}
         filters={<>
           <select className="adm-select" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status"><option value="open">Open</option><option value="resolved">Resolved</option><option value="all">All</option></select>
           <select className="adm-select" value={verdict} onChange={(e) => setVerdict(e.target.value)} aria-label="AI verdict"><option value="">Any AI verdict</option><option value="flawed">Flawed</option><option value="repeated">Repeated</option><option value="fine">Fine</option><option value="unsure">Unsure</option><option value="none">Not checked</option></select>

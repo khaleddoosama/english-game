@@ -81,7 +81,7 @@ export function Overview({ range, overview, activity, wordStats, players, conten
         <ChartCard title="Words per category" subtitle={`${categories.length} categories`}
           table={<SimpleTable columns={[{ key: "label", label: "Category" }, { key: "value", label: "Words", num: true }]} rows={categories} />}>
           <BarList data={categories.slice(0, 12)} valueLabel="words" />
-          {categories.length > 12 && <button className="adm-link" onClick={() => onNavigate("content")}>All {categories.length} categories →</button>}
+          {categories.length > 12 && <button className="adm-link" onClick={() => onNavigate("words")}>All {categories.length} categories →</button>}
         </ChartCard>
         <ChartCard title="Top players this week" subtitle="Points earned since Monday. Click a player for details."
           table={<SimpleTable columns={[{ key: "label", label: "Player" }, { key: "value", label: "Points", num: true }, { key: "sub", label: "Mastered" }]} rows={weekTop} />}>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "../../../lib/router";
 import { FileJson, FolderInput, Image as ImageIcon, Plus, Trash2 } from "lucide-react";
 import { V2 } from "../../../engine/v2";
 import { DataTable, downloadText } from "../DataTable";
@@ -24,16 +25,18 @@ const ISSUE_FILTERS = [
   { id: "no example", label: "No example" },
   { id: "no gap", label: "No gap sentence" },
   { id: "no hints", label: "No hints" },
-  { id: "picture", label: "Has a picture" },
-  { id: "nopicture", label: "No picture" },
   { id: "hard", label: "Hard for the class (<50%)" },
   { id: "unplayed", label: "Never answered" },
 ];
 
 export function Words({ content, wordStats, mastery, onUpdate, onEdit, onCreate }) {
-  const [category, setCategory] = useState("");
-  const [type, setType] = useState("");
-  const [issue, setIssue] = useState("");
+  // Filters live in the address: /admin/words?category=Food&hasPicture=false
+  const [filters, setFilters] = useQuery({ category: "", type: "", issue: "", hasPicture: "" });
+  const { category, type, issue, hasPicture: pictureFilter } = filters;
+  const setCategory = (v) => setFilters({ category: v, page: null });
+  const setType = (v) => setFilters({ type: v, page: null });
+  const setIssue = (v) => setFilters({ issue: v, page: null });
+  const setPicture = (v) => setFilters({ hasPicture: v, page: null });
   const [confirm, setConfirm] = useState(null);
   const [moveTo, setMoveTo] = useState(null); // { rows, clear } | null
   const [moveInput, setMoveInput] = useState("");
@@ -45,9 +48,10 @@ export function Words({ content, wordStats, mastery, onUpdate, onEdit, onCreate 
     const s = stats.get(w.word);
     return { w, index, word: w.word, category: w.category || "", type: w.type || "", attempts: s?.attempts || 0, players: s?.players || 0, accuracy: s?.attempts ? s.correct / s.attempts : null, issues: wordIssues(w), picture: hasPicture(w), stage: V2.stage(mastery[w.word]) };
   }), [words, stats, mastery]);
-  const rows = useMemo(() => enriched.filter((r) => (!category || r.category === category) && (!type || r.type === type) && (
-    !issue || (issue === "any" && r.issues.length) || r.issues.includes(issue) || (issue === "picture" && r.picture) || (issue === "nopicture" && !r.picture)
-    || (issue === "hard" && r.accuracy != null && r.accuracy < 0.5 && r.attempts >= 5) || (issue === "unplayed" && !r.attempts))), [enriched, category, type, issue]);
+  const rows = useMemo(() => enriched.filter((r) => (!category || r.category === category) && (!type || r.type === type)
+    && (pictureFilter === "" || r.picture === (pictureFilter === "true")) && (
+    !issue || (issue === "any" && r.issues.length) || r.issues.includes(issue)
+    || (issue === "hard" && r.accuracy != null && r.accuracy < 0.5 && r.attempts >= 5) || (issue === "unplayed" && !r.attempts))), [enriched, category, type, issue, pictureFilter]);
 
   const columns = [
     { key: "word", label: "Word", render: (r) => <span className="adm-word">{r.picture ? <ImageIcon size={14} className="adm-has-pic" aria-label="has a picture" /> : <i className="adm-pic-gap" />}<b>{r.word}</b><small>{r.w.meaning}</small></span> },
@@ -85,10 +89,11 @@ export function Words({ content, wordStats, mastery, onUpdate, onEdit, onCreate 
       <DataTable
         id="words" columns={columns} rows={rows} rowKey={(r) => r.word} csvName="word-hunter-words"
         searchText={(r) => `${r.word} ${r.w.meaning || ""} ${r.category} ${(r.w.synonyms || []).join(" ")}`} searchPlaceholder="Search words, meanings, categories…"
-        resetKey={`${category}|${type}|${issue}`} selectable onRowClick={(r) => onEdit(r.word)}
+        resetKey={`${category}|${type}|${issue}|${pictureFilter}`} syncUrl selectable onRowClick={(r) => onEdit(r.word)}
         filters={<>
           <select className="adm-select" value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Category"><option value="">All categories</option>{categories.map((c) => <option key={c} value={c}>{c}</option>)}</select>
           <select className="adm-select" value={type} onChange={(e) => setType(e.target.value)} aria-label="Type"><option value="">All types</option>{types.map((t) => <option key={t} value={t}>{t}</option>)}</select>
+          <select className="adm-select" value={pictureFilter} onChange={(e) => setPicture(e.target.value)} aria-label="Picture"><option value="">Any picture</option><option value="true">Has a picture</option><option value="false">No picture</option></select>
           <select className="adm-select" value={issue} onChange={(e) => setIssue(e.target.value)} aria-label="Quality filter">{ISSUE_FILTERS.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}</select>
         </>}
         toolbar={<button className="adm-btn primary" onClick={onCreate}><Plus size={15} /> New word</button>}

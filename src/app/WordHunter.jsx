@@ -9,8 +9,12 @@ import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildEntryQuestion, buildQu
 import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, locateReportSource, normalizeAnswerText, reviewReportedQuestion, spellingDistanceInfo } from "../engine/ai";
 import { DEFAULT_SETTINGS, SCHEMA_VERSION, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
+import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
 // Screens most players open rarely load on demand, keeping the first
 // download small: Admin (and all its tools), Live, Leaderboard, Profile.
+// The Admin tab reopens the admin page (and filters) used last.
+const lastAdminPath = () => { try { const p = localStorage.getItem("wh-admin-path"); return p && p.startsWith("/admin") ? p : "/admin"; } catch { return "/admin"; } };
+const PLAY_SCREENS = new Set(["session", "playing", "results", "reviewResults", "finalReport", "finalResults", "speed", "speedResults"]);
 const AdminPanel = lazy(() => import("../features/admin/AdminPanel").then((m) => ({ default: m.AdminPanel })));
 const LiveChallenge = lazy(() => import("../features/live/LiveChallenge").then((m) => ({ default: m.LiveChallenge })));
 const Leaderboard = lazy(() => import("../features/social/Leaderboard"));
@@ -110,7 +114,25 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const [sessionLogs,setSessionLogs]=useState([]);
   const [dailyProgress,setDailyProgress]=useState(null);
   const recordedSessionAnswersRef = useRef(new Set());
-  const [section, setSection] = useState("practice");
+  // Where we are comes from the address bar (see lib/router.js). The play
+  // screens (a session and its result cards) all live under /play.
+  const location = useLocation();
+  const route = useMemo(() => parseRoute(location.path), [location.path]);
+  const [playScreen, setPlayScreen] = useState("session");
+  const lastSectionRef = useRef("practice");
+  const screen = route.screen === "play" ? playScreen : route.screen === "notFound" ? "levels" : route.screen;
+  const section = route.screen === "levels" ? route.section : lastSectionRef.current;
+  if (route.screen === "levels") lastSectionRef.current = route.section;
+  function setScreen(next) {
+    if (PLAY_SCREENS.has(next)) { setPlayScreen(next); navigate("/play"); }
+    else if (next === "admin") navigate(lastAdminPath());
+    else navigate(pathFor(next, next === "levels" ? { section: lastSectionRef.current } : {}));
+    if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+  }
+  function setSection(id) { navigate(pathFor("levels", { section: id })); }
+  // Leaving /play forgets which result card was showing: coming Back to
+  // /play resumes the open session or goes home.
+  useEffect(() => { if (route.screen !== "play" && playScreen !== "session") setPlayScreen("session"); }, [route.screen]);
   const progressExtrasRef = useRef({});
   const contentNoteRef = useRef("");
   function liveContent() { return { words: WORDS, grammar: GRAMMAR, challenges: CHALLENGES, combos: customCombos, stories: customStories, note: contentNoteRef.current }; }
@@ -428,7 +450,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const [customWords, setCustomWords] = useState([]);
   const [customGrammar, setCustomGrammar] = useState([]);
   const [customChallenges, setCustomChallenges] = useState([]);
-  const [importOpen, setImportOpen] = useState(false);
   const [contentPanelView, setContentPanelView] = useState("review"); // 'export' | 'review'
   const [exportText, setExportText] = useState("");
   const [exportCopied, setExportCopied] = useState(false);
@@ -440,7 +461,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const [aiFixBusy, setAiFixBusy] = useState(false);
   const [aiFixError, setAiFixError] = useState(null);
   const [aiFixChanges, setAiFixChanges] = useState(null);
-  const [screen, setScreen] = useState("levels"); // levels | playing | results | reviewResults | finalReport | finalResults | speed | speedResults
   const [sessionType, setSessionType] = useState("level");
   const [levelsCleared, setLevelsCleared] = useState([]);
   const [levelStats, setLevelStats] = useState({});
@@ -526,8 +546,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const [pools, setPools] = useState({});
   const [confusions, setConfusions] = useState({});
 
-  const [badgesOpen, setBadgesOpen] = useState(false);
-  const [dashboardOpen, setDashboardOpen] = useState(false);
+  const badgesOpen = screen === "badges", dashboardOpen = screen === "stats", importOpen = screen === "data";
   const [toast, setToast] = useState(null);
   const seenBadgesRef = useRef(null);
   const pendingGenRef = useRef(new Set());
@@ -1277,7 +1296,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
     setPools({}); poolsRef.current = {}; setConfusions({}); confusionsRef.current = {};
     setBestSpeedScore(0); setBestSpeedCombo(0); pendingGenRef.current = new Set(); seenBadgesRef.current = new Set();
     setSolvedStories([]);setSessionLogs([]);
-    setScreen("levels"); setCurrentLevelIndex(null); setBadgesOpen(false); setDashboardOpen(false);
+    setScreen("levels"); setCurrentLevelIndex(null);
     // Content is intentionally left alone here.
   }
   // Full factory reset: progress AND every imported word/grammar/pun/story/
@@ -1450,7 +1469,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
     }
     // Content import deliberately retains pools and all progress byte-for-byte.
     // New sessions read current authored text, not stale seed variants.
-    setDataVersion(v=>v+1);setReviewPreview(null);setReviewText("");setImportOpen(false);setScreen("levels");
+    setDataVersion(v=>v+1);setReviewPreview(null);setReviewText("");setScreen("levels");
     setToast({text:restoreProgress?"Full backup restored":"Content merged; all player progress retained"});
   }
 
@@ -1466,6 +1485,14 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
 
   const masteredWordCount = Object.entries(mastery).filter(([key, stats]) => isWordKey(key) && V2.stage(stats) === "Mastered").length;
   const showNav = !["session", "playing", "finalReport", "speed", "admin"].includes(screen);
+
+  // Addresses that can't be shown go home (replacing, so Back still works):
+  // unknown paths, admin pages for players, and /play with nothing to play.
+  useEffect(() => {
+    if (!loaded) return;
+    const nothingToPlay = route.screen === "play" && playScreen === "session" && (!activeSession || activeSession.completed);
+    if (route.screen === "notFound" || (route.screen === "admin" && !isAdmin) || nothingToPlay) navigate("/", { replace: true });
+  }, [loaded, route, playScreen, activeSession, isAdmin]);
 
   if (loadError) return (
     <main className="splash" role="alert">
@@ -1504,10 +1531,10 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
             <span className="ui-stat" title="Score"><b>{score}</b> pts</span>
             <span className="ui-stat wh-stat-streak" title="Answer streak"><Flame size={14} /> {streak}</span>
             <span className="ui-stat" title="Study streak (days in a row)"><b>{studyStreak}</b>d streak</span>
-            <button className="wh-icon-btn ui-stat" onClick={() => { setBadgesOpen((v) => !v); setDashboardOpen(false); }} title="View badges">
+            <button className="wh-icon-btn ui-stat" onClick={() => setScreen(badgesOpen ? "levels" : "badges")} aria-pressed={badgesOpen} title="View badges">
               <Trophy size={13} /> {earnedBadgesCount}/{BADGES.length}
             </button>
-            <button className="wh-icon-btn ui-stat" onClick={() => { setDashboardOpen((v) => !v); setBadgesOpen(false); setImportOpen(false); }} title="View stats dashboard">
+            <button className="wh-icon-btn ui-stat" onClick={() => setScreen(dashboardOpen ? "levels" : "stats")} aria-pressed={dashboardOpen} title="View stats dashboard">
               <BarChart3 size={13} /> Stats
             </button>
           </div>
@@ -1533,7 +1560,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
             </article>}
           </aside>
         </div>}
-        {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel profile={profile} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onResolveReport={resolveQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} onOpenImport={()=>{setScreen("levels");setContentPanelView("review");setImportOpen(true);}} onExport={mode=>{handleExport(mode);setScreen("levels");setContentPanelView("export");setImportOpen(true);}}/></Suspense>}
+        {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onResolveReport={resolveQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} onOpenImport={()=>{setContentPanelView("review");setScreen("data");}} onExport={mode=>{handleExport(mode);setContentPanelView("export");setScreen("data");}}/></Suspense>}
         {confirmAction && (
           <div className="wh-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmAction(null); }}>
           <div className="wh-panel wh-confirm-panel" role="alertdialog">
@@ -1577,7 +1604,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
           <div className="wh-panel">
             <div className="wh-panel-header">
               <span>Case Archive — Badges</span>
-              <button onClick={() => setBadgesOpen(false)} aria-label="Close badges panel">
+              <button onClick={() => setScreen("levels")} aria-label="Close badges panel">
                 <X size={15} />
               </button>
             </div>
@@ -1602,7 +1629,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
           <div className="wh-panel">
             <div className="wh-panel-header">
               <span>Study Dashboard</span>
-              <button onClick={() => setDashboardOpen(false)} aria-label="Close dashboard">
+              <button onClick={() => setScreen("levels")} aria-label="Close dashboard">
                 <X size={15} />
               </button>
             </div>
@@ -1683,7 +1710,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
             <div className="wh-panel-header">
               <span>Data Center</span>
               <button
-                onClick={() => { setImportOpen(false); setReviewPreview(null); setReviewError(null); setAiFixError(null); setAiFixChanges(null); }}
+                onClick={() => { setScreen("levels"); setReviewPreview(null); setReviewError(null); setAiFixError(null); setAiFixChanges(null); }}
                 aria-label="Close content panel"
               >
                 <X size={15} />
@@ -1803,7 +1830,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
           {showFreshCopyPrompt && <div className="wh-fresh-copy-banner">
             <p><b>Fresh copy detected.</b> No saved progress or content found here — if you have a backup from a previous version, restore it now before you start playing.</p>
             <div className="wh-regen-actions">
-              <button className="wh-level-btn" onClick={()=>{setImportOpen(true);setContentPanelView("review");setShowFreshCopyPrompt(false);}}>Open Import Center</button>
+              <button className="wh-level-btn" onClick={()=>{setContentPanelView("review");setShowFreshCopyPrompt(false);setScreen("data");}}>Open Import Center</button>
               <button className="wh-back-btn wh-nav-btn" onClick={()=>setShowFreshCopyPrompt(false)}>Dismiss</button>
             </div>
           </div>}
@@ -2281,7 +2308,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
 
         {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge player={livePlayer} levels={LEVELS} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} /></Suspense>}
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} /></Suspense>}
-        {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => { setScreen("levels"); setDashboardOpen(true); setBadgesOpen(false); }} /></Suspense>}
+        {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
 
         {screen === "speedResults" && (
           <div className="wh-results-card">
@@ -2300,7 +2327,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
           </div>
         )}
       </div>
-      {showNav && <BottomNav screen={screen} isAdmin={isAdmin} onNavigate={(id) => { setBadgesOpen(false); setDashboardOpen(false); setImportOpen(false); setScreen(id); window.scrollTo({ top: 0 }); }} />}
+      {showNav && <BottomNav screen={screen} isAdmin={isAdmin} onNavigate={(id) => setScreen(id)} />}
     </div>
   );
 }

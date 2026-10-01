@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useQueryParam } from "../../../lib/router";
 import { KeyRound, RotateCcw, ShieldCheck, ShieldOff, Trash2 } from "lucide-react";
 import { V2 } from "../../../engine/v2";
 import { isWordKey } from "../../../engine/data";
@@ -9,13 +10,16 @@ import { Badge, ConfirmDialog, Drawer, Kpi, Notice, fmtDate, relTime, useAsync }
 const acc = (p) => (p.answers_30d ? p.correct_30d / p.answers_30d : null);
 const ACTIVITY = [{ id: "", label: "All players" }, { id: "active", label: "Active in 7 days" }, { id: "idle", label: "Idle 30+ days" }, { id: "new", label: "Joined in 7 days" }];
 
-export function Players({ api, players, me, onChanged, openId, onOpen }) {
-  const [role, setRole] = useState("");
-  const [activity, setActivity] = useState("");
+// openName/onOpen: the player whose drawer is open, by username, so the
+// address (/admin/players/sara_22) can be shared.
+export function Players({ api, players, me, onChanged, openName, onOpen }) {
+  const [role, setRole] = useQueryParam("role");
+  const [activity, setActivity] = useQueryParam("activity");
   const [confirm, setConfirm] = useState(null); // { kind, rows }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const all = players.data || [];
+  const openId = openName ? all.find((p) => p.username === openName || p.id === openName)?.id : null;
   const now = Date.now();
   const rows = useMemo(() => all.filter((p) => (!role || p.role === role) && (
     !activity
@@ -63,7 +67,7 @@ export function Players({ api, players, me, onChanged, openId, onOpen }) {
       <DataTable
         id="players" columns={columns} rows={rows} rowKey={(p) => p.id} csvName="word-hunter-players"
         searchText={(p) => p.username} searchPlaceholder="Search players…" initialSort={{ key: "score", dir: "desc" }}
-        resetKey={`${role}|${activity}`} onRowClick={(p) => onOpen(p.id)} selectable={api.online}
+        resetKey={`${role}|${activity}`} onRowClick={(p) => onOpen(p.username)} selectable={api.online} syncUrl
         filters={<>
           <select className="adm-select" value={role} onChange={(e) => setRole(e.target.value)} aria-label="Role"><option value="">All roles</option><option value="admin">Admins</option><option value="player">Players</option></select>
           <select className="adm-select" value={activity} onChange={(e) => setActivity(e.target.value)} aria-label="Activity">{ACTIVITY.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}</select>

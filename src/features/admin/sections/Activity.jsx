@@ -1,5 +1,6 @@
 // Live matches, AI usage and the admin audit log.
 import { useMemo, useState } from "react";
+import { useQueryParam } from "../../../lib/router";
 import { DataTable } from "../DataTable";
 import { BarList, ChartCard, ColumnChart, SimpleTable, formatNumber } from "../charts";
 import { Badge, Kpi, Notice, fmtDate, longDay, relTime, shortDay } from "../adminUi";
@@ -39,7 +40,7 @@ export function LiveMatches({ matches, activity, range }) {
           <BarList data={wins} valueLabel="wins" emptyText="No multiplayer matches yet." />
         </ChartCard>
       </div>
-      <DataTable id="live" columns={columns} rows={rows} rowKey={(r) => `${r.room_code}-${r.played_at}`} csvName="word-hunter-live-matches"
+      <DataTable id="live" syncUrl columns={columns} rows={rows} rowKey={(r) => `${r.room_code}-${r.played_at}`} csvName="word-hunter-live-matches"
         searchText={(r) => `${r.title} ${r.room_code} ${(r.results || []).map((x) => x.username).join(" ")}`} searchPlaceholder="Search lesson, room or player…"
         initialSort={{ key: "played_at", dir: "desc" }} emptyText="No live matches yet." />
     </div>
@@ -78,7 +79,7 @@ export function AiUsage({ usage, activity, range, overview }) {
           <BarList data={perPlayer.slice(0, 12)} valueLabel="calls" emptyText="No AI calls yet." />
         </ChartCard>
       </div>
-      <DataTable id="ai" columns={columns} rows={rows} rowKey={(r) => `${r.day}-${r.username}`} csvName="word-hunter-ai-usage" searchText={(r) => r.username} searchPlaceholder="Search player…" initialSort={{ key: "day", dir: "desc" }} emptyText="No AI calls in this period." />
+      <DataTable id="ai" syncUrl columns={columns} rows={rows} rowKey={(r) => `${r.day}-${r.username}`} csvName="word-hunter-ai-usage" searchText={(r) => r.username} searchPlaceholder="Search player…" initialSort={{ key: "day", dir: "desc" }} emptyText="No AI calls in this period." />
     </div>
   );
 }
@@ -87,7 +88,7 @@ const ACTION_LABEL = { "content.save": "Content saved", "player.role": "Role cha
 const ACTION_TONE = { "content.save": "info", "player.role": "warning", "player.password": "warning", "player.reset": "danger", "player.delete": "danger" };
 
 export function AuditLog({ audit }) {
-  const [action, setAction] = useState("");
+  const [action, setAction] = useQueryParam("action");
   const rows = (audit.data || []).filter((r) => !action || r.action === action);
   const detail = (r) => {
     const d = r.details || {};
@@ -105,7 +106,7 @@ export function AuditLog({ audit }) {
   return (
     <div className={`adm-section ${audit.loading ? "is-refreshing" : ""}`}>
       {audit.error && <Notice tone="error">{audit.error}</Notice>}
-      <DataTable id="audit" columns={columns} rows={rows} rowKey={(r) => r.id} csvName="word-hunter-audit" searchText={(r) => `${r.action} ${r.target || ""} ${JSON.stringify(r.details)}`} searchPlaceholder="Search the log…"
+      <DataTable id="audit" syncUrl columns={columns} rows={rows} rowKey={(r) => r.id} csvName="word-hunter-audit" searchText={(r) => `${r.action} ${r.target || ""} ${JSON.stringify(r.details)}`} searchPlaceholder="Search the log…"
         initialSort={{ key: "at", dir: "desc" }} resetKey={action}
         filters={<select className="adm-select" value={action} onChange={(e) => setAction(e.target.value)} aria-label="Action"><option value="">All actions</option>{Object.entries(ACTION_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>}
         emptyText="Nothing logged yet. Content saves and account changes appear here." />

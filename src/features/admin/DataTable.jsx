@@ -2,7 +2,8 @@
 // size, pagination, row selection with bulk actions, and CSV export of the
 // filtered rows. Data stays client-side (lists here are hundreds to a few
 // thousand rows), so every control responds instantly.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "../../lib/router";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Search, ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
 /* --------------------------------------------------------- pure helpers */
@@ -60,6 +61,12 @@ export function downloadText(name, text, type = "text/csv;charset=utf-8") {
 }
 
 const PAGE_SIZES = [10, 25, 50, 100];
+// "name" -> ascending, "-name" -> descending, "none" -> unsorted.
+export function parseSort(value, fallback = null) {
+  if (!value) return fallback;
+  if (value === "none") return null;
+  return value.startsWith("-") ? { key: value.slice(1), dir: "desc" } : { key: value, dir: "asc" };
+}
 const sizeKey = (id) => `wh-admin-pagesize:${id}`;
 
 /* ----------------------------------------------------------- component */
@@ -67,11 +74,25 @@ const sizeKey = (id) => `wh-admin-pagesize:${id}`;
 export function DataTable({
   id, columns, rows, rowKey, searchText, searchPlaceholder = "Search…", filters, toolbar,
   initialSort = null, selectable = false, bulkActions, onRowClick, emptyText = "Nothing here yet.", csvName,
-  dense = false, resetKey,
+  dense = false, resetKey, syncUrl = false,
 }) {
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState(initialSort);
-  const [page, setPage] = useState(1);
+  // syncUrl: search (?q=), sort (?sort=name or ?sort=-name) and page (?page=)
+  // live in the address bar, so a refresh or a shared link keeps them.
+  const [qs, setQs] = useQuery();
+  const [localQuery, setLocalQuery] = useState("");
+  const [localSort, setLocalSort] = useState(initialSort);
+  const [localPage, setLocalPage] = useState(1);
+  const query = syncUrl ? qs.q || "" : localQuery;
+  const sort = syncUrl ? parseSort(qs.sort, initialSort) : localSort;
+  const page = syncUrl ? Math.max(1, Number(qs.page) || 1) : localPage;
+  const setQuery = (v) => (syncUrl ? setQs({ q: v, page: null }) : setLocalQuery(v));
+  const setPage = (p) => (syncUrl ? setQs({ page: p > 1 ? p : null }, { replace: false }) : setLocalPage(p));
+  const setSort = (fn) => {
+    const next = typeof fn === "function" ? fn(sort) : fn;
+    if (!syncUrl) return setLocalSort(next);
+    const same = (next?.key || null) === (initialSort?.key || null) && (next?.dir || null) === (initialSort?.dir || null);
+    setQs({ sort: same ? null : next ? `${next.dir === "desc" ? "-" : ""}${next.key}` : "none", page: null });
+  };
   const [size, setSize] = useState(() => { try { return Number(localStorage.getItem(sizeKey(id))) || 25; } catch { return 25; } });
   const [selected, setSelected] = useState(() => new Set());
 
@@ -83,8 +104,14 @@ export function DataTable({
   const sorted = useMemo(() => sortRows(filtered, columns, sort), [filtered, columns, sort]);
   const view = paginate(sorted, page, size);
 
-  // New search/filter/data -> back to page 1; selection drops rows that left.
-  useEffect(() => { setPage(1); }, [query, resetKey, size]);
+  // New search/filter/page size -> back to page 1 (not on first render:
+  // a page number from the address bar must survive); selection drops rows
+  // that left.
+  const firstRef = useRef(true);
+  useEffect(() => {
+    if (firstRef.current) { firstRef.current = false; return; }
+    if (page !== 1) { if (syncUrl) setQs({ page: null }); else setLocalPage(1); }
+  }, [query, resetKey, size]);
   useEffect(() => {
     const keys = new Set(rows.map(rowKey));
     setSelected((s) => { const next = new Set([...s].filter((k) => keys.has(k))); return next.size === s.size ? s : next; });
