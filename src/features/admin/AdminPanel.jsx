@@ -1,9 +1,9 @@
 // Admin panel: analytics (overview, players, live, AI), content and
-// reports with paginated tables and bulk actions, an audit log, and the
-// classic tools (editor, grammar, health, settings, data) embedded as-is.
+// reports with paginated tables and bulk actions, data quality, the
+// activity log, app settings, and import & export.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ShieldCheck, BookOpen, FolderTree, Library as LibraryIcon, Database, Flag, HeartPulse, History, LayoutDashboard, RefreshCw, Scale, Settings, Sparkles, Swords, Users } from "lucide-react";
-import { AdminControlCenter } from "./AdminControlCenter";
+import { ContentHealthPanel } from "./ContentHealthPanel";
 import { createAdminApi } from "./adminApi";
 import { RangePicker, useAsync } from "./adminUi";
 import { navigate, pathFor, useLocation, useQueryParam } from "../../lib/router";
@@ -17,6 +17,7 @@ import { DataQuality } from "./sections/DataQuality";
 import { AppSettings } from "./sections/AppSettings";
 import { Categories } from "./sections/Categories";
 import { Library } from "./sections/Library";
+import { Grammar } from "./sections/Grammar";
 import ImportExport from "../data/ImportExport";
 import "../../styles/admin.css";
 
@@ -32,9 +33,9 @@ const NAV = [
     { id: "categories", label: "Categories", icon: FolderTree, desc: "The lessons: order, rename, merge and clean up" },
     { id: "reports", label: "Reports", icon: Flag, desc: "Questions players flagged" },
     { id: "library", label: "Stories & more", icon: LibraryIcon, desc: "Stories, combos and challenges" },
-    { id: "grammar", label: "Grammar", icon: Scale, desc: "Grammar rules and their questions", classic: "grammar" },
+    { id: "grammar", label: "Grammar", icon: Scale, desc: "Rules, their questions and how the class does on them" },
     { id: "quality", label: "Data quality", icon: ShieldCheck, desc: "Problems in the data, word completeness and accuracy by type" },
-    { id: "health", label: "Content health", icon: HeartPulse, desc: "Find and fix weak content with AI", classic: "health" },
+    { id: "health", label: "Content health", icon: HeartPulse, desc: "Find and fix weak content with AI" },
   ] },
   { group: "System", items: [
     { id: "audit", label: "Activity log", icon: History, desc: "Every change: who, when, which item, and each field before and after" },
@@ -123,7 +124,7 @@ export function AdminPanel(props) {
           </div>
           <div className="adm-top-actions">
             {showsRange && <RangePicker value={range} onChange={setRange} />}
-            {!current.classic && !["settings", "data"].includes(section) && <button className="adm-btn ghost" onClick={refresh} title={`Updated ${new Date(refreshedAt).toLocaleTimeString()}`}><RefreshCw size={15} className={overview.loading || activity.loading ? "spin" : ""} /> Refresh</button>}
+            {!["settings", "data", "health"].includes(section) && <button className="adm-btn ghost" onClick={refresh} title={`Updated ${new Date(refreshedAt).toLocaleTimeString()}`}><RefreshCw size={15} className={overview.loading || activity.loading ? "spin" : ""} /> Refresh</button>}
           </div>
         </header>
         {section === "overview" && <Overview range={range} overview={overview} activity={activity} wordStats={wordStats} players={players} content={content} onOpenWord={editWord} onOpenPlayer={openPlayerByName} onNavigate={setSection} />}
@@ -132,7 +133,7 @@ export function AdminPanel(props) {
         {section === "ai" && <AiSection api={api} tick={tick} activity={activity} range={range} overview={overview} />}
         {section === "words" && <Words content={content} wordStats={wordStats} mastery={mastery} onUpdate={onUpdate} onRenameWord={props.onRenameWord} openWord={item} onOpen={(w) => keepQuery("words", w)} />}
         {section === "categories" && <Categories content={content} onUpdate={onUpdate} onMerge={props.onMergeCategories} onRemoveEmpty={props.onRemoveEmptyLevels} openName={item} onOpen={(n) => keepQuery("categories", n)} onOpenWord={editWord}
-          onNavigate={(sec, id, type) => navigate(pathFor("admin", { section: sec, item: sec === "library" ? id : null }) + (type ? `?type=${type}` : sec === "grammar" && id ? `?q=${encodeURIComponent(id)}` : ""))} />}
+          onNavigate={(sec, id, type) => navigate(pathFor("admin", { section: sec, item: sec === "library" || sec === "grammar" ? id : null }) + (type ? `?type=${type}` : ""))} />}
         {section === "library" && <Library content={content} onUpdate={onUpdate} openId={item} onOpen={(id) => keepQuery("library", id)} />}
         {section === "reports" && <Reports reports={reports} content={content} onResolve={onResolveReport} onReopen={onReopenReport} onDelete={onDeleteReport} onRetire={onRetireVariant} onReviewReport={onReviewReport} onUpdate={onUpdate}
           openKey={item} onOpen={(key) => navigate(pathFor("admin", { section: "reports", item: key }) + window.location.search)} onOpenWord={editWord} onOpenPlayer={openPlayerByName} />}
@@ -140,8 +141,9 @@ export function AdminPanel(props) {
         {section === "data" && props.dataTools && <ImportExport variant="admin" isAdmin tools={props.dataTools} onBack={onClose} />}
         {section === "quality" && <DataQuality api={api} tick={tick} onOpenWord={editWord} onOpenReport={(id) => setSection("reports", id)} onOpenPlayer={openPlayerByName} onNavigate={setSection} />}
         {section === "audit" && <AuditLog api={api} tick={tick} content={content} onUpdate={onUpdate} players={players} onOpenWord={editWord} onOpenReport={(id) => setSection("reports", id)} onOpenPlayer={openPlayerByName} />}
-        {current.classic && <div className="adm-classic">
-          <AdminControlCenter {...props} embedded tab={current.classic} />
+        {section === "grammar" && <Grammar content={content} wordStats={wordStats} onUpdate={onUpdate} openId={item} onOpen={(id) => keepQuery("grammar", id)} />}
+        {section === "health" && <div className="adm-classic">
+          <ContentHealthPanel content={content} onUpdate={onUpdate} onMergeCategories={props.onMergeCategories} onRemoveEmptyLevels={props.onRemoveEmptyLevels} />
         </div>}
       </main>
     </section>

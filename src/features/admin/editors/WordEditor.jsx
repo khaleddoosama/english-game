@@ -81,10 +81,10 @@ export function wordProblems(item, all, original) {
   return out;
 }
 
-function Area({ label, hint, value, onChange, rows = 2, mono }) {
+export function Area({ label, hint, value, onChange, rows = 2, mono }) {
   return <label className="adm-field"><span>{label}{hint && <small className="adm-muted"> · {hint}</small>}</span><textarea className={`adm-input adm-textarea ${mono ? "mono" : ""}`} rows={rows} value={value} onChange={(e) => onChange(e.target.value)} /></label>;
 }
-function Text({ label, hint, value, onChange, list, placeholder }) {
+export function Text({ label, hint, value, onChange, list, placeholder }) {
   return <label className="adm-field"><span>{label}{hint && <small className="adm-muted"> · {hint}</small>}</span><input className="adm-input" value={value} list={list} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} /></label>;
 }
 

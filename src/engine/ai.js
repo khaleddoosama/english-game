@@ -338,7 +338,7 @@ export async function aiFixWordBatch(kind, words, allWords) {
 // clearly the same topic written differently (punctuation, spacing,
 // word order, abbreviation) — never merely related-but-distinct topics.
 // Returns only groups the model is confident about; the admin still
-// applies each merge explicitly via applyCategoryMerge in AdminControlCenter.
+// applies each merge explicitly from Content health.
 export async function suggestCategoryMerges(categories) {
   const result = await callAiJsonAdmin(
     `You are cleaning up the category taxonomy for "Word Hunter", an English vocabulary game's admin panel. You are given every distinct category name currently in use. Find groups of names that are clearly the SAME topic written differently — different punctuation, spacing, capitalization, word order, singular/plural, or an abbreviation (e.g. "Environment-Nature" vs "Environment & Nature"). Do NOT merge categories that are merely related but distinct topics (e.g. "Food" and "Cooking" stay separate; "Personality" and "Emotions" stay separate). Only propose a merge when confident a content author would consider them literally the same category. For each group, pick whichever existing name is best-formatted as the canonical one — never invent a new name not already in the list. Return ONLY JSON with shape {"merges": [{"canonical": "exact existing name", "duplicates": ["exact existing name", "..."]}]}. Omit any category with no duplicates — only include groups of 2+ names.`,

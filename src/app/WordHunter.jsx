@@ -799,12 +799,17 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   // the tab, switching apps on a phone) runs them at once instead of
   // losing the last 600 ms of changes.
   const pendingSavesRef = useRef({});
+  const contentWritesRef = useRef(0);
   useEffect(() => {
     const flush = () => Object.values(pendingSavesRef.current).forEach((run) => run());
     const onHide = () => { if (document.visibilityState === "hidden") flush(); };
+    // An admin's content edit still being written: ask before leaving, as
+    // a reload or closed tab would cut the write off.
+    const onLeave = (e) => { flush(); if (contentWritesRef.current > 0) { e.preventDefault(); e.returnValue = ""; } };
     window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", onLeave);
     document.addEventListener("visibilitychange", onHide);
-    return () => { window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", onHide); };
+    return () => { window.removeEventListener("pagehide", flush); window.removeEventListener("beforeunload", onLeave); document.removeEventListener("visibilitychange", onHide); };
   }, []);
   function debouncedSave(name, run, ms = 600) {
     let done = false;
@@ -824,16 +829,22 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   // Save content whenever it changes (admin only — players read content,
   // they never write it). Separate from progress so a progress reset never
   // touches imported vocabulary.
+  // Content edits are single clicks (save, delete, import), not typing, so
+  // the wait is short: it only folds together changes made in one go.
   const contentSavingRef = useRef(Promise.resolve());
   useEffect(() => {
     if (!loaded || !isAdmin) return;
-    return debouncedSave("content", () => {
+    contentWritesRef.current++;
+    let counted = true;
+    const settle = () => { if (counted) { counted = false; contentWritesRef.current--; } };
+    const cancel = debouncedSave("content", () => {
       const content = { note: contentNoteRef.current, combos: customCombos, stories: customStories, words: customWords, grammar: customGrammar, challenges: customChallenges, levelOrder: LEVEL_ORDER };
       contentSavingRef.current = contentSavingRef.current.then(() => repo.saveContent(content)).catch((e) => {
         console.error("Could not save content:", e);
         setStorageWarning("Content could not be saved to the server. Check your connection; your last change will be saved with the next edit. Take a Full Backup if this keeps happening.");
-      });
-    });
+      }).finally(settle);
+    }, 150);
+    return () => { cancel(); if (pendingSavesRef.current.content === undefined) return; settle(); };
   }, [loaded, customCombos, customStories, customWords, customGrammar, customChallenges, dataVersion]);
 
   // Detect newly earned badges and surface a small celebration toast
