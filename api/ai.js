@@ -16,7 +16,8 @@ export async function POST(request) {
   const denied = await gate(request, { adminOnly: !!body.adminOnly });
   if (denied) return denied;
   try {
-    return json(200, { text: await generateJsonText(prompt) });
+    const { text, model } = await generateJsonText(prompt);
+    return json(200, { text, model });
   } catch (e) {
     console.error("ai:", e.message);
     return json(e.status || 502, { error: e.message || "AI request failed." });

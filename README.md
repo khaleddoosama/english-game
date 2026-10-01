@@ -31,6 +31,8 @@ and fill it in to use the real backend (AI calls need `vercel dev`, since
 | `GEMINI_MODEL` | server | default `gemini-3.8-flash` |
 | `GEMINI_TTS_MODEL` | server | default `gemini-3.8-flash-lite-tts` |
 | `GEMINI_TTS_VOICE` | server | default `Kore` |
+| `GEMINI_FALLBACK_MODELS` | server | tried in order when the main model is overloaded (503), rate-limited (429) or missing; default `gemini-3.5-flash-lite,gemini-flash-lite-latest` |
+| `GEMINI_TTS_FALLBACK_MODELS` | server | same for speech; default `gemini-3.8-flash-tts,gemini-3.1-flash-tts-preview` |
 | `PLAYER_DAILY_AI_CALLS` | server | AI calls per player per day, default 150 (admin unlimited) |
 | `CRON_SECRET` | server | protects `/api/keepalive` (Vercel sends it to cron calls) |
 

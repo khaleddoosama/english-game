@@ -6,6 +6,10 @@ export const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 export const GEMINI_TTS_MODEL = process.env.GEMINI_TTS_MODEL || "gemini-3.8-flash-lite-tts";
 export const GEMINI_TTS_VOICE = process.env.GEMINI_TTS_VOICE || "Kore";
+// Tried in order when the main model is overloaded, rate-limited or gone.
+const list = (v, d) => (v ?? d).split(",").map((x) => x.trim()).filter(Boolean);
+export const GEMINI_FALLBACK_MODELS = list(process.env.GEMINI_FALLBACK_MODELS, "gemini-3.5-flash-lite,gemini-flash-lite-latest");
+export const GEMINI_TTS_FALLBACK_MODELS = list(process.env.GEMINI_TTS_FALLBACK_MODELS, "gemini-3.8-flash-tts,gemini-3.1-flash-tts-preview");
 export const PLAYER_DAILY_AI_CALLS = Number(process.env.PLAYER_DAILY_AI_CALLS || 150);
 
 export const json = (status, body, headers = {}) =>
