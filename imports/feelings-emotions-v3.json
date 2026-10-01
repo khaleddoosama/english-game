@@ -1,0 +1,2230 @@
+{
+  "schemaVersion": 3,
+  "kind": "content",
+  "note": "Feelings and Emotions lesson (board photo), content v3: 27 words and 4 grammar rules (making suggestions, feeling adjectives + preposition, -ed/-ing adjectives, -ed pronunciation). 'Obsessed' is on the board but already in Health-Body, so it's left out here.",
+  "categories": [
+    {
+      "id": "feelings-emotions",
+      "title": "Feelings and Emotions",
+      "subCategories": [
+        {
+          "id": "happy-feelings",
+          "title": "Happy feelings"
+        },
+        {
+          "id": "worry-and-sadness",
+          "title": "Worry and sadness"
+        },
+        {
+          "id": "anger",
+          "title": "Anger"
+        },
+        {
+          "id": "outlook",
+          "title": "Outlook"
+        },
+        {
+          "id": "expressing-feelings",
+          "title": "Expressing feelings"
+        },
+        {
+          "id": "sport-and-fights",
+          "title": "Sport and fights"
+        }
+      ]
+    }
+  ],
+  "words": [
+    {
+      "id": "enthusiastic",
+      "word": "Enthusiastic",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "happy-feelings",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "Showing a lot of interest and energy about something you like doing.",
+      "situations": [
+        "Nora joined the drama club and offered to help with everything — lights, tickets, even cleaning."
+      ],
+      "gaps": [
+        "The new science teacher was so ______ that the whole class started to love the subject.",
+        "Sami is an ______ volunteer; he is always the first to arrive and the last to leave."
+      ],
+      "hints": [
+        "You show a lot of interest and energy in something.",
+        "It starts with 'enth-' and ends with '-astic'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She is very enthusiastic for her new job.",
+          "correction": "She is very enthusiastic about her new job.",
+          "why": "We say 'enthusiastic about' something."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "enthusiasm",
+          "pos": "noun"
+        },
+        {
+          "word": "enthusiastically",
+          "pos": "adverb"
+        },
+        {
+          "word": "enthusiast",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "enthusiastic about",
+        "very enthusiastic"
+      ],
+      "synonyms": [
+        "eager",
+        "keen"
+      ],
+      "antonyms": [
+        "unenthusiastic",
+        "indifferent"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "excited",
+          "positive",
+          "optimistic",
+          "like-a-kid-with-a-new-toy"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "He's really enthusiastic ______ the new project.",
+          "answer": "about",
+          "wrong": [
+            "for",
+            "at",
+            "on"
+          ],
+          "explanation": "Enthusiastic about something."
+        }
+      ]
+    },
+    {
+      "id": "excited",
+      "word": "Excited",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "happy-feelings",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "Very happy and full of energy because something good is going to happen.",
+      "situations": [
+        "The children were excited the night before the school trip and couldn't stop talking."
+      ],
+      "gaps": [
+        "The kids were so ______ about the trip to the zoo that they jumped up and down all morning.",
+        "I'm really ______ to see my cousins next week — I haven't seen them for two years."
+      ],
+      "hints": [
+        "How you feel before something fun, like a party or a trip.",
+        "It ends in '-ed', not '-ing'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The football match was very excited.",
+          "correction": "The football match was very exciting.",
+          "why": "Use -ed for how a person feels and -ing for the thing that causes the feeling."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "excite",
+          "pos": "verb"
+        },
+        {
+          "word": "excitement",
+          "pos": "noun"
+        },
+        {
+          "word": "exciting",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "excited about",
+        "excited to see"
+      ],
+      "synonyms": [
+        "thrilled"
+      ],
+      "antonyms": [
+        "bored"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "enthusiastic",
+          "positive",
+          "like-a-kid-with-a-new-toy",
+          "proud",
+          "satisfied",
+          "thankful",
+          "optimistic"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "We're all excited ______ the holiday.",
+          "answer": "about",
+          "wrong": [
+            "of",
+            "on",
+            "at"
+          ],
+          "explanation": "Excited about something."
+        }
+      ]
+    },
+    {
+      "id": "satisfied",
+      "word": "Satisfied",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "happy-feelings",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "Pleased because you got what you wanted or needed.",
+      "situations": [
+        "After a long day of painting the room, Omar looked at the walls and felt satisfied."
+      ],
+      "gaps": [
+        "The customer was ______ with the repair and left a five-star review.",
+        "I'm really ______ with my new phone — the camera is great and the battery lasts two days."
+      ],
+      "hints": [
+        "You feel this when something is as good as you wanted.",
+        "It starts with 'sat-' and ends with '-fied'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I'm not satisfy with the result.",
+          "correction": "I'm not satisfied with the result.",
+          "why": "The adjective is 'satisfied'; 'satisfy' is the verb."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "satisfy",
+          "pos": "verb"
+        },
+        {
+          "word": "satisfaction",
+          "pos": "noun"
+        },
+        {
+          "word": "satisfying",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "satisfied with",
+        "a satisfied customer"
+      ],
+      "synonyms": [
+        "pleased",
+        "content"
+      ],
+      "antonyms": [
+        "dissatisfied",
+        "disappointed"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "proud",
+          "excited",
+          "thankful",
+          "annoyed",
+          "disappointed"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "Our teacher was satisfied ______ our work.",
+          "answer": "with",
+          "wrong": [
+            "about",
+            "from",
+            "of"
+          ],
+          "explanation": "Satisfied with something."
+        }
+      ]
+    },
+    {
+      "id": "thankful",
+      "word": "Thankful",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "happy-feelings",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "Glad and grateful that something good happened or that someone helped you.",
+      "situations": [
+        "Mona was thankful to her neighbours for watering her plants while she was away."
+      ],
+      "gaps": [
+        "After the storm, we were ______ that nobody in the family was hurt.",
+        "I'm so ______ to my uncle for lending me his car when mine broke down."
+      ],
+      "hints": [
+        "You feel this when someone helps you or when you are lucky.",
+        "Thank + a word ending meaning 'full of'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I'm thankful of your help.",
+          "correction": "I'm thankful for your help.",
+          "why": "Thankful to a person, for a thing."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "thank",
+          "pos": "verb"
+        },
+        {
+          "word": "thanks",
+          "pos": "noun"
+        },
+        {
+          "word": "thankfully",
+          "pos": "adverb"
+        }
+      ],
+      "collocations": [
+        "thankful to someone",
+        "thankful for something"
+      ],
+      "synonyms": [
+        "grateful"
+      ],
+      "antonyms": [
+        "ungrateful"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "satisfied",
+          "proud",
+          "excited"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "I'm thankful ______ my parents for all their support.",
+          "answer": "to",
+          "wrong": [
+            "with",
+            "of",
+            "at"
+          ],
+          "explanation": "Thankful to a person (and for a thing)."
+        }
+      ]
+    },
+    {
+      "id": "proud",
+      "word": "Proud",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "happy-feelings",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "Pleased about something good that you or someone close to you has done.",
+      "situations": [
+        "Ahmed's mother cried with joy at his graduation; she was so proud of him."
+      ],
+      "gaps": [
+        "My parents were so ______ of me when I finished university.",
+        "You should be ______ of yourself — you trained every day and it worked."
+      ],
+      "hints": [
+        "You feel this when you or your family do something great.",
+        "It sounds like 'crowd' with a 'p'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She is very proud for her son.",
+          "correction": "She is very proud of her son.",
+          "why": "We say 'proud of' someone or something."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "pride",
+          "pos": "noun"
+        },
+        {
+          "word": "proudly",
+          "pos": "adverb"
+        }
+      ],
+      "collocations": [
+        "proud of",
+        "feel proud"
+      ],
+      "synonyms": [
+        "pleased"
+      ],
+      "antonyms": [
+        "ashamed"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "satisfied",
+          "excited",
+          "thankful"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "She's very proud ______ her little brother.",
+          "answer": "of",
+          "wrong": [
+            "for",
+            "with",
+            "from"
+          ],
+          "explanation": "Proud of someone or something."
+        }
+      ]
+    },
+    {
+      "id": "hope",
+      "word": "Hope",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb",
+        "noun"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "happy-feelings",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To want something good to happen and believe it might happen; this feeling (noun).",
+      "situations": [
+        "I hope the rain stops before the match starts."
+      ],
+      "gaps": [
+        "I ______ you feel better soon — get some rest.",
+        "The doctors say she is getting stronger, so don't give up ______."
+      ],
+      "hints": [
+        "A wish for something good in the future.",
+        "It rhymes with 'rope'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I hope you to come to my party.",
+          "correction": "I hope you can come to my party.",
+          "why": "Don't use 'hope + person + to'; use 'hope (that) + sentence'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "hopeful",
+          "pos": "adjective"
+        },
+        {
+          "word": "hopeless",
+          "pos": "adjective"
+        },
+        {
+          "word": "hopefully",
+          "pos": "adverb"
+        }
+      ],
+      "collocations": [
+        "I hope so",
+        "give up hope",
+        "hope for"
+      ],
+      "synonyms": [
+        "wish"
+      ],
+      "antonyms": [
+        "despair"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "collocationChecks": [
+        {
+          "sentence": "We all hope ______ good weather tomorrow.",
+          "answer": "for",
+          "wrong": [
+            "on",
+            "to",
+            "at"
+          ],
+          "explanation": "Hope for something."
+        }
+      ]
+    },
+    {
+      "id": "like-a-kid-with-a-new-toy",
+      "word": "Like a kid with a new toy",
+      "type": "idiom",
+      "partsOfSpeech": [
+        "adjective phrase"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "happy-feelings",
+      "level": "B2",
+      "register": "informal",
+      "meaning": "Very happy and excited about something new you have.",
+      "situations": [
+        "When he takes his salary, he feels like a kid with a new toy."
+      ],
+      "gaps": [
+        "When Ali got his first car, he was ______ — he washed it every single day.",
+        "Grandpa is ______ with his new smartphone; he takes photos of everything."
+      ],
+      "hints": [
+        "Think of a child on his birthday morning.",
+        "It starts with 'like a kid'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He's like a kid with new toy.",
+          "correction": "He's like a kid with a new toy.",
+          "why": "The idiom keeps 'a': a new toy."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "be like a kid with a new toy"
+      ],
+      "synonyms": [
+        "over the moon",
+        "thrilled"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "excited",
+          "enthusiastic",
+          "proud",
+          "thankful"
+        ]
+      }
+    },
+    {
+      "id": "worried",
+      "word": "Worried",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "worry-and-sadness",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "Unhappy because you keep thinking about a problem or something bad that might happen.",
+      "situations": [
+        "Sara is worried about her exam results, so she can't sleep."
+      ],
+      "gaps": [
+        "Mum was ______ and kept calling my brother's phone to check he was safe.",
+        "I'm ______ about my grandmother — she's been ill for a week."
+      ],
+      "hints": [
+        "You feel this when you keep thinking something bad might happen.",
+        "It comes from 'worry'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Don't be worried of the test.",
+          "correction": "Don't be worried about the test.",
+          "why": "We say 'worried about'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "worry",
+          "pos": "verb"
+        },
+        {
+          "word": "worry",
+          "pos": "noun"
+        },
+        {
+          "word": "worrying",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "worried about",
+        "worried sick"
+      ],
+      "synonyms": [
+        "anxious",
+        "concerned"
+      ],
+      "antonyms": [
+        "relaxed",
+        "calm"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "afraid",
+          "upset",
+          "pessimistic"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "Try not to be worried ______ the interview.",
+          "answer": "about",
+          "wrong": [
+            "of",
+            "from",
+            "at"
+          ],
+          "explanation": "Worried about something."
+        }
+      ]
+    },
+    {
+      "id": "upset",
+      "word": "Upset",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective",
+        "verb"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "worry-and-sadness",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "Unhappy or worried because something unpleasant has happened; (verb) to make someone feel this way.",
+      "situations": [
+        "Lina was upset when her best friend forgot her birthday."
+      ],
+      "gaps": [
+        "She cried for an hour and was still ______ when her mother got home.",
+        "Please don't tell him the bad news yet — it will ______ him before his exam."
+      ],
+      "hints": [
+        "Unhappy because something bad happened.",
+        "Its past form looks the same as the present."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The news upsetted me.",
+          "correction": "The news upset me.",
+          "why": "Upset doesn't change in the past: upset – upset – upset."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "upsetting",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "get upset",
+        "upset about",
+        "upset stomach"
+      ],
+      "synonyms": [
+        "unhappy",
+        "hurt"
+      ],
+      "antonyms": [
+        "calm",
+        "happy"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "disappointed",
+          "angry",
+          "annoyed",
+          "worried",
+          "feel-blue",
+          "afraid"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "He gets upset ______ small things.",
+          "answer": "about",
+          "wrong": [
+            "of",
+            "for",
+            "in"
+          ],
+          "explanation": "Upset about something."
+        }
+      ]
+    },
+    {
+      "id": "disappointed",
+      "word": "Disappointed",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "worry-and-sadness",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "Sad because something was not as good as you hoped, or did not happen.",
+      "situations": [
+        "Karim was disappointed when the concert was cancelled at the last minute."
+      ],
+      "gaps": [
+        "We were ______ with the hotel — the pictures online looked much better.",
+        "He was ______ that it rained on the day of the beach trip."
+      ],
+      "hints": [
+        "You feel this when something is worse than you expected.",
+        "dis + appoint + ed"
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The film was disappointed.",
+          "correction": "The film was disappointing.",
+          "why": "People feel disappointed; the thing that causes it is disappointing."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "disappoint",
+          "pos": "verb"
+        },
+        {
+          "word": "disappointment",
+          "pos": "noun"
+        },
+        {
+          "word": "disappointing",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "disappointed with",
+        "disappointed in someone"
+      ],
+      "synonyms": [
+        "let down"
+      ],
+      "antonyms": [
+        "satisfied",
+        "pleased"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "upset",
+          "annoyed",
+          "feel-blue",
+          "angry",
+          "furious"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "I'm disappointed ______ my exam results.",
+          "answer": "with",
+          "wrong": [
+            "from",
+            "of",
+            "on"
+          ],
+          "explanation": "Disappointed with something (or in someone)."
+        }
+      ]
+    },
+    {
+      "id": "afraid",
+      "word": "Afraid",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "worry-and-sadness",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "Frightened, or worried that something bad or dangerous will happen.",
+      "situations": [
+        "My little sister is afraid of dogs, even small ones."
+      ],
+      "gaps": [
+        "My little brother is ______ of the dark and sleeps with the light on.",
+        "Don't be ______ to ask questions in class — everyone learns that way."
+      ],
+      "hints": [
+        "Another word for 'scared'.",
+        "It starts with 'a' and rhymes with 'paid'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She is afraid from dogs.",
+          "correction": "She is afraid of dogs.",
+          "why": "We say 'afraid of'. Also, 'afraid' doesn't go before a noun: not 'an afraid child'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "fear",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "afraid of",
+        "I'm afraid (polite)"
+      ],
+      "synonyms": [
+        "scared",
+        "frightened"
+      ],
+      "antonyms": [
+        "brave",
+        "fearless"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "worried"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "Many people are afraid ______ spiders.",
+          "answer": "of",
+          "wrong": [
+            "from",
+            "with",
+            "at"
+          ],
+          "explanation": "Afraid of — not 'afraid from'."
+        }
+      ]
+    },
+    {
+      "id": "feel-blue",
+      "word": "Feel blue",
+      "type": "idiom",
+      "partsOfSpeech": [
+        "verb phrase"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "worry-and-sadness",
+      "level": "B1",
+      "register": "informal",
+      "meaning": "To feel sad.",
+      "situations": [
+        "I am blue today — I miss my family."
+      ],
+      "gaps": [
+        "Whenever I ______, I call my grandma and she cheers me up.",
+        "Long, grey winters make many people ______ and want to stay in bed."
+      ],
+      "hints": [
+        "An informal way to say 'feel sad'.",
+        "The missing colour is the colour of the sky."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I'm feeling blues today.",
+          "correction": "I'm feeling blue today.",
+          "why": "The idiom uses 'blue', not 'blues'."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "feel blue",
+        "I'm blue"
+      ],
+      "synonyms": [
+        "feel down",
+        "sad"
+      ],
+      "antonyms": [
+        "happy"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "upset",
+          "disappointed"
+        ]
+      }
+    },
+    {
+      "id": "angry",
+      "word": "Angry",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "anger",
+      "level": "A1",
+      "register": "neutral",
+      "meaning": "Having a strong feeling against someone who has done something bad or unfair.",
+      "situations": [
+        "You shouldn't get angry that fast. You should hold your horses."
+      ],
+      "gaps": [
+        "The driver got ______ and shouted at the man who hit his car.",
+        "My dad is never ______ with us for long; he forgives us quickly."
+      ],
+      "hints": [
+        "How you feel when someone treats you badly.",
+        "It comes from the noun 'anger'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He was angry on me.",
+          "correction": "He was angry with me.",
+          "why": "Angry with (or at) a person, about a thing."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "anger",
+          "pos": "noun"
+        },
+        {
+          "word": "angrily",
+          "pos": "adverb"
+        }
+      ],
+      "collocations": [
+        "angry with someone",
+        "angry about something",
+        "get angry"
+      ],
+      "synonyms": [
+        "mad",
+        "cross"
+      ],
+      "antonyms": [
+        "calm",
+        "pleased"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "annoyed",
+          "furious"
+        ],
+        "excludeWith": [
+          "annoyed",
+          "furious",
+          "upset",
+          "disappointed",
+          "see-red",
+          "blow-up"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "She was angry ______ me for breaking her phone.",
+          "answer": "with",
+          "wrong": [
+            "on",
+            "from",
+            "to"
+          ],
+          "explanation": "Angry with (or at) a person."
+        }
+      ]
+    },
+    {
+      "id": "annoyed",
+      "word": "Annoyed",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "anger",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "A little angry because something keeps bothering you.",
+      "situations": [
+        "I was annoyed because my brother kept taking my charger."
+      ],
+      "gaps": [
+        "I was a bit ______ when the people behind me talked during the whole film.",
+        "She gets ______ when her brother takes her charger without asking."
+      ],
+      "hints": [
+        "A little angry.",
+        "It ends in '-ed' because it is how a person feels."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I'm annoying because the bus is late.",
+          "correction": "I'm annoyed because the bus is late.",
+          "why": "Use -ed for how you feel; 'annoying' describes the thing that bothers you."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "annoy",
+          "pos": "verb"
+        },
+        {
+          "word": "annoyance",
+          "pos": "noun"
+        },
+        {
+          "word": "annoying",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "annoyed with someone",
+        "annoyed about something",
+        "a bit annoyed"
+      ],
+      "synonyms": [
+        "irritated"
+      ],
+      "antonyms": [
+        "pleased"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "annoying",
+          "angry"
+        ],
+        "excludeWith": [
+          "angry",
+          "upset",
+          "furious"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "He was annoyed ______ his sister for reading his messages.",
+          "answer": "with",
+          "wrong": [
+            "from",
+            "on",
+            "to"
+          ],
+          "explanation": "Annoyed with a person."
+        }
+      ]
+    },
+    {
+      "id": "annoying",
+      "word": "Annoying",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "anger",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "Making you feel a little angry.",
+      "situations": [
+        "That song is so annoying — I've heard it ten times today."
+      ],
+      "gaps": [
+        "That noise from the fridge is really ______ — it keeps me awake.",
+        "It's so ______ when people talk loudly on their phones on the bus."
+      ],
+      "hints": [
+        "Describes the thing that makes you a little angry.",
+        "It ends in '-ing'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I feel annoying today.",
+          "correction": "I feel annoyed today.",
+          "why": "People feel annoyed; the thing is annoying."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "annoy",
+          "pos": "verb"
+        },
+        {
+          "word": "annoyed",
+          "pos": "adjective"
+        },
+        {
+          "word": "annoyance",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "really annoying",
+        "an annoying habit"
+      ],
+      "synonyms": [
+        "irritating"
+      ],
+      "antonyms": [
+        "pleasant"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "annoyed"
+        ],
+        "excludeWith": []
+      }
+    },
+    {
+      "id": "furious",
+      "word": "Furious",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "anger",
+      "level": "B2",
+      "register": "neutral",
+      "meaning": "Extremely angry.",
+      "situations": [
+        "The coach was furious when the referee didn't give the penalty."
+      ],
+      "gaps": [
+        "When he saw the big scratch on his new car, he was absolutely ______.",
+        "She was ______ with the airline for losing her bags for the second time."
+      ],
+      "hints": [
+        "Much stronger than 'angry'.",
+        "It starts with 'fur-'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He was very furious.",
+          "correction": "He was absolutely furious.",
+          "why": "Furious is already extreme, so we use 'absolutely', not 'very'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "fury",
+          "pos": "noun"
+        },
+        {
+          "word": "furiously",
+          "pos": "adverb"
+        }
+      ],
+      "collocations": [
+        "absolutely furious",
+        "furious with someone"
+      ],
+      "synonyms": [
+        "livid"
+      ],
+      "antonyms": [
+        "calm"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "angry"
+        ],
+        "excludeWith": [
+          "angry",
+          "annoyed",
+          "upset",
+          "disappointed"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "The fans were furious ______ the referee.",
+          "answer": "with",
+          "wrong": [
+            "on",
+            "to",
+            "from"
+          ],
+          "explanation": "Furious with a person."
+        }
+      ]
+    },
+    {
+      "id": "anger",
+      "word": "Anger",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "anger",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "The strong feeling you have when you think someone has treated you badly or unfairly.",
+      "situations": [
+        "He couldn't hide his anger when they cancelled his flight."
+      ],
+      "gaps": [
+        "She couldn't hide her ______ when she saw her broken laptop.",
+        "Take a deep breath and count to ten to control your ______."
+      ],
+      "hints": [
+        "The feeling of being angry (a noun).",
+        "Take 'angry' and change the end."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He shouted with angry.",
+          "correction": "He shouted in anger.",
+          "why": "After a preposition we need the noun 'anger', not the adjective 'angry'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "angry",
+          "pos": "adjective"
+        },
+        {
+          "word": "angrily",
+          "pos": "adverb"
+        }
+      ],
+      "collocations": [
+        "control your anger",
+        "in anger",
+        "anger management"
+      ],
+      "synonyms": [
+        "rage"
+      ],
+      "antonyms": [
+        "calm"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "fury"
+        ],
+        "excludeWith": [
+          "fury"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "He said it ______ anger and was sorry later.",
+          "answer": "in",
+          "wrong": [
+            "at",
+            "on",
+            "by"
+          ],
+          "explanation": "Do or say something in anger."
+        }
+      ]
+    },
+    {
+      "id": "fury",
+      "word": "Fury",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "anger",
+      "level": "B2",
+      "register": "neutral",
+      "meaning": "Extreme anger.",
+      "situations": [
+        "The crowd's fury grew when the match was cancelled."
+      ],
+      "gaps": [
+        "His face turned red with ______ when he read the rude message.",
+        "The crowd's ______ grew when the match was cancelled at the last minute."
+      ],
+      "hints": [
+        "Very strong anger (a noun).",
+        "The noun from 'furious'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He was in a big fury.",
+          "correction": "He was in a rage. / He was furious.",
+          "why": "We usually say 'with fury' or 'furious', not 'a big fury'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "furious",
+          "pos": "adjective"
+        },
+        {
+          "word": "furiously",
+          "pos": "adverb"
+        }
+      ],
+      "collocations": [
+        "with fury",
+        "shake with fury"
+      ],
+      "synonyms": [
+        "rage"
+      ],
+      "antonyms": [
+        "calm"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "anger"
+        ],
+        "excludeWith": [
+          "anger"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "She was shaking ______ fury.",
+          "answer": "with",
+          "wrong": [
+            "of",
+            "from",
+            "at"
+          ],
+          "explanation": "Shake / turn red with fury."
+        }
+      ]
+    },
+    {
+      "id": "see-red",
+      "word": "See red",
+      "type": "idiom",
+      "partsOfSpeech": [
+        "verb phrase"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "anger",
+      "level": "B2",
+      "register": "informal",
+      "meaning": "To suddenly become very angry.",
+      "situations": [
+        "When someone is rude to my mother, I see red."
+      ],
+      "gaps": [
+        "Small things make my brother ______ — he shouts at everyone.",
+        "Try not to ______ and start shouting every time someone disagrees with you."
+      ],
+      "hints": [
+        "To suddenly get very angry.",
+        "Think of the colour of anger."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He saw the red when he lost.",
+          "correction": "He saw red when he lost.",
+          "why": "The idiom has no 'the': see red."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "make someone see red"
+      ],
+      "synonyms": [
+        "lose your temper",
+        "get angry"
+      ],
+      "antonyms": [
+        "keep calm"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "feel-blue",
+          "blow-up",
+          "angry"
+        ]
+      }
+    },
+    {
+      "id": "hold-your-horses",
+      "word": "Hold your horses",
+      "type": "idiom",
+      "partsOfSpeech": [
+        "phrase"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "anger",
+      "level": "B1",
+      "register": "informal",
+      "meaning": "Wait a moment and don't act or decide too quickly.",
+      "situations": [
+        "You shouldn't get angry that fast. You should hold your horses."
+      ],
+      "gaps": [
+        "______! Let's read the instructions before we start building the table.",
+        "You want to quit your job today? ______ — think about it for a few days first."
+      ],
+      "hints": [
+        "Telling someone to wait and slow down.",
+        "It's about animals you ride."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Hold your horse!",
+          "correction": "Hold your horses!",
+          "why": "The idiom always uses the plural 'horses'."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "hold your horses"
+      ],
+      "synonyms": [
+        "wait",
+        "slow down"
+      ],
+      "antonyms": [
+        "hurry up"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      }
+    },
+    {
+      "id": "optimistic",
+      "word": "Optimistic",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "outlook",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "Expecting good things to happen in the future.",
+      "situations": [
+        "Even after failing twice, Yara is optimistic that she will pass her driving test."
+      ],
+      "gaps": [
+        "Even after losing three games, the coach is ______ that the team will win the next one.",
+        "I'm ______ about the exam — I studied hard and I think I'll pass."
+      ],
+      "hints": [
+        "You always expect the best.",
+        "The opposite of 'pessimistic'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She is optimist about the future.",
+          "correction": "She is optimistic about the future.",
+          "why": "'Optimist' is a person (noun); the adjective is 'optimistic'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "optimist",
+          "pos": "noun"
+        },
+        {
+          "word": "optimism",
+          "pos": "noun"
+        },
+        {
+          "word": "optimistically",
+          "pos": "adverb"
+        }
+      ],
+      "collocations": [
+        "optimistic about",
+        "optimistic that"
+      ],
+      "synonyms": [
+        "hopeful"
+      ],
+      "antonyms": [
+        "pessimistic"
+      ],
+      "links": {
+        "opposite": "Pessimistic",
+        "confusableWith": [],
+        "excludeWith": [
+          "positive",
+          "realistic",
+          "enthusiastic",
+          "excited",
+          "hope"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "She's optimistic ______ her chances of getting the job.",
+          "answer": "about",
+          "wrong": [
+            "on",
+            "for",
+            "in"
+          ],
+          "explanation": "Optimistic about something."
+        }
+      ]
+    },
+    {
+      "id": "pessimistic",
+      "word": "Pessimistic",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "outlook",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "Expecting bad things to happen.",
+      "situations": [
+        "My uncle is pessimistic; he always says the weather will be terrible."
+      ],
+      "gaps": [
+        "He's very ______ — he always thinks the plane will be late and the hotel will be awful.",
+        "Don't be so ______! We still have a good chance of winning."
+      ],
+      "hints": [
+        "You always expect the worst.",
+        "The opposite of 'optimistic'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He is pessimist about the match.",
+          "correction": "He is pessimistic about the match.",
+          "why": "'Pessimist' is a person (noun); the adjective is 'pessimistic'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "pessimist",
+          "pos": "noun"
+        },
+        {
+          "word": "pessimism",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "pessimistic about"
+      ],
+      "synonyms": [
+        "negative",
+        "gloomy"
+      ],
+      "antonyms": [
+        "optimistic"
+      ],
+      "links": {
+        "opposite": "Optimistic",
+        "confusableWith": [],
+        "excludeWith": [
+          "worried",
+          "upset",
+          "realistic"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "Why are you so pessimistic ______ the future?",
+          "answer": "about",
+          "wrong": [
+            "on",
+            "for",
+            "in"
+          ],
+          "explanation": "Pessimistic about something."
+        }
+      ]
+    },
+    {
+      "id": "realistic",
+      "word": "Realistic",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "outlook",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "Seeing things as they really are and expecting only what is possible.",
+      "situations": [
+        "Let's be realistic — we can't paint the whole house in one day."
+      ],
+      "gaps": [
+        "Be ______: you can't learn a new language in one week.",
+        "We need a ______ plan that we can actually finish by Friday."
+      ],
+      "hints": [
+        "You think about what is really possible.",
+        "It comes from 'real'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Your goal is not real.",
+          "correction": "Your goal is not realistic.",
+          "why": "'Realistic' means possible and sensible; 'real' means it exists."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "reality",
+          "pos": "noun"
+        },
+        {
+          "word": "realistically",
+          "pos": "adverb"
+        },
+        {
+          "word": "real",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "realistic goal",
+        "be realistic"
+      ],
+      "synonyms": [
+        "practical",
+        "sensible"
+      ],
+      "antonyms": [
+        "unrealistic"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "positive",
+          "optimistic",
+          "pessimistic"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "Let's be realistic ______ how much time we have.",
+          "answer": "about",
+          "wrong": [
+            "for",
+            "on",
+            "at"
+          ],
+          "explanation": "Realistic about something."
+        }
+      ]
+    },
+    {
+      "id": "positive",
+      "word": "Positive",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "outlook",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "Hopeful and confident; thinking about the good side of things.",
+      "situations": [
+        "She stayed positive during her long illness and always smiled."
+      ],
+      "gaps": [
+        "Try to stay ______ — one bad day doesn't mean a bad year.",
+        "Her ______ attitude helped the whole team keep going after the loss."
+      ],
+      "hints": [
+        "You look at the good side of things.",
+        "The opposite of 'negative'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Think positively about it!",
+          "correction": "Think positive! / Be positive about it.",
+          "why": "We usually say 'stay positive' or 'think positive' in everyday speech."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "positively",
+          "pos": "adverb"
+        },
+        {
+          "word": "positivity",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "stay positive",
+        "positive attitude",
+        "think positive"
+      ],
+      "synonyms": [
+        "optimistic"
+      ],
+      "antonyms": [
+        "negative"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "optimistic",
+          "enthusiastic",
+          "realistic"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "Try to ______ positive, even on hard days.",
+          "answer": "stay",
+          "wrong": [
+            "make",
+            "do",
+            "go"
+          ],
+          "explanation": "Stay positive = keep a hopeful attitude."
+        }
+      ]
+    },
+    {
+      "id": "express",
+      "word": "Express",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "expressing-feelings",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "To show a feeling or opinion with words, looks or actions.",
+      "situations": [
+        "He doesn't express his feelings easily, but he wrote her a lovely letter."
+      ],
+      "gaps": [
+        "Some children find it hard to ______ their feelings, so they draw pictures instead.",
+        "Write him a card to ______ your thanks for his help."
+      ],
+      "hints": [
+        "To show what you feel or think.",
+        "It starts with 'ex-'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He expressed about his feelings.",
+          "correction": "He expressed his feelings.",
+          "why": "Express takes a direct object — no 'about'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "expression",
+          "pos": "noun"
+        },
+        {
+          "word": "expressive",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "express your feelings",
+        "express an opinion",
+        "express thanks"
+      ],
+      "synonyms": [
+        "show"
+      ],
+      "antonyms": [
+        "hide"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      }
+    },
+    {
+      "id": "referee",
+      "word": "Referee",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "sport-and-fights",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "The person who makes sure players follow the rules in a game like football.",
+      "situations": [
+        "The fans were furious with the referee after he missed the foul."
+      ],
+      "gaps": [
+        "The ______ blew the whistle and showed the player a red card.",
+        "Fans shouted at the ______ because he didn't see the foul."
+      ],
+      "hints": [
+        "The person in charge of the rules during a match.",
+        "It ends with '-ee'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The judge showed him a yellow card.",
+          "correction": "The referee showed him a yellow card.",
+          "why": "In football and basketball, the official is the referee."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "referee",
+          "pos": "verb"
+        }
+      ],
+      "collocations": [
+        "football referee",
+        "the referee blew the whistle"
+      ],
+      "synonyms": [
+        "umpire"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "collocationChecks": [
+        {
+          "sentence": "The referee ______ the whistle to end the match.",
+          "answer": "blew",
+          "wrong": [
+            "hit",
+            "played",
+            "rang"
+          ],
+          "explanation": "Blow the whistle (past: blew)."
+        }
+      ]
+    },
+    {
+      "id": "black-and-blue",
+      "word": "Black and blue",
+      "type": "binomial",
+      "partsOfSpeech": [
+        "adjective phrase"
+      ],
+      "category": "feelings-emotions",
+      "subCategory": "sport-and-fights",
+      "level": "B1",
+      "register": "informal",
+      "meaning": "Covered in bruises.",
+      "situations": [
+        "After he got in the fight, he was black and blue."
+      ],
+      "gaps": [
+        "After falling off his bike, his legs were ______ for a week.",
+        "The football match was so rough that the players were ______ by the end."
+      ],
+      "hints": [
+        "How your skin looks after many bruises.",
+        "Two colours joined by 'and'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "His arm was blue and black.",
+          "correction": "His arm was black and blue.",
+          "why": "Binomials have a fixed order: always 'black and blue'."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "black and blue"
+      ],
+      "synonyms": [
+        "bruised"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      }
+    }
+  ],
+  "grammar": [
+    {
+      "id": "gr-making-suggestions",
+      "rule": "Making suggestions: Let's + verb / How about + -ing / You should + verb",
+      "category": "feelings-emotions",
+      "level": "A2",
+      "explanation": "Let's and should are followed by the base verb (go, try). How about is followed by verb + -ing (going).",
+      "examples": [
+        "Let's go to the café.",
+        "How about going to the café?",
+        "You should try this café."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "How about go to the café?",
+          "correction": "How about going to the café?",
+          "why": "After 'how about', use verb + -ing."
+        },
+        {
+          "sentence": "You should to try this café.",
+          "correction": "You should try this café.",
+          "why": "After 'should', use the base verb without 'to'."
+        }
+      ],
+      "questions": [
+        {
+          "type": "choose",
+          "prompt": "How about ______ to the café after class?",
+          "options": [
+            "going",
+            "go",
+            "to go"
+          ],
+          "answer": "going",
+          "explanation": "How about + verb-ing."
+        },
+        {
+          "type": "choose",
+          "prompt": "Let's ______ a pizza tonight.",
+          "options": [
+            "order",
+            "ordering",
+            "to order"
+          ],
+          "answer": "order",
+          "explanation": "Let's + base verb."
+        },
+        {
+          "type": "choose",
+          "prompt": "You look tired. You should ______ to bed early.",
+          "options": [
+            "go",
+            "going",
+            "to go"
+          ],
+          "answer": "go",
+          "explanation": "Should + base verb, no 'to'."
+        },
+        {
+          "type": "judge",
+          "sentence": "How about go to the cinema tonight?",
+          "correct": false,
+          "fix": "How about going to the cinema tonight?",
+          "explanation": "After 'how about', use verb + -ing."
+        },
+        {
+          "type": "judge",
+          "sentence": "Let's meet at the café at six.",
+          "correct": true,
+          "alternative": "Let's meeting at the café at six.",
+          "explanation": "Let's + base verb: meet."
+        },
+        {
+          "type": "fix",
+          "sentence": "You should to see a doctor.",
+          "answer": "You should see a doctor.",
+          "explanation": "Should + base verb, without 'to'."
+        },
+        {
+          "type": "fix",
+          "sentence": "Let's to call Sara and invite her.",
+          "answer": "Let's call Sara and invite her.",
+          "explanation": "Let's + base verb, without 'to'."
+        }
+      ]
+    },
+    {
+      "id": "gr-feeling-prepositions",
+      "rule": "Feeling adjectives + preposition (afraid of, proud of, thankful to/for…)",
+      "category": "feelings-emotions",
+      "level": "B1",
+      "explanation": "Many feeling adjectives take a fixed preposition: afraid of, proud of, worried about, excited about, satisfied with, angry with (a person), thankful to (a person) for (a thing).",
+      "examples": [
+        "She's afraid of the dark.",
+        "I'm proud of you.",
+        "We're thankful to our teacher for her help."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He is afraid from dogs.",
+          "correction": "He is afraid of dogs.",
+          "why": "Afraid of, not afraid from."
+        },
+        {
+          "sentence": "I'm proud for my sister.",
+          "correction": "I'm proud of my sister.",
+          "why": "Proud of someone."
+        }
+      ],
+      "questions": [
+        {
+          "type": "choose",
+          "prompt": "I'm really proud ______ my sister — she won the race.",
+          "options": [
+            "of",
+            "for",
+            "with"
+          ],
+          "answer": "of",
+          "explanation": "Proud of someone."
+        },
+        {
+          "type": "choose",
+          "prompt": "We're thankful ______ our neighbours for their help.",
+          "options": [
+            "to",
+            "of",
+            "with"
+          ],
+          "answer": "to",
+          "explanation": "Thankful to a person, for a thing."
+        },
+        {
+          "type": "choose",
+          "prompt": "Are you satisfied ______ your new flat?",
+          "options": [
+            "with",
+            "of",
+            "from"
+          ],
+          "answer": "with",
+          "explanation": "Satisfied with something."
+        },
+        {
+          "type": "judge",
+          "sentence": "My son is afraid from the dark.",
+          "correct": false,
+          "fix": "My son is afraid of the dark.",
+          "explanation": "Afraid of, not afraid from."
+        },
+        {
+          "type": "judge",
+          "sentence": "I'm worried about my exam tomorrow.",
+          "correct": true,
+          "alternative": "I'm worried of my exam tomorrow.",
+          "explanation": "Worried about something."
+        },
+        {
+          "type": "fix",
+          "sentence": "She is very excited of the trip.",
+          "answer": "She is very excited about the trip.",
+          "explanation": "Excited about something."
+        },
+        {
+          "type": "fix",
+          "sentence": "I'm thankful of your help.",
+          "answer": "I'm thankful for your help.",
+          "explanation": "Thankful for a thing."
+        }
+      ]
+    },
+    {
+      "id": "gr-ed-ing-adjectives",
+      "rule": "-ed and -ing adjectives (annoyed / annoying, excited / exciting)",
+      "category": "feelings-emotions",
+      "level": "B1",
+      "explanation": "Use -ed for how a person feels (I'm annoyed, I'm bored). Use -ing for the thing or person that causes the feeling (the noise is annoying, the film is boring).",
+      "examples": [
+        "I'm annoyed. This noise is annoying.",
+        "The kids are excited. The trip is exciting.",
+        "We were disappointed. The result was disappointing."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I'm very boring in this lesson.",
+          "correction": "I'm very bored in this lesson.",
+          "why": "Bored = how you feel; boring = the thing that causes it."
+        }
+      ],
+      "questions": [
+        {
+          "type": "choose",
+          "prompt": "The film was so ______ that I fell asleep.",
+          "options": [
+            "boring",
+            "bored"
+          ],
+          "answer": "boring",
+          "explanation": "The film causes the feeling: boring."
+        },
+        {
+          "type": "choose",
+          "prompt": "I was ______ when the bus came 40 minutes late.",
+          "options": [
+            "annoyed",
+            "annoying"
+          ],
+          "answer": "annoyed",
+          "explanation": "How a person feels: annoyed."
+        },
+        {
+          "type": "choose",
+          "prompt": "The final match was really ______ — everyone was standing up.",
+          "options": [
+            "exciting",
+            "excited"
+          ],
+          "answer": "exciting",
+          "explanation": "The match causes the feeling: exciting."
+        },
+        {
+          "type": "judge",
+          "sentence": "My little brother is so annoyed — he never stops talking.",
+          "correct": false,
+          "fix": "My little brother is so annoying — he never stops talking.",
+          "explanation": "He causes the feeling, so he is annoying."
+        },
+        {
+          "type": "judge",
+          "sentence": "We were disappointed with the hotel.",
+          "correct": true,
+          "alternative": "We were disappointing with the hotel.",
+          "explanation": "How people feel: disappointed."
+        },
+        {
+          "type": "fix",
+          "sentence": "I'm so exciting about my birthday party!",
+          "answer": "I'm so excited about my birthday party!",
+          "explanation": "How you feel: excited."
+        },
+        {
+          "type": "fix",
+          "sentence": "The ending of the book was very disappointed.",
+          "answer": "The ending of the book was very disappointing.",
+          "explanation": "The ending causes the feeling: disappointing."
+        }
+      ]
+    },
+    {
+      "id": "gr-ed-pronunciation",
+      "rule": "Saying -ed: /t/, /d/ or /ɪd/ (asked = /æskt/)",
+      "category": "feelings-emotions",
+      "level": "B1",
+      "explanation": "-ed sounds like /t/ after voiceless sounds (p, k, s, sh, ch, f): asked, hoped, laughed. It sounds like /ɪd/ — an extra syllable — after t or d: wanted, needed, excited. Everywhere else it sounds like /d/: worried, annoyed, played.",
+      "examples": [
+        "asked /æskt/",
+        "worried /ˈwʌrid/",
+        "excited /ɪkˈsaɪtɪd/"
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "asked = /ˈæskɪd/ (two syllables)",
+          "correction": "asked = /æskt/ (one syllable)",
+          "why": "The extra /ɪd/ syllable comes only after t or d."
+        }
+      ],
+      "questions": [
+        {
+          "type": "choose",
+          "prompt": "How do you say the -ed in “asked”?",
+          "options": [
+            "/t/",
+            "/d/",
+            "/ɪd/"
+          ],
+          "answer": "/t/",
+          "explanation": "After the voiceless k sound, -ed sounds like /t/: /æskt/."
+        },
+        {
+          "type": "choose",
+          "prompt": "Which word has an extra /ɪd/ syllable at the end?",
+          "options": [
+            "excited",
+            "worried",
+            "annoyed"
+          ],
+          "answer": "excited",
+          "explanation": "-ed after t or d adds a syllable: ex-ci-ted."
+        },
+        {
+          "type": "choose",
+          "prompt": "How do you say the -ed in “worried”?",
+          "options": [
+            "/d/",
+            "/t/",
+            "/ɪd/"
+          ],
+          "answer": "/d/",
+          "explanation": "After a vowel sound, -ed sounds like /d/."
+        },
+        {
+          "type": "choose",
+          "prompt": "Which word ends with a /t/ sound?",
+          "options": [
+            "hoped",
+            "played",
+            "needed"
+          ],
+          "answer": "hoped",
+          "explanation": "After the voiceless p sound, -ed sounds like /t/."
+        },
+        {
+          "type": "choose",
+          "prompt": "How many syllables does “disappointed” have?",
+          "options": [
+            "4",
+            "3",
+            "5"
+          ],
+          "answer": "4",
+          "explanation": "dis-ap-poin-ted: -ed after t adds a syllable."
+        }
+      ]
+    }
+  ]
+}
