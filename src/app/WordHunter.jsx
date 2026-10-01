@@ -11,6 +11,7 @@ import { DEFAULT_SETTINGS, SCHEMA_VERSION, deriveLearningInsights, emptyProgress
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
+import { importModeError, inspectImport, wordsCsv } from "../features/data/transfer";
 // Screens most players open rarely load on demand, keeping the first
 // download small: Admin (and all its tools), Live, Leaderboard, Profile.
 // Local mode (no accounts): each browser tab is its own player, kept for
@@ -26,12 +27,14 @@ function localTabPlayer() {
 }
 // The Admin tab reopens the admin page (and filters) used last.
 const lastAdminPath = () => { try { const p = localStorage.getItem("wh-admin-path"); return p && p.startsWith("/admin") ? p : "/admin"; } catch { return "/admin"; } };
+const masteredCountFor = (m) => Object.entries(m || {}).filter(([k, v]) => isWordKey(k) && V2.stage(v) === "Mastered").length;
 const PLAY_SCREENS = new Set(["session", "playing", "results", "reviewResults", "finalReport", "finalResults", "speed", "speedResults"]);
 const AdminPanel = lazy(() => import("../features/admin/AdminPanel").then((m) => ({ default: m.AdminPanel })));
 const LiveChallenge = lazy(() => import("../features/live/LiveChallenge").then((m) => ({ default: m.LiveChallenge })));
 const Leaderboard = lazy(() => import("../features/social/Leaderboard"));
 const ProfilePage = lazy(() => import("../features/social/ProfilePage"));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage"));
+const ImportExport = lazy(() => import("../features/data/ImportExport"));
 
 export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const [loaded, setLoaded] = useState(false);
@@ -490,17 +493,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const [customWords, setCustomWords] = useState([]);
   const [customGrammar, setCustomGrammar] = useState([]);
   const [customChallenges, setCustomChallenges] = useState([]);
-  const [contentPanelView, setContentPanelView] = useState("review"); // 'export' | 'review'
-  const [exportText, setExportText] = useState("");
-  const [exportCopied, setExportCopied] = useState(false);
   const [quickBackupCopied, setQuickBackupCopied] = useState(false);
   const [showFreshCopyPrompt, setShowFreshCopyPrompt] = useState(false);
-  const [reviewText, setReviewText] = useState("");
-  const [reviewPreview, setReviewPreview] = useState(null);
-  const [reviewError, setReviewError] = useState(null);
-  const [aiFixBusy, setAiFixBusy] = useState(false);
-  const [aiFixError, setAiFixError] = useState(null);
-  const [aiFixChanges, setAiFixChanges] = useState(null);
   const [sessionType, setSessionType] = useState("level");
   const [levelsCleared, setLevelsCleared] = useState([]);
   const [levelStats, setLevelStats] = useState({});
@@ -597,7 +591,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const roundTotalRef = useRef(0);
   const roundStartStagesRef = useRef({});
   const studyRef = useRef({ studyStreak: 0, bestStudyStreak: 0, lastStudyDate: null });
-  const reviewFileInputRef = useRef(null);
   const feedbackRequestIdRef = useRef(0);
   useEffect(() => { poolsRef.current = pools; }, [pools]);
   useEffect(() => { masteryRef.current = mastery; }, [mastery]);
@@ -1368,30 +1361,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
     try { await repo.wipeContent(); } catch (e) { console.error("Could not clear content:", e); }
   }
 
-  // Step 1: parse the pasted export and figure out what's genuinely new
-  // (dedup against everything already loaded, built-in or imported).
-  // Builds a JSON snapshot of every playable piece of content, meant to be
-  // handed to another AI for a review pass, then brought back in with
-  // "Apply AI Review" below.
-  function handleExport(mode) {
-    const content = V2.contentOnly(mode === "builtin" ? {words:BUILTIN_WORDS,grammar:BUILTIN_GRAMMAR,challenges:BUILTIN_CHALLENGES} : liveContent());
-    const payload = mode === "backup" ? {
-      ...progressExtrasRef.current, ...content, kind:"backup", schemaVersion:SCHEMA_VERSION, contentSchemaVersion:2,
-      activeSession, levelOrder:LEVEL_ORDER, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings,
-    } : content;
-    setExportText(JSON.stringify(payload,null,2)); setExportCopied(false); setContentPanelView("export");
-  }
-
-  async function handleCopyExport() {
-    try {
-      await navigator.clipboard.writeText(exportText);
-      setExportCopied(true);
-      setTimeout(() => setExportCopied(false), 2500);
-    } catch (e) {
-      console.error("Copy failed:", e);
-    }
-  }
-
   function backupPayload() {
     const content = V2.contentOnly(liveContent());
     return {
@@ -1400,136 +1369,82 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
     };
   }
   function downloadBackup() {
-    const blob = new Blob([JSON.stringify(backupPayload())], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
+    const file = exportFile("backup");
+    const url = URL.createObjectURL(new Blob([file.text], { type: file.type }));
     const a = document.createElement("a");
-    a.href = url; a.download = `word-hunter-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.href = url; a.download = file.name;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   async function handleQuickBackup() {
-    // One click, no need to open Data Center at all.
-    const payload = backupPayload();
     try {
-      await navigator.clipboard.writeText(JSON.stringify(payload));
+      await navigator.clipboard.writeText(exportFile("backup").text);
       setQuickBackupCopied(true);
-      setToast({ kind: "import", text: "Full backup copied — paste it into the new version's Import Center." });
+      setToast({ kind: "import", text: "Full backup copied. Paste it into Import & export to restore it." });
       setTimeout(() => setQuickBackupCopied(false), 2500);
     } catch (e) {
       console.error("Quick backup copy failed:", e);
-      setToast({ text: "Couldn't copy to clipboard — try Admin → Data → Full Backup instead." });
+      setToast({ text: "Couldn't copy to the clipboard. Use Download backup instead." });
     }
   }
-
-  function handleDownloadExport() {
-    const blob = new Blob([exportText], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "word-hunter-backup.json";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  // ---- Import & export (/data, and Admin -> Data & backup) -------------
+  // Files: a full backup (progress + content), content only (admin), or
+  // the words as a spreadsheet (admin).
+  function exportFile(kind) {
+    const day = new Date().toISOString().slice(0, 10);
+    if (kind === "content") return { name: `word-hunter-content-${day}.json`, type: "application/json", text: JSON.stringify(V2.contentOnly(liveContent()), null, 2) };
+    if (kind === "wordsCsv") return { name: `word-hunter-words-${day}.csv`, type: "text/csv;charset=utf-8", text: wordsCsv(WORDS) };
+    return { name: `word-hunter-backup-${day}.json`, type: "application/json", text: JSON.stringify({ ...backupPayload(), exportedAt: new Date().toISOString(), exportedBy: profile?.username || "local" }) };
   }
-
-  // Lets the user upload a .json/.txt file instead of pasting into the
-  // Apply/Restore box — reads it as plain text and drops it straight into
-  // reviewText, same path as a paste.
-  function handleReviewFileChange(e) {
-    const file = e.target.files && e.target.files[0];
-    e.target.value = ""; // allow re-selecting the same file later
-    if (!file) return;
-    setReviewError(null);
-    setAiFixError(null); setAiFixChanges(null);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setReviewText(String(reader.result || ""));
-    };
-    reader.onerror = () => {
-      setReviewError("Couldn't read that file — try pasting the JSON directly instead.");
-    };
-    reader.readAsText(file);
-  }
-
-  // Step 1 of applying a review: match incoming entries against what exists
-  // (words by exact word text, grammar/puns by id) and split into updates
-  // vs genuinely new content.
-  function handleParseReview() {
-    setReviewError(null);setReviewPreview(null);setAiFixError(null);
-    try {
-      const raw=JSON.parse(reviewText);
-      const issues=V2.validateContent(raw,liveContent());
-      if(issues.length){setReviewError(issues.join("\n"));return;}
-      // v3 files are converted here; matching uses the converted words and
-      // the existing content after renames, so a renamed word shows as an update.
-      const prep=V2.prepareImport(raw,liveContent()),data=prep.data,current=prep.existing;
-      const preview={backupData:raw,isBackup:raw.kind==="backup"||(!raw.kind&&(raw.mastery!==undefined||raw.pools!==undefined)),restoreProgress:false,builtinSkipped:0,invalidChallenges:[],expectedWords:WORDS.length,gotWords:data.words?.length||0,expectedChallenges:CHALLENGES.length,gotChallenges:data.challenges?.length||0,warnings:prep.warnings,renames:prep.renames,v3:raw.schemaVersion===3};
-      for(const [field,singular,key] of [["words","word","word"],["grammar","grammar","id"],["challenges","challenge","id"]]){
-        preview[singular+"Updates"]=[];const plural=field[0].toUpperCase()+field.slice(1);preview["new"+plural]=[];
-        for(const incoming of data[field]||[]){const existing=(current[field]||[]).find(x=>V2.norm(x[key])===V2.norm(incoming[key]));if(existing)preview[singular+"Updates"].push({existing,incoming});else preview["new"+plural].push(incoming);}
-      }
-      setReviewPreview(preview);
-    }catch(e){setReviewError("JSON: "+e.message);}
-  }
-
-  // Lets the person hand a failed import straight to the AI instead of
-  // hand-editing JSON. Sends the exact validator errors plus the raw text,
-  // gets back a corrected document and a plain-English list of what
-  // changed, and drops the fix into the textarea — it does NOT auto-import;
-  // the person still reviews and hits Parse/Preview like any other paste.
-  async function handleAiFixImport() {
-    if (!reviewText.trim() || !reviewError) return;
-    setAiFixBusy(true); setAiFixError(null); setAiFixChanges(null);
-    try {
-      const result = await aiFixImportJson(reviewText, reviewError);
-      setReviewText(JSON.stringify(result.fixed, null, 2));
-      setAiFixChanges(result.changes.length ? result.changes : ["AI adjusted the JSON to satisfy the validator — review the fields it touched before applying."]);
-      setReviewError(null);
-    } catch (e) {
-      setAiFixError(e.message || "AI couldn't fix this. Try editing manually.");
-    } finally {
-      setAiFixBusy(false);
+  // Step 1: read and check a file against the current content (throws
+  // { message, issues } when it can't be used).
+  function checkImport(text) { return inspectImport(text, liveContent()); }
+  // Step 2: apply. mode: "content" (merge content, keep progress), "full"
+  // (content and progress from a backup), "progress" (a player's own
+  // progress from a backup; content stays as it is).
+  function applyImport(check, mode) {
+    const raw = check.raw;
+    const refused = importModeError(check, mode, isAdmin);
+    if (refused) throw new Error(refused);
+    if (mode !== "progress") {
+      const restoreProgress = mode === "full";
+      const issues = V2.validateContent(raw, restoreProgress ? {} : liveContent());
+      if (issues.length) throw new Error(issues[0]);
+      const prep = V2.prepareImport(raw, restoreProgress ? {} : liveContent()), data = prep.data;
+      const content = V2.mergeContent(prep.existing, data);
+      const catMap = new Map(prep.renames.categories.map((r) => [r.from, r.to]));
+      const baseOrder = [...new Set(LEVEL_ORDER.map((t) => catMap.get(t) || t))];
+      const order = restoreProgress && Array.isArray(raw.levelOrder) ? raw.levelOrder : insertLevelTitles(baseOrder, [...new Set([...(prep.levelOrder || []), ...[...content.words, ...content.grammar, ...content.challenges].map((x) => x.category).filter(Boolean)])]);
+      contentNoteRef.current = data.note || contentNoteRef.current;
+      mergeCustomData(content.words, content.grammar, content.challenges, order);
+      setCustomWords(content.words); setCustomGrammar(content.grammar); setCustomChallenges(content.challenges); setCustomCombos(content.combos); setCustomStories(content.stories);
+      if (!restoreProgress) migrateRenamedProgress(prep.renames);
     }
-  }
-
-  function toggleRestoreProgress() {
-    setReviewPreview((prev) => (prev ? { ...prev, restoreProgress: !prev.restoreProgress } : prev));
-  }
-
-  // Step 2: apply it. Matched entries keep their word/id (the progress key)
-  // and only refresh their content — including any already-seeded pool
-  // variants, so an in-progress word shows the improved text too. Anything
-  // unmatched goes through the normal capacity-aware level placement.
-  function handleConfirmReview() {
-    if(!reviewPreview)return;
-    const {backupData:raw,restoreProgress}=reviewPreview;
-    const issues=V2.validateContent(raw,restoreProgress?{}:liveContent());if(issues.length){setReviewError(issues.join("\n"));return;}
-    const prep=V2.prepareImport(raw,restoreProgress?{}:liveContent()),data=prep.data;
-    // The existing restore checkbox plus the explicit Restore backup button
-    // confirm replacement inside the artifact, without a sandbox-blocked native dialog.
-    const content=V2.mergeContent(prep.existing,data);
-    const catMap=new Map(prep.renames.categories.map(r=>[r.from,r.to]));
-    const baseOrder=[...new Set(LEVEL_ORDER.map(t=>catMap.get(t)||t))];
-    const order=restoreProgress&&Array.isArray(raw.levelOrder)?raw.levelOrder:insertLevelTitles(baseOrder,[...new Set([...(prep.levelOrder||[]),...[...content.words,...content.grammar,...content.challenges].map(x=>x.category).filter(Boolean)])]);
-    contentNoteRef.current=data.note||contentNoteRef.current;
-    mergeCustomData(content.words,content.grammar,content.challenges,order);
-    setCustomWords(content.words);setCustomGrammar(content.grammar);setCustomChallenges(content.challenges);setCustomCombos(content.combos);setCustomStories(content.stories);
-    if(!restoreProgress)migrateRenamedProgress(prep.renames);
-    if(restoreProgress){
-      const restored=migrateProgressData(data);progressExtrasRef.current=restored;setActiveSession(restored.activeSession||null);setDailyProgress(restored.dailyProgress||null);
-      setScore(restored.score);setStreak(restored.streak);setBestStreak(restored.bestStreak);setAttempted(restored.attempted);
-      setMastery(restored.mastery);masteryRef.current=restored.mastery;setLevelsCleared(restored.levelsCleared);setLevelStats(restored.levelStats);
-      setStudyStreak(restored.studyStreak);setBestStudyStreak(restored.bestStudyStreak);setLastStudyDate(restored.lastStudyDate);
-      studyRef.current={studyStreak:restored.studyStreak,bestStudyStreak:restored.bestStudyStreak,lastStudyDate:restored.lastStudyDate};
-      setPools(restored.pools);poolsRef.current=restored.pools;setBestSpeedScore(restored.bestSpeedScore);setBestSpeedCombo(restored.bestSpeedCombo);setConfusions(restored.confusions);confusionsRef.current=restored.confusions;setSolvedStories(restored.solvedStories||[]);setSessionLogs(restored.sessionLogs||[]);setQuestionReports(Array.isArray(restored.reports)?restored.reports:[]);setSettings(normalizeSettings(restored.settings));
+    if (mode === "progress" || mode === "full") {
+      const restored = migrateProgressData(mode === "full" ? V2.prepareImport(raw, {}).data : raw);
+      progressExtrasRef.current = restored; setActiveSession(restored.activeSession || null); setDailyProgress(restored.dailyProgress || null);
+      setScore(restored.score); setStreak(restored.streak); setBestStreak(restored.bestStreak); setAttempted(restored.attempted);
+      setMastery(restored.mastery); masteryRef.current = restored.mastery; setLevelsCleared(restored.levelsCleared); setLevelStats(restored.levelStats);
+      setStudyStreak(restored.studyStreak); setBestStudyStreak(restored.bestStudyStreak); setLastStudyDate(restored.lastStudyDate);
+      studyRef.current = { studyStreak: restored.studyStreak, bestStudyStreak: restored.bestStudyStreak, lastStudyDate: restored.lastStudyDate };
+      setPools(restored.pools); poolsRef.current = restored.pools; setBestSpeedScore(restored.bestSpeedScore); setBestSpeedCombo(restored.bestSpeedCombo);
+      setConfusions(restored.confusions); confusionsRef.current = restored.confusions; setSolvedStories(restored.solvedStories || []); setSessionLogs(restored.sessionLogs || []);
+      setQuestionReports(Array.isArray(restored.reports) ? restored.reports : []); setSettings(normalizeSettings(restored.settings));
     }
-    // Content import deliberately retains pools and all progress byte-for-byte.
-    // New sessions read current authored text, not stale seed variants.
-    setDataVersion(v=>v+1);setReviewPreview(null);setReviewText("");setScreen("levels");
-    setToast({text:restoreProgress?"Full backup restored":"Content merged; all player progress retained"});
+    setDataVersion((v) => v + 1);
+    setShowFreshCopyPrompt(false);
+    const text = mode === "full" ? "Backup restored: content and progress" : mode === "progress" ? "Your progress was restored" : "Content imported; everyone's progress is kept";
+    setToast({ kind: "import", text });
+    return text;
   }
-
+  // A file that fails the checks can go to AI for a repair; the result is
+  // checked again before anything is applied.
+  async function aiFixImport(text, issues) {
+    const result = await aiFixImportJson(text, issues.join("\n"));
+    return { text: JSON.stringify(result.fixed, null, 2), changes: result.changes.length ? result.changes : ["AI adjusted the file to pass the checks."] };
+  }
+  const contentCounts = { words: WORDS.length, grammar: GRAMMAR.length, challenges: CHALLENGES.length, stories: customStories.length, combos: customCombos.length, categories: LEVEL_ORDER.length };
+  const dataTools = { exportFile, checkImport, applyImport, aiFixImport, contentCounts, progressCounts: { score, words: Object.keys(mastery).filter(isWordKey).length, mastered: masteredCountFor(mastery), sessions: sessionLogs.length }, onResetProgress: () => setConfirmAction("reset"), onWipeEverything: () => setConfirmAction("wipe") };
 
   const earnedBadgesCount = BADGES.filter((b) => getBadgeProgress(b, { mastery, bestStreak }).earned).length;
   const totalLevelsCleared = levelsCleared.length;
@@ -1631,7 +1546,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
             </article>}
           </aside>
         </div>}
-        {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onRenameWord={renameWord} onResolveReport={resolveQuestionReport} onReopenReport={reopenQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} onOpenImport={()=>{setContentPanelView("review");setScreen("data");}} onExport={mode=>{handleExport(mode);setContentPanelView("export");setScreen("data");}}/></Suspense>}
+        {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onRenameWord={renameWord} onResolveReport={resolveQuestionReport} onReopenReport={reopenQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} dataTools={dataTools}/></Suspense>}
         {confirmAction && (
           <div className="wh-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmAction(null); }}>
           <div className="wh-panel wh-confirm-panel" role="alertdialog">
@@ -1776,133 +1691,12 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
           </div>
         )}
 
-        {importOpen && (
-          <div className="wh-panel">
-            <div className="wh-panel-header">
-              <span>Data Center</span>
-              <button
-                onClick={() => { setScreen("levels"); setReviewPreview(null); setReviewError(null); setAiFixError(null); setAiFixChanges(null); }}
-                aria-label="Close content panel"
-              >
-                <X size={15} />
-              </button>
-            </div>
-
-            <div className="wh-content-tabs">
-              <button className={contentPanelView === "export" ? "active" : ""} onClick={() => setContentPanelView("export")}>Export</button>
-              <button className={contentPanelView === "review" ? "active" : ""} onClick={() => setContentPanelView("review")}>Apply / Restore</button>
-            </div>
-
-            {contentPanelView === "export" && (
-              <>
-                <p className="wh-import-hint">
-                  <b>Content only</b> — for handing to another AI to review wording/clarity. Keep every "word"
-                  and "id" field unchanged so your progress stays attached, then paste its answer into "Apply / Restore". Challenge IDs are stable progress keys too.<br />
-                  <b>Full backup</b> — everything, including your score, streak, and mastery. Use this to move
-                  to a new browser/tab, or as a safety copy.
-                </p>
-                <div className="wh-import-actions wh-import-actions-tight">
-                  <button className="wh-import-btn secondary" onClick={() => handleExport("content")}>Content only</button>
-                  <button className="wh-import-btn secondary" onClick={() => handleExport("backup")}>Full backup</button>
-                </div>
-                {exportText && (
-                  <>
-                    <textarea className="wh-import-textarea" value={exportText} readOnly rows={8} onFocus={(e) => e.target.select()} />
-                    <div className="wh-import-actions">
-                      <button className="wh-import-btn secondary" onClick={handleDownloadExport}>
-                        <Download size={13} /> Download .json
-                      </button>
-                      <button className="wh-import-btn primary" onClick={handleCopyExport}>
-                        {exportCopied ? <><ClipboardCheck size={13} /> Copied</> : <><Copy size={13} /> Copy</>}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-
-            {contentPanelView === "review" && !reviewPreview && (
-              <>
-                <p className="wh-import-hint">
-                  Paste the reviewed JSON back here, or upload a .json/.txt file. Matched words/rules/challenges get
-                  their content refreshed without touching your progress; anything new gets added as usual.
-                </p>
-                <textarea
-                  className="wh-import-textarea"
-                  value={reviewText}
-                  onChange={(e) => { setReviewText(e.target.value); setAiFixError(null); }}
-                  onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); if (reviewText.trim()) handleParseReview(); } }}
-                  placeholder="Paste the reviewed JSON here…"
-                  rows={8}
-                />
-                {reviewError && <div className="wh-import-error">{reviewError}<div className="wh-import-actions"><button className="wh-import-btn primary" disabled={aiFixBusy} onClick={handleAiFixImport}>{aiFixBusy ? "Asking AI…" : <><Sparkles size={13} /> Fix with AI</>}</button></div></div>}
-                {aiFixError && <div className="wh-import-error">{aiFixError}</div>}
-                {aiFixChanges && <div className="wh-import-hint"><b>AI adjusted the JSON below to fix the errors — review it, then Parse again:</b><ul>{aiFixChanges.map((c, i) => <li key={i}>{c}</li>)}</ul></div>}
-                <div className="wh-import-actions">
-                  <input
-                    ref={reviewFileInputRef}
-                    id="wh-review-file-input"
-                    type="file"
-                    accept=".json,.txt,application/json,text/plain"
-                    style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}
-                    onChange={handleReviewFileChange}
-                  />
-                  <label htmlFor="wh-review-file-input" className="wh-import-btn secondary">
-                    <Upload size={13} /> Upload file
-                  </label>
-                  <button className="wh-import-btn primary" onClick={handleParseReview} disabled={!reviewText.trim()}>
-                    Parse
-                  </button>
-                </div>
-              </>
-            )}
-
-            {contentPanelView === "review" && reviewPreview && (
-              <>
-                <div className="wh-import-summary">
-                  <div>
-                    <b>{reviewPreview.wordUpdates.length + reviewPreview.grammarUpdates.length + reviewPreview.challengeUpdates.length}</b> updated,{" "}
-                    <b>{reviewPreview.newWords.length + reviewPreview.newGrammar.length + reviewPreview.newChallenges.length}</b> new · {reviewPreview.backupData.combos?.length||0} combos · {reviewPreview.backupData.stories?.length||0} stories
-                    {reviewPreview.builtinSkipped > 0 && <> — {reviewPreview.builtinSkipped} matched built-in content and can't be edited this way</>}
-                  </div>
-                  <div className="wh-import-breakdown">
-                    {reviewPreview.wordUpdates.length > 0 && <span>{reviewPreview.wordUpdates.length} word(s) updated</span>}
-                    {reviewPreview.grammarUpdates.length > 0 && <span>{reviewPreview.grammarUpdates.length} grammar updated</span>}
-                    {reviewPreview.challengeUpdates.length > 0 && <span>{reviewPreview.challengeUpdates.length} challenge(s) updated by stable ID</span>}
-                    {reviewPreview.newWords.length > 0 && <span>{reviewPreview.newWords.length} new word(s)</span>}
-                    {reviewPreview.newGrammar.length > 0 && <span>{reviewPreview.newGrammar.length} new grammar</span>}
-                    {reviewPreview.newChallenges.length > 0 && <span>{reviewPreview.newChallenges.length} new challenge(s)</span>}
-                    {reviewPreview.invalidChallenges.length > 0 && <span>{reviewPreview.invalidChallenges.length} invalid challenge(s) skipped</span>}
-                    <span>received {reviewPreview.gotWords} of {reviewPreview.expectedWords} current words</span>
-                    <span>received {reviewPreview.gotChallenges} challenge(s); currently loaded {reviewPreview.expectedChallenges}</span>
-                  </div>
-                  <p>Partial content files are merged. Missing arrays do not delete current items. Structural checks do not verify B1 language or semantic accuracy.</p>
-                  {reviewPreview.renames && (reviewPreview.renames.words.length > 0 || reviewPreview.renames.categories.length > 0) && <div className="wh-import-hint"><b>Renamed by id — progress moves with them:</b><ul>{[...reviewPreview.renames.words, ...reviewPreview.renames.categories].map((r, i) => <li key={i}>{r.from} → {r.to}</li>)}</ul></div>}
-                  {reviewPreview.warnings?.length > 0 && <div className="wh-import-error"><b>{reviewPreview.warnings.length} warning(s) — the rest imports normally:</b><ul>{reviewPreview.warnings.slice(0, 30).map((w, i) => <li key={i}>{w}</li>)}</ul>{reviewPreview.warnings.length > 30 && <p>…and {reviewPreview.warnings.length - 30} more.</p>}</div>}
-                </div>
-                {reviewPreview.isBackup && (
-                  <label className="wh-restore-toggle">
-                    <input type="checkbox" checked={reviewPreview.restoreProgress} onChange={toggleRestoreProgress} />
-                    Also restore progress (score, streak, mastery, cleared levels) — this overrides what's currently loaded
-                  </label>
-                )}
-                <div className="wh-import-actions">
-                  <button className="wh-import-btn secondary" onClick={() => setReviewPreview(null)}>Back</button>
-                  <button className="wh-import-btn primary" onClick={handleConfirmReview}>
-                    {reviewPreview.restoreProgress ? "Restore backup" : "Apply review"}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
         {screen === "levels" && <>
           {app.announcement && !announcementHidden && <div className={`wh-announcement ${app.announcementTone}`} role="status"><p>{app.announcement}</p><button aria-label="Hide this message" onClick={hideAnnouncement}><X size={15} /></button></div>}
           {showFreshCopyPrompt && <div className="wh-fresh-copy-banner">
             <p><b>Fresh copy detected.</b> No saved progress or content found here — if you have a backup from a previous version, restore it now before you start playing.</p>
             <div className="wh-regen-actions">
-              <button className="wh-level-btn" onClick={()=>{setContentPanelView("review");setShowFreshCopyPrompt(false);setScreen("data");}}>Open Import Center</button>
+              <button className="wh-level-btn" onClick={()=>{setShowFreshCopyPrompt(false);setScreen("data");}}>Open Import &amp; Export</button>
               <button className="wh-back-btn wh-nav-btn" onClick={()=>setShowFreshCopyPrompt(false)}>Dismiss</button>
             </div>
           </div>}
@@ -2379,6 +2173,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
         )}
 
         {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge player={livePlayer} levels={LEVELS} code={route.code} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} limits={{ maxPlayers: isAdmin ? 10 : app.liveMaxPlayers, canCreate: isAdmin || app.liveCreate !== "admin", defaultCount: settings.liveQuestions ?? app.liveDefaultQuestions, defaultSeconds: settings.liveSeconds ?? app.liveDefaultSeconds, maxHours: isAdmin ? 168 : app.liveMaxHours }} /></Suspense>}
+        {screen === "data" && <Suspense fallback={<ScreenSkeleton />}><ImportExport variant="game" isAdmin={isAdmin} tools={dataTools} onBack={backToLevels} /></Suspense>}
         {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} /></Suspense>}
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} /></Suspense>}
         {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}

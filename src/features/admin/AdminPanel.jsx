@@ -17,6 +17,7 @@ import { DataQuality } from "./sections/DataQuality";
 import { AppSettings } from "./sections/AppSettings";
 import { Categories } from "./sections/Categories";
 import { Library } from "./sections/Library";
+import ImportExport from "../data/ImportExport";
 import "../../styles/admin.css";
 
 const NAV = [
@@ -38,7 +39,7 @@ const NAV = [
   { group: "System", items: [
     { id: "audit", label: "Activity log", icon: History, desc: "Every change: who, when, which item, and each field before and after" },
     { id: "settings", label: "Settings", icon: Settings, desc: "Rules for the whole app: access, announcement, AI, Live Challenge, leaderboard, new players" },
-    { id: "data", label: "Data & backup", icon: Database, desc: "Import, export, reset", classic: "data" },
+    { id: "data", label: "Import & export", icon: Database, desc: "Backups, content files and spreadsheets; restore, reset" },
   ] },
 ];
 const ALL = NAV.flatMap((g) => g.items);
@@ -122,7 +123,7 @@ export function AdminPanel(props) {
           </div>
           <div className="adm-top-actions">
             {showsRange && <RangePicker value={range} onChange={setRange} />}
-            {!current.classic && section !== "settings" && <button className="adm-btn ghost" onClick={refresh} title={`Updated ${new Date(refreshedAt).toLocaleTimeString()}`}><RefreshCw size={15} className={overview.loading || activity.loading ? "spin" : ""} /> Refresh</button>}
+            {!current.classic && !["settings", "data"].includes(section) && <button className="adm-btn ghost" onClick={refresh} title={`Updated ${new Date(refreshedAt).toLocaleTimeString()}`}><RefreshCw size={15} className={overview.loading || activity.loading ? "spin" : ""} /> Refresh</button>}
           </div>
         </header>
         {section === "overview" && <Overview range={range} overview={overview} activity={activity} wordStats={wordStats} players={players} content={content} onOpenWord={editWord} onOpenPlayer={openPlayerByName} onNavigate={setSection} />}
@@ -136,6 +137,7 @@ export function AdminPanel(props) {
         {section === "reports" && <Reports reports={reports} content={content} onResolve={onResolveReport} onReopen={onReopenReport} onDelete={onDeleteReport} onRetire={onRetireVariant} onReviewReport={onReviewReport} onUpdate={onUpdate}
           openKey={item} onOpen={(key) => navigate(pathFor("admin", { section: "reports", item: key }) + window.location.search)} onOpenWord={editWord} onOpenPlayer={openPlayerByName} />}
         {section === "settings" && <AppSettings />}
+        {section === "data" && props.dataTools && <ImportExport variant="admin" isAdmin tools={props.dataTools} onBack={onClose} />}
         {section === "quality" && <DataQuality api={api} tick={tick} onOpenWord={editWord} onOpenReport={(id) => setSection("reports", id)} onOpenPlayer={openPlayerByName} onNavigate={setSection} />}
         {section === "audit" && <AuditLog api={api} tick={tick} content={content} onUpdate={onUpdate} players={players} onOpenWord={editWord} onOpenReport={(id) => setSection("reports", id)} onOpenPlayer={openPlayerByName} />}
         {current.classic && <div className="adm-classic">
