@@ -25,6 +25,8 @@ const SECTION_OF = {
   reports: "reports", levelStats: "levels", levelsCleared: "levels",
 };
 const PAGE = 1000, UPSERT_BATCH = 250, POSITION_GAP = 1000, RETRY_MS = 15000;
+const newDraftId = () => (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID()
+  : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => (c ^ (Math.random() * 16 >> (c / 4))).toString(16)));
 
 export { stableJson } from "./stableJson";
 import { stableJson } from "./stableJson";
@@ -107,6 +109,7 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
   // Content state on the server.
   let contentRows = new Map();              // `${kind}\u0000${key}` -> { kind, key, json, position }
   let contentMeta = { levelOrder: "[]", note: "" };
+  let contentVersion = null;                // content_meta.version this device last saw
 
   async function fetchAll(build) {
     const rows = [];
@@ -129,6 +132,7 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
   function rememberContent(cache) {
     contentRows = new Map(Object.entries(cache.items).map(([id, row]) => [id, { kind: row.kind, key: row.key, json: stableJson(row.data), position: row.position }]));
     contentMeta = { levelOrder: stableJson(cache.levelOrder || []), note: cache.note || "" };
+    contentVersion = cache.version ?? null;
   }
 
   async function loadContent() {
@@ -165,7 +169,9 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
 
   // Admin only. Upserts changed items, tombstones removed ones. Positions keep
   // their order with gaps, so deleting or appending never renumbers the rest.
-  async function saveContent(content) {
+  // renames: [{ kind: "word" | "category", from, to }] applied to every
+  // player's progress in the same transaction (content_save_v2).
+  async function saveContent(content, { renames = [] } = {}) {
     if (!isAdmin) return;
     const upserts = [], seen = new Set();
     for (const kind of CONTENT_KINDS) {
@@ -200,21 +206,27 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
     const levelOrder = content.levelOrder || [];
     const note = content.note || "";
     const metaChanged = stableJson(levelOrder) !== contentMeta.levelOrder || note !== contentMeta.note;
-    if (!upserts.length && !removes.length && !metaChanged) return;
-    let version = null;
-    for (let i = 0; i < Math.max(1, upserts.length); i += UPSERT_BATCH) {
-      const batch = upserts.slice(i, i + UPSERT_BATCH);
-      const last = i + UPSERT_BATCH >= upserts.length;
-      const { data, error } = await sb.rpc("apply_content_changes", {
-        p_upserts: batch.map(({ json, ...row }) => row),
-        p_removes: last ? removes : [],
-        p_level_order: levelOrder,
-        p_note: note,
-      });
+    if (!upserts.length && !removes.length && !metaChanged && !renames.length) return;
+    // One call when it fits; otherwise the batches go into a draft and the
+    // last call publishes everything at once, so players never see half.
+    const rows = upserts.map(({ json, ...row }) => row);
+    const draft = rows.length > UPSERT_BATCH ? newDraftId() : null;
+    for (let i = 0; i + UPSERT_BATCH < rows.length; i += UPSERT_BATCH) {
+      const { error } = await sb.rpc("content_save_v2", { p_draft: draft, p_upserts: rows.slice(i, i + UPSERT_BATCH), p_removes: [], p_level_order: null, p_note: null, p_renames: null, p_expected_version: null, p_publish: false });
       if (error) throw error;
-      version = data;
-      for (const row of batch) contentRows.set(`${row.kind}\u0000${row.key}`, { kind: row.kind, key: row.key, json: row.json, position: row.position });
     }
+    const lastStart = draft ? Math.floor((rows.length - 1) / UPSERT_BATCH) * UPSERT_BATCH : 0;
+    const { data: result, error } = await sb.rpc("content_save_v2", {
+      p_draft: draft, p_upserts: rows.slice(lastStart), p_removes: removes, p_level_order: levelOrder, p_note: note,
+      p_renames: renames.length ? renames : null, p_expected_version: contentVersion, p_publish: true,
+    });
+    if (error) {
+      if (error.code === "40001") throw Object.assign(new Error(error.message), { conflict: true });
+      throw error;
+    }
+    const version = result?.version ?? null;
+    contentVersion = version;
+    for (const row of upserts) contentRows.set(`${row.kind}\u0000${row.key}`, { kind: row.kind, key: row.key, json: row.json, position: row.position });
     for (const r of removes) contentRows.delete(`${r.kind}\u0000${r.key}`);
     contentMeta = { levelOrder: stableJson(levelOrder), note };
     // Keep the admin's own cache current so the next start is a cache hit.

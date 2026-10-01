@@ -240,3 +240,75 @@ describe("merging never drops other players' reports (admin)", () => {
     [a, b].forEach((r) => r.dispose());
   });
 });
+
+describe("F03 and F08: renames and publishing content", () => {
+  const word = (w, extra = {}) => ({ word: w, category: "Food", meaning: "m", situation: "s", gap: "a ___ b", hints: ["h"], ...extra });
+  async function setup() {
+    const fake = createFakeSupabase({ userId: "admin", admin: true });
+    const admin = createSupabaseRepo({ userId: "admin", isAdmin: true, client: fake });
+    await admin.loadContent();
+    await admin.saveContent({ words: [word("Apple"), word("Bread")], levelOrder: ["Food"] });
+    return { fake, admin };
+  }
+
+  it("a rename moves every player's record, keeping the one with more answers", async () => {
+    const { fake, admin } = await setup();
+    fake.tables.mastery.push(
+      { user_id: "p1", item_key: "Apple", stats: { total: 4, correct: 3 } },
+      { user_id: "p2", item_key: "Apple", stats: { total: 2 } }, { user_id: "p2", item_key: "Green apple", stats: { total: 5 } },
+    );
+    fake.tables.progress.push({ user_id: "p1", section: "pools", data: { pools: { Apple: { gap: [1] } } }, rev: 3 });
+    await admin.saveContent({ words: [word("Green apple"), word("Bread")], levelOrder: ["Food"] }, { renames: [{ kind: "word", from: "Apple", to: "Green apple" }] });
+    const rows = (u) => fake.tables.mastery.filter((m) => m.user_id === u).map((m) => [m.item_key, m.stats.total]);
+    expect(rows("p1")).toEqual([["Green apple", 4]]);
+    expect(rows("p2")).toEqual([["Green apple", 5]]);
+    expect(fake.tables.progress.find((p) => p.user_id === "p1").data.pools).toEqual({ "Green apple": { gap: [1] } });
+    // The rename went in the same call as the content change.
+    const last = fake.calls.filter((c) => c.rpc === "content_save_v2").at(-1).args;
+    expect(last.p_renames).toEqual([{ kind: "word", from: "Apple", to: "Green apple" }]);
+    expect(last.p_upserts.map((u) => u.key)).toContain("Green apple");
+    admin.dispose();
+  });
+
+  it("an offline device that still sends the old name saves under the new one", async () => {
+    const { fake, admin } = await setup();
+    await admin.saveContent({ words: [word("Green apple"), word("Bread")], levelOrder: ["Food"] }, { renames: [{ kind: "word", from: "Apple", to: "Green apple" }] });
+    const player = createSupabaseRepo({ userId: "admin", isAdmin: true, client: fake });
+    await player.loadProgress();
+    await player.saveProgress({ score: 0, mastery: { Apple: { total: 1, correct: 1 } } });
+    expect(fake.tables.mastery.map((m) => m.item_key)).toEqual(["Green apple"]);
+    [admin, player].forEach((r) => r.dispose());
+  });
+
+  it("a large import is staged and published by one final call", async () => {
+    const { fake, admin } = await setup();
+    const many = Array.from({ length: 600 }, (_, i) => word(`W${i}`));
+    const before = fake.tables.content_meta[0].version;
+    await admin.saveContent({ words: many, levelOrder: ["Food"] });
+    const calls = fake.calls.filter((c) => c.rpc === "content_save_v2").slice(-3).map((c) => [c.args.p_publish, c.args.p_upserts.length]);
+    expect(calls).toEqual([[false, 250], [false, 250], [true, 100]]);
+    expect(fake.tables.content_meta[0].version).toBe(before + 1); // one new version, not three
+    expect(fake.tables.content_items.filter((r) => !r.deleted).length).toBe(600);
+    admin.dispose();
+  });
+
+  it("a failure before publishing leaves the published content as it was", async () => {
+    const { fake, admin } = await setup();
+    const original = fake.rpc.bind(fake);
+    fake.rpc = async (name, args) => (name === "content_save_v2" && args.p_publish ? { data: null, error: { message: "network down" } } : original(name, args));
+    const many = Array.from({ length: 600 }, (_, i) => word(`W${i}`));
+    await expect(admin.saveContent({ words: many, levelOrder: ["Food"] })).rejects.toThrow("network down");
+    expect(fake.tables.content_items.filter((r) => !r.deleted).map((r) => r.key).sort()).toEqual(["Apple", "Bread"]);
+    admin.dispose();
+  });
+
+  it("two tabs: the second save is refused instead of overwriting", async () => {
+    const { fake, admin } = await setup();
+    const other = createSupabaseRepo({ userId: "admin", isAdmin: true, client: fake });
+    await other.loadContent();
+    await admin.saveContent({ words: [word("Apple", { meaning: "from tab 1" }), word("Bread")], levelOrder: ["Food"] });
+    await expect(other.saveContent({ words: [word("Apple", { meaning: "from tab 2" }), word("Bread")], levelOrder: ["Food"] })).rejects.toMatchObject({ conflict: true });
+    expect(fake.tables.content_items.find((r) => r.key === "Apple").data.meaning).toBe("from tab 1");
+    [admin, other].forEach((r) => r.dispose());
+  });
+});

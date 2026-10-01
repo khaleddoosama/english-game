@@ -11,6 +11,8 @@ export function createFakeSupabase({ userId = "u1", admin = true } = {}) {
     profiles: [{ id: userId, username: "khaled", role: admin ? "admin" : "player" }],
   };
   const calls = [];
+  const drafts = {};
+  const aliases = new Map();
   let clock = 0;
   const now = () => new Date(Date.UTC(2026, 0, 1) + ++clock).toISOString();
   const clone = (v) => JSON.parse(JSON.stringify(v));
@@ -81,6 +83,47 @@ export function createFakeSupabase({ userId = "u1", admin = true } = {}) {
       meta.version += 1;
       return { data: meta.version };
     },
+    // Same rules as supabase/migrations/0017_content_publish.sql.
+    content_save_v2({ p_draft, p_upserts, p_removes, p_level_order, p_note, p_renames, p_expected_version, p_publish }) {
+      if (!admin) return { error: { message: "only the admin can change content", code: "42501" } };
+      if (!p_publish) {
+        const d = (drafts[p_draft] ||= new Map());
+        for (const u of p_upserts || []) d.set(`${u.kind}\u0000${u.key}`, u);
+        return { data: { staged: d.size } };
+      }
+      const meta = tables.content_meta[0];
+      if (p_expected_version != null && meta.version !== p_expected_version) return { error: { code: "40001", message: "The content was changed in another tab or by another admin." } };
+      const all = [...(drafts[p_draft]?.values() || []), ...(p_upserts || [])];
+      delete drafts[p_draft];
+      const version = rpcs.apply_content_changes({ p_upserts: all, p_removes: p_removes || [], p_level_order, p_note }).data;
+      let renamed = 0;
+      for (const r of p_renames || []) {
+        if (!r?.from || !r?.to || r.from === r.to) continue;
+        renamed++;
+        if (r.kind === "word") {
+          for (const row of tables.mastery.filter((m) => m.item_key === r.from)) {
+            const other = tables.mastery.find((m) => m.user_id === row.user_id && m.item_key === r.to);
+            if (!other) row.item_key = r.to;
+            else { if ((Number(row.stats.total) || 0) > (Number(other.stats.total) || 0)) other.stats = row.stats; tables.mastery = tables.mastery.filter((m) => m !== row); }
+          }
+          for (const row of tables.progress.filter((p) => p.section === "pools" && p.data.pools && r.from in p.data.pools)) {
+            const pools = { ...row.data.pools };
+            if (!(r.to in pools)) pools[r.to] = pools[r.from];
+            delete pools[r.from];
+            row.data = { ...row.data, pools }; row.rev += 1;
+          }
+          aliases.set(r.from, r.to);
+        } else {
+          for (const row of tables.progress.filter((p) => p.section === "levels" && p.data.levelStats && `cat-${r.from}` in p.data.levelStats)) {
+            const stats = { ...row.data.levelStats };
+            if (!(`cat-${r.to}` in stats)) stats[`cat-${r.to}`] = stats[`cat-${r.from}`];
+            delete stats[`cat-${r.from}`];
+            row.data = { ...row.data, levelStats: stats }; row.rev += 1;
+          }
+        }
+      }
+      return { data: { version, renamed } };
+    },
     // Same rules as supabase/migrations/0016_progress_merge.sql.
     save_progress_v2({ p_sections, p_expected, p_mastery, p_mastery_removes, p_profile, p_replace }) {
       const mine = (section) => tables.progress.find((r) => r.user_id === userId && r.section === section);
@@ -93,7 +136,8 @@ export function createFakeSupabase({ userId = "u1", admin = true } = {}) {
         const row = mine(section);
         if (row) { row.data = jsonb(data); row.rev += 1; } else tables.progress.push({ user_id: userId, section, data: jsonb(data), rev: 1 });
       }
-      for (const [item_key, stats] of Object.entries(p_mastery || {})) {
+      for (const [sentKey, stats] of Object.entries(p_mastery || {})) {
+        const item_key = aliases.get(sentKey) && !(aliases.get(sentKey) in (p_mastery || {})) ? aliases.get(sentKey) : sentKey;
         const row = tables.mastery.find((r) => r.user_id === userId && r.item_key === item_key);
         const at = now();
         if (!row) tables.mastery.push({ user_id: userId, item_key, stats: jsonb(stats), updated_at: at });

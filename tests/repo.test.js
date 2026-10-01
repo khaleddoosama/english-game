@@ -35,7 +35,7 @@ describe("content", () => {
     const words = content.words.map((w, i) => (i === 10 ? { ...w, meaning: "edited" } : w)).filter((_, i) => i !== 20);
     words.splice(5, 0, { word: "brand-new", category: content.words[5].category, meaning: "x", situation: "y", gap: "a ______ b" });
     await admin.saveContent({ ...content, words });
-    const [call] = rpcCalls(fake, "apply_content_changes").slice(-1);
+    const [call] = rpcCalls(fake, "content_save_v2").slice(-1);
     expect(fake.calls.length - before).toBe(1);
     expect(call.args.p_upserts.map((u) => u.key).sort()).toEqual(["brand-new", content.words[10].word].sort());
     expect(call.args.p_removes).toEqual([{ kind: "words", key: content.words[20].word }]);
@@ -47,7 +47,7 @@ describe("content", () => {
     const fake = createFakeSupabase({ admin: false });
     const player = createSupabaseRepo({ userId: "u1", isAdmin: false, client: fake });
     await player.saveContent(content);
-    expect(rpcCalls(fake, "apply_content_changes")).toHaveLength(0);
+    expect(rpcCalls(fake, "content_save_v2")).toHaveLength(0);
   });
 });
 
@@ -118,9 +118,9 @@ describe("progress", () => {
     await admin.saveContent(content);
     const again = createSupabaseRepo({ userId: "u1", isAdmin: true, client: fake });
     const loaded = await again.loadContent();
-    const before = rpcCalls(fake, "apply_content_changes").length;
+    const before = rpcCalls(fake, "content_save_v2").length;
     await again.saveContent(loaded);
-    expect(rpcCalls(fake, "apply_content_changes")).toHaveLength(before);
+    expect(rpcCalls(fake, "content_save_v2")).toHaveLength(before);
   });
 
   it("files a player's report where the admin can see it", async () => {

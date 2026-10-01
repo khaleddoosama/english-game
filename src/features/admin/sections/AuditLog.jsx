@@ -14,6 +14,7 @@ export const ACTIONS = {
   "content.update": { label: "Edited", tone: "info" },
   "content.delete": { label: "Deleted", tone: "danger" },
   "content.save": { label: "Save", tone: "neutral" },
+  "content.rename": { label: "Renamed", tone: "info" },
   "categories.update": { label: "Categories", tone: "info" },
   "report.resolve": { label: "Report resolved", tone: "success" },
   "report.reopen": { label: "Report reopened", tone: "warning" },
@@ -29,7 +30,7 @@ export const ACTIONS = {
   "audit.clear": { label: "Log cleared", tone: "danger" },
 };
 const FILTERS = [
-  ["", "All changes"], ["content.*", "Content: all"], ["content.create", "Content added"], ["content.update", "Content edited"], ["content.delete", "Content deleted"],
+  ["", "All changes"], ["content.*", "Content: all"], ["content.create", "Content added"], ["content.update", "Content edited"], ["content.rename", "Renamed"], ["content.delete", "Content deleted"],
   ["content.save", "Saves (batches)"], ["categories.update", "Category order"], ["report.*", "Reports"], ["player.*", "Players"], ["live.*", "Live challenges"], ["settings.update", "Settings"], ["audit.*", "Log clean-ups"],
 ];
 const ENTITIES = [["", "Any type"], ["words", "Words"], ["grammar", "Grammar"], ["stories", "Stories"], ["combos", "Combos"], ["challenges", "Challenges"], ["report", "Reports"], ["player", "Players"], ["settings", "Settings"]];

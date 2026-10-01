@@ -31,6 +31,6 @@ function run(mode, fn) {
 // callers can tell the player their progress isn't kept on this device.
 export const idb = {
   get: (key) => run("readonly", (s) => s.get(key)).catch(() => undefined),
-  set: (key, value) => run("readwrite", (s) => s.put(value, key)).then(() => true, (e) => { console.warn("IndexedDB write failed:", e?.message || e); return false; }),
+  set: (key, value) => run("readwrite", (s) => s.put(value, key)).then(() => true, (e) => { if (typeof indexedDB !== "undefined") console.warn("IndexedDB write failed:", e?.message || e); return false; }),
   del: (key) => run("readwrite", (s) => s.delete(key)).then(() => true, () => false),
 };
