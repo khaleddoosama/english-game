@@ -1,8 +1,9 @@
 # Word Hunter
 
-An English vocabulary detective game: practice rounds, stories, challenges,
-a speed round, and Live Challenge matches against friends on their own
-devices.
+An English vocabulary detective game: practice rounds, stories, a speed
+round, a study dashboard, and Live Challenges: send a link to 1–9 friends,
+everyone answers the same questions at their own pace, most right answers
+wins and a tie goes to the faster player.
 
 **Stack:** Vite + React · Supabase (accounts, data, realtime, storage) ·
 Gemini (AI tools and pronunciation) through Vercel Functions · PWA.
@@ -12,7 +13,8 @@ Gemini (AI tools and pronunciation) through Vercel Functions · PWA.
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # engine, save-layer and server-helper tests
+npm test         # unit tests (Vitest): engine, saves, routing, Live, import/export,
+                 # grammar editor, dashboard numbers, settings, audit, AI log
 ```
 
 Without Supabase settings the app runs in **local mode**: one local admin,
@@ -52,41 +54,73 @@ Protection) if friends should be able to open preview links.
 
 Migrations live in `supabase/migrations` (apply in order). They create:
 
-- `profiles` — username and role (`admin` / `player`) + leaderboard numbers
+- `profiles` — username and role (`admin` / `player`) + leaderboard numbers.
+  Other players' rows are readable only while ranks are on (0013)
 - `content_items` / `content_meta` — one row per word, grammar rule,
   challenge, story or combo; only the admin writes
 - `progress` (sections) and `mastery` (one row per word) — each player's own
-- `reports`, `live_rooms`, `live_results`, `ai_usage`
+- `reports` — the question, options, the player's answer, reason, who and when
+- `live_challenges`, `live_players`, `live_answers`, `live_answer_keys` (0008)
+  — Live Challenge: the answer keys never reach players; answers are judged
+  and timed on the server; finished matches go to `live_results`
+- `admin_audit` — every change with field-by-field before/after (0009);
+  entries can be deleted only through `admin_audit_delete` / `admin_audit_clear`,
+  which leave a note (0014)
+- `app_settings` (0012) — sign-ups, maintenance, announcement, AI limits,
+  Live limits, ranks, new-player defaults; enforced in the database
+- `ai_usage` (daily counts) and `ai_calls` (0015) — one row per AI, voice or
+  picture-copy call: who, when, feature, model, time, tokens, outcome
+- `analytics` schema views (0010, 0011) for data quality, read with
+  `admin_analytics` / `admin_data_issues`
 - storage buckets `word-images` and `tts`, private realtime channels `live:*`
+
+Each feature has SQL tests in `supabase/tests/*.sql`. Run one as
+`begin; <file>; rollback;`: it ends by raising `… TESTS PASSED`, and the
+rollback leaves nothing behind.
 
 Accounts are **username + password**. Sign-up goes through the
 `register_player` function, so no email is involved. The admin account is
 `khaled`; change its password from the Profile page.
 
-**First run:** sign in as the admin → *Open Import Center* → upload
-`word-hunter-backup.json` → tick *Also restore progress* → *Restore backup*.
-That loads all content for every player and the admin's own progress.
+**First run:** sign in as the admin → *Open Import & Export* → choose
+`word-hunter-backup.json` → *Content and my progress* → *Restore*. That
+loads all content for every player and the admin's own progress.
+
+## Pages and links
+
+Every page has its own address, and filters live in the query string, so a
+refresh or a shared link opens the same view:
+`/`, `/stories`, `/play`, `/stats?show=started`, `/badges`, `/live`,
+`/live/<code>`, `/leaderboard`, `/profile`, `/settings`, `/data`, and
+`/admin/<section>/<item>?filters`, e.g. `/admin/words?hasPicture=false`,
+`/admin/grammar/g5`, `/admin/ai?status=error`.
 
 ## Admin panel
 
-Signed in as an admin, the **Admin** tab opens:
+Signed in as an admin, the **Admin** tab opens (Back to game and Log out
+stay pinned in the sidebar):
 
-- **Overview** — KPIs and charts (answers, accuracy and active players per
-  day, how the class does on each word, hardest words, words per category,
-  top players) over 7 / 30 / 90 days; every chart has a table view
-- **Players** — search, filter, sort, paginate, CSV; a player drawer with
-  their charts, weakest words and sessions; make admin, set password, reset
-  progress, delete (single or bulk)
-- **Live matches**, **AI usage**, **Activity log** (every content save and
-  account change, with who did it)
-- **Words** — 989+ words paginated with filters (category, type, quality
-  issues, class accuracy), bulk move / export / delete, click to edit
-- **Reports** — filter by status, AI verdict and player; bulk resolve,
-  export, delete; *Review & fix* opens the AI review tools
-- The classic tools stay: content editor, grammar, content health,
-  settings, data & backup
+- **Overview** — KPIs and charts over 7 / 30 / 90 days, each with a table view
+- **Players** — search, filter, sort, CSV; a drawer per player; make admin,
+  set password, reset progress, delete
+- **Live challenges** — open challenges (end one early) and finished matches
+- **AI usage** — totals, by feature / player / model, errors and refusals,
+  and the call log with filters
+- **Words** — filters in the address, bulk move / export / delete, a form
+  editor per word (picture upload, AI fill, rename keeps progress)
+- **Categories** — order, rename, merge, clean up
+- **Reports** — every detail of a reported question; resolve, reopen, fix
+- **Stories & more** — stories, combos and challenges
+- **Grammar** — rules with lesson, level, question types and class
+  accuracy; an editor with choose / right-or-wrong / fix questions, a
+  learner preview, and AI-written questions to review
+- **Data quality**, **Content health** — problems in the content, with fixes
+- **Activity log** — who changed what and when, field by field; revert a
+  change; delete selected entries or all of them
+- **Settings** — app-wide rules (ranks, AI, Live, sign-ups, maintenance…)
+- **Import & export** — backups, content files, words spreadsheet
 
-Analytics come from `admin_*` database functions (migration 0006); each
+Analytics and actions go through `admin_*` database functions; each
 refuses anyone who isn't an admin.
 
 ## Layout
@@ -94,9 +128,13 @@ refuses anyone who isn't an admin.
 ```
 api/                 Vercel Functions: ai, tts, image-import, keepalive
 src/engine/          game logic (moved verbatim from the original single file)
-src/features/        session, live, admin, media, social (leaderboard/profile), auth, shell
-src/lib/             supabase client, auth, repo (diff-based saves + caches), ai, images
-src/styles/          tokens, app, auth, ui
+src/features/        session, live, admin, data (import/export), stats (dashboard),
+                     settings, media, social (leaderboard/profile), auth, shell
+src/lib/             supabase client, auth, repo (diff-based saves + caches), router,
+                     app settings, ai, images
+src/styles/          tokens, app, auth, ui, admin, live, data, stats, settings
 supabase/migrations/ database schema and policies
+supabase/tests/      SQL tests (run inside a rolled-back transaction)
+tests/               Vitest unit tests
 legacy/              the original single-file Claude artifact, for reference
 ```
