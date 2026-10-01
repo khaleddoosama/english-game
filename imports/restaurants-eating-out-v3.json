@@ -1,0 +1,1521 @@
+{
+  "schemaVersion": 3,
+  "kind": "content",
+  "note": "Restaurants and Eating Out lesson (board photo), content v3, written at A2 level: 27 words and 1 grammar rule (past continuous). 'Place / make an order' is a collocation of Order (with a Word Partners check).",
+  "categories": [
+    {
+      "id": "restaurants-eating-out",
+      "title": "Restaurants and Eating Out",
+      "subCategories": [
+        {
+          "id": "going-out",
+          "title": "Going out to eat"
+        },
+        {
+          "id": "courses",
+          "title": "Courses"
+        },
+        {
+          "id": "the-table",
+          "title": "The table"
+        },
+        {
+          "id": "taste",
+          "title": "Taste"
+        },
+        {
+          "id": "paying",
+          "title": "Paying"
+        },
+        {
+          "id": "sharing-food",
+          "title": "Sharing food"
+        },
+        {
+          "id": "words-to-watch",
+          "title": "Words to watch"
+        }
+      ]
+    }
+  ],
+  "words": [
+    {
+      "id": "eat-out",
+      "word": "Eat out",
+      "type": "phrasal",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "going-out",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To eat a meal in a restaurant, not at home.",
+      "situations": [
+        "We eat out every Friday at a small fish restaurant."
+      ],
+      "gaps": [
+        "We don't want to cook tonight, so let's ______.",
+        "My parents like to ______ on their wedding anniversary."
+      ],
+      "hints": [
+        "To have a meal in a restaurant.",
+        "Eat + a small word that means 'not inside'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "We ate outside at a restaurant last night.",
+          "correction": "We ate out at a restaurant last night.",
+          "why": "'Eat out' means eat at a restaurant; 'eat outside' means eat in the open air."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "eat out",
+        "go out to eat"
+      ],
+      "synonyms": [
+        "go out for dinner"
+      ],
+      "antonyms": [
+        "eat in"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "order-delivery",
+          "order"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "I'm too tired to cook. Let's eat ______ tonight.",
+          "answer": "out",
+          "wrong": [
+            "off",
+            "up",
+            "away"
+          ],
+          "explanation": "Eat out = have a meal in a restaurant."
+        }
+      ]
+    },
+    {
+      "id": "order",
+      "word": "Order",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb",
+        "noun"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "going-out",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To ask for food or drinks in a restaurant (verb); the food or drinks you ask for (noun).",
+      "situations": [
+        "I'd like to order the chicken with rice, please."
+      ],
+      "gaps": [
+        "Are you ready to ______, or do you need more time to look at the menu?",
+        "Can I ______ a large pizza and two lemonades, please?"
+      ],
+      "hints": [
+        "What you do when you tell the waiter what you want.",
+        "It rhymes with 'border'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Can I do an order, please?",
+          "correction": "Can I place an order, please?",
+          "why": "We place or make an order — we don't 'do' an order."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "place an order",
+        "make an order",
+        "take someone's order"
+      ],
+      "synonyms": [],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "taste",
+          "order-delivery",
+          "consume"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "I'd like to ______ an order for two pizzas, please.",
+          "answer": "place",
+          "wrong": [
+            "do",
+            "put",
+            "give"
+          ],
+          "explanation": "Place (or make) an order."
+        }
+      ]
+    },
+    {
+      "id": "order-delivery",
+      "word": "Order delivery",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb phrase"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "going-out",
+      "level": "A2",
+      "register": "informal",
+      "meaning": "To ask a restaurant to bring food to your home.",
+      "situations": [
+        "It was raining, so we ordered delivery from the burger place."
+      ],
+      "gaps": [
+        "It's raining and we're tired — let's ______ from the pizza place tonight.",
+        "When you ______, the food comes to your door in about thirty minutes."
+      ],
+      "hints": [
+        "The food comes to your home.",
+        "Order + the word for bringing things to your door."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Let's order a delivery.",
+          "correction": "Let's order delivery.",
+          "why": "We say 'order delivery' without 'a'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "delivery",
+          "pos": "noun"
+        },
+        {
+          "word": "deliver",
+          "pos": "verb"
+        }
+      ],
+      "collocations": [
+        "order delivery",
+        "free delivery"
+      ],
+      "synonyms": [
+        "order in"
+      ],
+      "antonyms": [
+        "eat out"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "eat-out",
+          "order"
+        ]
+      }
+    },
+    {
+      "id": "service",
+      "word": "Service",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "going-out",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "The way waiters and other workers help you in a restaurant or shop.",
+      "situations": [
+        "The service in this café is always fast and friendly."
+      ],
+      "gaps": [
+        "The food was good, but the ______ was slow — we waited an hour for our drinks.",
+        "This hotel is famous for its friendly customer ______."
+      ],
+      "hints": [
+        "How the waiters help you.",
+        "It comes from the verb 'serve'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The service were very good.",
+          "correction": "The service was very good.",
+          "why": "'Service' is singular here: the service was."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "serve",
+          "pos": "verb"
+        },
+        {
+          "word": "server",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "good service",
+        "slow service",
+        "service charge"
+      ],
+      "synonyms": [],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "cuisine"
+        ]
+      }
+    },
+    {
+      "id": "cuisine",
+      "word": "Cuisine",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "going-out",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "A style of cooking from a country or area.",
+      "situations": [
+        "I love Italian cuisine, especially pasta and pizza."
+      ],
+      "gaps": [
+        "Koshari and molokhia are famous dishes of Egyptian ______.",
+        "This restaurant serves Japanese ______, like sushi and noodles."
+      ],
+      "hints": [
+        "The type of cooking from one country.",
+        "It sounds like 'kwi-ZEEN'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I like the Italian kitchen.",
+          "correction": "I like Italian cuisine.",
+          "why": "For a country's style of cooking, say 'cuisine', not 'kitchen'."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "Egyptian cuisine",
+        "Italian cuisine"
+      ],
+      "synonyms": [
+        "food",
+        "cooking"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "service"
+        ]
+      }
+    },
+    {
+      "id": "appetizer",
+      "word": "Appetizer",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "courses",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "A small dish you eat before the main dish.",
+      "situations": [
+        "We had soup as an appetizer and then grilled fish."
+      ],
+      "gaps": [
+        "We shared some soup as an ______ before our steaks came.",
+        "I'm not very hungry, so I'll just have an ______ and skip the main dish."
+      ],
+      "hints": [
+        "The small food at the start of a meal.",
+        "It starts with 'app-'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "For appetizer I want soup.",
+          "correction": "As an appetizer, I want soup.",
+          "why": "Say 'as an appetizer' or 'for an appetizer' — don't forget 'an'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "appetite",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "as an appetizer"
+      ],
+      "synonyms": [
+        "starter"
+      ],
+      "antonyms": [
+        "dessert"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "side-dish"
+        ]
+      }
+    },
+    {
+      "id": "main-dish",
+      "word": "Main dish",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "courses",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "The biggest and most important part of a meal.",
+      "situations": [
+        "For my main dish, I had chicken with rice."
+      ],
+      "gaps": [
+        "I had soup to start, and for my ______ I had grilled fish with rice.",
+        "The steak is the ______; the salad and chips come with it."
+      ],
+      "hints": [
+        "The big part of the meal, after the small starter.",
+        "Main + another word for a plate of food."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "What is the principal dish?",
+          "correction": "What is the main dish?",
+          "why": "We say 'main dish' (or 'main course')."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "main dish",
+        "main course"
+      ],
+      "synonyms": [
+        "main course"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "side-dish",
+          "appetizer"
+        ]
+      }
+    },
+    {
+      "id": "side-dish",
+      "word": "Side dish",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "courses",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "A small amount of food you eat with the main dish, like chips or salad.",
+      "situations": [
+        "I'll have the burger with a salad as a side dish."
+      ],
+      "gaps": [
+        "I'll have the chicken, and rice as a ______, please.",
+        "Would you like salad or chips as a ______ with your burger?"
+      ],
+      "hints": [
+        "Small food that comes next to the main dish.",
+        "Side + another word for a plate of food."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I want chips as side.",
+          "correction": "I want chips as a side dish.",
+          "why": "Say 'as a side dish' (or 'as a side')."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "as a side dish"
+      ],
+      "synonyms": [
+        "side"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "main-dish",
+          "appetizer"
+        ]
+      }
+    },
+    {
+      "id": "dessert",
+      "word": "Dessert",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "courses",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "Sweet food you eat at the end of a meal.",
+      "situations": [
+        "For dessert, we had chocolate cake."
+      ],
+      "gaps": [
+        "For ______, we had chocolate cake and ice cream.",
+        "I'm full, but I always have space for something sweet like ______!"
+      ],
+      "hints": [
+        "Sweet food at the end of the meal.",
+        "Two s's — like 'sweet stuff'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Let's have desert.",
+          "correction": "Let's have dessert.",
+          "why": "Dessert (ss) is sweet food; desert (s) is a dry, sandy place."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "have dessert",
+        "for dessert"
+      ],
+      "synonyms": [
+        "sweet"
+      ],
+      "antonyms": [
+        "appetizer"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "desert"
+        ],
+        "excludeWith": []
+      }
+    },
+    {
+      "id": "desert",
+      "word": "Desert",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "words-to-watch",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "A large, hot, dry area of land with a lot of sand.",
+      "situations": [
+        "The Sahara is a very big desert."
+      ],
+      "gaps": [
+        "Camels can walk for days in the ______ without water.",
+        "The Sahara is the biggest hot ______ in the world."
+      ],
+      "hints": [
+        "A place with sand and very little rain.",
+        "One s — don't confuse it with sweet food."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "We ate a nice desert after dinner.",
+          "correction": "We ate a nice dessert after dinner.",
+          "why": "Desert = sand; dessert = sweet food."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "the Sahara desert",
+        "in the desert"
+      ],
+      "synonyms": [],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "dessert"
+        ],
+        "excludeWith": []
+      }
+    },
+    {
+      "id": "cutlery",
+      "word": "Cutlery",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "the-table",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "Knives, forks and spoons.",
+      "situations": [
+        "Please put the cutlery in the drawer."
+      ],
+      "gaps": [
+        "The waiter put clean ______ next to each plate.",
+        "Where do you keep the ______? I need something to eat my steak with."
+      ],
+      "hints": [
+        "The metal things you eat with.",
+        "It starts with 'cut-'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Can I have a cutlery?",
+          "correction": "Can I have some cutlery?",
+          "why": "'Cutlery' is uncountable — no 'a', no plural."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "clean cutlery",
+        "plastic cutlery"
+      ],
+      "synonyms": [],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "fork",
+          "knife",
+          "spoon"
+        ]
+      }
+    },
+    {
+      "id": "fork",
+      "word": "Fork",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "the-table",
+      "level": "A1",
+      "register": "neutral",
+      "meaning": "A tool with points that you use to pick up food.",
+      "situations": [
+        "I eat spaghetti with a fork."
+      ],
+      "gaps": [
+        "You eat spaghetti with a ______ — you turn it to catch the noodles.",
+        "Push your ______ into a piece of chicken and lift it to your mouth."
+      ],
+      "hints": [
+        "You use it to pick up food; it has points.",
+        "It rhymes with 'pork'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I eat soup with a fork.",
+          "correction": "I eat soup with a spoon.",
+          "why": "A fork has points, so we use a spoon for soup."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "knife and fork"
+      ],
+      "synonyms": [],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "cutlery",
+          "knife"
+        ]
+      }
+    },
+    {
+      "id": "knife",
+      "word": "Knife",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "the-table",
+      "level": "A1",
+      "register": "neutral",
+      "meaning": "A tool with a sharp edge for cutting.",
+      "situations": [
+        "Can I have a knife to cut this steak?"
+      ],
+      "gaps": [
+        "Be careful, the ______ is very sharp.",
+        "You need a ______ to cut this steak."
+      ],
+      "hints": [
+        "You cut food with it.",
+        "The 'k' is silent."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Two knifes, please.",
+          "correction": "Two knives, please.",
+          "why": "The plural of knife is knives."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "a sharp knife",
+        "knife and fork"
+      ],
+      "synonyms": [],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "cutlery"
+        ]
+      }
+    },
+    {
+      "id": "spoon",
+      "word": "Spoon",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "the-table",
+      "level": "A1",
+      "register": "neutral",
+      "meaning": "A tool with a small round end for eating soup or mixing tea.",
+      "situations": [
+        "She mixed her tea with a spoon."
+      ],
+      "gaps": [
+        "You can't eat soup with a fork — take a ______.",
+        "Add one ______ of sugar to my tea, please."
+      ],
+      "hints": [
+        "You eat soup with it.",
+        "It rhymes with 'moon'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I put two spoon of sugar.",
+          "correction": "I put two spoons of sugar.",
+          "why": "Use the plural: two spoons."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "spoonful",
+          "pos": "noun"
+        },
+        {
+          "word": "teaspoon",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "a spoon of sugar"
+      ],
+      "synonyms": [],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "cutlery"
+        ]
+      }
+    },
+    {
+      "id": "set-the-table",
+      "word": "Set the table",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb phrase"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "the-table",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To put plates, glasses and cutlery on the table before a meal.",
+      "situations": [
+        "Can you set the table? Dinner is almost ready."
+      ],
+      "gaps": [
+        "Can you ______ for dinner? Put out four plates and four glasses.",
+        "The guests are coming at eight, so please ______ before then."
+      ],
+      "hints": [
+        "What you do before a meal.",
+        "Set + the + the thing you eat on."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Can you prepare the table?",
+          "correction": "Can you set the table?",
+          "why": "We say 'set the table' (or 'lay the table')."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "set the table",
+        "lay the table"
+      ],
+      "synonyms": [
+        "lay the table"
+      ],
+      "antonyms": [
+        "clear the table"
+      ],
+      "links": {
+        "opposite": "clear-the-table",
+        "confusableWith": [],
+        "excludeWith": [
+          "clear-the-table"
+        ]
+      }
+    },
+    {
+      "id": "clear-the-table",
+      "word": "Clear the table",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb phrase"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "the-table",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To take the plates and glasses away after a meal.",
+      "situations": [
+        "After lunch, I cleared the table and washed the dishes."
+      ],
+      "gaps": [
+        "After dinner, the kids ______ and their dad washes the dishes.",
+        "Can you help me ______? Put the dirty plates in the kitchen."
+      ],
+      "hints": [
+        "What you do after a meal.",
+        "The opposite of 'set the table'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Can you clean the table from the plates?",
+          "correction": "Can you clear the table?",
+          "why": "'Clear the table' = take the dishes away."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "clear the table"
+      ],
+      "synonyms": [],
+      "antonyms": [
+        "set the table"
+      ],
+      "links": {
+        "opposite": "set-the-table",
+        "confusableWith": [],
+        "excludeWith": [
+          "set-the-table"
+        ]
+      }
+    },
+    {
+      "id": "taste",
+      "word": "Taste",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb",
+        "noun"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "taste",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To try a little food; to have a flavour (verb). The flavour of food (noun).",
+      "situations": [
+        "Can I taste your soup? It smells good."
+      ],
+      "gaps": [
+        "Can I ______ your soup? It smells really good.",
+        "This medicine has a horrible ______, like old coffee."
+      ],
+      "hints": [
+        "What your tongue tells you about food.",
+        "It rhymes with 'paste'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "This cake tastes like good.",
+          "correction": "This cake tastes good.",
+          "why": "Taste + adjective (tastes good), or taste like + noun (tastes like chocolate)."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "tasty",
+          "pos": "adjective"
+        },
+        {
+          "word": "tasteless",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "taste good",
+        "taste like",
+        "a bad taste"
+      ],
+      "synonyms": [
+        "flavour"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "order",
+          "consume"
+        ]
+      },
+      "collocationChecks": [
+        {
+          "sentence": "This drink tastes ______ oranges.",
+          "answer": "like",
+          "wrong": [
+            "as",
+            "to",
+            "with"
+          ],
+          "explanation": "Taste like + noun."
+        }
+      ]
+    },
+    {
+      "id": "sweet",
+      "word": "Sweet",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "taste",
+      "level": "A1",
+      "register": "neutral",
+      "meaning": "Tasting of sugar.",
+      "situations": [
+        "This mango is very sweet."
+      ],
+      "gaps": [
+        "This tea is too ______ — you put three spoons of sugar in it!",
+        "Children usually love ______ snacks like chocolate and cake."
+      ],
+      "hints": [
+        "How sugar tastes.",
+        "It rhymes with 'meet'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I don't like sweety food.",
+          "correction": "I don't like sweet food.",
+          "why": "The adjective is 'sweet'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "sweets",
+          "pos": "noun"
+        },
+        {
+          "word": "sweeten",
+          "pos": "verb"
+        }
+      ],
+      "collocations": [
+        "too sweet",
+        "a sweet tooth"
+      ],
+      "synonyms": [
+        "sugary"
+      ],
+      "antonyms": [
+        "savory",
+        "salty",
+        "bitter"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "savory"
+        ]
+      }
+    },
+    {
+      "id": "savory",
+      "word": "Savory",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "taste",
+      "level": "B1",
+      "register": "neutral",
+      "meaning": "Salty or spicy, not sweet.",
+      "situations": [
+        "I prefer savory snacks, like cheese and crackers."
+      ],
+      "gaps": [
+        "I don't like sweet breakfasts; I prefer ______ food like eggs and cheese.",
+        "Would you like a ______ pie with meat, or one with apples and sugar?"
+      ],
+      "hints": [
+        "Food that is not sweet.",
+        "It starts with 'sav-'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I like savory cakes with chocolate.",
+          "correction": "I like sweet cakes with chocolate.",
+          "why": "Chocolate cake is sweet; savory food is salty or spicy."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "savory food",
+        "savory snacks"
+      ],
+      "synonyms": [],
+      "antonyms": [
+        "sweet"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "salty"
+        ]
+      }
+    },
+    {
+      "id": "salty",
+      "word": "Salty",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "taste",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "Tasting of salt, or with too much salt.",
+      "situations": [
+        "These chips are very salty."
+      ],
+      "gaps": [
+        "The sea water is too ______ to drink.",
+        "These chips are very ______ — I need a glass of water."
+      ],
+      "hints": [
+        "How sea water tastes.",
+        "It comes from 'salt'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The soup has too much salty.",
+          "correction": "The soup is too salty. / The soup has too much salt.",
+          "why": "'Salty' is an adjective; 'salt' is the noun."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "salt",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "too salty",
+        "salty food"
+      ],
+      "synonyms": [],
+      "antonyms": [
+        "sweet"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "savory"
+        ]
+      }
+    },
+    {
+      "id": "make-my-mouth-water",
+      "word": "Make my mouth water",
+      "type": "idiom",
+      "partsOfSpeech": [
+        "verb phrase"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "taste",
+      "level": "B1",
+      "register": "informal",
+      "meaning": "To make you very hungry because food looks or smells so good.",
+      "situations": [
+        "The smell of grilled chicken makes my mouth water."
+      ],
+      "gaps": [
+        "Pictures of pizza can ______ even when I'm not hungry.",
+        "The smell from that bakery is enough to ______."
+      ],
+      "hints": [
+        "When good food makes you want to eat right now.",
+        "Your mouth gets wet."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The cake made my mouth to water.",
+          "correction": "The cake made my mouth water.",
+          "why": "Make + someone + base verb, without 'to'."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "make your mouth water"
+      ],
+      "synonyms": [
+        "make you hungry"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      }
+    },
+    {
+      "id": "split-the-bill",
+      "word": "Split the bill",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb phrase"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "paying",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To share the cost of a meal so each person pays part of it.",
+      "situations": [
+        "There were four of us, so we split the bill."
+      ],
+      "gaps": [
+        "The meal cost 600 pounds, so the three of us decided to ______.",
+        "Let's ______ — you pay for your food and I'll pay for mine."
+      ],
+      "hints": [
+        "Everyone pays part of the cost.",
+        "Split + the + the paper with the price."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Let's divide the account.",
+          "correction": "Let's split the bill.",
+          "why": "We say 'split the bill' (or 'go halves')."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "split the bill"
+      ],
+      "synonyms": [
+        "go halves",
+        "go Dutch"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "collocationChecks": [
+        {
+          "sentence": "Let's ______ the bill — 200 pounds each.",
+          "answer": "split",
+          "wrong": [
+            "cut",
+            "break",
+            "share out"
+          ],
+          "explanation": "Split the bill = share the cost."
+        }
+      ]
+    },
+    {
+      "id": "my-treat",
+      "word": "My treat",
+      "type": "idiom",
+      "partsOfSpeech": [
+        "noun phrase"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "paying",
+      "level": "A2",
+      "register": "informal",
+      "meaning": "Used to say that you will pay for someone else's meal or drink.",
+      "situations": [
+        "Put your money away — this is my treat."
+      ],
+      "gaps": [
+        "Put your money away — lunch is ______ today.",
+        "Don't worry about the bill. This coffee is ______."
+      ],
+      "hints": [
+        "You say this when you pay for your friend.",
+        "My + a word for something nice you give someone."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "This is my invite.",
+          "correction": "This is my treat.",
+          "why": "We say 'my treat' (or 'it's on me')."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "treat",
+          "pos": "verb"
+        }
+      ],
+      "collocations": [
+        "it's my treat"
+      ],
+      "synonyms": [
+        "it's on me"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "it-s-on-me",
+          "it-s-on-the-house"
+        ]
+      }
+    },
+    {
+      "id": "it-s-on-me",
+      "word": "It's on me",
+      "type": "idiom",
+      "partsOfSpeech": [
+        "expression"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "paying",
+      "level": "A2",
+      "register": "informal",
+      "meaning": "I will pay for this.",
+      "situations": [
+        "Don't pay for the drinks — it's on me."
+      ],
+      "gaps": [
+        "Don't take out your wallet — ______. You paid last time.",
+        "You helped me move house, so dinner tonight — ______!"
+      ],
+      "hints": [
+        "You say this when you want to pay.",
+        "It's on + the person who pays."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "It's on my.",
+          "correction": "It's on me.",
+          "why": "After 'on', use the object pronoun: me."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "it's on me"
+      ],
+      "synonyms": [
+        "my treat"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "my-treat",
+          "it-s-on-the-house"
+        ]
+      }
+    },
+    {
+      "id": "it-s-on-the-house",
+      "word": "It's on the house",
+      "type": "idiom",
+      "partsOfSpeech": [
+        "expression"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "paying",
+      "level": "A2",
+      "register": "informal",
+      "meaning": "The restaurant gives it to you for free.",
+      "situations": [
+        "The waiter brought us free tea and said, \"It's on the house.\""
+      ],
+      "gaps": [
+        "The owner knows my dad, so when we tried to pay for the cake, he smiled and said, \"No, no — ______!\"",
+        "We waited a long time, so the manager gave us free drinks and said, \"______.\""
+      ],
+      "hints": [
+        "The restaurant pays, so it's free for you.",
+        "'House' here means the restaurant."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "It's on the restaurant.",
+          "correction": "It's on the house.",
+          "why": "The fixed expression uses 'the house'."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "it's on the house"
+      ],
+      "synonyms": [
+        "free"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": [
+          "my-treat",
+          "it-s-on-me"
+        ]
+      }
+    },
+    {
+      "id": "take-the-lion-s-share",
+      "word": "Take the lion's share",
+      "type": "idiom",
+      "partsOfSpeech": [
+        "verb phrase"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "sharing-food",
+      "level": "B1",
+      "register": "informal",
+      "meaning": "To take the biggest part of something.",
+      "situations": [
+        "My friend took the lion's share of the meal."
+      ],
+      "gaps": [
+        "My brother always tries to ______ of the pizza — he eats five slices!",
+        "The boss's son will ______ of the money, and the workers will get very little."
+      ],
+      "hints": [
+        "To take the biggest part.",
+        "Think of the king of animals."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He took the lion share.",
+          "correction": "He took the lion's share.",
+          "why": "Don't forget the 's: the lion's share."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "take the lion's share of"
+      ],
+      "synonyms": [
+        "most of"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      }
+    },
+    {
+      "id": "bit-by-bit",
+      "word": "Bit by bit",
+      "type": "binomial",
+      "partsOfSpeech": [
+        "adverb phrase"
+      ],
+      "category": "restaurants-eating-out",
+      "subCategory": "sharing-food",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "Slowly, in small amounts or steps.",
+      "situations": [
+        "You should eat your meal bit by bit."
+      ],
+      "gaps": [
+        "Eat your food slowly and ______, not all at once.",
+        "My English is getting better ______."
+      ],
+      "hints": [
+        "Slowly, one small part at a time.",
+        "The same small word two times, with 'by' in the middle."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He learned it bit to bit.",
+          "correction": "He learned it bit by bit.",
+          "why": "The binomial is fixed: bit by bit."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "bit by bit"
+      ],
+      "synonyms": [
+        "little by little",
+        "slowly"
+      ],
+      "antonyms": [
+        "all at once"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      }
+    }
+  ],
+  "grammar": [
+    {
+      "id": "gr-past-continuous",
+      "rule": "Past continuous: was / were + verb-ing",
+      "category": "restaurants-eating-out",
+      "level": "A2",
+      "explanation": "Use the past continuous for an action that was in progress at a time in the past. I / he / she / it + was; you / we / they + were. Negative: wasn't / weren't + verb-ing.",
+      "examples": [
+        "I was watching TV at 7.",
+        "They were eating koshari at 1.",
+        "He wasn't playing football at 6."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "We was eating at 8.",
+          "correction": "We were eating at 8.",
+          "why": "We / you / they + were."
+        },
+        {
+          "sentence": "I was eat lunch at 2.",
+          "correction": "I was eating lunch at 2.",
+          "why": "was / were + verb-ing."
+        }
+      ],
+      "questions": [
+        {
+          "type": "choose",
+          "prompt": "At 7 o'clock yesterday, I ______ TV.",
+          "options": [
+            "was watching",
+            "were watching",
+            "was watch"
+          ],
+          "answer": "was watching",
+          "explanation": "I + was + verb-ing."
+        },
+        {
+          "type": "choose",
+          "prompt": "They ______ koshari at 1 o'clock.",
+          "options": [
+            "were eating",
+            "was eating",
+            "were eat"
+          ],
+          "answer": "were eating",
+          "explanation": "They + were + verb-ing."
+        },
+        {
+          "type": "choose",
+          "prompt": "He ______ football at 6 — he was at home with his family.",
+          "options": [
+            "wasn't playing",
+            "weren't playing",
+            "wasn't play"
+          ],
+          "answer": "wasn't playing",
+          "explanation": "He + wasn't + verb-ing."
+        },
+        {
+          "type": "choose",
+          "prompt": "______ you having dinner at 8 last night?",
+          "options": [
+            "Were",
+            "Was",
+            "Did"
+          ],
+          "answer": "Were",
+          "explanation": "Question: Were + you + verb-ing?"
+        },
+        {
+          "type": "judge",
+          "sentence": "We was waiting for our food at nine.",
+          "correct": false,
+          "fix": "We were waiting for our food at nine.",
+          "explanation": "We + were, not was."
+        },
+        {
+          "type": "judge",
+          "sentence": "She was drinking coffee in the café at ten.",
+          "correct": true,
+          "alternative": "She was drink coffee in the café at ten.",
+          "explanation": "She + was + verb-ing: was drinking."
+        },
+        {
+          "type": "fix",
+          "sentence": "They were eat dinner at 8.",
+          "answer": "They were eating dinner at 8.",
+          "explanation": "were + verb-ing: eating."
+        },
+        {
+          "type": "fix",
+          "sentence": "I wasn't sleep at midnight.",
+          "answer": "I wasn't sleeping at midnight.",
+          "explanation": "wasn't + verb-ing: sleeping."
+        }
+      ]
+    }
+  ]
+}
