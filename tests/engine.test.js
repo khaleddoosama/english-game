@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { V2 } from "../src/engine/v2";
 import { LEVELS, WORDS, mergeCustomData } from "../src/engine/data";
 import { migrateProgressData } from "../src/engine/progress";
-import { liveBoard, livePoints, liveQuestions } from "../src/features/live/liveEngine";
+import { liveQuestions } from "../src/features/live/liveEngine";
 
 const backup = JSON.parse(readFileSync(new URL("../word-hunter-backup.json", import.meta.url), "utf8"));
 const content = V2.withoutRemovedFields(backup);
@@ -71,14 +71,10 @@ describe("live challenge", () => {
     }
   });
 
-  it("scores speed and ranks players", () => {
-    expect(livePoints({ correct: true, ms: 0 }, 20000)).toBe(1000);
-    expect(livePoints({ correct: true, ms: 20000 }, 20000)).toBe(500);
-    expect(livePoints({ correct: false, ms: 10 }, 20000)).toBe(0);
-    const room = { seconds: 20, players: [
-      { id: "a", name: "A", answers: { 0: { correct: true, ms: 15000 } } },
-      { id: "b", name: "B", answers: { 0: { correct: true, ms: 1000 } } },
-    ] };
-    expect(liveBoard(room, 0).map((p) => p.id)).toEqual(["b", "a"]);
+  it("builds only the question types asked for", () => {
+    const words = LEVELS[1].items.filter((it) => it.kind === "word").map((it) => it.obj);
+    const qs = liveQuestions(words, 8, { rng: seeded(5), kinds: ["meaning"] });
+    expect(qs.length).toBeGreaterThan(0);
+    for (const q of qs) expect(q.mode).toBe("meaning");
   });
 });

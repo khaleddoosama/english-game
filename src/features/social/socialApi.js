@@ -18,7 +18,7 @@ export async function fetchLeaderboard(kind) {
 
 export async function fetchLiveHistory(userId, limit = 10) {
   if (isLocalMode) return [];
-  const { data, error } = await supabase.from("live_results").select("room_code, title, points, correct, total, rank, players, played_at").eq("user_id", userId).order("played_at", { ascending: false }).limit(limit);
+  const { data, error } = await supabase.from("live_results").select("room_code, title, points, correct, total, rank, players, played_at, total_ms, finished").eq("user_id", userId).order("played_at", { ascending: false }).limit(limit);
   if (error) throw new Error(error.message);
   return data;
 }

@@ -18,7 +18,7 @@ const NAV = [
   { group: "Insights", items: [
     { id: "overview", label: "Overview", icon: LayoutDashboard, desc: "How the game is doing" },
     { id: "players", label: "Players", icon: Users, desc: "Accounts, progress and access" },
-    { id: "live", label: "Live matches", icon: Swords, desc: "Every Live Challenge played" },
+    { id: "live", label: "Live challenges", icon: Swords, desc: "Open challenges and every finished match" },
     { id: "ai", label: "AI usage", icon: Sparkles, desc: "Gemini calls by day and player" },
   ] },
   { group: "Content", items: [
@@ -39,8 +39,11 @@ const HIDDEN = { review: { id: "review", label: "Review report", desc: "AI revie
 const RANGES = [7, 30, 90];
 
 function LiveSection({ api, tick, activity, range }) {
-  const matches = useAsync(() => api.liveMatches(), [api, tick]);
-  return <LiveMatches matches={matches} activity={activity} range={range} />;
+  const [n, setN] = useState(0);
+  const matches = useAsync(() => api.liveMatches(), [api, tick, n]);
+  const challenges = useAsync(() => api.liveChallenges(), [api, tick, n]);
+  const end = async (code) => { if (!window.confirm(`End challenge ${code} now? Players who started get their results.`)) return; try { await api.endChallenge(code); setN((x) => x + 1); } catch (e) { window.alert(e.message); } };
+  return <LiveMatches matches={matches} challenges={challenges} activity={activity} range={range} onEnd={end} />;
 }
 function AiSection({ api, tick, activity, range, overview }) {
   const usage = useAsync(() => api.aiUsage(range), [api, tick, range]);

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { navigate } from "../../lib/router";
+import { formatMs } from "../live/liveRules";
 import { Award, Copy, Download, KeyRound, LogOut, Users } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { isLocalMode } from "../../lib/supabase";
@@ -42,12 +44,12 @@ export default function ProfilePage({ stats, onCopyBackup, onDownloadBackup, onO
       <button className="ui-row-btn" onClick={onOpenStats}><Award size={16} /> Full stats &amp; weak words</button>
 
       <h3 className="ui-section-title"><Users size={16} /> Recent live matches</h3>
-      {history === null ? <div className="ui-skeleton-row" /> : history.length === 0 ? <p className="ui-muted">No live matches yet. Challenge a friend from the Live tab.</p> : (
+      {history === null ? <div className="ui-skeleton-row" /> : history.length === 0 ? <p className="ui-muted">No live matches yet. Create a challenge from the Live tab and send the link to your friends.</p> : (
         <ul className="ui-history">
           {history.map((h) => (
-            <li key={`${h.room_code}-${h.played_at}`}>
+            <li key={`${h.room_code}-${h.played_at}`} onClick={() => navigate(`/live/${h.room_code}`)} role="link" tabIndex={0} className="clickable">
               <span><b>{h.rank === 1 && h.players > 1 ? "🏆 " : `#${h.rank} `}</b>{h.title}<small>{new Date(h.played_at).toLocaleDateString()} · {h.players} players</small></span>
-              <span><b>{h.points}</b> pts<small>{h.correct}/{h.total} right</small></span>
+              <span><b>{h.correct}/{h.total}</b> right<small>{h.total_ms ? formatMs(h.total_ms) : `${h.points} pts`}{h.finished === false ? " · unfinished" : ""}</small></span>
             </li>
           ))}
         </ul>

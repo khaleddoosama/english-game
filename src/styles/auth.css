@@ -37,3 +37,4 @@
 .splash-bar::after { content: ""; display: block; width: 40%; height: 100%; background: var(--gold); animation: splash 1.1s ease-in-out infinite; }
 @keyframes splash { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
 .load-error { max-width: 340px; margin: var(--space-4) auto; color: var(--paper-dim); line-height: 1.5; }
+.auth-invite { margin: 0 0 14px; padding: 10px 12px; border: 1px dashed var(--gold-soft); border-radius: 6px; background: rgba(201,162,39,0.1); font-size: 13px; line-height: 1.45; text-align: center; }

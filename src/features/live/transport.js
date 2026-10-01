@@ -1,87 +1,50 @@
-// Live Challenge transport. Online: a private Supabase Realtime channel per
-// room (presence for who is here, broadcast for game events) plus the
-// live_rooms/live_results tables. Local mode: the same interface over
-// BroadcastChannel + localStorage, so two tabs can play for testing.
+// Live Challenge realtime channel: presence (who has the challenge open)
+// and small "something changed" events (joined, left, start, progress,
+// end). The game itself runs through liveApi RPCs, so if the channel can't
+// connect the challenge still works; the screen just refreshes by polling.
+// Local mode uses BroadcastChannel so several tabs can play together.
 import { isLocalMode, supabase } from "../../lib/supabase";
 
-export const LIVE_CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-const randomCode = () => Array.from({ length: 4 }, () => LIVE_CODE_CHARS[Math.floor(Math.random() * LIVE_CODE_CHARS.length)]).join("");
-const EVENTS = ["room", "answer", "sync"];
+export const LIVE_EVENTS = ["joined", "left", "start", "progress", "end"];
+const RETRY_MS = [1000, 3000, 8000];
 
-/* ------------------------------------------------------------ rooms */
-
-export const liveRooms = isLocalMode ? {
-  async create({ title, seconds, questions, hostId }) {
-    for (let i = 0; i < 8; i++) {
-      const code = randomCode();
-      if (localStorage.getItem(`live-room:${code}`)) continue;
-      localStorage.setItem(`live-room:${code}`, JSON.stringify({ code, host_id: hostId, title, seconds, questions, state: "lobby" }));
-      return code;
-    }
-    throw new Error("Couldn't find a free code. Try again.");
-  },
-  async get(code) { try { return JSON.parse(localStorage.getItem(`live-room:${code}`) || "null"); } catch { return null; } },
-  async setState(code, state) { const r = await this.get(code); if (r) localStorage.setItem(`live-room:${code}`, JSON.stringify({ ...r, state })); },
-  async saveResult() {},
-} : {
-  async create({ title, seconds, questions }) {
-    // Old rooms of mine free their codes.
-    await supabase.from("live_rooms").delete().lt("created_at", new Date(Date.now() - 86400000).toISOString());
-    for (let i = 0; i < 8; i++) {
-      const code = randomCode();
-      const { error } = await supabase.from("live_rooms").insert({ code, title, seconds, questions });
-      if (!error) return code;
-      if (error.code !== "23505") throw new Error(error.message);
-    }
-    throw new Error("Couldn't find a free code. Try again.");
-  },
-  async get(code) {
-    const { data, error } = await supabase.from("live_rooms").select("code, host_id, title, seconds, questions, state").eq("code", code).maybeSingle();
-    if (error) throw new Error(error.message);
-    return data;
-  },
-  async setState(code, state) { await supabase.from("live_rooms").update({ state }).eq("code", code); },
-  async saveResult(row) {
-    const { error } = await supabase.from("live_results").insert(row);
-    if (error) console.error("Couldn't save the live result:", error.message);
-  },
-};
-
-/* ---------------------------------------------------------- channel */
-
-// Returns { ready, send(event, payload), close() }. `onPresence` gets the
-// list of { id, name, host } currently in the room.
-export function openLiveChannel(code, me, { onEvent, onPresence }) {
-  return isLocalMode ? localChannel(code, me, onEvent, onPresence) : realtimeChannel(code, me, onEvent, onPresence);
+// Returns { send(event, payload), close() }. onStatus gets "connecting",
+// "live" or "offline" (gave up; polling only).
+export function openLiveChannel(code, me, { onEvent, onPresence, onStatus = () => {} }) {
+  return isLocalMode ? localChannel(code, me, onEvent, onPresence, onStatus) : realtimeChannel(code, me, onEvent, onPresence, onStatus);
 }
 
-function realtimeChannel(code, me, onEvent, onPresence) {
-  let channel = null, closed = false;
-  const ready = (async () => {
-    await supabase.realtime.setAuth();
+function realtimeChannel(code, me, onEvent, onPresence, onStatus) {
+  let channel = null, closed = false, attempt = 0, timer = null;
+  const connect = async () => {
+    if (closed) return;
+    onStatus("connecting");
+    try { await supabase.realtime.setAuth(); } catch {}
     channel = supabase.channel(`live:${code}`, { config: { private: true, broadcast: { self: false }, presence: { key: me.id } } });
-    for (const event of EVENTS) channel.on("broadcast", { event }, ({ payload }) => onEvent(event, payload));
-    channel.on("presence", { event: "sync" }, () => {
-      const state = channel.presenceState();
-      onPresence(Object.values(state).map((metas) => metas[0]).filter(Boolean));
+    for (const event of LIVE_EVENTS) channel.on("broadcast", { event }, ({ payload }) => onEvent(event, payload));
+    channel.on("presence", { event: "sync" }, () => onPresence(Object.values(channel.presenceState()).map((metas) => metas[0]).filter(Boolean)));
+    channel.subscribe(async (status, err) => {
+      if (closed) return;
+      if (status === "SUBSCRIBED") { attempt = 0; onStatus("live"); await channel.track({ id: me.id, name: me.name }); return; }
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        // e.g. "MissingPartition" on a project's very first connection, or
+        // a dropped network: try again a few times, then rely on polling.
+        console.warn("Live channel:", status, err?.message || "");
+        supabase.removeChannel(channel);
+        if (attempt < RETRY_MS.length) { timer = setTimeout(connect, RETRY_MS[attempt++]); onStatus("connecting"); }
+        else onStatus("offline");
+      }
     });
-    await new Promise((resolve, reject) => {
-      channel.subscribe(async (status, err) => {
-        if (status === "SUBSCRIBED") { await channel.track({ id: me.id, name: me.name, host: !!me.host }); resolve(); }
-        else if ((status === "CHANNEL_ERROR" || status === "TIMED_OUT") && !closed) reject(err || new Error(`Live connection failed (${status}).`));
-      });
-    });
-  })();
+  };
+  connect();
   return {
-    ready,
-    send(event, payload) { return channel?.send({ type: "broadcast", event, payload }); },
-    close() { closed = true; if (channel) supabase.removeChannel(channel); },
+    send(event, payload) { if (channel && !closed) channel.send({ type: "broadcast", event, payload }).catch(() => {}); },
+    close() { closed = true; clearTimeout(timer); if (channel) supabase.removeChannel(channel); },
   };
 }
 
-// Same-browser stand-in: BroadcastChannel for events, a heartbeat for presence.
-function localChannel(code, me, onEvent, onPresence) {
-  const bc = new BroadcastChannel(`live:${code}`);
+function localChannel(code, me, onEvent, onPresence, onStatus) {
+  const bc = new BroadcastChannel(`live3:${code}`);
   const seen = new Map([[me.id, { ...me, at: Date.now() }]]);
   const publish = () => onPresence([...seen.values()].filter((p) => p.id === me.id || Date.now() - p.at < 4000).map(({ at, ...p }) => p));
   bc.onmessage = ({ data }) => {
@@ -91,9 +54,8 @@ function localChannel(code, me, onEvent, onPresence) {
   };
   const beat = () => bc.postMessage({ kind: "presence", me });
   const timer = setInterval(() => { beat(); publish(); }, 1000);
-  beat(); publish();
+  beat(); publish(); onStatus("live");
   return {
-    ready: Promise.resolve(),
     send(event, payload) { bc.postMessage({ kind: "event", event, payload }); },
     close() { clearInterval(timer); bc.postMessage({ kind: "leave", id: me.id }); bc.close(); },
   };

@@ -31,6 +31,8 @@ export function createAdminApi(local) {
       playerDetail: (id) => rpc("admin_player_detail", { p_user: id }),
       wordStats: () => rpc("admin_word_stats"),
       liveMatches: () => rpc("admin_live_matches", { p_limit: 500 }),
+      liveChallenges: () => rpc("admin_live_challenges", { p_limit: 300 }),
+      endChallenge: (code) => rpc("live_end", { p_code: code }),
       aiUsage: (days) => rpc("admin_ai_usage", { p_days: days }),
       audit: async () => {
         const { data, error } = await supabase.from("admin_audit").select("id, at, action, target, details, admin:admin_id(username)").order("at", { ascending: false }).limit(1000);
@@ -83,6 +85,8 @@ export function createAdminApi(local) {
       return Object.entries(L().mastery || {}).map(([item_key, s]) => ({ item_key, players: 1, attempts: Number(s?.total) || 0, correct: Number(s?.correct) || 0 }));
     },
     liveMatches: async () => [],
+    liveChallenges: async () => [],
+    endChallenge: notOnline,
     aiUsage: async () => [],
     audit: async () => [],
     setRole: notOnline, setPassword: notOnline, resetPlayer: notOnline, deletePlayer: notOnline,

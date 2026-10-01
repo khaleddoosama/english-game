@@ -243,3 +243,4 @@
   .adm-pager-info { flex-basis: 100%; }
   .viz-barrow { grid-template-columns: minmax(80px, 40%) 1fr auto; }
 }
+.adm-h3 { margin: 18px 0 8px; font-size: 14px; font-weight: 600; letter-spacing: 0.2px; }

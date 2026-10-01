@@ -7,7 +7,32 @@ import { Badge, Kpi, Notice, fmtDate, longDay, relTime, shortDay } from "../admi
 
 const dayRows = (activity, key) => (activity.data || []).map((r) => ({ key: r.day, label: shortDay(r.day), title: longDay(r.day), value: r[key] || 0 }));
 
-export function LiveMatches({ matches, activity, range }) {
+const fmtTime = (ms) => (ms ? (ms < 60000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.floor(ms / 60000)}:${String(Math.floor((ms % 60000) / 1000)).padStart(2, "0")}`) : "");
+const STATE_TONE = { lobby: "warning", playing: "info", done: "neutral" };
+const STATE_LABEL = { lobby: "waiting room", playing: "playing", done: "ended" };
+
+// Challenges that haven't ended: who made them, how many joined/finished.
+function OpenChallenges({ challenges, onEnd }) {
+  const rows = (challenges.data || []).filter((c) => c.state !== "done" && Date.parse(c.expires_at) > Date.now());
+  const columns = [
+    { key: "created_at", label: "Created", defaultDir: "desc", sortValue: (r) => Date.parse(r.created_at), render: (r) => <span title={fmtDate(r.created_at)}>{relTime(r.created_at)}</span> },
+    { key: "title", label: "Challenge", render: (r) => <span className="adm-word"><b>{r.title}</b><small><code>{r.code}</code> · by {r.host}</small></span> },
+    { key: "state", label: "State", render: (r) => <Badge tone={STATE_TONE[r.state]}>{STATE_LABEL[r.state]}</Badge> },
+    { key: "start_mode", label: "Start", render: (r) => (r.start_mode === "anytime" ? "anytime" : "together") },
+    { key: "players", label: "Players", num: true, render: (r) => `${r.players}/${r.max_players}` },
+    { key: "finished", label: "Finished", num: true },
+    { key: "question_count", label: "Questions", num: true, render: (r) => `${r.question_count}${r.seconds ? ` · ${r.seconds}s` : ""}` },
+    { key: "expires_at", label: "Ends", sortValue: (r) => Date.parse(r.expires_at), render: (r) => <span title={fmtDate(r.expires_at)}>{relTime(r.expires_at)}</span> },
+    { key: "act", label: "", sortable: false, csv: false, render: (r) => <span className="adm-tags"><a className="adm-btn ghost small" href={`/live/${r.code}`} target="_blank" rel="noreferrer">Open</a><button className="adm-btn ghost small" onClick={() => onEnd(r.code)}>End now</button></span> },
+  ];
+  if (!rows.length) return null;
+  return <>
+    <h3 className="adm-h3">Open challenges</h3>
+    <DataTable id="live-open" columns={columns} rows={rows} rowKey={(r) => r.code} initialSort={{ key: "created_at", dir: "desc" }} emptyText="No open challenges." />
+  </>;
+}
+
+export function LiveMatches({ matches, challenges = { data: [] }, activity, range, onEnd = () => {} }) {
   const rows = matches.data || [];
   const perDay = dayRows(activity, "live_matches");
   const wins = useMemo(() => {
@@ -21,7 +46,7 @@ export function LiveMatches({ matches, activity, range }) {
     { key: "room_code", label: "Room", render: (r) => <code>{r.room_code}</code> },
     { key: "players", label: "Players", num: true, defaultDir: "desc" },
     { key: "winner", label: "Winner", sortValue: (r) => r.results?.[0]?.username || "", csv: (r) => r.results?.[0]?.username || "", render: (r) => (r.players > 1 ? <b>🏆 {r.results?.[0]?.username}</b> : <span className="adm-muted">solo</span>) },
-    { key: "results", label: "Results", sortable: false, csv: (r) => (r.results || []).map((x) => `${x.rank}. ${x.username} ${x.points}`).join(" | "), render: (r) => <span className="adm-tags">{(r.results || []).map((x) => <Badge key={x.username}>{x.rank}. {x.username} · {formatNumber(x.points)}</Badge>)}</span> },
+    { key: "results", label: "Results (right · time)", sortable: false, csv: (r) => (r.results || []).map((x) => `${x.rank}. ${x.username} ${x.correct}/${x.total} ${fmtTime(x.total_ms)}`).join(" | "), render: (r) => <span className="adm-tags">{(r.results || []).map((x) => <Badge key={x.username}>{x.rank}. {x.username} · {x.correct}/{x.total}{x.total_ms ? ` · ${fmtTime(x.total_ms)}` : ""}{x.finished === false ? " · unfinished" : ""}</Badge>)}</span> },
   ];
   return (
     <div className={`adm-section ${matches.loading ? "is-refreshing" : ""}`}>
@@ -40,6 +65,8 @@ export function LiveMatches({ matches, activity, range }) {
           <BarList data={wins} valueLabel="wins" emptyText="No multiplayer matches yet." />
         </ChartCard>
       </div>
+      <OpenChallenges challenges={challenges} onEnd={onEnd} />
+      <h3 className="adm-h3">Finished matches</h3>
       <DataTable id="live" syncUrl columns={columns} rows={rows} rowKey={(r) => `${r.room_code}-${r.played_at}`} csvName="word-hunter-live-matches"
         searchText={(r) => `${r.title} ${r.room_code} ${(r.results || []).map((x) => x.username).join(" ")}`} searchPlaceholder="Search lesson, room or player…"
         initialSort={{ key: "played_at", dir: "desc" }} emptyText="No live matches yet." />

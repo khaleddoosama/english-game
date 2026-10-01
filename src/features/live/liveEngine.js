@@ -2,9 +2,16 @@ import { V2 } from "../../engine/v2";
 import { imageLinkOk } from "../media/media";
 import { WORDS } from "../../engine/data";
 import { shuffle } from "../../engine/questions";
-// Live Challenge scoring and question building (no transport here; see
-// transport.js for the realtime channel and LiveChallenge.jsx for the flow).
-export const LIVE_REVEAL_MS = 4000, LIVE_GRACE_MS = 2500;
+// Live Challenge question building (rules and scoring: liveRules.js;
+// server calls: liveApi.js; the screens: LiveChallenge.jsx).
+export const LIVE_KINDS = [
+  { id: "meaning", label: "Meaning" },
+  { id: "reverse", label: "Word from meaning" },
+  { id: "gap", label: "Fill the gap" },
+  { id: "picture", label: "Picture" },
+  { id: "collocation", label: "Word partners" },
+  { id: "family", label: "Word family" },
+];
 // Multiple-choice questions only: typed answers would turn a spelling slip
 // into a lost match. Each question carries everything it needs, because the
 // other players don't have the host's words.
@@ -12,7 +19,8 @@ export const LIVE_REVEAL_MS = 4000, LIVE_GRACE_MS = 2500;
 // too), and a question whose sentence the host never read beats one read
 // long ago, which beats one read in the last 20 hours. Definition questions
 // (meaning / reverse) aren't tracked, so they count as fresh.
-export function liveQuestions(words, count, { pools = null, seen = {}, rng = Math.random } = {}) {
+export function liveQuestions(words, count, { pools = null, seen = {}, rng = Math.random, kinds = null } = {}) {
+  const allowed = (kinds?.length ? kinds : LIVE_KINDS.map((k) => k.id));
   const build = (w, kind) => {
     try {
       return kind === "picture" ? V2.pictureQuestion(w, WORDS, rng, false, imageLinkOk)
@@ -31,7 +39,7 @@ export function liveQuestions(words, count, { pools = null, seen = {}, rng = Mat
   };
   const picks = [];
   for (const w of shuffle(words)) {
-    const options = ["meaning", "reverse", "gap", "picture", "collocation", "family"]
+    const options = allowed
       .map((kind) => build(w, kind))
       .filter((q) => q && q.type === "mcq" && q.prompt && Array.isArray(q.options) && q.options.length >= 3 && q.answers?.[0])
       .map((q) => ({ q, tier: freshness(q), last: Math.max(0, ...V2.questionSentences(q).map((k) => Number(seen?.[k] || 0))) }));
@@ -47,13 +55,3 @@ export function liveQuestions(words, count, { pools = null, seen = {}, rng = Mat
 }
 // Word options start with a capital, as in the normal question box.
 export function liveOption(opt, q) { const t = String(opt); return q.mode !== "meaning" && q.mode !== "collocation" && t.trim().split(/\s+/).length <= 4 && /^[a-z]/.test(t) ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
-// Kahoot-style: a right answer is worth 500, plus up to 500 more for speed.
-export function livePoints(a, perMs) { return a?.correct ? 500 + Math.round(500 * Math.max(0, 1 - (a.ms || 0) / perMs)) : 0; }
-export function liveBoard(room, upTo) {
-  const per = (room.seconds || 20) * 1000;
-  return (room.players || []).map((p) => {
-    let points = 0, correct = 0;
-    for (let i = 0; i <= upTo; i++) { const a = p.answers?.[i]; points += livePoints(a, per); if (a?.correct) correct++; }
-    return { id: p.id, name: p.name, points, correct };
-  }).sort((a, b) => b.points - a.points);
-}

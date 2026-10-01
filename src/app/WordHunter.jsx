@@ -12,6 +12,17 @@ import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
 // Screens most players open rarely load on demand, keeping the first
 // download small: Admin (and all its tools), Live, Leaderboard, Profile.
+// Local mode (no accounts): each browser tab is its own player, kept for
+// the tab's life so a refresh doesn't turn you into someone else.
+function localTabPlayer() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem("wh-live-player") || "null");
+    if (saved?.id) return saved;
+  } catch {}
+  const p = { id: `tab-${Math.random().toString(36).slice(2, 8)}`, name: `Player ${Math.floor(Math.random() * 90 + 10)}` };
+  try { sessionStorage.setItem("wh-live-player", JSON.stringify(p)); } catch {}
+  return p;
+}
 // The Admin tab reopens the admin page (and filters) used last.
 const lastAdminPath = () => { try { const p = localStorage.getItem("wh-admin-path"); return p && p.startsWith("/admin") ? p : "/admin"; } catch { return "/admin"; } };
 const PLAY_SCREENS = new Set(["session", "playing", "results", "reviewResults", "finalReport", "finalResults", "speed", "speedResults"]);
@@ -26,7 +37,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const [loadError, setLoadError] = useState(null);
   const livePlayer = useMemo(() => (profile && profile.id !== "local"
     ? { id: profile.id, name: profile.username }
-    : { id: `tab-${Math.random().toString(36).slice(2, 8)}`, name: `Player ${Math.floor(Math.random() * 90 + 10)}` }), [profile?.id, profile?.username]);
+    : localTabPlayer()), [profile?.id, profile?.username]);
   const [customCombos, setCustomCombos] = useState([]);
   const [customStories, setCustomStories] = useState([]);
   const [askAiOpen,setAskAiOpen]=useState(false);
@@ -1883,7 +1894,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
             <div className="wh-speed-card-icon"><Users size={22} /></div>
             <div className="wh-speed-card-info">
               <div className="wh-speed-card-title">Live Challenge</div>
-              <div className="wh-speed-card-meta">Play the same questions with a friend, each on your own device</div>
+              <div className="wh-speed-card-meta">Send a link to 1–9 friends · same questions, everyone at their own pace</div>
             </div>
             <button className="wh-speed-card-btn" onClick={() => setScreen("live")}><Play size={13} /> Play</button>
           </div>
@@ -2306,7 +2317,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
           </div>
         )}
 
-        {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge player={livePlayer} levels={LEVELS} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} /></Suspense>}
+        {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge player={livePlayer} levels={LEVELS} code={route.code} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} /></Suspense>}
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} /></Suspense>}
         {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
 

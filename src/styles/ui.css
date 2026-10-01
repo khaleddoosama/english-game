@@ -136,3 +136,5 @@
 /* Admin has its own navigation and tools: keep the game header to its title. */
 .wh-root.screen-admin .ui-stat-row, .wh-root.screen-admin .wh-ask-bar { display: none; }
 .wh-root.screen-admin .ui-header { margin-bottom: 14px; }
+.ui-history li.clickable { cursor: pointer; }
+.ui-history li.clickable:hover { border-color: var(--gold-soft); }

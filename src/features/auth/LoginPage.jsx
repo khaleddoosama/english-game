@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../../lib/auth";
+import { parseRoute, useLocation } from "../../lib/router";
 
 export function LoginPage() {
   const auth = useAuth();
@@ -8,6 +9,10 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(auth.error || null);
+  // Opened from a challenge link: say so. After signing in, the same
+  // address opens the challenge.
+  const route = parseRoute(useLocation().path);
+  const invite = route.screen === "live" && route.code ? route.code : null;
 
   async function submit(e) {
     e.preventDefault();
@@ -27,6 +32,7 @@ export function LoginPage() {
       <form className="auth-card" onSubmit={submit}>
         <h1 className="auth-title">Word <span>Hunter</span></h1>
         <p className="auth-sub">English vocabulary detective</p>
+        {invite && <p className="auth-invite" role="status">You've been invited to a <b>Live Challenge</b> ({invite}). Sign in, or create an account in a few seconds, to join.</p>}
         <div className="auth-tabs" role="tablist">
           <button type="button" role="tab" aria-selected={mode === "signin"} onClick={() => { setMode("signin"); setError(null); }}>Sign in</button>
           <button type="button" role="tab" aria-selected={mode === "signup"} onClick={() => { setMode("signup"); setError(null); }}>Create account</button>
