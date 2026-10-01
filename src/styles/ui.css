@@ -141,3 +141,4 @@
 .wh-root.screen-admin .ui-header { margin-bottom: 14px; }
 .ui-history li.clickable { cursor: pointer; }
 .ui-history li.clickable:hover { border-color: var(--gold-soft); }
+.ui-note { margin: 0 0 12px; padding: 10px 12px; border-radius: var(--radius-sm); background: rgba(201, 162, 39, 0.12); border: 1px solid var(--line); color: var(--paper-dim); font-size: 13px; line-height: 1.45; }

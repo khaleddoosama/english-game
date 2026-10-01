@@ -47,6 +47,11 @@ export function AppSettings({ onDirtyChange = () => {} }) {
         </section>
 
         <section className="adm-card">
+          <h3><Trophy size={16} /> Ranks</h3>
+          <Field label="Players can see the ranks" hint={draft.leaderboard ? "Everyone sees the Ranks tab: this week, all time and Live wins" : "Hidden: no Ranks tab for players, and the server won't send them anyone else's score. You still see it."}><Switch label="Players can see the ranks" checked={draft.leaderboard} onChange={(v) => set({ leaderboard: v })} /></Field>
+        </section>
+
+        <section className="adm-card">
           <h3><Megaphone size={16} /> Announcement</h3>
           <p className="adm-muted">Shown at the top of everyone's home screen until you clear it. Players can hide it for themselves.</p>
           <textarea className="adm-input adm-textarea" maxLength={500} value={draft.announcement} onChange={(e) => set({ announcement: e.target.value })} placeholder="e.g. New words for Unit 4 are in! Try a Live Challenge with your class tonight." aria-label="Announcement" />
@@ -68,11 +73,6 @@ export function AppSettings({ onDirtyChange = () => {} }) {
           <Field label="Default questions"><select className="adm-select" value={clean.liveDefaultQuestions} onChange={(e) => set({ liveDefaultQuestions: Number(e.target.value) })}>{[5, 10, 15, 20, 25, 30].map((n) => <option key={n} value={n}>{n}</option>)}</select></Field>
           <Field label="Default time per question"><select className="adm-select" value={clean.liveDefaultSeconds} onChange={(e) => set({ liveDefaultSeconds: Number(e.target.value) })}>{[[0, "No limit"], [10, "10s"], [15, "15s"], [20, "20s"], [30, "30s"], [45, "45s"], [60, "60s"]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
           <Field label="Longest link lifetime" hint="Hours a player's link can stay open"><select className="adm-select" value={clean.liveMaxHours} onChange={(e) => set({ liveMaxHours: Number(e.target.value) })}>{[[1, "1 hour"], [6, "6 hours"], [24, "1 day"], [72, "3 days"], [168, "7 days"]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
-        </section>
-
-        <section className="adm-card">
-          <h3><Trophy size={16} /> Leaderboard</h3>
-          <Field label="Show the leaderboard to players" hint="Hides the Ranks tab; you still see it"><Switch label="Leaderboard" checked={draft.leaderboard} onChange={(v) => set({ leaderboard: v })} /></Field>
         </section>
 
         <section className="adm-card">

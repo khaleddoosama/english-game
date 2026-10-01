@@ -9,7 +9,7 @@ const TABS = [
   { id: "live", label: "Live wins", value: (p) => p.live_wins, unit: "wins", extra: (p) => `${p.live_played} played` },
 ];
 
-export default function Leaderboard({ me }) {
+export default function Leaderboard({ me, hiddenForPlayers = false }) {
   const [tab, setTab] = useState("week");
   const [rows, setRows] = useState(null);
   const [error, setError] = useState(null);
@@ -27,6 +27,7 @@ export default function Leaderboard({ me }) {
         {TABS.map((x) => <button key={x.id} role="tab" aria-selected={tab === x.id} onClick={() => setTab(x.id)}>{x.label}</button>)}
       </div>
       {isLocalMode && <p className="ui-muted">The leaderboard needs the online version.</p>}
+      {hiddenForPlayers && <p className="ui-note">Ranks are hidden from players (Admin → Settings → Ranks). Only you can see this page.</p>}
       {error && <p className="wh-import-error">{error}</p>}
       {!rows && !error && !isLocalMode && <ol className="ui-rank-list">{[0, 1, 2, 3, 4].map((i) => <li key={i} className="ui-skeleton-row" />)}</ol>}
       {rows && !rows.length && <p className="ui-muted">{tab === "week" ? "No points yet this week — play a round to take first place." : tab === "live" ? "No live matches yet." : "Nobody has scored yet."}</p>}
