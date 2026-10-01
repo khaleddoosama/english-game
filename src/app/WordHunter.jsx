@@ -35,6 +35,7 @@ const Leaderboard = lazy(() => import("../features/social/Leaderboard"));
 const ProfilePage = lazy(() => import("../features/social/ProfilePage"));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage"));
 const ImportExport = lazy(() => import("../features/data/ImportExport"));
+const StudyDashboard = lazy(() => import("../features/stats/StudyDashboard"));
 
 export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const [loaded, setLoaded] = useState(false);
@@ -211,7 +212,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
     }
   }
   function launchStory(story) { try { launchSession(V2.storySession(story, WORDS, masteryRef.current)); } catch(e) { setToast({text:e.message}); } }
-  function launchChain(group) { try { const session = V2.chainSession(group, WORDS, masteryRef.current); if(!session.queue.length) {setToast({text:"No eligible opposite questions yet."});return;} launchSession(session); } catch(e) { setToast({text:e.message}); } }
   function introduceWords(words) { const next={...masteryRef.current}; words.forEach(w=>{next[w.word]={...next[w.word], introducedAt:next[w.word]?.introducedAt||Date.now()};}); masteryRef.current=next;setMastery(next);recordStudyDay(); }
   // V2 keeps mastery evidence session-based so repeated questions cannot inflate
   // a word's stage. Global telemetry is still recorded once, at answer time,
@@ -600,19 +600,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   const clearedSet = useMemo(() => new Set(levelsCleared), [levelsCleared]);
   const weakCandidates = useMemo(() => getWeakWordCandidates(WORDS, mastery, confusions), [mastery, confusions, dataVersion]);
   const masteredOnlyWords = useMemo(() => WORDS.filter((w) => getMasteryStage(mastery[w.word], { kind: "word", obj: w }) === MASTERY_STAGE.MASTERED), [mastery, dataVersion]);
-  const stageSummary = useMemo(() => { const counts = { New: 0, Familiar: 0, Learned: 0, Mastered: 0 }; LEVELS.forEach((level) => level.items.forEach((item) => { counts[getMasteryStage(mastery[levelItemKey(item)], item)] += 1; })); return counts; }, [mastery, dataVersion]);
-  const overviewStats = useMemo(() => {
-    let total = 0, practiced = 0, correctSum = 0, totalSum = 0;
-    LEVELS.forEach((level) => level.items.forEach((item) => {
-      total += 1;
-      const stats = mastery[levelItemKey(item)];
-      const attempts = stats?.total || 0;
-      if (attempts > 0) practiced += 1;
-      correctSum += stats?.correct || 0;
-      totalSum += attempts;
-    }));
-    return { total, practiced, accuracy: totalSum > 0 ? Math.round((correctSum / totalSum) * 100) : null };
-  }, [mastery, dataVersion]);
   const learningInsights = useMemo(() => deriveLearningInsights(WORDS, mastery, confusions), [mastery, confusions, dataVersion]);
   const currentLevel = currentLevelIndex !== null ? LEVELS[currentLevelIndex] : null;
   const currentEntry = roundQueue[roundIndex] || null;
@@ -927,12 +914,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
     roundStartStagesRef.current = snapshotStages(selectedItems);
     setPoolsSnapshotForSession(poolsRef.current);
     launchSession(v2SessionFromEntries(selectedWords.map((wordObj)=>({kind:"word",wordObj,mode:"gapTyping",difficulty:4})),{kind:"finalRecall",title:`Final Case — ${level.title}`,idPrefix:"final"}));
-  }
-
-  function launchAuthoredChallenge(challenge) {
-    setCurrentLevelIndex(null);
-    setPoolsSnapshotForSession(poolsRef.current);
-    launchSession(v2SessionFromEntries([{kind:"challenge",obj:challenge}],{kind:"challenge",title:challenge.label||challenge.id,idPrefix:`challenge-${challenge.id}`}));
   }
 
   function retryLevel() { if (currentLevelIndex !== null) startLevel(currentLevelIndex); }
@@ -1622,85 +1603,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
           </div>
         )}
 
-        {dashboardOpen && (
-          <div className="wh-panel">
-            <div className="wh-panel-header">
-              <span>Study Dashboard</span>
-              <button onClick={() => setScreen("levels")} aria-label="Close dashboard">
-                <X size={15} />
-              </button>
-            </div>
-            <div className="wh-dash-summary">
-              <div className="wh-dash-stat">
-                <div className="wh-dash-stat-num">{overviewStats.total}</div>
-                <div className="wh-dash-stat-label">Total words</div>
-              </div>
-              <div className="wh-dash-stat">
-                <div className="wh-dash-stat-num">{overviewStats.practiced}</div>
-                <div className="wh-dash-stat-label">Practiced</div>
-              </div>
-              <div className="wh-dash-stat">
-                <div className="wh-dash-stat-num">{overviewStats.total - overviewStats.practiced}</div>
-                <div className="wh-dash-stat-label">Not tried yet</div>
-              </div>
-              <div className="wh-dash-stat mastered">
-                <div className="wh-dash-stat-num">{stageSummary.Mastered}</div>
-                <div className="wh-dash-stat-label">Mastered</div>
-              </div>
-              <div className="wh-dash-stat">
-                <div className="wh-dash-stat-num">{stageSummary.Learned}</div>
-                <div className="wh-dash-stat-label">Learned</div>
-              </div>
-              <div className="wh-dash-stat">
-                <div className="wh-dash-stat-num">{stageSummary.Familiar}</div>
-                <div className="wh-dash-stat-label">Familiar</div>
-              </div>
-            </div>
-            <div className="wh-dash-bar" aria-hidden="true">
-              {overviewStats.total > 0 && (
-                <>
-                  <span className="wh-dash-bar-seg mastered" style={{ width: `${(stageSummary.Mastered / overviewStats.total) * 100}%` }} />
-                  <span className="wh-dash-bar-seg learned" style={{ width: `${(stageSummary.Learned / overviewStats.total) * 100}%` }} />
-                  <span className="wh-dash-bar-seg familiar" style={{ width: `${(stageSummary.Familiar / overviewStats.total) * 100}%` }} />
-                </>
-              )}
-            </div>
-            {overviewStats.accuracy !== null && (
-              <div className="wh-dash-accuracy">Overall accuracy: {overviewStats.accuracy}%</div>
-            )}
-            <div className="wh-dash-scroll">
-              {LEVELS.map((level) => (
-                <div className="wh-dash-group" key={level.id}>
-                  <div className="wh-dash-group-title">{level.title}</div>
-                  <table className="wh-dash-table">
-                    <tbody>
-                      {level.items.map((item) => {
-                        const key = levelItemKey(item);
-                        const name =
-                          item.kind === "word"
-                            ? item.obj.word
-                            : item.kind === "grammar"
-                            ? `${item.obj.rule} #${item.obj.id.slice(1)}`
-                            : item.obj.word;
-                        const stats = mastery[key];
-                        const attempts = stats?.total || 0;
-                        const correct = stats?.correct || 0;
-                        const acc = attempts > 0 ? Math.round((correct / attempts) * 100) : null;
-                        return (
-                          <tr key={key}>
-                            <td className="wh-dash-name">{name}</td>
-                            <td className="wh-dash-num">{attempts === 0 ? "not tried" : `${correct}/${attempts} correct`}</td>
-                            <td className="wh-dash-num">{acc === null ? "—" : `${acc}%`}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {dashboardOpen && <Suspense fallback={<ScreenSkeleton />}><StudyDashboard levels={LEVELS} mastery={mastery} sessionLogs={sessionLogs} confusions={confusions} levelStats={levelStats}
+          studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} today={todayProgress(dailyProgress)} dailyGoal={settings.dailyGoal}
+          weakReviewCount={Math.min(weakCandidates.length, settings.weakReviewSize)} onWeakReview={startWeakReview} onPlayLevel={(i) => startLevel(i)} onBack={backToLevels} /></Suspense>}
 
         {screen === "levels" && <>
           {app.announcement && !announcementHidden && <div className={`wh-announcement ${app.announcementTone}`} role="status"><p>{app.announcement}</p><button aria-label="Hide this message" onClick={hideAnnouncement}><X size={15} /></button></div>}
@@ -1711,7 +1616,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
               <button className="wh-back-btn wh-nav-btn" onClick={()=>setShowFreshCopyPrompt(false)}>Dismiss</button>
             </div>
           </div>}
-          <nav className="wh-v2-nav" aria-label="Game sections">{[["practice","Practice"],["stories","Stories"],["challenges","Challenges"]].map(([id,label])=><button key={id} aria-pressed={section===id} onClick={()=>setSection(id)}>{label}</button>)}</nav>
+          <nav className="wh-v2-nav" aria-label="Game sections">{[["practice","Practice"],["stories","Stories"]].map(([id,label])=><button key={id} aria-pressed={section===id} onClick={()=>setSection(id)}>{label}</button>)}</nav>
           {activeSession&&!activeSession.completed&&<button className="wh-level-btn" onClick={()=>setScreen("session")}>Resume {activeSession.title} ({Math.min(activeSession.index+1,activeSession.queue.length)}/{activeSession.queue.length})</button>}
           {section==="practice"&&(()=>{const day=todayProgress(dailyProgress);const goal=settings.dailyGoal;const done=day.answered>=goal;return <div className={`wh-daily-goal ${done?"done":""}`}><div className="wh-daily-goal-head"><b>{done?<><CheckCircle2 size={15}/> Daily goal reached</>:<><Target size={15}/> Today's goal</>}</b><span>{day.answered} / {goal} questions{day.answered?` · ${Math.round(day.correct/day.answered*100)}% correct`:""}</span></div><div className="wh-daily-goal-bar"><span style={{width:`${Math.min(100,day.answered/goal*100)}%`}}/></div>{done&&day.answered>goal&&<small>+{day.answered-goal} bonus questions today</small>}</div>;})()}
           {section==="stories"&&<div className="wh-panel"><h2>Stories</h2>
@@ -1729,12 +1634,11 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
               </div>
             </div>}
             {!customStories.length&&<p>No authored stories loaded. Import a Content v2 file to add them.</p>}{[...customStories].sort((a,b)=>a.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length-b.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length).map(story=>{const fresh=story.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length;const record=solvedStories.find(e=>e.id===story.id);return <article className="wh-v2-learn" key={story.id}><strong>{story.title}{record&&<span className="wh-story-solved-flag"><CheckCircle2 size={13}/> Solved · {record.correct}/{record.total}</span>}</strong><p>{story.questions.length}{story.grammarQuestions?.length?` + ${story.grammarQuestions.length} grammar`:""} questions · {fresh?`${fresh} new words: preview first`:"Ready for review"}</p><button className="wh-level-btn" onClick={()=>launchStory(story)}>{record?"Play again":"Open story"}</button></article>;})}</div>}
-          {section==="challenges"&&<div className="wh-panel"><h2>Opposite Chain</h2>{[...new Set(WORDS.filter(w=>w.chainGroup&&w.opposite).map(w=>w.chainGroup))].map(group=><button key={group} className="wh-level-btn" onClick={()=>launchChain(group)}>{group}</button>)}<h2>Authored Challenges</h2>{!CHALLENGES.length&&<p>No authored challenges loaded.</p>}{CHALLENGES.map(c=><button key={c.id} className="wh-level-btn" onClick={()=>launchAuthoredChallenge(c)}>{c.label||c.id}</button>)}</div>}
         </>}
         {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={reportSessionQuestion} onReviewReport={reviewQuestionReport} onWithdrawReport={deleteQuestionReport} onUpdateWord={isAdmin?updateWordFields:undefined} sound={settings.sound} prefs={{ autoAdvanceMs: settings.autoAdvanceMs, hints: settings.hints, speakWord: settings.speakWord }} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onResult={recordSessionResult} onAskWord={openAskAi}/>}
 
 
-        {screen === "levels" && (section === "challenges" || section === "practice") && (
+        {screen === "levels" && section === "practice" && (
           <div className={`wh-speed-card ${masteredWords.length < MIN_LEARNED_FOR_SPEED ? "locked" : ""}`}>
             <div className="wh-speed-card-icon"><Zap size={22} /></div>
             <div className="wh-speed-card-info">
@@ -1755,7 +1659,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
           </div>
         )}
 
-        {screen === "levels" && (section === "challenges" || section === "practice") && (
+        {screen === "levels" && section === "practice" && (
           <div className="wh-speed-card wh-live-card">
             <div className="wh-speed-card-icon"><Users size={22} /></div>
             <div className="wh-speed-card-info">
