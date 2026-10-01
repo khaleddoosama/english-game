@@ -10,13 +10,20 @@
   --viz-text: #0b0b0b; --viz-text-2: #52514e; --viz-muted: #898781;
   --viz-ord-1: #86b6ef; --viz-ord-2: #3987e5; --viz-ord-3: #1c5cab; --viz-ord-4: #0d366b; --viz-neutral: #e1e0d9;
   display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: calc(100dvh - 160px);
-  background: var(--adm-bg); color: var(--adm-ink); border-radius: 14px; overflow: hidden;
+  /* The sidebar column stays dark below the (shorter, pinned) sidebar. */
+  background: linear-gradient(to right, #1c1a17 236px, var(--adm-bg) 236px); color: var(--adm-ink); border-radius: 14px; overflow: clip;
   box-shadow: 0 18px 50px rgba(0,0,0,.35); font-family: var(--font-body); color-scheme: light;
 }
 .adm-shell :focus-visible { outline: 2px solid var(--adm-focus); outline-offset: 2px; }
 
 /* ---------------------------------------------------------- sidebar */
-.adm-side { background: #1c1a17; color: #ede4d3; display: flex; flex-direction: column; padding: 18px 12px; gap: 14px; }
+/* Pinned while the page scrolls, so Back to game and Log out are always
+   in reach; the section list scrolls on its own if the window is short. */
+.adm-side { position: sticky; top: 0; align-self: start; max-height: 100dvh; box-sizing: border-box; background: #1c1a17; color: #ede4d3; display: flex; flex-direction: column; padding: 18px 12px; gap: 14px; }
+.adm-side nav { overflow-y: auto; min-height: 0; scrollbar-width: thin; }
+.adm-side-foot { display: grid; gap: 2px; border-top: 1px solid rgba(201,162,39,.2); padding-top: 8px; }
+.adm-side-foot .adm-back { border-top: 0; padding-top: 9px; border-radius: 8px; }
+.adm-back:disabled { opacity: .6; cursor: default; }
 .adm-brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 12px; border-bottom: 1px solid rgba(201,162,39,.25); }
 .adm-brand > span { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--adm-accent); color: var(--adm-accent-ink); font: 700 14px var(--font-mono); }
 .adm-brand b { display: block; font-size: 15px; }
@@ -223,8 +230,12 @@
 
 /* ------------------------------------------------------------ mobile */
 @media (max-width: 900px) {
-  .adm-shell { grid-template-columns: 1fr; border-radius: 12px; }
-  .adm-side { position: sticky; top: 0; z-index: 20; flex-direction: row; align-items: center; padding: 8px; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+  .adm-shell { grid-template-columns: 1fr; border-radius: 12px; background: var(--adm-bg); }
+  .adm-side { position: sticky; top: 0; z-index: 20; max-height: none; flex-direction: row; align-items: center; padding: 8px; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+  .adm-side nav { overflow: visible; }
+  .adm-side-foot { display: contents; }
+  .adm-logout { order: 99; }
+  .adm-top-back { display: none; }
   .adm-side::-webkit-scrollbar { display: none; }
   .adm-brand { display: none; }
   .adm-side nav { display: flex; gap: 4px; flex: none; }

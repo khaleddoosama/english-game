@@ -6,7 +6,7 @@ import { useAuth } from "../../lib/auth";
 import { isLocalMode } from "../../lib/supabase";
 import { fetchLiveHistory } from "./socialApi";
 
-export default function ProfilePage({ stats, onCopyBackup, onDownloadBackup, onOpenStats }) {
+export default function ProfilePage({ stats, onCopyBackup, onDownloadBackup, onOpenStats, onSignOut }) {
   const auth = useAuth();
   const [history, setHistory] = useState(null);
   const [pw, setPw] = useState("");
@@ -73,7 +73,7 @@ export default function ProfilePage({ stats, onCopyBackup, onDownloadBackup, onO
         </form>
         {pwState === "done" && <p className="ui-ok">Password changed.</p>}
         {pwState && !["busy", "done"].includes(pwState) && <p className="wh-import-error">{pwState}</p>}
-        <button className="ui-row-btn ui-danger" onClick={() => auth.signOut()}><LogOut size={16} /> Sign out</button>
+        <button className="ui-row-btn ui-danger" onClick={() => (onSignOut ? onSignOut() : auth.signOut())}><LogOut size={16} /> Sign out</button>
       </>}
     </section>
   );

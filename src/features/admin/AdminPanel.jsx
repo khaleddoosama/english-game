@@ -2,7 +2,7 @@
 // reports with paginated tables and bulk actions, data quality, the
 // activity log, app settings, and import & export.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ShieldCheck, BookOpen, FolderTree, Library as LibraryIcon, Database, Flag, HeartPulse, History, LayoutDashboard, RefreshCw, Scale, Settings, Sparkles, Swords, Users } from "lucide-react";
+import { ArrowLeft, LogOut, ShieldCheck, BookOpen, FolderTree, Library as LibraryIcon, Database, Flag, HeartPulse, History, LayoutDashboard, RefreshCw, Scale, Settings, Sparkles, Swords, Users } from "lucide-react";
 import { ContentHealthPanel } from "./ContentHealthPanel";
 import { createAdminApi } from "./adminApi";
 import { RangePicker, useAsync } from "./adminUi";
@@ -60,7 +60,7 @@ function AiSection({ api, tick, activity, range, overview }) {
 }
 
 export function AdminPanel(props) {
-  const { content, mastery, reports, profile, onClose, onUpdate, onResolveReport, onReopenReport, onDeleteReport, onReviewReport, onRetireVariant, route = {} } = props;
+  const { content, mastery, reports, profile, onClose, onUpdate, onResolveReport, onReopenReport, onDeleteReport, onReviewReport, onRetireVariant, onSignOut, loggingOut, route = {} } = props;
   // Old links to the report review page now open the report itself.
   useEffect(() => { if (route.section === "review") navigate(pathFor("admin", { section: "reports", item: route.item }), { replace: true }); }, [route.section]);
   // The page comes from the address: /admin/<section>/<item>?filters
@@ -114,7 +114,10 @@ export function AdminPanel(props) {
             </div>
           ))}
         </nav>
-        <button className="adm-back" onClick={onClose}><ArrowLeft size={16} /> Back to game</button>
+        <div className="adm-side-foot">
+          <button className="adm-back" onClick={onClose}><ArrowLeft size={16} /> Back to game</button>
+          {onSignOut && <button className="adm-back adm-logout" onClick={onSignOut} disabled={loggingOut}><LogOut size={16} /> {loggingOut ? "Logging out…" : "Log out"}</button>}
+        </div>
       </aside>
       <main className="adm-main">
         <header className="adm-top">
@@ -123,6 +126,7 @@ export function AdminPanel(props) {
             <p>{current.desc}</p>
           </div>
           <div className="adm-top-actions">
+            <button className="adm-btn ghost adm-top-back" onClick={onClose}><ArrowLeft size={15} /> Back to game</button>
             {showsRange && <RangePicker value={range} onChange={setRange} />}
             {!["settings", "data", "health"].includes(section) && <button className="adm-btn ghost" onClick={refresh} title={`Updated ${new Date(refreshedAt).toLocaleTimeString()}`}><RefreshCw size={15} className={overview.loading || activity.loading ? "spin" : ""} /> Refresh</button>}
           </div>

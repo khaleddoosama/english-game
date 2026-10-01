@@ -11,13 +11,14 @@ import { loadAppSettings } from "../lib/appSettings";
 loadAppSettings();
 
 function Game({ user, profile }) {
+  const { signOut } = useAuth();
   const isAdmin = profile?.role === "admin";
   const repo = useMemo(
     () => (isLocalMode ? createLocalRepo() : createSupabaseRepo({ userId: user.id, isAdmin })),
     [user.id, isAdmin],
   );
   useEffect(() => () => repo.dispose(), [repo]);
-  return <WordHunter repo={repo} profile={profile} isAdmin={isAdmin} />;
+  return <WordHunter repo={repo} profile={profile} isAdmin={isAdmin} onSignOut={isLocalMode ? null : signOut} />;
 }
 
 function Gate() {

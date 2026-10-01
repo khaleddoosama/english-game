@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Award, BarChart3, Settings as SettingsIcon, Wrench, BookOpen, CheckCircle2, ClipboardCheck, Copy, Download, Flag, Flame, HelpCircle, ListChecks, Lock, Play, Search, Sparkles, Target, Trash2, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
+import { ArrowLeft, Award, BarChart3, LogOut, Settings as SettingsIcon, Wrench, BookOpen, CheckCircle2, ClipboardCheck, Copy, Download, Flag, Flame, HelpCircle, ListChecks, Lock, Play, Search, Sparkles, Target, Trash2, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
 import { V2 } from "../engine/v2";
 import { PronunciationModal, imageLinkOk } from "../features/media/media";
 import { SessionView } from "../features/session/SessionView";
@@ -37,7 +37,7 @@ const SettingsPage = lazy(() => import("../features/settings/SettingsPage"));
 const ImportExport = lazy(() => import("../features/data/ImportExport"));
 const StudyDashboard = lazy(() => import("../features/stats/StudyDashboard"));
 
-export default function WordHunter({ repo, profile = null, isAdmin = true }) {
+export default function WordHunter({ repo, profile = null, isAdmin = true, onSignOut = null }) {
   const [loaded, setLoaded] = useState(false);
   const app = useAppSettings();
   // The announcement can be hidden per message (a new message shows again).
@@ -798,17 +798,28 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
     document.addEventListener("visibilitychange", onHide);
     return () => { window.removeEventListener("pagehide", flush); window.removeEventListener("beforeunload", onLeave); document.removeEventListener("visibilitychange", onHide); };
   }, []);
+  const runningSavesRef = useRef({});
   function debouncedSave(name, run, ms = 600) {
     let done = false;
-    const once = () => { if (done) return; done = true; if (pendingSavesRef.current[name] === once) delete pendingSavesRef.current[name]; run(); };
+    const once = () => { if (done) return; done = true; if (pendingSavesRef.current[name] === once) delete pendingSavesRef.current[name]; runningSavesRef.current[name] = run(); };
     pendingSavesRef.current[name] = once;
     const handle = setTimeout(once, ms);
     return () => clearTimeout(handle);
   }
+  // Log out: finish any save first (up to 5 s), so the last answers and
+  // edits aren't lost with the session.
+  const [loggingOut, setLoggingOut] = useState(false);
+  async function logOut() {
+    if (!onSignOut || loggingOut) return;
+    setLoggingOut(true);
+    Object.values(pendingSavesRef.current).forEach((run) => run());
+    await Promise.race([Promise.allSettled(Object.values(runningSavesRef.current)), new Promise((r) => setTimeout(r, 5000))]);
+    try { await onSignOut(); } catch (e) { setLoggingOut(false); setToast({ text: `Couldn't log out: ${e.message}` }); }
+  }
   useEffect(() => {
     if (!loaded) return;
     return debouncedSave("progress", () => {
-      repo.saveProgress({ ...progressExtrasRef.current, activeSession, schemaVersion: SCHEMA_VERSION, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings })
+      return repo.saveProgress({ ...progressExtrasRef.current, activeSession, schemaVersion: SCHEMA_VERSION, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings })
         .catch((e) => console.error("Could not save progress:", e));
     });
   }, [loaded, activeSession, questionReports, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings, liveSeenTick]);
@@ -826,7 +837,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
     const settle = () => { if (counted) { counted = false; contentWritesRef.current--; } };
     const cancel = debouncedSave("content", () => {
       const content = { note: contentNoteRef.current, combos: customCombos, stories: customStories, words: customWords, grammar: customGrammar, challenges: customChallenges, levelOrder: LEVEL_ORDER };
-      contentSavingRef.current = contentSavingRef.current.then(() => repo.saveContent(content)).catch((e) => {
+      return contentSavingRef.current = contentSavingRef.current.then(() => repo.saveContent(content)).catch((e) => {
         console.error("Could not save content:", e);
         setStorageWarning("Content could not be saved to the server. Check your connection; your last change will be saved with the next edit. Take a Full Backup if this keeps happening.");
       }).finally(settle);
@@ -1500,7 +1511,10 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
               <h1 className="wh-title">WORD <span>HUNTER</span></h1>
               <div className="wh-sub">{profile?.username && profile.id !== "local" ? `Hi ${profile.username} · ` : ""}{totalLevelsCleared}/{LEVELS.length} levels cleared</div>
             </div>
-            <SyncStatus repo={repo} />
+            <div className="ui-header-actions">
+              <SyncStatus repo={repo} />
+              {onSignOut && <button className="wh-icon-btn ui-logout" onClick={logOut} disabled={loggingOut} title="Log out"><LogOut size={14} /><span>{loggingOut ? "Logging out…" : "Log out"}</span></button>}
+            </div>
           </div>
           <div className="wh-stats ui-stat-row">
             <span className="ui-stat" title="Score"><b>{score}</b> pts</span>
@@ -1538,7 +1552,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
             </article>}
           </aside>
         </div>}
-        {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onRenameWord={renameWord} onResolveReport={resolveQuestionReport} onReopenReport={reopenQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} dataTools={dataTools}/></Suspense>}
+        {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} onSignOut={onSignOut ? logOut : null} loggingOut={loggingOut} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onRenameWord={renameWord} onResolveReport={resolveQuestionReport} onReopenReport={reopenQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} dataTools={dataTools}/></Suspense>}
         {confirmAction && (
           <div className="wh-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmAction(null); }}>
           <div className="wh-panel wh-confirm-panel" role="alertdialog">
@@ -2091,7 +2105,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
         {screen === "data" && <Suspense fallback={<ScreenSkeleton />}><ImportExport variant="game" isAdmin={isAdmin} tools={dataTools} onBack={backToLevels} /></Suspense>}
         {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} /></Suspense>}
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} /></Suspense>}
-        {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
+        {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage onSignOut={onSignOut ? logOut : null} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
 
         {screen === "speedResults" && (
           <div className="wh-results-card">
