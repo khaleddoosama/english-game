@@ -1,6 +1,5 @@
 // Live matches, AI usage and the admin audit log.
-import { useMemo, useState } from "react";
-import { useQueryParam } from "../../../lib/router";
+import { useMemo } from "react";
 import { DataTable } from "../DataTable";
 import { BarList, ChartCard, ColumnChart, SimpleTable, formatNumber } from "../charts";
 import { Badge, Kpi, Notice, fmtDate, longDay, relTime, shortDay } from "../adminUi";
@@ -107,36 +106,6 @@ export function AiUsage({ usage, activity, range, overview }) {
         </ChartCard>
       </div>
       <DataTable id="ai" syncUrl columns={columns} rows={rows} rowKey={(r) => `${r.day}-${r.username}`} csvName="word-hunter-ai-usage" searchText={(r) => r.username} searchPlaceholder="Search player…" initialSort={{ key: "day", dir: "desc" }} emptyText="No AI calls in this period." />
-    </div>
-  );
-}
-
-const ACTION_LABEL = { "content.save": "Content saved", "player.role": "Role changed", "player.password": "Password set", "player.reset": "Progress reset", "player.delete": "Account deleted" };
-const ACTION_TONE = { "content.save": "info", "player.role": "warning", "player.password": "warning", "player.reset": "danger", "player.delete": "danger" };
-
-export function AuditLog({ audit }) {
-  const [action, setAction] = useQueryParam("action");
-  const rows = (audit.data || []).filter((r) => !action || r.action === action);
-  const detail = (r) => {
-    const d = r.details || {};
-    if (r.action === "content.save") return `${d.changed || 0} changed, ${d.removed || 0} removed · v${d.version}${d.sample?.length ? ` · ${d.sample.join(", ")}${d.changed > d.sample.length ? "…" : ""}` : ""}`;
-    if (r.action === "player.role") return `now ${d.role}`;
-    return "";
-  };
-  const columns = [
-    { key: "at", label: "When", defaultDir: "desc", sortValue: (r) => Date.parse(r.at), csv: (r) => r.at, render: (r) => <span title={fmtDate(r.at)}>{fmtDate(r.at)}</span> },
-    { key: "admin", label: "By" },
-    { key: "action", label: "Action", render: (r) => <Badge tone={ACTION_TONE[r.action] || "neutral"}>{ACTION_LABEL[r.action] || r.action}</Badge> },
-    { key: "target", label: "Target", render: (r) => r.target || "—" },
-    { key: "details", label: "Details", sortable: false, csv: detail, render: (r) => <span className="adm-muted">{detail(r)}</span> },
-  ];
-  return (
-    <div className={`adm-section ${audit.loading ? "is-refreshing" : ""}`}>
-      {audit.error && <Notice tone="error">{audit.error}</Notice>}
-      <DataTable id="audit" syncUrl columns={columns} rows={rows} rowKey={(r) => r.id} csvName="word-hunter-audit" searchText={(r) => `${r.action} ${r.target || ""} ${JSON.stringify(r.details)}`} searchPlaceholder="Search the log…"
-        initialSort={{ key: "at", dir: "desc" }} resetKey={action}
-        filters={<select className="adm-select" value={action} onChange={(e) => setAction(e.target.value)} aria-label="Action"><option value="">All actions</option>{Object.entries(ACTION_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>}
-        emptyText="Nothing logged yet. Content saves and account changes appear here." />
     </div>
   );
 }

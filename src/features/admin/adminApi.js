@@ -20,6 +20,30 @@ export function lastDays(n) {
   return out;
 }
 
+// Activity log, filtered and paged on the server. action: an exact action
+// ("content.update"), a group ending in ".*" ("report.*"), "all", or empty
+// for everything except the per-save summary rows.
+export const AUDIT_PAGE = 50;
+export async function auditPage({ page = 1, size = AUDIT_PAGE, action = "", entity = "", q = "", adminId = "", from = "", to = "", batch = "" } = {}) {
+  let query = supabase.from("admin_audit")
+    .select("id, at, action, target, entity, item_key, batch_id, details, changes, before, after, admin:admin_id(username)", { count: "exact" })
+    .order("at", { ascending: false }).order("id", { ascending: false });
+  if (batch) query = query.eq("batch_id", batch);
+  if (action.endsWith(".*")) query = query.like("action", `${action.slice(0, -1)}%`);
+  else if (action && action !== "all") query = query.eq("action", action);
+  else if (!action && !batch) query = query.neq("action", "content.save");
+  if (entity) query = query.eq("entity", entity);
+  if (adminId) query = query.eq("admin_id", adminId);
+  if (from) query = query.gte("at", new Date(`${from}T00:00:00`).toISOString());
+  if (to) query = query.lt("at", new Date(new Date(`${to}T00:00:00`).getTime() + 86400000).toISOString());
+  const term = String(q || "").trim().replace(/[,()%*\\]/g, " ").trim();
+  if (term) query = query.or(`target.ilike.*${term}*,item_key.ilike.*${term}*`);
+  const start = (Math.max(1, page) - 1) * size;
+  const { data, error, count } = await query.range(start, start + size - 1);
+  if (error) throw new Error(error.message);
+  return { rows: data.map((r) => ({ ...r, admin: r.admin?.username || "system" })), count: count ?? data.length };
+}
+
 // local = { content, mastery, sessionLogs, profile, reports, score, studyStreak, bestStudyStreak }
 export function createAdminApi(local) {
   if (!isLocalMode) {
@@ -34,11 +58,7 @@ export function createAdminApi(local) {
       liveChallenges: () => rpc("admin_live_challenges", { p_limit: 300 }),
       endChallenge: (code) => rpc("live_end", { p_code: code }),
       aiUsage: (days) => rpc("admin_ai_usage", { p_days: days }),
-      audit: async () => {
-        const { data, error } = await supabase.from("admin_audit").select("id, at, action, target, details, admin:admin_id(username)").order("at", { ascending: false }).limit(1000);
-        if (error) throw new Error(error.message);
-        return data.map((r) => ({ ...r, admin: r.admin?.username || "—" }));
-      },
+      audit: (filters) => auditPage(filters),
       setRole: (id, role) => rpc("admin_set_role", { p_user: id, p_role: role }),
       setPassword: (id, password) => rpc("admin_set_password", { p_user: id, p_password: password }),
       resetPlayer: (id) => rpc("admin_reset_player", { p_user: id }),
@@ -88,7 +108,7 @@ export function createAdminApi(local) {
     liveChallenges: async () => [],
     endChallenge: notOnline,
     aiUsage: async () => [],
-    audit: async () => [],
+    audit: async () => ({ rows: [], count: 0 }),
     setRole: notOnline, setPassword: notOnline, resetPlayer: notOnline, deletePlayer: notOnline,
   };
 }

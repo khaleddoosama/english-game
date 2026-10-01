@@ -238,7 +238,7 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
         fetchAll(() => sb.from("mastery").select("item_key, stats").eq("user_id", userId).order("item_key")),
       ]);
       if (isAdmin) {
-        reportRows = await fetchAll(() => sb.from("reports").select("id, data, resolved_at, user_id, profiles:user_id(username)").neq("user_id", userId).order("created_at"));
+        reportRows = await fetchAll(() => sb.from("reports").select("id, data, resolved_at, created_at, user_id, profiles:user_id(username)").neq("user_id", userId).order("created_at"));
       }
     } catch (e) {
       if (snapshot?.data) { status.set("offline"); return snapshot.data; }
@@ -254,7 +254,7 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
     if (lastScore !== null && week.start === weekStart()) savedProfile = stableJson(profileSummary(data, week));
     for (const r of data.reports || []) if (r?.id) savedReports.set(r.id, stableJson(r));
     // Other players' reports: shown in Admin, tracked separately.
-    const remote = reportRows.map((row) => ({ ...row.data, resolvedAt: row.resolved_at ? Date.parse(row.resolved_at) : row.data.resolvedAt || null, _remote: true, _from: row.profiles?.username || "player" }));
+    const remote = reportRows.map((row) => ({ ...row.data, resolvedAt: row.resolved_at ? Date.parse(row.resolved_at) : row.data.resolvedAt || null, _remote: true, _from: row.profiles?.username || "player", _filedAt: row.created_at || null }));
     for (const r of remote) savedRemoteReports.set(r.id, stableJson(r));
     if (remote.length) data.reports = [...(data.reports || []), ...remote];
     const hasServer = hasServerRows(sections, masteryRows);
@@ -274,7 +274,7 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
     const nextRemote = new Map(remote.map((r) => [r.id, stableJson(r)]));
     for (const [id, json] of nextRemote) {
       if (savedRemoteReports.get(id) === json) continue;
-      const { _remote, _from, ...report } = JSON.parse(json);
+      const { _remote, _from, _filedAt, ...report } = JSON.parse(json);
       const { error } = await sb.from("reports").update({ data: report, resolved_at: report.resolvedAt ? new Date(report.resolvedAt).toISOString() : null }).eq("id", id);
       if (error) throw error;
     }

@@ -336,9 +336,20 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
       setScreen("finalReport");
     }
   }
-  function reportSessionQuestion(q, session, reason, learnerAnswer, details) {
+  // A report carries everything needed to judge it later without the
+  // round: the full question (prompt, options, right answers), what the
+  // player answered and whether it was marked right, the reason and note,
+  // the round it came from, who sent it and when. The server also records
+  // the sender and time itself (reports.user_id / created_at).
+  function reportSessionQuestion(q, session, reason, learnerAnswer, details, prior = null) {
     markSentencesSeen(q);
-    const report={id:`rep-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,questionId:q.id,sessionId:session.id,prompt:q.prompt,targetWords:q.targets||[],mode:q.mode,type:q.type||null,options:q.options||null,answers:q.answers||null,poolType:q.poolType||null,poolItemId:q.poolItemId||null,reason:reason||null,details:details||null,learnerAnswer:learnerAnswer??null,at:Date.now()};
+    const now = Date.now();
+    const answerText = learnerAnswer == null ? null : Array.isArray(learnerAnswer) ? learnerAnswer.join(" + ") : typeof learnerAnswer === "object" ? (learnerAnswer.text ?? (learnerAnswer.selected || []).join(" + ")) : String(learnerAnswer);
+    const report={id:`rep-${now}-${Math.random().toString(36).slice(2,8)}`,questionId:q.id,sessionId:session.id,prompt:q.prompt,targetWords:q.targets||[],mode:q.mode,type:q.type||null,options:q.options||null,answers:q.answers||null,poolType:q.poolType||null,poolItemId:q.poolItemId||null,reason:reason||null,details:details||null,learnerAnswer:learnerAnswer??null,learnerAnswerText:answerText||null,wasCorrect:prior&&typeof prior.correct==="boolean"&&!prior.reported?prior.correct:null,answerSubmitted:!!prior,at:now,reportedAt:new Date(now).toISOString(),
+      question:{id:q.id,mode:q.mode,type:q.type||null,prompt:q.prompt,options:q.options||null,answers:q.answers||null,targets:q.targets||[],explanation:q.explanation||null,sentences:V2.questionSentences(q),hasPicture:!!(q.picture||q.photo),poolType:q.poolType||null,poolItemId:q.poolItemId||null},
+      session:{id:session.id,title:session.title||null,kind:session.kind||null,index:session.index??null,total:session.queue?.length??null},
+      reporter:{id:profile?.id||"local",username:profile?.username||"local"},
+      timeZone:(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone;}catch{return null;}})()};
     const merged=[...(progressExtrasRef.current.reports||[]),report];
     // Unbounded growth here was pushing the saved payload toward the
     // storage size limit over months of testing. Keep every unresolved
@@ -367,6 +378,10 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
   function resolveQuestionReport(report){
     const reports=(progressExtrasRef.current.reports||[]).map(item=>sameReport(item,report)?{...item,resolvedAt:Date.now()}:item);
     progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);setActiveSession(session=>session?{...session}:session);
+  }
+  function reopenQuestionReport(report){
+    const reports=(progressExtrasRef.current.reports||[]).map(item=>sameReport(item,report)?{...item,resolvedAt:null}:item);
+    progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);
   }
   function retireReportedVariant(report){
     const wordObj=V2.findWord(WORDS,report.targetWords?.[0]);
@@ -1571,7 +1586,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true }) {
             </article>}
           </aside>
         </div>}
-        {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onResolveReport={resolveQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} onOpenImport={()=>{setContentPanelView("review");setScreen("data");}} onExport={mode=>{handleExport(mode);setContentPanelView("export");setScreen("data");}}/></Suspense>}
+        {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onResolveReport={resolveQuestionReport} onReopenReport={reopenQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} onOpenImport={()=>{setContentPanelView("review");setScreen("data");}} onExport={mode=>{handleExport(mode);setContentPanelView("export");setScreen("data");}}/></Suspense>}
         {confirmAction && (
           <div className="wh-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmAction(null); }}>
           <div className="wh-panel wh-confirm-panel" role="alertdialog">

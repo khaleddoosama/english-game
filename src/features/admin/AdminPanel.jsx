@@ -11,7 +11,8 @@ import { Overview } from "./sections/Overview";
 import { Players } from "./sections/Players";
 import { Words } from "./sections/Words";
 import { Reports } from "./sections/Reports";
-import { AiUsage, AuditLog, LiveMatches } from "./sections/Activity";
+import { AiUsage, LiveMatches } from "./sections/Activity";
+import { AuditLog } from "./sections/AuditLog";
 import "../../styles/admin.css";
 
 const NAV = [
@@ -29,13 +30,13 @@ const NAV = [
     { id: "health", label: "Content health", icon: HeartPulse, desc: "Find and fix weak content with AI", classic: "health" },
   ] },
   { group: "System", items: [
-    { id: "audit", label: "Activity log", icon: History, desc: "What changed and who changed it" },
+    { id: "audit", label: "Activity log", icon: History, desc: "Every change: who, when, which item, and each field before and after" },
     { id: "settings", label: "Game settings", icon: Settings, desc: "Round size, daily goal, sound", classic: "settings" },
     { id: "data", label: "Data & backup", icon: Database, desc: "Import, export, reset", classic: "data" },
   ] },
 ];
 const ALL = NAV.flatMap((g) => g.items);
-const HIDDEN = { review: { id: "review", label: "Review report", desc: "AI review, fixes and retiring flawed questions", classic: "reports" } };
+const HIDDEN = {};
 const RANGES = [7, 30, 90];
 
 function LiveSection({ api, tick, activity, range }) {
@@ -49,13 +50,11 @@ function AiSection({ api, tick, activity, range, overview }) {
   const usage = useAsync(() => api.aiUsage(range), [api, tick, range]);
   return <AiUsage usage={usage} activity={activity} range={range} overview={overview} />;
 }
-function AuditSection({ api, tick }) {
-  const audit = useAsync(() => api.audit(), [api, tick]);
-  return <AuditLog audit={audit} />;
-}
 
 export function AdminPanel(props) {
-  const { content, mastery, reports, profile, onClose, onUpdate, onResolveReport, onDeleteReport, route = {} } = props;
+  const { content, mastery, reports, profile, onClose, onUpdate, onResolveReport, onReopenReport, onDeleteReport, onReviewReport, onRetireVariant, route = {} } = props;
+  // Old links to the report review page now open the report itself.
+  useEffect(() => { if (route.section === "review") navigate(pathFor("admin", { section: "reports", item: route.item }), { replace: true }); }, [route.section]);
   // The page comes from the address: /admin/<section>/<item>?filters
   const section = ALL.some((x) => x.id === route.section) || HIDDEN[route.section] ? route.section : "overview";
   const item = route.item ?? null;
@@ -67,7 +66,7 @@ export function AdminPanel(props) {
   const location = useLocation();
   // Remembered so the Admin tab reopens this page with its filters.
   useEffect(() => { try { localStorage.setItem("wh-admin-path", location.href); } catch {} }, [location.href]);
-  const focus = useMemo(() => (section === "review" && item ? { reportId: item } : section === "editor" && item ? (item === "new" ? { entity: "words", create: true } : { entity: "words", key: item }) : null), [section, item]);
+  const focus = useMemo(() => (section === "editor" && item ? (item === "new" ? { entity: "words", create: true } : { entity: "words", key: item }) : null), [section, item]);
   const local = useRef(null);
   local.current = { content, mastery, sessionLogs: props.sessionLogs, profile, reports, score: props.score, studyStreak: props.studyStreak, bestStudyStreak: props.bestStudyStreak };
   const api = useMemo(() => createAdminApi(local), []);
@@ -99,7 +98,7 @@ export function AdminPanel(props) {
             <div key={g.group} className="adm-nav-group">
               <small>{g.group}</small>
               {g.items.map(({ id, label, icon: Icon }) => (
-                <button key={id} className={section === id || (section === "review" && id === "reports") ? "on" : ""} aria-current={section === id ? "page" : undefined} onClick={() => setSection(id)}>
+                <button key={id} className={section === id ? "on" : ""} aria-current={section === id ? "page" : undefined} onClick={() => setSection(id)}>
                   <Icon size={17} /><span>{label}</span>{id === "reports" && openReports > 0 && <em>{openReports}</em>}
                 </button>
               ))}
@@ -124,10 +123,10 @@ export function AdminPanel(props) {
         {section === "live" && <LiveSection api={api} tick={tick} activity={activity} range={range} />}
         {section === "ai" && <AiSection api={api} tick={tick} activity={activity} range={range} overview={overview} />}
         {section === "words" && <Words content={content} wordStats={wordStats} mastery={mastery} onUpdate={onUpdate} onEdit={editWord} onCreate={createWord} />}
-        {section === "reports" && <Reports reports={reports} onResolve={onResolveReport} onDelete={onDeleteReport} onReview={(r) => setSection("review", r.id)} />}
-        {section === "audit" && <AuditSection api={api} tick={tick} />}
+        {section === "reports" && <Reports reports={reports} content={content} onResolve={onResolveReport} onReopen={onReopenReport} onDelete={onDeleteReport} onRetire={onRetireVariant} onReviewReport={onReviewReport} onUpdate={onUpdate}
+          openKey={item} onOpen={(key) => navigate(pathFor("admin", { section: "reports", item: key }) + window.location.search)} onOpenWord={editWord} onOpenPlayer={openPlayerByName} />}
+        {section === "audit" && <AuditLog api={api} tick={tick} content={content} onUpdate={onUpdate} players={players} onOpenWord={editWord} onOpenReport={(id) => setSection("reports", id)} onOpenPlayer={openPlayerByName} />}
         {current.classic && <div className="adm-classic">
-          {section === "review" && <button className="adm-link" onClick={() => setSection("reports")}><ArrowLeft size={14} /> All reports</button>}
           <AdminControlCenter {...props} embedded tab={current.classic} focus={focus} />
         </div>}
       </main>

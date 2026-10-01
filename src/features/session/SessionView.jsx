@@ -307,7 +307,8 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
   function next(){save({index:s.index+1,draft:{}});}
   function submitReport(){
     const prior=s.answers[s.index]||null,index=s.index;
-    const report=onReport(q,s,reportReason,prior?.value??null,reportDetails.trim());
+    const draftValue=q.type==='typing'?(draft.text||'').trim()||null:(draft.selected?.length?draft.selected:null);
+    const report=onReport(q,s,reportReason,prior?.value??draftValue,reportDetails.trim(),prior);
     const answers=[...s.answers];answers[index]={...(prior||{}),reported:true,correct:false};save({answers});
     if(!onReviewReport||!report){setReportOpen(false);return;}
     setReportReview({report,prior,index,status:'reviewing'});
