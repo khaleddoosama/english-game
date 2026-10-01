@@ -24,9 +24,8 @@ export function lastDays(n) {
 // ("content.update"), a group ending in ".*" ("report.*"), "all", or empty
 // for everything except the per-save summary rows.
 export const AUDIT_PAGE = 50;
-export async function auditPage({ page = 1, size = AUDIT_PAGE, action = "", entity = "", q = "", adminId = "", from = "", to = "", batch = "" } = {}) {
-  let query = supabase.from("admin_audit")
-    .select("id, at, action, target, entity, item_key, batch_id, details, changes, before, after, admin:admin_id(username)", { count: "exact" })
+function auditQuery(columns, { action = "", entity = "", q = "", adminId = "", from = "", to = "", batch = "" } = {}, opts) {
+  let query = supabase.from("admin_audit").select(columns, opts)
     .order("at", { ascending: false }).order("id", { ascending: false });
   if (batch) query = query.eq("batch_id", batch);
   if (action.endsWith(".*")) query = query.like("action", `${action.slice(0, -1)}%`);
@@ -38,10 +37,27 @@ export async function auditPage({ page = 1, size = AUDIT_PAGE, action = "", enti
   if (to) query = query.lt("at", new Date(new Date(`${to}T00:00:00`).getTime() + 86400000).toISOString());
   const term = String(q || "").trim().replace(/[,()%*\\]/g, " ").trim();
   if (term) query = query.or(`target.ilike.*${term}*,item_key.ilike.*${term}*`);
+  return query;
+}
+export async function auditPage({ page = 1, size = AUDIT_PAGE, ...filters } = {}) {
+  const query = auditQuery("id, at, action, target, entity, item_key, batch_id, details, changes, before, after, admin:admin_id(username)", filters, { count: "exact" });
   const start = (Math.max(1, page) - 1) * size;
   const { data, error, count } = await query.range(start, start + size - 1);
   if (error) throw new Error(error.message);
   return { rows: data.map((r) => ({ ...r, admin: r.admin?.username || "system" })), count: count ?? data.length };
+}
+
+// Every entry id matching the filters (for "delete all that match"), read
+// 1,000 at a time; at most 10,000.
+export async function auditIds(filters = {}) {
+  const ids = [];
+  for (let start = 0; start < 10000; start += 1000) {
+    const { data, error } = await auditQuery("id", filters).range(start, start + 999);
+    if (error) throw new Error(error.message);
+    ids.push(...data.map((r) => r.id));
+    if (data.length < 1000) break;
+  }
+  return ids;
 }
 
 // The same checks analytics.word_quality makes, for local mode.
@@ -79,6 +95,9 @@ export function createAdminApi(local) {
       endChallenge: (code) => rpc("live_end", { p_code: code }),
       aiUsage: (days) => rpc("admin_ai_usage", { p_days: days }),
       audit: (filters) => auditPage(filters),
+      auditIds: (filters) => auditIds(filters),
+      deleteAudit: (ids) => rpc("admin_audit_delete", { p_ids: ids }),
+      clearAudit: () => rpc("admin_audit_clear"),
       setRole: (id, role) => rpc("admin_set_role", { p_user: id, p_role: role }),
       setPassword: (id, password) => rpc("admin_set_password", { p_user: id, p_password: password }),
       resetPlayer: (id) => rpc("admin_reset_player", { p_user: id }),
@@ -140,6 +159,9 @@ export function createAdminApi(local) {
     endChallenge: notOnline,
     aiUsage: async () => [],
     audit: async () => ({ rows: [], count: 0 }),
+    auditIds: async () => [],
+    deleteAudit: async () => 0,
+    clearAudit: async () => 0,
     setRole: notOnline, setPassword: notOnline, resetPlayer: notOnline, deletePlayer: notOnline,
   };
 }

@@ -2,7 +2,7 @@
 // each changed field before and after. Filters and the page live in the
 // address (/admin/audit?action=content.update&q=apple&page=2).
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, ChevronLeft, ExternalLink, RotateCcw } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronLeft, ExternalLink, RotateCcw, Trash2 } from "lucide-react";
 import { useQuery } from "../../../lib/router";
 import { AUDIT_PAGE } from "../adminApi";
 import { pageWindow } from "../DataTable";
@@ -25,10 +25,12 @@ export const ACTIONS = {
   "player.delete": { label: "Account deleted", tone: "danger" },
   "live.end": { label: "Challenge ended", tone: "warning" },
   "settings.update": { label: "Settings", tone: "info" },
+  "audit.delete": { label: "Log entries deleted", tone: "danger" },
+  "audit.clear": { label: "Log cleared", tone: "danger" },
 };
 const FILTERS = [
   ["", "All changes"], ["content.*", "Content: all"], ["content.create", "Content added"], ["content.update", "Content edited"], ["content.delete", "Content deleted"],
-  ["content.save", "Saves (batches)"], ["categories.update", "Category order"], ["report.*", "Reports"], ["player.*", "Players"], ["live.*", "Live challenges"], ["settings.update", "Settings"],
+  ["content.save", "Saves (batches)"], ["categories.update", "Category order"], ["report.*", "Reports"], ["player.*", "Players"], ["live.*", "Live challenges"], ["settings.update", "Settings"], ["audit.*", "Log clean-ups"],
 ];
 const ENTITIES = [["", "Any type"], ["words", "Words"], ["grammar", "Grammar"], ["stories", "Stories"], ["combos", "Combos"], ["challenges", "Challenges"], ["report", "Reports"], ["player", "Players"], ["settings", "Settings"]];
 const KEY_FIELD = { words: "word", grammar: "id", stories: "id", combos: "id", challenges: "id" };
@@ -64,6 +66,33 @@ export function AuditLog({ api, tick, content, onUpdate, players, onOpenWord, on
   const count = log.data?.count || 0;
   const pages = Math.max(1, Math.ceil(count / AUDIT_PAGE));
   const set = (patch) => setF({ ...patch, page: null });
+  // Deleting: tick entries on this page, or everything (that matches).
+  const [selected, setSelected] = useState(() => new Set());
+  const [del, setDel] = useState(null); // { kind: "selected" | "matching" | "all", count }
+  const [delBusy, setDelBusy] = useState(false);
+  const [delDone, setDelDone] = useState(null);
+  const filtered = !!(f.action || f.entity || f.q || f.admin || f.from || f.to || f.batch);
+  useEffect(() => { setSelected(new Set()); }, [page, f.action, f.entity, f.q, f.admin, f.from, f.to, f.batch]);
+  const pageIds = rows.map((r) => r.id);
+  const allOnPage = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const pick = (id) => setSelected((x) => { const next = new Set(x); next.has(id) ? next.delete(id) : next.add(id); return next; });
+  async function runDelete() {
+    setDelBusy(true);
+    try {
+      let n;
+      if (del.kind === "selected") n = await api.deleteAudit([...selected]);
+      else if (del.kind === "all") n = await api.clearAudit();
+      else {
+        const ids = await api.auditIds({ action: f.action, entity: f.entity, q: f.q, adminId, from: f.from, to: f.to, batch: f.batch });
+        n = ids.length ? await api.deleteAudit(ids) : 0;
+      }
+      setDelDone({ tone: "info", text: `Deleted ${n} entr${n === 1 ? "y" : "ies"}. A note of the deletion was added to the log.` });
+      setSelected(new Set());
+      if (page > 1) setF({ page: null });
+      setN((x) => x + 1);
+    } catch (e) { setDelDone({ tone: "error", text: `Couldn't delete: ${e.message}` }); }
+    setDelBusy(false); setDel(null);
+  }
   const toggle = (id) => setOpen((s) => { const x = new Set(s); x.has(id) ? x.delete(id) : x.add(id); return x; });
 
   // Undo a content change by applying its "before" values to the item as
@@ -112,6 +141,13 @@ export function AuditLog({ api, tick, content, onUpdate, players, onOpenWord, on
         <label className="adm-date">To <input type="date" className="adm-select" value={f.to} onChange={(e) => set({ to: e.target.value })} /></label>
         {(f.action || f.entity || f.q || f.admin || f.from || f.to || f.batch) && <button className="adm-link" onClick={() => setF({ action: null, entity: null, q: null, admin: null, from: null, to: null, batch: null, page: null })}>Clear filters</button>}
       </div>
+      {delDone && <Notice tone={delDone.tone}>{delDone.text}</Notice>}
+      {api.online && count > 0 && <div className="adm-audit-bulk">
+        <label className="adm-audit-pick"><input type="checkbox" checked={allOnPage} onChange={() => setSelected(allOnPage ? new Set() : new Set(pageIds))} aria-label="Select every entry on this page" /> {selected.size ? `${selected.size} selected` : "Select"}</label>
+        <button className="adm-btn danger small" disabled={!selected.size} onClick={() => setDel({ kind: "selected", count: selected.size })}><Trash2 size={14} /> Delete selected{selected.size ? ` (${selected.size})` : ""}</button>
+        <span className="adm-toolbar-spacer" />
+        <button className="adm-btn ghost small adm-danger-text" onClick={() => setDel({ kind: filtered ? "matching" : "all", count })}><Trash2 size={14} /> {filtered ? `Delete all ${count} that match` : "Delete all"}</button>
+      </div>}
       {f.batch && <Notice>Showing the changes of one save. <button className="adm-link" onClick={() => set({ batch: null })}>Show everything</button></Notice>}
       <ol className="adm-audit">
         {rows.map((r) => {
@@ -119,7 +155,9 @@ export function AuditLog({ api, tick, content, onUpdate, players, onOpenWord, on
           const isOpen = open.has(r.id);
           const plan = isOpen ? planRevert(r) : null;
           return (
-            <li key={r.id} className={isOpen ? "open" : ""}>
+            <li key={r.id} className={`${isOpen ? "open" : ""} ${selected.has(r.id) ? "picked" : ""}`}>
+              <div className="adm-audit-line">
+              {api.online && <input type="checkbox" className="adm-audit-check" checked={selected.has(r.id)} onChange={() => pick(r.id)} aria-label={`Select entry #${r.id}`} />}
               <button className="adm-audit-row" onClick={() => toggle(r.id)} aria-expanded={isOpen}>
                 {isOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                 <span className="adm-audit-when" title={fullDate(r.at)}>{fmtDate(r.at)}<small>{relTime(r.at)}</small></span>
@@ -128,6 +166,7 @@ export function AuditLog({ api, tick, content, onUpdate, players, onOpenWord, on
                 <span className="adm-audit-item"><b>{r.item_key || r.target || (r.action === "content.save" ? "Content" : "—")}</b>{r.entity && r.entity !== "content" && <small>{r.entity}</small>}</span>
                 <span className="adm-audit-sum">{summary(r)}</span>
               </button>
+              </div>
               {isOpen && <div className="adm-audit-detail">
                 <p className="adm-muted">{fullDate(r.at)} · by <b>{r.admin}</b>{r.target ? <> · {r.target}</> : null} · entry #{r.id}</p>
                 {r.action === "content.save" ? <p><button className="adm-btn ghost small" onClick={() => setF({ batch: r.batch_id, action: "all", page: null })}>Show the {r.details?.changed ?? ""} item changes in this save</button></p>
@@ -154,6 +193,11 @@ export function AuditLog({ api, tick, content, onUpdate, players, onOpenWord, on
           <button onClick={() => setF({ page: page + 1 }, { replace: false })} disabled={page >= pages} aria-label="Next page"><ChevronRight size={15} /></button>
         </nav>
       </footer>
+      {del && <ConfirmDialog danger busy={delBusy} confirmLabel="Delete for good"
+        title={del.kind === "selected" ? `Delete ${del.count} entr${del.count === 1 ? "y" : "ies"}?` : del.kind === "all" ? "Delete the whole activity log?" : `Delete all ${del.count} entries that match?`}
+        confirmText={del.kind === "selected" && del.count <= 20 ? undefined : "DELETE"}
+        body={<><p>{del.kind === "all" ? "Every entry goes, including the before-and-after values you'd need to revert a change." : "They're removed for good, including their before-and-after values, so those changes can't be reverted from here any more."}</p><p className="adm-muted">The game content itself isn't touched. One entry noting who deleted how many is added to the log.</p></>}
+        onCancel={() => setDel(null)} onConfirm={runDelete} />}
       {revert && <ConfirmDialog title="Revert this change?" confirmLabel="Revert"
         body={<><p>{revert.describe}</p>{revert.rows && <DiffTable rows={revert.rows} />}<p className="adm-muted">The revert is saved like any edit and shows up in this log.</p></>}
         onCancel={() => setRevert(null)} onConfirm={() => { revert.apply(); setRevert(null); setTimeout(() => setN((x) => x + 1), 2500); }} />}
