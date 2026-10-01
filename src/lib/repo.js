@@ -101,7 +101,7 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
   let savedProfile = "";
   let savedRevs = new Map();                // section -> revision on the server
   let masterySince = "";                    // newest mastery updated_at seen
-  let savedReports = new Map();             // id -> json (own reports)
+  let savedReports = new Map();             // id -> json (own reports, as in the reports table)
   let savedRemoteReports = new Map();       // id -> json (other players', admin only)
   let lastLocal = null;                     // the app's newest progress
   const mergedSubs = new Set();             // told when another device's changes were merged in
@@ -238,11 +238,12 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
 
   async function loadProgress() {
     const snapshot = await idb.get(snapshotKey);
-    let sections, masteryRows, reportRows = [];
+    let sections, masteryRows, ownReportRows, reportRows = [];
     try {
-      [sections, masteryRows] = await Promise.all([
+      [sections, masteryRows, ownReportRows] = await Promise.all([
         fetchAll(() => sb.from("progress").select("section, data, rev").eq("user_id", userId).order("section")),
         fetchAll(() => sb.from("mastery").select("item_key, stats, updated_at").eq("user_id", userId).order("item_key")),
+        fetchAll(() => sb.from("reports").select("id, data, resolved_at").eq("user_id", userId).order("id")),
       ]);
       if (isAdmin) {
         reportRows = await fetchAll(() => sb.from("reports").select("id, data, resolved_at, created_at, user_id, profiles:user_id(username)").neq("user_id", userId).order("created_at"));
@@ -266,19 +267,21 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
     }
     data.mastery = mastery;
     if (hasServerRows(sections, masteryRows)) savedProfile = stableJson(profileSummary(data));
-    for (const r of data.reports || []) if (r?.id) savedReports.set(r.id, stableJson(r));
+    const sectionReports = serverSections.reports?.reports || [];
     // Other players' reports: shown in Admin, tracked separately.
     const remote = reportRows.map((row) => ({ ...row.data, resolvedAt: row.resolved_at ? Date.parse(row.resolved_at) : row.data.resolvedAt || null, _remote: true, _from: row.profiles?.username || "player", _filedAt: row.created_at || null }));
     for (const r of remote) savedRemoteReports.set(r.id, stableJson(r));
-    if (remote.length) data.reports = [...(data.reports || []), ...remote];
     const hasServer = hasServerRows(sections, masteryRows);
     // Play from this device that never reached the server: merge it with
     // whatever other devices saved meanwhile; the next save sends it.
     if (snapshot?.dirty && snapshot.data) {
       const merged = mergeUnsynced(snapshot, serverSections, mastery);
+      merged.reports = [...reconcileReports((merged.reports || []).filter((r) => !r?._remote), sectionReports, ownReportRows), ...remote];
       lastLocal = merged;
-      return { ...merged, reports: [...(merged.reports || []).filter((r) => !r?._remote), ...remote] };
+      return merged;
     }
+    if (data.reports) data.reports = reconcileReports(data.reports, sectionReports, ownReportRows);
+    if (remote.length) data.reports = [...(data.reports || []), ...remote];
     const out = hasServer || remote.length ? data : null;
     lastLocal = out;
     return out;
@@ -301,11 +304,47 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
     return out;
   }
 
+  // The player's own reports: the reports table has the admin's decisions
+  // (resolved, deleted, notes added); this device has what it changed since
+  // its last save. A report the server's progress lists but the table
+  // doesn't have was deleted; one only this device has wasn't sent yet.
+  // Reports filed on another device arrive with that device's progress.
+  function reconcileReports(local, sectionReports, rows) {
+    const table = new Map(rows.map((row) => [row.id, row]));
+    const sent = new Map(sectionReports.filter((r) => r?.id).map((r) => [r.id, stableJson(r)]));
+    const out = [];
+    for (const r of local) {
+      if (!r?.id) { out.push(r); continue; }
+      const row = table.get(r.id);
+      if (!row) { if (!sent.has(r.id)) out.push(r); continue; }
+      const resolvedAt = row.resolved_at ? Date.parse(row.resolved_at) : null;
+      const fromTable = { ...row.data, resolvedAt };
+      savedReports.set(r.id, stableJson(fromTable));
+      const changedHere = sent.has(r.id) && sent.get(r.id) !== stableJson(r);
+      out.push(!changedHere ? fromTable : isAdmin ? r : { ...r, resolvedAt });
+    }
+    return out;
+  }
+
   async function syncReports(own, remote) {
     const nextOwn = new Map(own.filter((r) => r?.id).map((r) => [r.id, stableJson(r)]));
-    const upserts = [...nextOwn].filter(([id, json]) => savedReports.get(id) !== json).map(([id, json]) => ({ id, data: JSON.parse(json), resolved_at: JSON.parse(json).resolvedAt ? new Date(JSON.parse(json).resolvedAt).toISOString() : null }));
-    const deletes = [...savedReports.keys()].filter((id) => !nextOwn.has(id));
-    if (upserts.length) { const { error } = await sb.from("reports").upsert(upserts); if (error) throw error; }
+    // Only the admin decides whether a report is resolved; the server keeps
+    // that part of a player's report as it is, whatever the player sends.
+    const upserts = [...nextOwn].filter(([id, json]) => savedReports.get(id) !== json).map(([id, json]) => {
+      const data = JSON.parse(json);
+      return isAdmin ? { id, data, resolved_at: data.resolvedAt ? new Date(data.resolvedAt).toISOString() : null } : { id, data };
+    });
+    // A player's device keeps only the newest resolved reports; dropping
+    // older ones there doesn't delete them for the admin.
+    const deletes = [...savedReports].filter(([id, json]) => !nextOwn.has(id) && (isAdmin || !JSON.parse(json).resolvedAt)).map(([id]) => id);
+    if (upserts.length) {
+      const { error } = await sb.from("reports").upsert(upserts);
+      if (error && error.code !== "42501") throw error;
+      // A report someone else filed (in a backup imported here) can't be
+      // written by this player: skip it instead of failing every save. The
+      // next start drops it from this player's list.
+      if (error) for (const row of upserts) { const { error: e } = await sb.from("reports").upsert([row]); if (e && e.code !== "42501") throw e; }
+    }
     if (deletes.length) { const { error } = await sb.from("reports").delete().in("id", deletes); if (error) throw error; }
     savedReports = nextOwn;
     if (!isAdmin) return;
@@ -340,6 +379,9 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
       const reportsChanged = own.some((r) => r?.id && savedReports.get(r.id) !== stableJson(r)) || own.filter((r) => r?.id).length !== savedReports.size
         || (isAdmin && (remote.length !== savedRemoteReports.size || remote.some((r) => savedRemoteReports.get(r.id) !== stableJson(r))));
       if (!Object.keys(changedSections).length && !Object.keys(upserts).length && !removes.length && profileJson === savedProfile && !reportsChanged) return data;
+      // Reports go first: the progress that lists a report is never on the
+      // server before the report itself (see reconcileReports).
+      if (reportsChanged) await syncReports(own, remote);
       const expected = Object.fromEntries(Object.keys(changedSections).map((name) => [name, savedRevs.get(name) ?? null]));
       const { data: result, error } = await sb.rpc("save_progress_v2", {
         p_sections: changedSections, p_expected: expected, p_mastery: upserts, p_mastery_removes: removes, p_profile: profile, p_replace: !!replace,
@@ -369,7 +411,6 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
       for (const key of removes) savedMasteryJson.delete(key);
       savedMasteryRefs = new Map(Object.entries(data.mastery || {}));
       savedProfile = profileJson;
-      if (reportsChanged) await syncReports(own, remote);
       return data;
     }
     throw new Error("Progress kept changing on another device; will try again.");

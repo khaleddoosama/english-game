@@ -1,15 +1,18 @@
 // In-memory stand-in for the parts of supabase-js the repo uses, with the
 // database functions from supabase/migrations reimplemented in JS. Records
 // every RPC call so tests can assert what went over the wire.
-export function createFakeSupabase({ userId = "u1", admin = true } = {}) {
-  const tables = {
+// Pass another fake's `tables` to act as a second user on the same database.
+export function createFakeSupabase({ userId = "u1", admin = true, tables: shared = null } = {}) {
+  const tables = shared || {
     content_items: [],
     content_meta: [{ id: 1, level_order: [], note: "", version: 0 }],
     progress: [],
     mastery: [],
     reports: [],
-    profiles: [{ id: userId, username: "khaled", role: admin ? "admin" : "player" }],
+    report_tombstones: [],
+    profiles: [],
   };
+  if (!tables.profiles.some((p) => p.id === userId)) tables.profiles.push({ id: userId, username: shared ? userId : "khaled", role: admin ? "admin" : "player" });
   const calls = [];
   const drafts = {};
   const aliases = new Map();
@@ -44,6 +47,7 @@ export function createFakeSupabase({ userId = "u1", admin = true } = {}) {
         try {
           calls.push({ table, op, payload: clone(payload) });
           let rows = tables[table].filter((r) => filters.every((f) => f(r)));
+          if (table === "reports") return resolve(reportsOp(rows));
           if (op === "upsert") {
             for (const row of [].concat(payload)) {
               const i = tables[table].findIndex((r) => r.id === row.id);
@@ -57,11 +61,48 @@ export function createFakeSupabase({ userId = "u1", admin = true } = {}) {
           rows = [...rows].sort((a, b) => { for (const c of orders) { if (a[c] < b[c]) return -1; if (a[c] > b[c]) return 1; } return 0; });
           if (range) rows = rows.slice(range[0], range[1] + 1);
           rows = clone(rows);
-          if (table === "reports") rows = rows.map((r) => ({ ...r, profiles: { username: tables.profiles.find((p) => p.id === r.user_id)?.username || "p" } }));
           resolve({ data: single ? rows[0] : rows, error: null });
         } catch (e) { reject(e); }
       },
     };
+    // Reports: row security, plus the triggers from
+    // supabase/migrations/0018_report_ownership.sql.
+    function reportsOp(matched) {
+      const mine = (r) => admin || r.user_id === userId;
+      if (op === "upsert") {
+        if ([].concat(payload).some((row) => { const old = tables.reports.find((r) => r.id === row.id); return old && !mine(old); })) {
+          return { data: null, error: { code: "42501", message: "new row violates row-level security policy for table \"reports\"" } };
+        }
+        for (const row of [].concat(payload)) {
+          const old = tables.reports.find((r) => r.id === row.id);
+          if (!old) {
+            if (!admin && tables.report_tombstones.includes(row.id)) continue; // deleted: not filed again
+            const next = { user_id: userId, resolved_at: null, created_at: now(), ...clone(row) };
+            if (!admin) { next.resolved_at = null; if (next.data && "resolvedAt" in next.data) next.data.resolvedAt = null; } // a player's new report is open
+            tables.reports.push(next);
+          } else {
+            Object.assign(old, keepDecision(old, { ...old, ...clone(row) }));
+          }
+        }
+        return { data: null, error: null };
+      }
+      if (op === "update") { for (const r of matched.filter(mine)) Object.assign(r, keepDecision(r, { ...r, ...clone(payload) })); return { data: null, error: null }; }
+      if (op === "delete") {
+        const gone = matched.filter(mine);
+        tables.reports = tables.reports.filter((r) => !gone.includes(r));
+        for (const r of gone) if (!tables.report_tombstones.includes(r.id)) tables.report_tombstones.push(r.id);
+        return { data: null, error: null };
+      }
+      let rows = matched.filter(mine).sort((a, b) => { for (const c of orders) { if (a[c] < b[c]) return -1; if (a[c] > b[c]) return 1; } return 0; });
+      if (range) rows = rows.slice(range[0], range[1] + 1);
+      rows = clone(rows).map((r) => ({ ...r, profiles: { username: tables.profiles.find((p) => p.id === r.user_id)?.username || "p" } }));
+      return { data: rows, error: null };
+    }
+    function keepDecision(old, next) {
+      if (admin) return next;
+      const data = next.data && (old.data && "resolvedAt" in old.data || "resolvedAt" in next.data) ? { ...next.data, resolvedAt: old.data?.resolvedAt ?? null } : next.data;
+      return { ...next, user_id: old.user_id, created_at: old.created_at, resolved_at: old.resolved_at, data };
+    }
     return q;
   }
 

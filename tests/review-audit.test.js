@@ -1,7 +1,8 @@
 // Regression tests for the Codex review (October 2026). The review's three
 // "observation" tests proved a problem by passing; these assert the fix:
 // F01 a change is kept on the device before it is sent; F02 two devices
-// merge instead of overwriting; plus the merge rules themselves.
+// merge instead of overwriting; F07 a player can't undo the admin's
+// decision on a report; plus the merge rules themselves.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const cache = vi.hoisted(() => new Map());
@@ -238,6 +239,109 @@ describe("merging never drops other players' reports (admin)", () => {
     expect(merged.reports.map((r) => r.id).sort()).toEqual(["mine-a", "mine-b", "r-sara"]);
     expect(fake.tables.reports.map((r) => r.id).sort()).toEqual(["mine-a", "mine-b", "r-sara"]);
     [a, b].forEach((r) => r.dispose());
+  });
+});
+
+describe("F07: the admin decides what happens to a report", () => {
+  // A player and the admin on one database (the fake's report triggers
+  // mirror supabase/migrations/0018_report_ownership.sql).
+  const setup = () => {
+    const fake = createFakeSupabase({ userId: "p1", admin: false });
+    const adminDb = createFakeSupabase({ userId: "a1", admin: true, tables: fake.tables });
+    return { fake, adminDb, player: createSupabaseRepo({ userId: "p1", isAdmin: false, client: fake }) };
+  };
+  const report = { id: "audit-report", reason: "Typo", resolvedAt: null };
+  const row = (fake) => fake.tables.reports.find((r) => r.id === "audit-report");
+
+  it("a player's edit doesn't reopen a report the admin resolved (the review's case)", async () => {
+    const { fake, adminDb, player } = setup();
+    await player.loadProgress();
+    await player.saveProgress({ ...state(0), reports: [report] });
+    await adminDb.from("reports").update({ resolved_at: "2026-10-01T00:00:00.000Z", data: { ...report, resolvedAt: Date.parse("2026-10-01") } }).eq("id", "audit-report");
+    await player.saveProgress({ ...state(0), reports: [{ ...report, reason: "More detail" }] });
+    expect(row(fake)).toMatchObject({ resolved_at: "2026-10-01T00:00:00.000Z", user_id: "p1", data: { reason: "More detail", resolvedAt: Date.parse("2026-10-01") } });
+    // Not even by asking the database directly.
+    await fake.from("reports").upsert([{ id: "audit-report", data: { ...report, resolvedAt: null }, resolved_at: null }]);
+    await fake.from("reports").update({ resolved_at: null, user_id: "someone" }).eq("id", "audit-report");
+    expect(row(fake)).toMatchObject({ resolved_at: "2026-10-01T00:00:00.000Z", user_id: "p1" });
+    player.dispose();
+  });
+
+  it("the player's device shows the admin's decision after a reload", async () => {
+    const { fake, adminDb, player } = setup();
+    await player.loadProgress();
+    await player.saveProgress({ ...state(0), reports: [report, { id: "still-open", reason: "Other" }] });
+    await adminDb.from("reports").update({ resolved_at: "2026-10-01T00:00:00.000Z" }).eq("id", "audit-report");
+    player.dispose();
+    cache.clear();
+    const again = createSupabaseRepo({ userId: "p1", isAdmin: false, client: fake });
+    const loaded = await again.loadProgress();
+    expect(loaded.reports.map((r) => [r.id, r.resolvedAt])).toEqual([["audit-report", Date.parse("2026-10-01")], ["still-open", null]]);
+    // Showing it isn't a change: nothing is sent back.
+    const before = fake.calls.length;
+    await again.saveProgress({ ...loaded });
+    expect(fake.calls.slice(before).filter((c) => c.table === "reports")).toEqual([]);
+    again.dispose();
+  });
+
+  it("a report the admin deleted doesn't come back from the player's device", async () => {
+    const { fake, adminDb, player } = setup();
+    await player.loadProgress();
+    await player.saveProgress({ ...state(0), reports: [report] });
+    await adminDb.from("reports").delete().in("id", ["audit-report"]);
+    // The device still has it and sends it again with a change.
+    await player.saveProgress({ ...state(0), reports: [{ ...report, reason: "Again" }] });
+    expect(row(fake)).toBeUndefined();
+    player.dispose();
+    // After a reload it's gone from the player's list too, while a report
+    // filed offline and never sent is kept.
+    cache.set("progress:p1", { dirty: true, data: { ...state(0), reports: [report, { id: "offline", reason: "New" }] }, base: { revs: {}, sections: {} } });
+    const again = createSupabaseRepo({ userId: "p1", isAdmin: false, client: fake });
+    const loaded = await again.loadProgress();
+    expect(loaded.reports.map((r) => r.id)).toEqual(["offline"]);
+    again.dispose();
+  });
+
+  it("dropping old resolved reports on the device doesn't delete them for the admin", async () => {
+    const { fake, adminDb, player } = setup();
+    await player.loadProgress();
+    await player.saveProgress({ ...state(0), reports: [report] });
+    await adminDb.from("reports").update({ resolved_at: "2026-10-01T00:00:00.000Z" }).eq("id", "audit-report");
+    player.dispose();
+    const again = createSupabaseRepo({ userId: "p1", isAdmin: false, client: fake });
+    await again.loadProgress();
+    await again.saveProgress({ ...state(0), reports: [{ id: "newer", reason: "x" }] });
+    expect(fake.tables.reports.map((r) => r.id).sort()).toEqual(["audit-report", "newer"]);
+    again.dispose();
+  });
+
+  it("someone else's report in an imported backup doesn't stop saving", async () => {
+    const { fake, adminDb, player } = setup();
+    await adminDb.from("reports").upsert([{ id: "admins-report", data: { id: "admins-report", reason: "Typo" } }]);
+    await player.loadProgress();
+    await player.saveProgress({ ...state(7), reports: [{ id: "admins-report", reason: "Changed" }, { id: "mine", reason: "x" }] }, { replace: true });
+    expect(fake.tables.progress.find((r) => r.section === "core").data.score).toBe(7);
+    expect(fake.tables.reports.find((r) => r.id === "admins-report")).toMatchObject({ user_id: "a1", data: { reason: "Typo" } });
+    expect(fake.tables.reports.find((r) => r.id === "mine").user_id).toBe("p1");
+    player.dispose();
+    cache.clear();
+    const again = createSupabaseRepo({ userId: "p1", isAdmin: false, client: fake });
+    expect((await again.loadProgress()).reports.map((r) => r.id)).toEqual(["mine"]);
+    again.dispose();
+  });
+
+  it("the admin's notes on a player's report survive the player's next save", async () => {
+    const { fake, adminDb, player } = setup();
+    await player.loadProgress();
+    await player.saveProgress({ ...state(0), reports: [report] });
+    await adminDb.from("reports").update({ data: { ...report, aiReview: { verdict: "fixed" } } }).eq("id", "audit-report");
+    player.dispose();
+    const again = createSupabaseRepo({ userId: "p1", isAdmin: false, client: fake });
+    const loaded = await again.loadProgress();
+    expect(loaded.reports[0].aiReview).toEqual({ verdict: "fixed" });
+    await again.saveProgress({ ...loaded, score: 5 });
+    expect(row(fake).data.aiReview).toEqual({ verdict: "fixed" });
+    again.dispose();
   });
 });
 

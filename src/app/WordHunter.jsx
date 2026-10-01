@@ -390,7 +390,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     const reports=(progressExtrasRef.current.reports||[]).map(item=>sameReport(item,report)?{...item,resolvedAt:Date.now()}:item);
     progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);setActiveSession(session=>session?{...session}:session);
   }
-  // Admin renamed a word in the editor: progress keyed by the old name moves.
   // Renaming a word: stories, combos, challenges and other words that
   // point at it follow, and every player's progress moves with it (sent
   // with the next content save; see migrateRenamedProgress).

@@ -1,6 +1,7 @@
 -- Reports and activity-log tests. Run inside a transaction that is thrown
 -- away (begin; <this file>; rollback;). The block always ends by raising:
--- "AUDIT TESTS PASSED: …" or "FAIL: …".
+-- "AUDIT TESTS PASSED: …" or "FAIL: …". Every check looks only at the rows
+-- this test made, so earlier activity in the log doesn't matter.
 do $$
 declare
   v_admin uuid := (select id from public.profiles where role = 'admin' order by created_at limit 1);
@@ -60,7 +61,7 @@ begin
 
   -- Category order.
   perform public.apply_content_changes('[]', '[]', '["Z-first", "A-second"]', null);
-  select * into r from public.admin_audit where action = 'categories.update' order by id desc limit 1;
+  select * into r from public.admin_audit where action = 'categories.update' and admin_id = v_admin order by id desc limit 1;
   if not found or r.changes -> 'level_order' -> 'after' <> '["Z-first", "A-second"]'::jsonb then raise exception 'FAIL: category order not logged'; end if;
   report := report || 'category order; ';
 
@@ -70,10 +71,10 @@ begin
   update public.reports set resolved_at = null where id = 'rep-test-1';
   delete from public.reports where id = 'rep-test-2';
   execute 'reset role';
-  if (select string_agg(action, ',' order by id) from public.admin_audit where entity = 'report') <> 'report.resolve,report.reopen,report.delete' then
-    raise exception 'FAIL: report actions %', (select string_agg(action, ',' order by id) from public.admin_audit where entity = 'report');
+  if (select string_agg(action, ',' order by id) from public.admin_audit where entity = 'report' and item_key in ('rep-test-1', 'rep-test-2')) <> 'report.resolve,report.reopen,report.delete' then
+    raise exception 'FAIL: report actions %', (select string_agg(action, ',' order by id) from public.admin_audit where entity = 'report' and item_key in ('rep-test-1', 'rep-test-2'));
   end if;
-  if (select before ->> '_reporter' from public.admin_audit where action = 'report.delete') <> 't_rita' then raise exception 'FAIL: deleted report keeps its reporter'; end if;
+  if (select before ->> '_reporter' from public.admin_audit where action = 'report.delete' and item_key = 'rep-test-2') <> 't_rita' then raise exception 'FAIL: deleted report keeps its reporter'; end if;
   report := report || 'report resolve/reopen/delete; ';
 
   -- A player's own edits to their report aren't admin actions.
@@ -81,7 +82,7 @@ begin
   execute 'set local role authenticated';
   update public.reports set data = data || '{"aiReview":{"verdict":"fine"}}' where id = 'rep-test-1';
   execute 'reset role';
-  select count(*) into n from public.admin_audit where action = 'report.update';
+  select count(*) into n from public.admin_audit where action = 'report.update' and item_key = 'rep-test-1';
   if n <> 0 then raise exception 'FAIL: player edit logged as admin action'; end if;
 
   -- Player management records before/after.
@@ -90,7 +91,7 @@ begin
   select * into r from public.admin_audit where action = 'player.role' and item_key = 't_rita';
   if r.changes -> 'role' <> '{"before": "player", "after": "admin"}'::jsonb then raise exception 'FAIL: role change %', r.changes; end if;
   perform public.admin_reset_player(v_player);
-  select count(*) into n from public.admin_audit where action = 'player.reset' and changes ? 'score';
+  select count(*) into n from public.admin_audit where action = 'player.reset' and item_key = 't_rita' and changes ? 'score';
   if n <> 1 then raise exception 'FAIL: reset not detailed'; end if;
   report := report || 'player changes; ';
 
