@@ -67,20 +67,27 @@ export async function generateJsonText(prompt) {
   }));
   const parts = data?.candidates?.[0]?.content?.parts || [];
   const text = parts.filter((p) => typeof p.text === "string" && !p.thought).map((p) => p.text).join("");
-  if (!text) throw Object.assign(new Error(`Gemini returned no text (${data?.candidates?.[0]?.finishReason || "no candidate"}).`), { status: 502 });
-  return { text, model };
+  if (!text) throw Object.assign(new Error(`Gemini returned no text (${data?.candidates?.[0]?.finishReason || "no candidate"}).`), { status: 502, model });
+  return { text, model, usage: usageOf(data) };
+}
+// Token counts for the AI call log (thinking counts as output).
+export function usageOf(data) {
+  const u = data?.usageMetadata || {};
+  const out = (Number(u.candidatesTokenCount) || 0) + (Number(u.thoughtsTokenCount) || 0);
+  return { inputTokens: Number(u.promptTokenCount) || null, outputTokens: out || null };
 }
 
 // Speech: Gemini returns raw 16-bit PCM; wrap it in a WAV header so any
 // browser <audio> can play it.
-export async function speak(text) {
-  const { data } = await generateWithFallback([GEMINI_TTS_MODEL, ...GEMINI_TTS_FALLBACK_MODELS], () => ({
+export async function speak(text, info = {}) {
+  const { data, model } = await generateWithFallback([GEMINI_TTS_MODEL, ...GEMINI_TTS_FALLBACK_MODELS], () => ({
     contents: [{ role: "user", parts: [{ text: `Say clearly, in a neutral American accent: ${text}` }] }],
     generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: GEMINI_TTS_VOICE } } } },
   }));
   const part = (data?.candidates?.[0]?.content?.parts || []).find((p) => p.inlineData?.data);
   if (!part) throw Object.assign(new Error("Gemini returned no audio."), { status: 502 });
   const pcm = Buffer.from(part.inlineData.data, "base64");
+  info.model = model; info.usage = usageOf(data);
   const rate = Number(/rate=(\d+)/.exec(part.inlineData.mimeType || "")?.[1]) || 24000;
   return wav(pcm, rate);
 }

@@ -1,8 +1,7 @@
-// Live matches, AI usage and the admin audit log.
+// Live matches and open challenges.
 import { useMemo } from "react";
-import { useAppSettings } from "../../../lib/appSettings";
 import { DataTable } from "../DataTable";
-import { BarList, ChartCard, ColumnChart, SimpleTable, formatNumber } from "../charts";
+import { BarList, ChartCard, ColumnChart, SimpleTable } from "../charts";
 import { Badge, Kpi, Notice, fmtDate, longDay, relTime, shortDay } from "../adminUi";
 
 const dayRows = (activity, key) => (activity.data || []).map((r) => ({ key: r.day, label: shortDay(r.day), title: longDay(r.day), value: r[key] || 0 }));
@@ -70,44 +69,6 @@ export function LiveMatches({ matches, challenges = { data: [] }, activity, rang
       <DataTable id="live" syncUrl columns={columns} rows={rows} rowKey={(r) => `${r.room_code}-${r.played_at}`} csvName="word-hunter-live-matches"
         searchText={(r) => `${r.title} ${r.room_code} ${(r.results || []).map((x) => x.username).join(" ")}`} searchPlaceholder="Search lesson, room or player…"
         initialSort={{ key: "played_at", dir: "desc" }} emptyText="No live matches yet." />
-    </div>
-  );
-}
-
-export function AiUsage({ usage, activity, range, overview }) {
-  const limit = useAppSettings().aiDailyLimit;
-  const rows = usage.data || [];
-  const perDay = dayRows(activity, "ai_calls");
-  const perPlayer = useMemo(() => {
-    const m = new Map();
-    for (const r of rows) m.set(r.username, (m.get(r.username) || 0) + r.calls);
-    return [...m].map(([label, value]) => ({ key: label, label, value })).sort((a, b) => b.value - a.value);
-  }, [rows]);
-  const columns = [
-    { key: "day", label: "Day", defaultDir: "desc", render: (r) => longDay(r.day) },
-    { key: "username", label: "Player" },
-    { key: "calls", label: "AI calls", num: true, defaultDir: "desc" },
-  ];
-  const total = perDay.reduce((a, r) => a + r.value, 0);
-  return (
-    <div className={`adm-section ${usage.loading ? "is-refreshing" : ""}`}>
-      {usage.error && <Notice tone="error">{usage.error}</Notice>}
-      <Notice>Players get {limit} AI calls a day; change it, or turn AI off for players, in Settings. The admin is unlimited. Each call is one Gemini request.</Notice>
-      <div className="adm-kpis compact">
-        <Kpi label="Today" value={overview.data?.ai_calls_today ?? "—"} />
-        <Kpi label={`${range} days`} value={total} trend={perDay.map((r) => r.value)} />
-        <Kpi label="Per active day" value={perDay.filter((r) => r.value).length ? Math.round(total / perDay.filter((r) => r.value).length) : 0} />
-        <Kpi label="Players using AI" value={perPlayer.length} />
-      </div>
-      <div className="adm-grid two">
-        <ChartCard title="AI calls per day" subtitle={`Last ${range} days`} table={<SimpleTable columns={[{ key: "title", label: "Day" }, { key: "value", label: "Calls", num: true }]} rows={[...perDay].reverse()} />}>
-          <ColumnChart data={perDay} valueLabel="calls" />
-        </ChartCard>
-        <ChartCard title="By player" subtitle={`Last ${range} days`}>
-          <BarList data={perPlayer.slice(0, 12)} valueLabel="calls" emptyText="No AI calls yet." />
-        </ChartCard>
-      </div>
-      <DataTable id="ai" syncUrl columns={columns} rows={rows} rowKey={(r) => `${r.day}-${r.username}`} csvName="word-hunter-ai-usage" searchText={(r) => r.username} searchPlaceholder="Search player…" initialSort={{ key: "day", dir: "desc" }} emptyText="No AI calls in this period." />
     </div>
   );
 }

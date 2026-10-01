@@ -74,7 +74,7 @@ Types:
 - choose: {"type":"choose","prompt":"sentence with ______ or a short question","options":["3 or 4 short options"],"answer":"exactly one of the options","explanation":"one short sentence"}. Exactly one option may be correct.
 - judge: {"type":"judge","sentence":"...","correct":false,"fix":"the corrected sentence","explanation":"..."} for a sentence that breaks the rule, or {"type":"judge","sentence":"...","correct":true,"alternative":"a tempting WRONG rewrite of the same sentence","explanation":"..."} for a correct one. Mix correct and wrong sentences.
 - fix: {"type":"fix","sentence":"a sentence with exactly one mistake about this rule","answer":"the corrected sentence","explanation":"..."}. Change as little as possible.
-Every mistake must be about this rule, and every "correct" sentence must be fully correct English. Return ONLY JSON: {"questions":[...]}`, { rule: rule.rule, explanation: rule.explanation, level: rule.level || null, examples: rule.examples || [], existingQuestions: rule.questions || [], lessonWords }, 2500);
+Every mistake must be about this rule, and every "correct" sentence must be fully correct English. Return ONLY JSON: {"questions":[...]}`, { rule: rule.rule, explanation: rule.explanation, level: rule.level || null, examples: rule.examples || [], existingQuestions: rule.questions || [], lessonWords }, 2500, "Write grammar questions");
   const list = Array.isArray(raw?.questions) ? raw.questions : [];
   if (!list.length) throw new Error("AI didn't return any questions. Try again.");
   return list.map((q) => checkAiQuestion(q, types));

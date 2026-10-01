@@ -47,6 +47,24 @@ export async function auditPage({ page = 1, size = AUDIT_PAGE, ...filters } = {}
   return { rows: data.map((r) => ({ ...r, admin: r.admin?.username || "system" })), count: count ?? data.length };
 }
 
+// AI call log, filtered and paged on the server (Admin -> AI usage).
+export const AI_PAGE = 50;
+export async function aiCallsPage({ page = 1, size = AI_PAGE, userId = "", task = "", status = "", kind = "", from = "", to = "" } = {}) {
+  let query = supabase.from("ai_calls")
+    .select("id, at, kind, task, admin_only, status, reason, http_status, model, ms, prompt_chars, output_chars, input_tokens, output_tokens, preview, finished_at, user:user_id(username)", { count: "exact" })
+    .order("at", { ascending: false }).order("id", { ascending: false });
+  if (userId) query = query.eq("user_id", userId);
+  if (task) query = query.eq("task", task);
+  if (status) query = query.eq("status", status);
+  if (kind) query = query.eq("kind", kind);
+  if (from) query = query.gte("at", new Date(`${from}T00:00:00`).toISOString());
+  if (to) query = query.lt("at", new Date(new Date(`${to}T00:00:00`).getTime() + 86400000).toISOString());
+  const start = (Math.max(1, page) - 1) * size;
+  const { data, error, count } = await query.range(start, start + size - 1);
+  if (error) throw new Error(error.message);
+  return { rows: data.map((r) => ({ ...r, username: r.user?.username || "deleted player" })), count: count ?? data.length };
+}
+
 // Every entry id matching the filters (for "delete all that match"), read
 // 1,000 at a time; at most 10,000.
 export async function auditIds(filters = {}) {
@@ -94,6 +112,8 @@ export function createAdminApi(local) {
       analytics: (view) => rpc("admin_analytics", { p_view: view }),
       endChallenge: (code) => rpc("live_end", { p_code: code }),
       aiUsage: (days) => rpc("admin_ai_usage", { p_days: days }),
+      aiSummary: (days) => rpc("admin_ai_summary", { p_days: days }),
+      aiCalls: (filters) => aiCallsPage(filters),
       audit: (filters) => auditPage(filters),
       auditIds: (filters) => auditIds(filters),
       deleteAudit: (ids) => rpc("admin_audit_delete", { p_ids: ids }),
@@ -160,6 +180,8 @@ export function createAdminApi(local) {
     aiUsage: async () => [],
     audit: async () => ({ rows: [], count: 0 }),
     auditIds: async () => [],
+    aiSummary: async () => null,
+    aiCalls: async () => ({ rows: [], count: 0 }),
     deleteAudit: async () => 0,
     clearAudit: async () => 0,
     setRole: notOnline, setPassword: notOnline, resetPlayer: notOnline, deletePlayer: notOnline,

@@ -421,3 +421,15 @@
 .adm-audit-line .adm-audit-row { flex: 1; min-width: 0; }
 .adm-audit > li.picked { background: var(--adm-bad-bg); }
 .adm-danger-text { color: var(--adm-bad); }
+/* AI usage */
+.adm-ai-reasons { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.adm-ai-reasons li { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--adm-line); }
+.adm-ai-reasons li span { color: var(--adm-ink-2); overflow: hidden; text-overflow: ellipsis; }
+.adm-ai-reasons li b { font-family: var(--font-mono); }
+.adm-card h3.adm-sub { margin-top: 18px; }
+.adm-bad-text { color: var(--adm-bad); }
+.adm-ai-log { display: grid; gap: 12px; }
+.adm-ai-detail { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; font-size: 13px; }
+.adm-ai-detail dt { color: var(--adm-muted); font: 600 11px var(--font-mono); text-transform: uppercase; letter-spacing: .8px; padding-top: 2px; }
+.adm-ai-detail dd { margin: 0; min-width: 0; }
+.adm-ai-detail pre { margin: 0; white-space: pre-wrap; word-break: break-word; }

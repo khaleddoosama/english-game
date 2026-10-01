@@ -2,7 +2,7 @@
 // Each phrase is spoken by Gemini once, stored in the public `tts` bucket,
 // and served from Supabase's CDN from then on.
 import { createHash } from "node:crypto";
-import { gate } from "./_lib/gate.js";
+import { finishCall, gate } from "./_lib/gate.js";
 import { GEMINI_TTS_MODEL, GEMINI_TTS_VOICE, json, SUPABASE_ANON_KEY, SUPABASE_URL } from "./_lib/env.js";
 import { speak } from "./_lib/gemini.js";
 
@@ -17,13 +17,16 @@ export async function POST(request) {
   const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/tts/${path}`;
   const cached = await fetch(publicUrl, { method: "HEAD" }).catch(() => null);
   if (cached?.ok) return json(200, { url: publicUrl, cached: true });
-  const denied = await gate(request, { kind: "tts" });
+  const { denied, callId } = await gate(request, { kind: "tts", task: "Pronunciation", preview: text, chars: text.length });
   if (denied) return denied;
   let audio;
-  try { audio = await speak(text); } catch (e) {
+  const info = {}, started = Date.now();
+  try { audio = await speak(text, info); } catch (e) {
     console.error("tts:", e.message);
+    await finishCall(request, callId, { ok: false, ms: Date.now() - started, status: e.status || 502, error: e.message });
     return json(e.status || 502, { error: e.message || "Speech failed." });
   }
+  await finishCall(request, callId, { ok: true, model: info.model, ms: Date.now() - started, status: 200, outputChars: audio.length, usage: info.usage });
   const up = await fetch(`${SUPABASE_URL}/storage/v1/object/tts/${path}`, {
     method: "POST",
     headers: {

@@ -26,7 +26,7 @@ export async function validateGeneratedContent(requests, generated) {
   try {
     const review = await callAiJson(`You are the quality-control layer for generated English-learning questions. Return ONLY JSON with shape {"results":[{"index":0,"valid":true,"confidence":"high|medium|low","reason":"brief"}]}. Reject a variant if context is vague, grammar is broken, the clue reveals the answer, the expected answer is ambiguous, distractors/sibling words could fit equally well, or the situation is culturally strange without reason. Be conservative; valid must be false when confidence is low.`, {
       requests: locallyValid.map(({ index }) => ({ index, ...requests[index], generatedText: generated[index]?.text })),
-    }, 900);
+    }, 900, { task: "Check new practice sentences" });
     const verdicts = new Map((Array.isArray(review?.results) ? review.results : []).map((v) => [Number(v.index), v]));
     return locallyValid.filter(({ index }) => {
       const v = verdicts.get(index);
@@ -60,7 +60,7 @@ For every request, avoid closely repeating anything listed in "existing" — wri
 Respond with ONLY a raw JSON array, no markdown fences, no commentary, matching this exact shape and the same order as the input:
 [{"word": "...", "poolType": "...", "text": "..."}]`;
 
-  const parsed = parseJsonLoose(await callAiText(`${instructions}\n\nRequests:\n${JSON.stringify(requests)}`));
+  const parsed = parseJsonLoose(await callAiText(`${instructions}\n\nRequests:\n${JSON.stringify(requests)}`, { task: "Write new practice sentences" }));
   if (!Array.isArray(parsed)) throw new Error("Unexpected generation response shape");
   return validateGeneratedContent(requests, parsed);
 }
@@ -108,12 +108,13 @@ export async function callAiJson(instructions, payload, maxTokens = 800, opts = 
   return parseJsonLoose(await callAiText(`${instructions}\n\nINPUT JSON:\n${JSON.stringify(payload)}`, opts));
 }
 // Content-authoring tools: the server refuses these for players.
-export const callAiJsonAdmin = (instructions, payload, maxTokens) => callAiJson(instructions, payload, maxTokens, { adminOnly: true });
+// task: a short name for the Admin -> AI usage log ("Ask AI about a word").
+export const callAiJsonAdmin = (instructions, payload, maxTokens, task) => callAiJson(instructions, payload, maxTokens, { adminOnly: true, task });
 
 export async function askAiForWord(rawTerm, existingWord = null) {
   const term=String(rawTerm||"").trim().replace(/^[^A-Za-z]+|[^A-Za-z' -]+$/g,"").replace(/\s+/g," ").slice(0,80);
   if(!term)throw new Error("Select or type an English word first.");
-  const result=await callAiJson(`You are the Word Hunter vocabulary coach. Use English only and B1-or-easier supporting language. Explain the requested word or short phrase accurately in its most likely meaning. If an existingEntry is given, its partsOfSpeech (if present) is authoritative — keep those exact values. A word can have more than one (e.g. a noun that is also used as a verb) — list every part of speech that applies to this meaning. Return ONLY JSON with this shape: {"word":"canonical form","type":"vocab|idiom|binomial|phrasal|fyi","partsOfSpeech":["noun"],"category":"short topic","meaning":"simple definition","pronunciation":"easy readable pronunciation","situation":"one natural example sentence","gap":"the same kind of example with the target replaced by exactly ______","nearWords":[{"word":"...","difference":"..."}],"commonMistake":{"sentence":"...","correction":"...","why":"..."},"hints":["...","..."]}. Never include Arabic. The gap must not reveal the answer.`,{term,existingEntry:existingWord||null},1000);
+  const result=await callAiJson(`You are the Word Hunter vocabulary coach. Use English only and B1-or-easier supporting language. Explain the requested word or short phrase accurately in its most likely meaning. If an existingEntry is given, its partsOfSpeech (if present) is authoritative — keep those exact values. A word can have more than one (e.g. a noun that is also used as a verb) — list every part of speech that applies to this meaning. Return ONLY JSON with this shape: {"word":"canonical form","type":"vocab|idiom|binomial|phrasal|fyi","partsOfSpeech":["noun"],"category":"short topic","meaning":"simple definition","pronunciation":"easy readable pronunciation","situation":"one natural example sentence","gap":"the same kind of example with the target replaced by exactly ______","nearWords":[{"word":"...","difference":"..."}],"commonMistake":{"sentence":"...","correction":"...","why":"..."},"hints":["...","..."]}. Never include Arabic. The gap must not reveal the answer.`,{term,existingEntry:existingWord||null},1000, { task: "Ask AI about a word" });
   const partsOfSpeech=Array.isArray(existingWord?.partsOfSpeech)&&existingWord.partsOfSpeech.length?existingWord.partsOfSpeech:(Array.isArray(result.partsOfSpeech)?result.partsOfSpeech.map(String).filter(Boolean):[]);
   const entry={word:String(result.word||term).trim(),type:["vocab","idiom","binomial","phrasal","fyi"].includes(result.type)?result.type:"vocab",partsOfSpeech,category:String(result.category||"AI Discoveries").trim(),meaning:String(result.meaning||"").trim(),situation:String(result.situation||"").trim(),gap:String(result.gap||"").trim(),hints:Array.isArray(result.hints)?result.hints.map(String).filter(Boolean).slice(0,3):[]};
   if(result.commonMistake?.sentence&&result.commonMistake?.correction&&result.commonMistake?.why)entry.commonMistake={sentence:String(result.commonMistake.sentence),correction:String(result.commonMistake.correction),why:String(result.commonMistake.why)};
@@ -135,7 +136,7 @@ Rules:
 - If some errors genuinely cannot be fixed without information only the author has (e.g. an ambiguous duplicate you can't safely merge), leave that item as-is and explain why in "changes" instead of guessing.
 Return ONLY JSON with this exact shape: {"fixed": <the complete corrected JSON document, valid JSON>, "changes": ["short plain-English description of each fix made, in the order applied"]}`,
     { validationErrors: String(errorText || "").split("\n").filter(Boolean), rawJson: clean },
-    8000
+    8000, "Fix an import file"
   );
   if (!result || typeof result !== "object" || result.fixed === undefined) throw new Error("AI didn't return a usable fix. Try again or edit manually.");
   if (!Array.isArray(result.changes)) result.changes = [];
@@ -154,7 +155,7 @@ Common causes worth checking: the situation/gap/prompt text accidentally contain
 If the report's reason doesn't map to an obvious fix, make your best conservative improvement to the field(s) most likely responsible and explain your reasoning in "changes" — never leave "fixed" identical to the input with an empty "changes" list.
 Return ONLY JSON with this exact shape: {"fixed": <the complete corrected ${singular} object, same keys/shape as the input>, "changes": ["short plain-English description of each change made"]}`,
     { report: { reason: report.reason || null, details: report.details || null, mode: report.mode, prompt: report.prompt, options: report.options || null, answers: report.answers || null }, entity: sourceEntity, currentContent: sourceItem },
-    1500
+    1500, "Suggest a fix for a report"
   );
   if (!result || typeof result !== "object" || !result.fixed) throw new Error("AI didn't return a usable fix. Try again or edit manually in Content Manager.");
   if (!Array.isArray(result.changes)) result.changes = [];
@@ -206,7 +207,7 @@ Return ONLY JSON with this exact shape: {"verdict":"flawed|repeated|fine|unsure"
       entity: source?.entity || null,
       currentContent: source?.item || null,
     },
-    1800
+    1800, { task: "Review a reported question" }
   );
   if (!result || typeof result !== "object") throw new Error("AI didn't return a usable review.");
   const verdict = ["flawed", "repeated", "fine", "unsure"].includes(result.verdict) ? result.verdict : "unsure";
@@ -284,7 +285,7 @@ export async function aiFixWordBatch(kind, words, allWords) {
     siblings: allWords.filter((x) => x.category === w.category && x.word !== w.word).slice(0, 25).map((x) => x.word),
     ...(kind === "duplicate" ? { sameMeaningAs: allWords.filter((x) => x.word !== w.word && normalizeAnswerText(x.meaning) === normalizeAnswerText(w.meaning)).map((x) => x.word) } : {}),
   }));
-  const raw = await callAiJsonAdmin(`You improve content for "Word Hunter", an English vocabulary game for B1 learners. English only. ${HEALTH_INSTRUCTIONS[instructionKind]} Return ONLY that JSON, one result per input word, same order.`, { words: payload }, 2500);
+  const raw = await callAiJsonAdmin(`You improve content for "Word Hunter", an English vocabulary game for B1 learners. English only. ${HEALTH_INSTRUCTIONS[instructionKind]} Return ONLY that JSON, one result per input word, same order.`, { words: payload }, 2500, "Content health fix");
   const results = Array.isArray(raw?.results) ? raw.results : [];
   return words.map((w) => {
     const hit = results.find((r) => normalizeAnswerText(r?.word) === normalizeAnswerText(w.word));
@@ -343,7 +344,7 @@ export async function suggestCategoryMerges(categories) {
   const result = await callAiJsonAdmin(
     `You are cleaning up the category taxonomy for "Word Hunter", an English vocabulary game's admin panel. You are given every distinct category name currently in use. Find groups of names that are clearly the SAME topic written differently — different punctuation, spacing, capitalization, word order, singular/plural, or an abbreviation (e.g. "Environment-Nature" vs "Environment & Nature"). Do NOT merge categories that are merely related but distinct topics (e.g. "Food" and "Cooking" stay separate; "Personality" and "Emotions" stay separate). Only propose a merge when confident a content author would consider them literally the same category. For each group, pick whichever existing name is best-formatted as the canonical one — never invent a new name not already in the list. Return ONLY JSON with shape {"merges": [{"canonical": "exact existing name", "duplicates": ["exact existing name", "..."]}]}. Omit any category with no duplicates — only include groups of 2+ names.`,
     { categories },
-    2000
+    2000, "Suggest category merges"
   );
   if (!result || !Array.isArray(result.merges)) throw new Error("AI didn't return a usable suggestion.");
   const known = new Set(categories);
@@ -393,7 +394,7 @@ export async function regenerateWordExplanation(word) {
     category: word.category,
     currentMeaning: word.meaning,
     currentExample: word.situation,
-  }, 400);
+  }, 400, "Rewrite a word");
   if (!raw || typeof raw.meaning !== "string" || typeof raw.situation !== "string" || !raw.meaning.trim() || !raw.situation.trim()) {
     throw new Error("Invalid regeneration response");
   }
@@ -494,7 +495,7 @@ export async function generateStory(targetWords, selectedCategories=[], grammarR
     targetWords: activeTargets.map(w => ({ word: w.word, type: w.type, category: w.category, meaning: w.meaning, exampleContext: w.situation })),
     grammarRules: grammarRules.map(g => ({ rule: g.rule, category: g.category })),
     ...(attempt > 1 ? { retryNotice: `Attempt ${attempt}/3. Previous attempt failed. Be extra careful: depict every target purely through events; never write the word itself, an inflected form, or a near-synonym. For idioms and phrasal verbs, describe only the outcome or behaviour — never the phrase.` } : {}),
-  }, 2400);
+  }, 2400, "Write a story");
 
   if (!raw || typeof raw.title !== "string" || typeof raw.text !== "string" || !Array.isArray(raw.questions) || !raw.questions.length)
     throw new Error("Invalid story response — the model returned an unexpected format.");
@@ -576,7 +577,7 @@ export async function evaluateFreeForm(question, answerText) {
       ? "The requested target phrasal verb should be used. A different valid equivalent may be acknowledged in feedback, but targetWordUsed must be false unless the requested target itself is present."
       : "Judge whether the target word is actually used with the intended meaning in a meaningful natural sentence; reject random word stuffing.",
   };
-  const raw = await callAiJson(FREEFORM_EVALUATION_CONTRACT, payload);
+  const raw = await callAiJson(FREEFORM_EVALUATION_CONTRACT, payload, undefined, { task: "Check a written answer" });
   return validateEvaluation(raw, kind);
 }
 
@@ -587,7 +588,7 @@ export async function evaluateAlternativeGap(question, answerText) {
     intendedTarget: question.answer,
     intendedMeaning: question.target?.meaning,
     learnerAnswer: answerText,
-  });
+  }, undefined, { task: "Check another word in a gap" });
   return validateEvaluation(raw, "gapAlternative");
 }
 
@@ -598,7 +599,7 @@ export async function evaluateAlternativeGap(question, answerText) {
 export async function generateComboVariant(combo) {
   const instructions = `Use B1-or-easier English. You write short "compare two things" exercise scenarios for an English vocabulary game. You are given two target words (a contrasting/opposite pair) and an existing situation+question. Write ONE brand-new situation testing the SAME two words with a DIFFERENT concrete example — same underlying contrast, fresh context, different characters/setting than the existing one. End with a short question asking the learner which word applies to which part. Do not use either target word inside the situation text itself. Respond with ONLY raw JSON, no markdown fences: {"situation":"...","prompt":"..."}`;
   const payload = { targetWords: combo.words, existingSituation: combo.situation, existingPrompt: combo.prompt, ruleExplanation: combo.explanation || "" };
-  const raw = await callAiJson(instructions, payload, 500);
+  const raw = await callAiJson(instructions, payload, 500, { task: "New combo question" });
   const situation = String(raw?.situation || "").trim();
   const prompt = String(raw?.prompt || "").trim();
   if (!situation || !prompt) throw new Error("AI returned an incomplete combo variant.");
@@ -611,7 +612,7 @@ export async function generateComboVariant(combo) {
 export async function generateGrammarVariant(g) {
   const instructions = `Use B1-or-easier English. You write short grammar-correction multiple-choice questions for an English vocabulary game. You are given an existing question testing one grammar rule (a common-mistake sentence and its correction). Write ONE brand-new example testing the SAME rule with different wording/context — not the same sentence reworded slightly. Respond with ONLY raw JSON, no markdown fences: {"prompt":"...","options":["<wrong sentence>","<correct sentence>"],"answer":"<must exactly match the correct sentence in options>","explanation":"one short sentence on why"}`;
   const payload = { existingPrompt: g.prompt, existingOptions: g.options, existingAnswer: g.answer, existingExplanation: g.explanation || "" };
-  const raw = await callAiJson(instructions, payload, 500);
+  const raw = await callAiJson(instructions, payload, 500, { task: "New grammar question" });
   const prompt = String(raw?.prompt || "").trim();
   const options = Array.isArray(raw?.options) ? raw.options.map(String).map((s) => s.trim()).filter(Boolean) : [];
   const answer = String(raw?.answer || "").trim();
@@ -626,7 +627,7 @@ Required shape:
 {"confidence":"high|medium|low","understandable":true,"quality":"Strong Evidence|Good Evidence|Almost|Needs Work","words":[{"word":"...","used":true,"semanticUse":"correct|partly_correct|incorrect","productionSuccess":true,"feedback":"brief"}],"feedback":"one concise improvement suggestion"}`, {
     evidenceWords: words.map((w) => ({ word: w.word, meaning: w.meaning })),
     report: reportText,
-  }, 1200);
+  }, 1200, { task: "Check a final case report" });
   if (!raw || !Array.isArray(raw.words)) throw new Error("Invalid final report evaluation");
   const byWord = new Map(raw.words.map((x) => [String(x.word || "").toLowerCase(), x]));
   const evaluatedWords = words.map((w) => {
@@ -677,7 +678,7 @@ export async function evaluateGrammarCorrection(question, correction) {
     evidence: question.prompt,
     expectedVerdict: question.answer,
     learnerCorrection: correction,
-  });
+  }, undefined, { task: "Grammar court" });
   return {
     correct: raw?.correct === true && (raw?.confidence === "high" || raw?.confidence === "medium"),
     confidence: ["high","medium","low"].includes(raw?.confidence) ? raw.confidence : "low",
@@ -719,7 +720,7 @@ export async function explainWrongLead(question, chosenWord, correctWord) {
       correctWord: correctWord.word,
       correctMeaning: correctWord.meaning || correctWord.explanation || null,
     },
-    200
+    200, { task: "Explain a wrong answer" }
   );
   const text = String(raw?.keyDifference || "").trim();
   return text ? text.slice(0, 240) : null;

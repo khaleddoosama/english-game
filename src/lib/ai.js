@@ -19,8 +19,8 @@ async function post(path, body) {
   return data;
 }
 
-export async function callAiText(prompt, { adminOnly = false } = {}) {
-  const { text } = await post("/api/ai", { prompt, adminOnly });
+export async function callAiText(prompt, { adminOnly = false, task = "" } = {}) {
+  const { text } = await post("/api/ai", { prompt, adminOnly, task });
   return text;
 }
 

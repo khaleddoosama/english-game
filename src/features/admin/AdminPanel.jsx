@@ -11,7 +11,8 @@ import { Overview } from "./sections/Overview";
 import { Players } from "./sections/Players";
 import { Words } from "./sections/Words";
 import { Reports } from "./sections/Reports";
-import { AiUsage, LiveMatches } from "./sections/Activity";
+import { LiveMatches } from "./sections/Activity";
+import { AiUsagePage } from "./sections/AiLog";
 import { AuditLog } from "./sections/AuditLog";
 import { DataQuality } from "./sections/DataQuality";
 import { AppSettings } from "./sections/AppSettings";
@@ -26,7 +27,7 @@ const NAV = [
     { id: "overview", label: "Overview", icon: LayoutDashboard, desc: "How the game is doing" },
     { id: "players", label: "Players", icon: Users, desc: "Accounts, progress and access" },
     { id: "live", label: "Live challenges", icon: Swords, desc: "Open challenges and every finished match" },
-    { id: "ai", label: "AI usage", icon: Sparkles, desc: "Gemini calls by day and player" },
+    { id: "ai", label: "AI usage", icon: Sparkles, desc: "Every AI and voice call: who, when, which feature, time, tokens and outcome" },
   ] },
   { group: "Content", items: [
     { id: "words", label: "Words", icon: BookOpen, desc: "Browse, filter, edit and organise the vocabulary" },
@@ -54,9 +55,10 @@ function LiveSection({ api, tick, activity, range }) {
   const end = async (code) => { if (!window.confirm(`End challenge ${code} now? Players who started get their results.`)) return; try { await api.endChallenge(code); setN((x) => x + 1); } catch (e) { window.alert(e.message); } };
   return <LiveMatches matches={matches} challenges={challenges} activity={activity} range={range} onEnd={end} />;
 }
-function AiSection({ api, tick, activity, range, overview }) {
+function AiSection({ api, tick, activity, range, overview, players }) {
   const usage = useAsync(() => api.aiUsage(range), [api, tick, range]);
-  return <AiUsage usage={usage} activity={activity} range={range} overview={overview} />;
+  const summary = useAsync(() => api.aiSummary(range), [api, tick, range]);
+  return <AiUsagePage api={api} tick={tick} usage={usage} summary={summary} activity={activity} range={range} overview={overview} players={players} />;
 }
 
 export function AdminPanel(props) {
@@ -134,7 +136,7 @@ export function AdminPanel(props) {
         {section === "overview" && <Overview range={range} overview={overview} activity={activity} wordStats={wordStats} players={players} content={content} onOpenWord={editWord} onOpenPlayer={openPlayerByName} onNavigate={setSection} />}
         {section === "players" && <Players api={api} players={players} me={profile?.id || "local"} onChanged={refresh} openName={item} onOpen={(name) => (name ? navigate(pathFor("admin", { section: "players", item: name }) + window.location.search) : navigate(pathFor("admin", { section: "players" }) + window.location.search))} />}
         {section === "live" && <LiveSection api={api} tick={tick} activity={activity} range={range} />}
-        {section === "ai" && <AiSection api={api} tick={tick} activity={activity} range={range} overview={overview} />}
+        {section === "ai" && <AiSection api={api} tick={tick} activity={activity} range={range} overview={overview} players={players} />}
         {section === "words" && <Words content={content} wordStats={wordStats} mastery={mastery} onUpdate={onUpdate} onRenameWord={props.onRenameWord} openWord={item} onOpen={(w) => keepQuery("words", w)} />}
         {section === "categories" && <Categories content={content} onUpdate={onUpdate} onMerge={props.onMergeCategories} onRemoveEmpty={props.onRemoveEmptyLevels} openName={item} onOpen={(n) => keepQuery("categories", n)} onOpenWord={editWord}
           onNavigate={(sec, id, type) => navigate(pathFor("admin", { section: sec, item: sec === "library" || sec === "grammar" ? id : null }) + (type ? `?type=${type}` : ""))} />}

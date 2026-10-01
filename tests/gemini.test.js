@@ -71,7 +71,7 @@ describe("gemini fallback", () => {
   it("uses the configured fallback chain for JSON text", async () => {
     const calls = stubFetch([fail(503, BUSY), fail(503, BUSY), ok('{"x":1}')]);
     const out = await gemini.generateJsonText("hi");
-    expect(out).toEqual({ text: '{"x":1}', model: "backup-a" });
+    expect(out).toEqual({ text: '{"x":1}', model: "backup-a", usage: { inputTokens: null, outputTokens: null } });
     expect(calls[2].body.generationConfig.responseMimeType).toBe("application/json");
   });
 });
