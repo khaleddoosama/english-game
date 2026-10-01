@@ -23,7 +23,9 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (isLocalMode) { setState({ loading: false, user: { id: "local" }, profile: LOCAL_PROFILE, error: null }); return; }
-    let currentId = null, stopped = false;
+    // undefined, not null: a signed-out first visit (session null) must still
+    // count as a change, or the splash screen never goes away.
+    let currentId, stopped = false;
     const apply = async (session) => {
       const id = session?.user?.id || null;
       if (id === currentId) return; // token refreshes don't touch the game
