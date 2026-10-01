@@ -103,8 +103,8 @@ describe("filterLevels", () => {
   const s = studyStats({ levels, mastery: { Apple: { total: 1, correct: 1 } }, now: NOW });
   it("by status", () => {
     expect(filterLevels(s.levels, "started").map((l) => l.title)).toEqual(["Food"]);
-    expect(filterLevels(s.levels, "new").map((l) => l.title)).toEqual(["Work", "Empty"]);
-    expect(filterLevels(s.levels, "").length).toBe(3);
+    expect(filterLevels(s.levels, "new").map((l) => l.title)).toEqual(["Work"]);
+    expect(filterLevels(s.levels, "").map((l) => l.title)).toEqual(["Food", "Work"]); // a level with nothing in it isn't listed
   });
   it("by a word or level name, keeping the matching items", () => {
     const hit = filterLevels(s.levels, "", "chee");
