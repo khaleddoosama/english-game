@@ -22,6 +22,16 @@ const SECTION_OF = {
 };
 const PAGE = 1000, UPSERT_BATCH = 250, POSITION_GAP = 1000, RETRY_MS = 15000;
 
+// Postgres jsonb reorders object keys, so "did this change?" compares a
+// key-sorted serialisation; plain JSON.stringify would see every record
+// loaded from the server as changed and re-send it.
+export function stableJson(value) {
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
+  if (Array.isArray(value)) return `[${value.map((v) => (v === undefined || typeof v === "function" ? "null" : stableJson(v))).join(",")}]`;
+  const keys = Object.keys(value).filter((k) => value[k] !== undefined && typeof value[k] !== "function").sort();
+  return `{${keys.map((k) => `${JSON.stringify(k)}:${stableJson(value[k])}`).join(",")}}`;
+}
+
 const emptyContent = () => ({ words: [], grammar: [], challenges: [], stories: [], combos: [], levelOrder: [], note: "" });
 const hasContent = (c) => !!c && CONTENT_KINDS.some((k) => (c[k] || []).length);
 
@@ -42,6 +52,15 @@ export function weekStart(now = new Date()) {
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
+
+// The leaderboard numbers saved alongside progress.
+const profileSummary = (data, week) => {
+  const score = Number(data.score) || 0;
+  return {
+    score, mastered_count: masteredCount(data.mastery), study_streak: Number(data.studyStreak) || 0,
+    best_study_streak: Number(data.bestStudyStreak) || 0, week_start: week.start, week_score: Math.max(0, score - week.base),
+  };
+};
 
 const hasServerRows = (sections, masteryRows) => sections.length > 0 || masteryRows.length > 0;
 
@@ -68,7 +87,7 @@ function masteryDiff(prevRefs, prevJson, next) {
   const upserts = {}, removes = [];
   for (const [key, stats] of Object.entries(next || {})) {
     if (prevRefs.get(key) === stats) continue;
-    const json = JSON.stringify(stats);
+    const json = stableJson(stats);
     if (prevJson.get(key) !== json) upserts[key] = stats;
   }
   for (const key of prevJson.keys()) if (!next || !(key in next)) removes.push(key);
@@ -113,8 +132,8 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
     return out;
   }
   function rememberContent(cache) {
-    contentRows = new Map(Object.entries(cache.items).map(([id, row]) => [id, { kind: row.kind, key: row.key, json: JSON.stringify(row.data), position: row.position }]));
-    contentMeta = { levelOrder: JSON.stringify(cache.levelOrder || []), note: cache.note || "" };
+    contentRows = new Map(Object.entries(cache.items).map(([id, row]) => [id, { kind: row.kind, key: row.key, json: stableJson(row.data), position: row.position }]));
+    contentMeta = { levelOrder: stableJson(cache.levelOrder || []), note: cache.note || "" };
   }
 
   async function loadContent() {
@@ -178,14 +197,14 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
           if (position <= prevPos) position = prevPos + 1;
         }
         prevPos = position;
-        const json = JSON.stringify(item);
+        const json = stableJson(item);
         if (!prev || prev.json !== json || prev.position !== position) upserts.push({ kind, key: String(keyOf(kind, item)), data: item, position, json });
       });
     }
     const removes = [...contentRows.entries()].filter(([id]) => !seen.has(id)).map(([, row]) => ({ kind: row.kind, key: row.key }));
     const levelOrder = content.levelOrder || [];
     const note = content.note || "";
-    const metaChanged = JSON.stringify(levelOrder) !== contentMeta.levelOrder || note !== contentMeta.note;
+    const metaChanged = stableJson(levelOrder) !== contentMeta.levelOrder || note !== contentMeta.note;
     if (!upserts.length && !removes.length && !metaChanged) return;
     let version = null;
     for (let i = 0; i < Math.max(1, upserts.length); i += UPSERT_BATCH) {
@@ -202,7 +221,7 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
       for (const row of batch) contentRows.set(`${row.kind}\u0000${row.key}`, { kind: row.kind, key: row.key, json: row.json, position: row.position });
     }
     for (const r of removes) contentRows.delete(`${r.kind}\u0000${r.key}`);
-    contentMeta = { levelOrder: JSON.stringify(levelOrder), note };
+    contentMeta = { levelOrder: stableJson(levelOrder), note };
     // Keep the admin's own cache current so the next start is a cache hit.
     const items = {};
     for (const [id, row] of contentRows) items[id] = { kind: row.kind, key: row.key, data: JSON.parse(row.json), position: row.position };
@@ -226,16 +245,17 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
       throw e;
     }
     const data = {};
-    for (const s of sections) { Object.assign(data, s.data); savedSections.set(s.section, JSON.stringify(s.data)); }
+    for (const s of sections) { Object.assign(data, s.data); savedSections.set(s.section, stableJson(s.data)); }
     const mastery = {};
-    for (const row of masteryRows) { mastery[row.item_key] = row.stats; savedMasteryJson.set(row.item_key, JSON.stringify(row.stats)); }
+    for (const row of masteryRows) { mastery[row.item_key] = row.stats; savedMasteryJson.set(row.item_key, stableJson(row.stats)); }
     data.mastery = mastery;
     week = data._week && typeof data._week === "object" ? { start: data._week.start || null, base: Number(data._week.base) || 0 } : { start: null, base: 0 };
     lastScore = hasServerRows(sections, masteryRows) ? Number(data.score) || 0 : null;
-    for (const r of data.reports || []) if (r?.id) savedReports.set(r.id, JSON.stringify(r));
+    if (lastScore !== null && week.start === weekStart()) savedProfile = stableJson(profileSummary(data, week));
+    for (const r of data.reports || []) if (r?.id) savedReports.set(r.id, stableJson(r));
     // Other players' reports: shown in Admin, tracked separately.
     const remote = reportRows.map((row) => ({ ...row.data, resolvedAt: row.resolved_at ? Date.parse(row.resolved_at) : row.data.resolvedAt || null, _remote: true, _from: row.profiles?.username || "player" }));
-    for (const r of remote) savedRemoteReports.set(r.id, JSON.stringify(r));
+    for (const r of remote) savedRemoteReports.set(r.id, stableJson(r));
     if (remote.length) data.reports = [...(data.reports || []), ...remote];
     const hasServer = hasServerRows(sections, masteryRows);
     // Unsynced offline play wins over the server copy; the next save pushes it.
@@ -244,14 +264,14 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
   }
 
   async function syncReports(own, remote) {
-    const nextOwn = new Map(own.filter((r) => r?.id).map((r) => [r.id, JSON.stringify(r)]));
+    const nextOwn = new Map(own.filter((r) => r?.id).map((r) => [r.id, stableJson(r)]));
     const upserts = [...nextOwn].filter(([id, json]) => savedReports.get(id) !== json).map(([id, json]) => ({ id, data: JSON.parse(json), resolved_at: JSON.parse(json).resolvedAt ? new Date(JSON.parse(json).resolvedAt).toISOString() : null }));
     const deletes = [...savedReports.keys()].filter((id) => !nextOwn.has(id));
     if (upserts.length) { const { error } = await sb.from("reports").upsert(upserts); if (error) throw error; }
     if (deletes.length) { const { error } = await sb.from("reports").delete().in("id", deletes); if (error) throw error; }
     savedReports = nextOwn;
     if (!isAdmin) return;
-    const nextRemote = new Map(remote.map((r) => [r.id, JSON.stringify(r)]));
+    const nextRemote = new Map(remote.map((r) => [r.id, stableJson(r)]));
     for (const [id, json] of nextRemote) {
       if (savedRemoteReports.get(id) === json) continue;
       const { _remote, _from, ...report } = JSON.parse(json);
@@ -274,24 +294,21 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
     const sections = splitSections({ ...data, reports: own, _week: week });
     const changedSections = {};
     for (const [name, value] of Object.entries(sections)) {
-      const json = JSON.stringify(value);
+      const json = stableJson(value);
       if (savedSections.get(name) !== json) changedSections[name] = value;
     }
     const { upserts, removes } = masteryDiff(savedMasteryRefs, savedMasteryJson, data.mastery);
-    const profile = {
-      score, mastered_count: masteredCount(data.mastery), study_streak: Number(data.studyStreak) || 0,
-      best_study_streak: Number(data.bestStudyStreak) || 0, week_start: week.start, week_score: Math.max(0, score - week.base),
-    };
-    const profileJson = JSON.stringify(profile);
-    const reportsChanged = own.some((r) => r?.id && savedReports.get(r.id) !== JSON.stringify(r)) || own.filter((r) => r?.id).length !== savedReports.size
-      || (isAdmin && (remote.length !== savedRemoteReports.size || remote.some((r) => savedRemoteReports.get(r.id) !== JSON.stringify(r))));
+    const profile = profileSummary(data, week);
+    const profileJson = stableJson(profile);
+    const reportsChanged = own.some((r) => r?.id && savedReports.get(r.id) !== stableJson(r)) || own.filter((r) => r?.id).length !== savedReports.size
+      || (isAdmin && (remote.length !== savedRemoteReports.size || remote.some((r) => savedRemoteReports.get(r.id) !== stableJson(r))));
     if (!Object.keys(changedSections).length && !Object.keys(upserts).length && !removes.length && profileJson === savedProfile && !reportsChanged) return;
     const { error } = await sb.rpc("save_progress", {
       p_sections: changedSections, p_mastery: upserts, p_mastery_removes: removes, p_profile: profileJson === savedProfile ? null : profile,
     });
     if (error) throw error;
-    for (const [name, value] of Object.entries(changedSections)) savedSections.set(name, JSON.stringify(value));
-    for (const [key, stats] of Object.entries(upserts)) savedMasteryJson.set(key, JSON.stringify(stats));
+    for (const [name, value] of Object.entries(changedSections)) savedSections.set(name, stableJson(value));
+    for (const [key, stats] of Object.entries(upserts)) savedMasteryJson.set(key, stableJson(stats));
     for (const key of removes) savedMasteryJson.delete(key);
     savedMasteryRefs = new Map(Object.entries(data.mastery || {}));
     savedProfile = profileJson;

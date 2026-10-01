@@ -14,6 +14,14 @@ export function createFakeSupabase({ userId = "u1", admin = true } = {}) {
   let clock = 0;
   const now = () => new Date(Date.UTC(2026, 0, 1) + ++clock).toISOString();
   const clone = (v) => JSON.parse(JSON.stringify(v));
+  // Postgres jsonb stores object keys shorter-first, then alphabetically.
+  const jsonb = (v) => {
+    if (v === null || typeof v !== "object") return v;
+    if (Array.isArray(v)) return v.map(jsonb);
+    const out = {};
+    for (const k of Object.keys(v).sort((a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0))) out[k] = jsonb(v[k]);
+    return out;
+  };
 
   function query(table) {
     const filters = [];
@@ -60,7 +68,7 @@ export function createFakeSupabase({ userId = "u1", admin = true } = {}) {
       if (!admin) return { error: { message: "only the admin can change content" } };
       for (const u of p_upserts) {
         const row = tables.content_items.find((r) => r.kind === u.kind && r.key === u.key);
-        const next = { kind: u.kind, key: u.key, data: u.data, position: u.position ?? 0, deleted: false, updated_at: now() };
+        const next = { kind: u.kind, key: u.key, data: jsonb(u.data), position: u.position ?? 0, deleted: false, updated_at: now() };
         if (row) Object.assign(row, next); else tables.content_items.push(next);
       }
       for (const r of p_removes) {
@@ -76,11 +84,11 @@ export function createFakeSupabase({ userId = "u1", admin = true } = {}) {
     save_progress({ p_sections, p_mastery, p_mastery_removes, p_profile }) {
       for (const [section, data] of Object.entries(p_sections || {})) {
         const row = tables.progress.find((r) => r.user_id === userId && r.section === section);
-        if (row) row.data = data; else tables.progress.push({ user_id: userId, section, data });
+        if (row) row.data = jsonb(data); else tables.progress.push({ user_id: userId, section, data: jsonb(data) });
       }
       for (const [item_key, stats] of Object.entries(p_mastery || {})) {
         const row = tables.mastery.find((r) => r.user_id === userId && r.item_key === item_key);
-        if (row) row.stats = stats; else tables.mastery.push({ user_id: userId, item_key, stats });
+        if (row) row.stats = jsonb(stats); else tables.mastery.push({ user_id: userId, item_key, stats: jsonb(stats) });
       }
       tables.mastery = tables.mastery.filter((r) => !(r.user_id === userId && (p_mastery_removes || []).includes(r.item_key)));
       if (p_profile) Object.assign(tables.profiles[0], p_profile);

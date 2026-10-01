@@ -94,6 +94,32 @@ describe("progress", () => {
     expect(rpcCalls(fake, "save_progress")).toHaveLength(count);
   });
 
+  it("re-sends nothing after a reload, even though the database reorders keys", async () => {
+    const fake = createFakeSupabase();
+    const first = createSupabaseRepo({ userId: "u1", isAdmin: false, client: fake });
+    await first.loadProgress();
+    await first.saveProgress(progress());
+    const second = createSupabaseRepo({ userId: "u1", isAdmin: false, client: fake });
+    const loaded = migrateProgressData(await second.loadProgress());
+    const before = rpcCalls(fake, "save_progress").length;
+    await second.saveProgress(loaded);
+    const after = rpcCalls(fake, "save_progress");
+    const sent = after.length > before ? after.at(-1).args : null;
+    expect(sent ? { sections: Object.keys(sent.p_sections), mastery: Object.keys(sent.p_mastery).length } : null).toBeNull();
+  });
+
+  it("re-sends no content after a reload", async () => {
+    const fake = createFakeSupabase();
+    const admin = createSupabaseRepo({ userId: "u1", isAdmin: true, client: fake });
+    await admin.loadContent();
+    await admin.saveContent(content);
+    const again = createSupabaseRepo({ userId: "u1", isAdmin: true, client: fake });
+    const loaded = await again.loadContent();
+    const before = rpcCalls(fake, "apply_content_changes").length;
+    await again.saveContent(loaded);
+    expect(rpcCalls(fake, "apply_content_changes")).toHaveLength(before);
+  });
+
   it("files a player's report where the admin can see it", async () => {
     const fake = createFakeSupabase({ userId: "p1", admin: false });
     const player = createSupabaseRepo({ userId: "p1", isAdmin: false, client: fake });
