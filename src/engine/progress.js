@@ -1,4 +1,4 @@
-import { LEVELS, MASTERY_STAGE, MAX_CONFUSIONS, PRODUCTION_GATE_STEP, confusionCount, getAccuracy, getMasteryStage, getProductionCorrect, isWordKey, levelMasteredCount, normalizeMasteryRecord } from "./data";
+import { LEVELS, MASTERY_STAGE, MAX_CONFUSIONS, PRODUCTION_GATE_STEP, confusionCount, getAccuracy, getMasteryStage, getProductionCorrect, isWordKey, levelMasteredCount, localDateKey, normalizeMasteryRecord } from "./data";
 import { getAllowedModes, getStrongConfusion, modeAccuracy, selectAdaptiveMode } from "./questions";
 export function pruneConfusions(confusions) {
   const entries = Object.entries(confusions || {}).sort((a, b) => {
@@ -176,6 +176,32 @@ export function normalizeLevelStats(levelStats = {}, levelsCleared = []) {
   return out;
 }
 
+// Rounds, answers and right answers per day (the player's local date),
+// kept for DAILY_HISTORY_DAYS. The round log keeps only the newest rounds;
+// this keeps every day's totals for the dashboard and the admin.
+export const DAILY_HISTORY_DAYS = 120;
+const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
+function bumpDay(history, { at, total, correct }) {
+  const day = localDateKey(new Date(Number(at)));
+  const cur = history[day] || { rounds: 0, answered: 0, correct: 0 };
+  return { ...history, [day]: { rounds: cur.rounds + 1, answered: cur.answered + (Number(total) || 0), correct: cur.correct + (Number(correct) || 0) } };
+}
+export function pruneDailyHistory(history, now = Date.now(), days = DAILY_HISTORY_DAYS) {
+  const cutoff = localDateKey(new Date(now - (days - 1) * 86400000));
+  return Object.fromEntries(Object.entries(history && typeof history === "object" ? history : {})
+    .filter(([day, v]) => DAY_KEY.test(day) && day >= cutoff && v && typeof v === "object")
+    .map(([day, v]) => [day, { rounds: Number(v.rounds) || 0, answered: Number(v.answered) || 0, correct: Number(v.correct) || 0 }]));
+}
+export function addToDailyHistory(history, round, now = Date.now()) {
+  return pruneDailyHistory(bumpDay(history || {}, round), now);
+}
+// Players from before the daily totals: start them from the round log.
+export function dailyHistoryFromLogs(logs, now = Date.now()) {
+  let history = {};
+  for (const round of logs || []) if (Number.isFinite(Number(round?.at))) history = bumpDay(history, round);
+  return pruneDailyHistory(history, now);
+}
+
 export function migrateProgressData(raw = {}) {
   const levelsCleared = Array.isArray(raw.levelsCleared) ? [...new Set(raw.levelsCleared)] : [];
   const mastery = {};
@@ -215,6 +241,8 @@ export function migrateProgressData(raw = {}) {
     confusions,
     solvedStories,
     sessionLogs,
+    dailyHistory: raw.dailyHistory && typeof raw.dailyHistory === "object" ? pruneDailyHistory(raw.dailyHistory) : dailyHistoryFromLogs(sessionLogs),
+    completedSessions: Array.isArray(raw.completedSessions) ? raw.completedSessions.slice(-500) : [],
     settings: normalizeSettings(raw.settings),
   };
 }

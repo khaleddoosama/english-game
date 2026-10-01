@@ -78,13 +78,19 @@ Migrations live in `supabase/migrations` (apply in order). They create:
   entries can be deleted only through `admin_audit_delete` / `admin_audit_clear`,
   which leave a note (0014)
 - `app_settings` (0012) — sign-ups, maintenance, announcement, AI limits,
-  Live limits, ranks, new-player defaults; enforced in the database
+  Live limits, ranks, new-player defaults; enforced in the database.
+  Sign-ups (0022): a limit per network the admin sets (default 30 in 10
+  minutes), at most 200 in 10 minutes overall, one at a time; a new
+  account is always a player. Accounts are made only by `register_player`,
+  so keep Supabase → Authentication → "Allow new users to sign up" off
 - `ai_usage` (daily counts) and `ai_calls` (0015) — one row per AI, voice or
   picture-copy call: who, when, feature, model, time, tokens, outcome.
   Only the server finishes a row (0019). Which AI features exist and which
   are admin-only is decided on the server (`api/_lib/tasks.js`)
 - `analytics` schema views (0010, 0011) for data quality, read with
-  `admin_analytics` / `admin_data_issues`
+  `admin_analytics` / `admin_data_issues`. Rounds per day come from each
+  player's daily totals (`dailyHistory` in the history section, 120 days),
+  the same numbers the player's Study Dashboard shows (0021)
 - storage buckets `word-images` (admin writes) and `tts` (only the server
   writes, 0019), private realtime channels `live:*`
 

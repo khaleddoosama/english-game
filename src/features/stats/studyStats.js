@@ -27,7 +27,7 @@ export function lastDays(days, now = Date.now()) {
   return out;
 }
 
-export function studyStats({ levels = [], mastery = {}, sessionLogs = [], confusions = {}, levelStats = {}, now = Date.now(), days = 14 } = {}) {
+export function studyStats({ levels = [], mastery = {}, sessionLogs = [], dailyHistory = null, confusions = {}, levelStats = {}, now = Date.now(), days = 14 } = {}) {
   const stages = emptyStages();
   let items = 0, practised = 0, answers = 0, correct = 0;
   const seen = new Set();
@@ -49,13 +49,21 @@ export function studyStats({ levels = [], mastery = {}, sessionLogs = [], confus
     return { index, id: level.id, title: level.title, total: rows.length, stages: ls, practised: lPractised, answers: lAnswers, accuracy: ratio(lCorrect, lAnswers), stars: st.stars || 0, bestAccuracy: st.bestAccuracy ?? null, lastPlayedAt: st.lastPlayedAt || null, status, items: rows };
   });
 
-  // Rounds per day from the round log (it keeps the last 50 rounds).
+  // Rounds per day: the daily totals (every round), or for older progress
+  // without them, the round log (only the last 50 rounds).
   const dayKeys = lastDays(days, now);
   const perDay = new Map(dayKeys.map((d) => [d, { day: d, rounds: 0, answered: 0, correct: 0 }]));
-  for (const s of sessionLogs || []) {
-    const d = perDay.get(localDateKey(new Date(s.at)));
-    if (!d) continue;
-    d.rounds++; d.answered += Number(s.total) || 0; d.correct += Number(s.correct) || 0;
+  if (dailyHistory && typeof dailyHistory === "object") {
+    for (const [day, v] of Object.entries(dailyHistory)) {
+      const d = perDay.get(day);
+      if (d) { d.rounds = Number(v?.rounds) || 0; d.answered = Number(v?.answered) || 0; d.correct = Number(v?.correct) || 0; }
+    }
+  } else {
+    for (const s of sessionLogs || []) {
+      const d = perDay.get(localDateKey(new Date(s.at)));
+      if (!d) continue;
+      d.rounds++; d.answered += Number(s.total) || 0; d.correct += Number(s.correct) || 0;
+    }
   }
   const activity = [...perDay.values()];
 

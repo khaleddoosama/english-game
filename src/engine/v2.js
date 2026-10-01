@@ -675,7 +675,9 @@ function sessionEvidence(mastery,session,now=Date.now()){
     const productionCorrect=(s.productionCorrect||0)+(ok&&recall?1:0);
     const stepCap=productionCorrect>0?4:PRODUCTION_GATE_STEP;
     const step=ok?Math.min(stepCap,(s.reviewStep||0)+1):0;
-    const sessions=[...new Set([...(s.independentSessions||[]),...(ok?[session.id]:[])])];
+    // Bounded: only "3 or more" matters, and a round is never applied twice
+    // within the last 50 (see progressMerge.mergeMasteryRecord).
+    const sessions=[...new Set([...(s.independentSessions||[]),...(ok?[session.id]:[])])].slice(-20);
     const spellingMisses=results.filter(a=>a.spelling).length;
     const lastResult=ok?'correct':spellingMisses?'spelling':results.some(a=>a.assisted)?'assisted':'wrong';
     const modes={...(s.modes||{})};
@@ -687,7 +689,7 @@ function sessionEvidence(mastery,session,now=Date.now()){
       modes[modeId]={...previous,total:(previous.total||0)+1,correct:(previous.correct||0)+(correct?1:0),spellingMisses:(previous.spellingMisses||0)+(result.spelling?1:0),lastResult:correct?'correct':result.spelling?'spelling':result.assisted?'assisted':'wrong',lastDifficulty:result.difficulty||1};
       recent.push({correct,modeId,difficulty:result.difficulty||1,at:now,spelling:!!result.spelling});
     });
-    const record={...s,everMastered:s.everMastered===true||stage(s)==='Mastered',evidenceV2:true,correct:(s.correct||0)+(ok?1:0),total:(s.total||0)+1,modes,productionCorrect:(s.productionCorrect||0)+(ok&&recall?1:0),productionAttempts:(s.productionAttempts||0)+(results.some(a=>a.type==='typing')?1:0),assistedAttempts:(s.assistedAttempts||0)+results.filter(a=>a.assisted).length,spellingMisses:(s.spellingMisses||0)+spellingMisses,aiEvaluatedAttempts:(s.aiEvaluatedAttempts||0)+results.filter(a=>a.aiEvaluated).length,independentSessions:sessions,appliedSessions:[...(s.appliedSessions||[]),session.id],lastReviewedAt:now,nextReviewAt:0,reviewStep:step,lastResult,recentResults:recent.slice(-8),regressionStrikes:s.everMastered?(ok?Math.max(0,(s.regressionStrikes||0)-1):(s.regressionStrikes||0)+1):(s.regressionStrikes||0)};
+    const record={...s,everMastered:s.everMastered===true||stage(s)==='Mastered',evidenceV2:true,correct:(s.correct||0)+(ok?1:0),total:(s.total||0)+1,modes,productionCorrect:(s.productionCorrect||0)+(ok&&recall?1:0),productionAttempts:(s.productionAttempts||0)+(results.some(a=>a.type==='typing')?1:0),assistedAttempts:(s.assistedAttempts||0)+results.filter(a=>a.assisted).length,spellingMisses:(s.spellingMisses||0)+spellingMisses,aiEvaluatedAttempts:(s.aiEvaluatedAttempts||0)+results.filter(a=>a.aiEvaluated).length,independentSessions:sessions,appliedSessions:[...(s.appliedSessions||[]),session.id].slice(-50),lastReviewedAt:now,nextReviewAt:0,reviewStep:step,lastResult,recentResults:recent.slice(-8),regressionStrikes:s.everMastered?(ok?Math.max(0,(s.regressionStrikes||0)-1):(s.regressionStrikes||0)+1):(s.regressionStrikes||0)};
     if(stage(record)==='Mastered')record.everMastered=true;
     next[key]=record;
   }

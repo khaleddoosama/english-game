@@ -13,8 +13,8 @@ const pct = (r) => (r == null ? "—" : `${Math.round(r * 100)}%`);
 const num = (n) => (Number(n) || 0).toLocaleString("en-US");
 const dayLabel = (iso, opts) => new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, opts);
 
-export default function StudyDashboard({ levels, mastery, sessionLogs, confusions, levelStats, studyStreak, bestStudyStreak, today, dailyGoal, weakReviewCount, onWeakReview, onPlayLevel, onBack }) {
-  const s = useMemo(() => studyStats({ levels, mastery, sessionLogs, confusions, levelStats }), [levels, mastery, sessionLogs, confusions, levelStats]);
+export default function StudyDashboard({ levels, mastery, sessionLogs, dailyHistory, confusions, levelStats, studyStreak, bestStudyStreak, today, dailyGoal, weakReviewCount, onWeakReview, onPlayLevel, onBack }) {
+  const s = useMemo(() => studyStats({ levels, mastery, sessionLogs, dailyHistory, confusions, levelStats }), [levels, mastery, sessionLogs, dailyHistory, confusions, levelStats]);
   const [query, setQuery] = useQuery({ show: "", q: "", level: "" });
   const shown = useMemo(() => filterLevels(s.levels, query.show, query.q), [s.levels, query.show, query.q]);
   const goalPct = Math.min(1, (today?.answered || 0) / Math.max(1, dailyGoal));

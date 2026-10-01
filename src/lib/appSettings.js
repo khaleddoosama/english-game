@@ -7,6 +7,7 @@ import { isLocalMode, supabase } from "./supabase";
 
 export const APP_DEFAULTS = {
   signupsOpen: true,
+  signupsPer10Min: 30,
   maintenance: false,
   maintenanceMessage: "",
   announcement: "",
@@ -33,6 +34,7 @@ export function normalizeAppSettings(raw) {
   const D = APP_DEFAULTS, ND = D.newPlayerDefaults;
   return {
     signupsOpen: bool(s.signupsOpen, D.signupsOpen),
+    signupsPer10Min: clamp(s.signupsPer10Min, 5, 200, D.signupsPer10Min),
     maintenance: bool(s.maintenance, D.maintenance),
     maintenanceMessage: String(s.maintenanceMessage ?? "").slice(0, 500),
     announcement: String(s.announcement ?? "").slice(0, 500),

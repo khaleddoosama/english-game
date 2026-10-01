@@ -16,6 +16,8 @@ describe("app settings", () => {
     expect(s.announcementTone).toBe("info");
     expect(s.liveCreate).toBe("everyone");
     expect(s.signupsOpen).toBe(true); // only real booleans count
+    expect(normalizeAppSettings({ signupsPer10Min: 9999 }).signupsPer10Min).toBe(200);
+    expect(normalizeAppSettings({ signupsPer10Min: 1 }).signupsPer10Min).toBe(5);
     expect(s.newPlayerDefaults).toEqual({ questionsPerRound: 30, newWordsPerRound: 3, dailyGoal: 5, sound: false, enablePairModes: true });
   });
   it("keeps texts short", () => {

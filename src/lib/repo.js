@@ -21,7 +21,7 @@ const keyOf = (kind, item) => (kind === "words" ? item?.word : item?.id);
 const CONTENT_FIELDS = new Set(["words", "combos", "stories", "grammar", "puns", "challenges", "levelOrder", "kind", "note", "contentSchemaVersion"]);
 const SECTION_OF = {
   activeSession: "session", pools: "pools", seenSentences: "seen", confusions: "confusions",
-  sessionLogs: "history", completedSessions: "history", solvedStories: "history",
+  sessionLogs: "history", completedSessions: "history", solvedStories: "history", dailyHistory: "history",
   reports: "reports", levelStats: "levels", levelsCleared: "levels",
 };
 const PAGE = 1000, UPSERT_BATCH = 250, POSITION_GAP = 1000, RETRY_MS = 15000;

@@ -42,6 +42,7 @@ export function AppSettings({ onDirtyChange = () => {} }) {
         <section className="adm-card">
           <h3><UserPlus size={16} /> Access</h3>
           <Field label="New accounts" hint="Anyone can create an account from the sign-in page"><Switch label="New accounts" checked={draft.signupsOpen} onChange={(v) => set({ signupsOpen: v })} /></Field>
+          {draft.signupsOpen && <Field label="New accounts per network" hint="In 10 minutes, from one home or school network. Raise it before a whole class signs up. Everyone together: at most 200 in 10 minutes."><Num label="New accounts per network" min={5} max={200} value={draft.signupsPer10Min} onChange={(v) => set({ signupsPer10Min: v })} /></Field>}
           <Field label="Maintenance mode" hint="Players see a message instead of the game; you can still play"><Switch label="Maintenance mode" checked={draft.maintenance} onChange={(v) => set({ maintenance: v })} /></Field>
           {draft.maintenance && <textarea className="adm-input adm-textarea" maxLength={500} value={draft.maintenanceMessage} onChange={(e) => set({ maintenanceMessage: e.target.value })} placeholder="We're updating the game. Back soon!" aria-label="Maintenance message" />}
         </section>

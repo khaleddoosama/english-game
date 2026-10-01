@@ -7,7 +7,7 @@ import { Splash } from "../features/auth/LoginPage";
 import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTERY_STAGE_RANK, PRODUCTION_MODES, RECENT_RESULT_LIMIT, TOPIC_ICONS, WORDS, confusionCount, formatAccuracy, formatStars, getMasteryStage, getStarsForAccuracy, isWordKey, levelGroups, levelItemKey, levelStageBreakdown, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setLastChallengeId, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildEntryQuestion, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, entryFileMeta, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, uniqueStrings, v2SessionFromEntries } from "../engine/questions";
 import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, locateReportSource, normalizeAnswerText, reviewReportedQuestion, spellingDistanceInfo } from "../engine/ai";
-import { DEFAULT_SETTINGS, SCHEMA_VERSION, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
+import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
@@ -310,7 +310,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   function completeSession(session) {
     if(session.kind==="speed"){
       if((progressExtrasRef.current.completedSessions||[]).includes(session.id)) return;
-      progressExtrasRef.current={...progressExtrasRef.current,completedSessions:[...(progressExtrasRef.current.completedSessions||[]),session.id]};
+      progressExtrasRef.current={...progressExtrasRef.current,completedSessions:[...(progressExtrasRef.current.completedSessions||[]),session.id].slice(-500)};
       const st=speedStats(session.answers);
       setSpeedScore(st.points);setSpeedAnswered(st.answered);setSpeedCorrect(st.correct);setSpeedBestCombo(st.bestCombo);
       setBestSpeedScore(b=>Math.max(b,st.points));setBestSpeedCombo(b=>Math.max(b,st.bestCombo));
@@ -318,11 +318,13 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       setActiveSession(null);setScreen("speedResults");return;
     }
     if(session.completed || (progressExtrasRef.current.completedSessions||[]).includes(session.id)) return;
-    progressExtrasRef.current={...progressExtrasRef.current,completedSessions:[...(progressExtrasRef.current.completedSessions||[]),session.id]};
+    progressExtrasRef.current={...progressExtrasRef.current,completedSessions:[...(progressExtrasRef.current.completedSessions||[]),session.id].slice(-500)};
     if(session.queue.length && session.answers.length===session.queue.length){
       const logEntry={id:session.id,kind:session.kind,title:session.title||session.kind,correct:session.answers.filter(a=>a.correct).length,total:session.queue.length,at:Date.now()};
+      // The round log shows the newest 50 rounds; the daily totals keep every day.
       const nextLogs=[logEntry,...(progressExtrasRef.current.sessionLogs||[])].slice(0,50);
-      progressExtrasRef.current={...progressExtrasRef.current,sessionLogs:nextLogs};setSessionLogs(nextLogs);
+      const dailyHistory=addToDailyHistory(progressExtrasRef.current.dailyHistory,logEntry);
+      progressExtrasRef.current={...progressExtrasRef.current,sessionLogs:nextLogs,dailyHistory};setSessionLogs(nextLogs);
     }
     const next = V2.sessionEvidence(masteryRef.current, session);
     masteryRef.current = next; setMastery(next); recordStudyDay();
@@ -1658,7 +1660,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           </div>
         )}
 
-        {dashboardOpen && <Suspense fallback={<ScreenSkeleton />}><StudyDashboard levels={LEVELS} mastery={mastery} sessionLogs={sessionLogs} confusions={confusions} levelStats={levelStats}
+        {dashboardOpen && <Suspense fallback={<ScreenSkeleton />}><StudyDashboard levels={LEVELS} mastery={mastery} sessionLogs={sessionLogs} dailyHistory={progressExtrasRef.current.dailyHistory} confusions={confusions} levelStats={levelStats}
           studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} today={todayProgress(dailyProgress)} dailyGoal={settings.dailyGoal}
           weakReviewCount={Math.min(weakCandidates.length, settings.weakReviewSize)} onWeakReview={startWeakReview} onPlayLevel={(i) => startLevel(i)} onBack={backToLevels} /></Suspense>}
 

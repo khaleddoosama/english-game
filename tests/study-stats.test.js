@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { localDateKey } from "../src/engine/data";
 import { filterLevels, lastDays, studyStats } from "../src/features/stats/studyStats";
+import { addToDailyHistory, dailyHistoryFromLogs, migrateProgressData, pruneDailyHistory } from "../src/engine/progress";
 
 const word = (w, category = "Food") => ({ kind: "word", obj: { word: w, category, meaning: "m", situation: "s", gap: "___", hints: ["h"] } });
 const levels = [
@@ -65,6 +66,32 @@ describe("studyStats", () => {
     expect(s.activity.find((d) => d.day === localDateKey(new Date(NOW - 3 * DAY))).answered).toBe(12);
     expect(s.activeDays).toBe(2);
     expect(s.week).toMatchObject({ answered: 24, rounds: 3, prevAnswered: 0 });
+  });
+
+  it("75 rounds over 14 days all count (review F12): the daily totals, not the 50-round log", () => {
+    let history = {}, logs = [];
+    for (let i = 0; i < 75; i++) {
+      const round = { id: `r${i}`, at: NOW - (i % 14) * DAY - i * 1000, correct: 3, total: 4 };
+      history = addToDailyHistory(history, round, NOW);
+      logs = [round, ...logs].slice(0, 50);
+    }
+    const s = studyStats({ sessionLogs: logs, dailyHistory: history, now: NOW });
+    expect(s.activity.reduce((n, d) => n + d.rounds, 0)).toBe(75);
+    expect(s.activity.reduce((n, d) => n + d.answered, 0)).toBe(300);
+    // The log alone would have lost 25 of them.
+    expect(studyStats({ sessionLogs: logs, now: NOW }).activity.reduce((n, d) => n + d.rounds, 0)).toBe(50);
+  });
+
+  it("daily totals: older progress starts from its round log; days past 120 drop off", () => {
+    const logs = [{ id: "a", at: NOW, correct: 1, total: 2 }, { id: "b", at: NOW - DAY, correct: 2, total: 2 }, { id: "c", at: NOW - 200 * DAY, correct: 1, total: 1 }];
+    expect(dailyHistoryFromLogs(logs, NOW)).toEqual({
+      [localDateKey(new Date(NOW))]: { rounds: 1, answered: 2, correct: 1 },
+      [localDateKey(new Date(NOW - DAY))]: { rounds: 1, answered: 2, correct: 2 },
+    });
+    const migrated = migrateProgressData({ sessionLogs: logs });
+    expect(Object.keys(migrated.dailyHistory)).toHaveLength(2);
+    expect(migrateProgressData({ sessionLogs: logs, dailyHistory: { "2026-09-30": { rounds: 9, answered: 9, correct: 9 }, junk: 1 } }).dailyHistory).toEqual({ "2026-09-30": { rounds: 9, answered: 9, correct: 9 } });
+    expect(Object.keys(pruneDailyHistory({ [localDateKey(new Date(NOW - 130 * DAY))]: { rounds: 1 }, [localDateKey(new Date(NOW))]: { rounds: 1 } }, NOW))).toEqual([localDateKey(new Date(NOW))]);
   });
 
   it("lastDays ends today and has no gaps", () => {

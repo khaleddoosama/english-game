@@ -14,6 +14,7 @@ vi.mock("../src/lib/idb", () => ({ idb: {
 
 import { createSupabaseRepo } from "../src/lib/repo";
 import { mergeMasteryRecord, mergeSection } from "../src/lib/progressMerge";
+import { V2 } from "../src/engine/v2";
 import { createFakeSupabase } from "./fakeSupabase";
 
 beforeEach(() => cache.clear());
@@ -214,6 +215,37 @@ describe("merge rules", () => {
     expect(out.levelsCleared.sort()).toEqual(["a", "b", "c"]);
     expect(mergeSection({ confusions: { "a|b": 1 } }, { confusions: { "a|b": 3 } }, { confusions: { "a|b": 2 } }).confusions["a|b"]).toBe(4);
   });
+  it("daily totals: both devices' rounds on a day count", () => {
+    const base = { dailyHistory: { "2026-10-01": { rounds: 2, answered: 8, correct: 6 } } };
+    const a = { dailyHistory: { "2026-10-01": { rounds: 3, answered: 12, correct: 9 } } };
+    const b = { dailyHistory: { "2026-10-01": { rounds: 4, answered: 16, correct: 10 }, "2026-10-02": { rounds: 1, answered: 4, correct: 4 } } };
+    expect(mergeSection(base, a, b).dailyHistory).toEqual({ "2026-10-01": { rounds: 5, answered: 20, correct: 13 }, "2026-10-02": { rounds: 1, answered: 4, correct: 4 } });
+    // A new day on both devices: both count, since the base had none.
+    const c = { dailyHistory: { ...a.dailyHistory, "2026-10-03": { rounds: 1, answered: 4, correct: 1 } } };
+    const d = { dailyHistory: { ...b.dailyHistory, "2026-10-03": { rounds: 2, answered: 8, correct: 8 } } };
+    expect(mergeSection(base, c, d).dailyHistory["2026-10-03"]).toEqual({ rounds: 3, answered: 12, correct: 9 });
+  });
+
+  it("a word's rounds list stays at 50 however much it's played (review F12)", () => {
+    let mastery = {};
+    for (let i = 0; i < 70; i++) {
+      mastery = V2.sessionEvidence(mastery, { id: `s${i}`, kind: "practice", queue: [{ targets: ["Fork"], mode: "gap", type: "mcq" }], answers: [{ correct: true }] }, 1000 + i);
+    }
+    expect(mastery.Fork.total).toBe(70);
+    expect(mastery.Fork.appliedSessions).toHaveLength(50);
+    expect(mastery.Fork.appliedSessions.at(-1)).toBe("s69");
+    expect(mastery.Fork.independentSessions).toHaveLength(20);
+    // The newest round is still recognised if it comes again.
+    expect(V2.sessionEvidence(mastery, { id: "s69", kind: "practice", queue: [{ targets: ["Fork"], mode: "gap" }], answers: [{ correct: true }] }).Fork.total).toBe(70);
+  });
+
+  it("a word's round lists stay bounded", () => {
+    const many = (n, p) => Array.from({ length: n }, (_, i) => `${p}${i}`);
+    const merged = mergeMasteryRecord({ total: 1 }, { total: 90, appliedSessions: many(50, "a"), independentSessions: many(20, "a") }, { total: 80, appliedSessions: many(50, "b"), independentSessions: many(20, "b") });
+    expect(merged.appliedSessions).toHaveLength(50);
+    expect(merged.independentSessions).toHaveLength(20);
+  });
+
   it("a word changed on both devices: more answers wins, rounds are kept from both", () => {
     const out = mergeMasteryRecord({ total: 2, appliedSessions: ["s0"] }, { total: 3, appliedSessions: ["s0", "s1"] }, { total: 4, appliedSessions: ["s0", "s2"] });
     expect(out.total).toBe(4);

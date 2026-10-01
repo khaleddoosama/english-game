@@ -42,6 +42,16 @@ function mergeDaily(b, l, s) {
   const fromBase = b && b.date === l.date ? b : { answered: 0, correct: 0 };
   return { ...s, ...l, answered: num(s.answered) + num(l.answered) - num(fromBase.answered), correct: num(s.correct) + num(l.correct) - num(fromBase.correct) };
 }
+// Per day: both devices' rounds count. A day the base doesn't have started
+// at zero, unless there's no base at all (then the larger, to never count
+// the same rounds twice).
+function mergeDailyHistory(b, l, s) {
+  const known = isObj(b);
+  return mergeMap(b, l, s, (_k, bb, ll = {}, ss = {}) => {
+    const add = (f) => (bb || known ? num(ss[f]) + num(ll[f]) - num(bb?.[f]) : Math.max(num(ll[f]), num(ss[f])));
+    return { rounds: add("rounds"), answered: add("answered"), correct: add("correct") };
+  });
+}
 function mergeLevelStats(b, l, s) {
   return mergeMap(b, l, s, (_k, bb = {}, ll = {}, ss = {}) => ({
     ...ss, ...ll,
@@ -67,6 +77,7 @@ export function mergeField(field, base, local, server, ctx = {}) {
     case "lastStudyDate": return laterDate(local, server);
     case "studyStreak": return String(ctx.local?.lastStudyDate || "") >= String(ctx.server?.lastStudyDate || "") ? local : server;
     case "dailyProgress": return mergeDaily(base, local, server);
+    case "dailyHistory": return mergeDailyHistory(base, local, server);
     case "sessionLogs": return unionById(local, server).sort((a, c) => num(c?.at) - num(a?.at)).slice(0, Math.max(HISTORY_LIMIT, (local || []).length));
     case "completedSessions": return [...new Set([...(server || []), ...(local || [])])].slice(-COMPLETED_LIMIT);
     case "solvedStories": case "reports": return unionById(local, server);
@@ -101,7 +112,7 @@ export function mergeMasteryRecord(base, local, server) {
   if (!local) return server;
   const winner = num(local.total) >= num(server.total) ? local : server;
   const union = (k) => [...new Set([...(server[k] || []), ...(local[k] || [])])];
-  return { ...winner, appliedSessions: union("appliedSessions").slice(-50), independentSessions: union("independentSessions") };
+  return { ...winner, appliedSessions: union("appliedSessions").slice(-50), independentSessions: union("independentSessions").slice(-20) };
 }
 export function mergeMastery(base, local, server) {
   const b = base || {}, l = local || {}, s = server || {};
