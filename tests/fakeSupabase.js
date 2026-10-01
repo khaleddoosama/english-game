@@ -81,22 +81,41 @@ export function createFakeSupabase({ userId = "u1", admin = true } = {}) {
       meta.version += 1;
       return { data: meta.version };
     },
-    save_progress({ p_sections, p_mastery, p_mastery_removes, p_profile }) {
+    // Same rules as supabase/migrations/0016_progress_merge.sql.
+    save_progress_v2({ p_sections, p_expected, p_mastery, p_mastery_removes, p_profile, p_replace }) {
+      const mine = (section) => tables.progress.find((r) => r.user_id === userId && r.section === section);
+      if (!p_replace && p_expected) {
+        const conflict = Object.keys(p_sections || {}).filter((name) => { const row = mine(name); return row && row.rev !== (p_expected[name] ?? null); }).sort();
+        if (conflict.length) return { data: { conflict, sections: Object.fromEntries(conflict.map((n) => [n, { data: clone(mine(n).data), rev: mine(n).rev }])) } };
+      }
+      const oldScore = Math.floor(Number(mine("core")?.data?.score) || 0);
       for (const [section, data] of Object.entries(p_sections || {})) {
-        const row = tables.progress.find((r) => r.user_id === userId && r.section === section);
-        if (row) row.data = jsonb(data); else tables.progress.push({ user_id: userId, section, data: jsonb(data) });
+        const row = mine(section);
+        if (row) { row.data = jsonb(data); row.rev += 1; } else tables.progress.push({ user_id: userId, section, data: jsonb(data), rev: 1 });
       }
       for (const [item_key, stats] of Object.entries(p_mastery || {})) {
         const row = tables.mastery.find((r) => r.user_id === userId && r.item_key === item_key);
-        if (row) row.stats = jsonb(stats); else tables.mastery.push({ user_id: userId, item_key, stats: jsonb(stats) });
+        const at = now();
+        if (!row) tables.mastery.push({ user_id: userId, item_key, stats: jsonb(stats), updated_at: at });
+        else { if (p_replace || (Number(stats.total) || 0) >= (Number(row.stats.total) || 0)) row.stats = jsonb(stats); row.updated_at = at; }
       }
       tables.mastery = tables.mastery.filter((r) => !(r.user_id === userId && (p_mastery_removes || []).includes(r.item_key)));
-      if (p_profile) Object.assign(tables.profiles[0], p_profile);
-      return { data: null };
+      const profile = tables.profiles.find((x) => x.id === userId);
+      if (p_sections?.core && profile) {
+        const score = Math.max(0, Math.floor(Number(p_sections.core.score) || 0));
+        const gain = p_replace ? 0 : Math.max(0, score - oldScore);
+        const week = p_profile?.week_start || null;
+        Object.assign(profile, { score, study_streak: Number(p_sections.core.studyStreak) || 0, best_study_streak: Number(p_sections.core.bestStudyStreak) || 0 });
+        if (week && !p_replace) { profile.week_score = profile.week_start !== week ? gain : (profile.week_score || 0) + gain; profile.week_start = week; }
+      }
+      if (profile && Number.isFinite(p_profile?.mastered_count)) profile.mastered_count = p_profile.mastered_count;
+      return { data: { revs: Object.fromEntries(Object.keys(p_sections || {}).map((n) => [n, mine(n).rev])) } };
     },
     reset_my_progress() {
       tables.progress = tables.progress.filter((r) => r.user_id !== userId);
       tables.mastery = tables.mastery.filter((r) => r.user_id !== userId);
+      const profile = tables.profiles.find((x) => x.id === userId);
+      if (profile) Object.assign(profile, { score: 0, mastered_count: 0, study_streak: 0, week_score: 0 });
       return { data: null };
     },
   };
@@ -106,8 +125,8 @@ export function createFakeSupabase({ userId = "u1", admin = true } = {}) {
     calls,
     from: (table) => query(table),
     async rpc(name, args) {
-      calls.push({ rpc: name, args: clone(args) });
-      const out = rpcs[name](clone(args));
+      calls.push({ rpc: name, args: clone(args ?? {}) });
+      const out = rpcs[name](clone(args ?? {}));
       return { data: out.data ?? null, error: out.error ?? null };
     },
   };

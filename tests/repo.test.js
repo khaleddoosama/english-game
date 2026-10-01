@@ -84,14 +84,17 @@ describe("progress", () => {
     const key = Object.keys(data.mastery)[3];
     const next = { ...data, score: data.score + 10, mastery: { ...data.mastery, [key]: { ...data.mastery[key], correct: (data.mastery[key].correct || 0) + 1 } } };
     await repo.saveProgress(next);
-    const [call] = rpcCalls(fake, "save_progress").slice(-1);
+    const [call] = rpcCalls(fake, "save_progress_v2").slice(-1);
     expect(Object.keys(call.args.p_mastery)).toEqual([key]);
     expect(Object.keys(call.args.p_sections)).toEqual(["core"]);
-    expect(call.args.p_profile.score).toBe(data.score + 10);
+    expect(call.args.p_expected).toEqual({ core: 1 });
+    // The leaderboard score comes from the saved progress, not from the app.
+    expect(call.args.p_profile.score).toBeUndefined();
+    expect(fake.tables.profiles[0].score).toBe(data.score + 10);
     // Nothing changed: nothing sent.
-    const count = rpcCalls(fake, "save_progress").length;
+    const count = rpcCalls(fake, "save_progress_v2").length;
     await repo.saveProgress(next);
-    expect(rpcCalls(fake, "save_progress")).toHaveLength(count);
+    expect(rpcCalls(fake, "save_progress_v2")).toHaveLength(count);
   });
 
   it("re-sends nothing after a reload, even though the database reorders keys", async () => {
@@ -101,9 +104,9 @@ describe("progress", () => {
     await first.saveProgress(progress());
     const second = createSupabaseRepo({ userId: "u1", isAdmin: false, client: fake });
     const loaded = migrateProgressData(await second.loadProgress());
-    const before = rpcCalls(fake, "save_progress").length;
+    const before = rpcCalls(fake, "save_progress_v2").length;
     await second.saveProgress(loaded);
-    const after = rpcCalls(fake, "save_progress");
+    const after = rpcCalls(fake, "save_progress_v2");
     const sent = after.length > before ? after.at(-1).args : null;
     expect(sent ? { sections: Object.keys(sent.p_sections), mastery: Object.keys(sent.p_mastery).length } : null).toBeNull();
   });

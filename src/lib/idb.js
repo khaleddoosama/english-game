@@ -1,5 +1,5 @@
 // Minimal IndexedDB key-value store for the content cache and the offline
-// progress snapshot. Every call fails soft: no IndexedDB means no cache.
+// progress snapshot. Calls never throw: no IndexedDB means no cache.
 const DB = "word-hunter", STORE = "kv";
 let dbPromise = null;
 
@@ -26,8 +26,11 @@ function run(mode, fn) {
   }));
 }
 
+// get: undefined when missing or unreadable. set/del: true when written,
+// false when the browser refused (storage full, private mode, blocked), so
+// callers can tell the player their progress isn't kept on this device.
 export const idb = {
   get: (key) => run("readonly", (s) => s.get(key)).catch(() => undefined),
-  set: (key, value) => run("readwrite", (s) => s.put(value, key)).catch(() => undefined),
-  del: (key) => run("readwrite", (s) => s.delete(key)).catch(() => undefined),
+  set: (key, value) => run("readwrite", (s) => s.put(value, key)).then(() => true, (e) => { console.warn("IndexedDB write failed:", e?.message || e); return false; }),
+  del: (key) => run("readwrite", (s) => s.delete(key)).then(() => true, () => false),
 };

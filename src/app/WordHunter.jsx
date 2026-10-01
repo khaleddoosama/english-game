@@ -725,6 +725,19 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     }
   }
 
+  // Puts a progress object into the game's state (on start, and when
+  // another device's changes were merged in).
+  function applyProgressData(data) {
+    progressExtrasRef.current = data; setActiveSession(data.activeSession || null);setDailyProgress(data.dailyProgress||null);setQuestionReports(Array.isArray(data.reports)?data.reports:[]);setSolvedStories(Array.isArray(data.solvedStories)?data.solvedStories:[]);setSessionLogs(Array.isArray(data.sessionLogs)?data.sessionLogs:[]);
+    setScore(data.score); setStreak(data.streak); setBestStreak(data.bestStreak); setAttempted(data.attempted);
+    setMastery(data.mastery); masteryRef.current = data.mastery;
+    setLevelsCleared(data.levelsCleared); setLevelStats(data.levelStats); setPools(data.pools); poolsRef.current = data.pools;
+    setStudyStreak(data.studyStreak); setBestStudyStreak(data.bestStudyStreak); setLastStudyDate(data.lastStudyDate);
+    studyRef.current = { studyStreak: data.studyStreak, bestStudyStreak: data.bestStudyStreak, lastStudyDate: data.lastStudyDate };
+    setBestSpeedScore(data.bestSpeedScore); setBestSpeedCombo(data.bestSpeedCombo);
+    setConfusions(data.confusions); confusionsRef.current = data.confusions;
+  }
+
   // Load saved progress AND any previously imported custom content once on
   // mount. Custom content must be merged first so LEVELS/BADGES are already
   // correct by the time we compute badge state from the saved mastery.
@@ -756,14 +769,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       try {
         if (raw) hadAnyData = true;
         const data = raw ? migrateProgressData(raw) : emptyProgressData();
-        progressExtrasRef.current = data; setActiveSession(data.activeSession || null);setDailyProgress(data.dailyProgress||null);setQuestionReports(Array.isArray(data.reports)?data.reports:[]);setSolvedStories(Array.isArray(data.solvedStories)?data.solvedStories:[]);setSessionLogs(Array.isArray(data.sessionLogs)?data.sessionLogs:[]);
-        setScore(data.score); setStreak(data.streak); setBestStreak(data.bestStreak); setAttempted(data.attempted);
-        setMastery(data.mastery); masteryRef.current = data.mastery;
-        setLevelsCleared(data.levelsCleared); setLevelStats(data.levelStats); setPools(data.pools); poolsRef.current = data.pools;
-        setStudyStreak(data.studyStreak); setBestStudyStreak(data.bestStudyStreak); setLastStudyDate(data.lastStudyDate);
-        studyRef.current = { studyStreak: data.studyStreak, bestStudyStreak: data.bestStudyStreak, lastStudyDate: data.lastStudyDate };
-        setBestSpeedScore(data.bestSpeedScore); setBestSpeedCombo(data.bestSpeedCombo);
-        setConfusions(data.confusions); confusionsRef.current = data.confusions;
+        applyProgressData(data);
         // A new player starts with the admin's defaults (Admin -> Settings).
         setSettings(normalizeSettings(raw?.settings ? data.settings : { ...getAppSettings().newPlayerDefaults }));
         seenBadgesRef.current = new Set(BADGES.filter((b) => getBadgeProgress(b, { mastery: data.mastery, bestStreak: data.bestStreak }).earned).map((b) => b.id));
@@ -816,13 +822,33 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     await Promise.race([Promise.allSettled(Object.values(runningSavesRef.current)), new Promise((r) => setTimeout(r, 5000))]);
     try { await onSignOut(); } catch (e) { setLoggingOut(false); setToast({ text: `Couldn't log out: ${e.message}` }); }
   }
+  // A restored backup replaces the saved progress instead of merging with it.
+  const restoringRef = useRef(false);
   useEffect(() => {
     if (!loaded) return;
     return debouncedSave("progress", () => {
-      return repo.saveProgress({ ...progressExtrasRef.current, activeSession, schemaVersion: SCHEMA_VERSION, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings })
+      const replace = restoringRef.current;
+      restoringRef.current = false;
+      return repo.saveProgress({ ...progressExtrasRef.current, activeSession, schemaVersion: SCHEMA_VERSION, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings }, { replace })
         .catch((e) => console.error("Could not save progress:", e));
     });
   }, [loaded, activeSession, questionReports, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings, liveSeenTick]);
+
+  // Another device (or tab) on this account played: its changes are merged
+  // into this one. Checked when the game comes back to the foreground.
+  useEffect(() => {
+    if (!loaded || !repo.onMerged) return;
+    const off = repo.onMerged((merged) => applyProgressData(migrateProgressData(merged)));
+    let last = 0;
+    const check = () => {
+      if (document.visibilityState !== "visible" || Date.now() - last < 10000) return;
+      last = Date.now();
+      repo.refreshProgress?.().catch?.(() => {});
+    };
+    document.addEventListener("visibilitychange", check);
+    window.addEventListener("focus", check);
+    return () => { off(); document.removeEventListener("visibilitychange", check); window.removeEventListener("focus", check); };
+  }, [loaded, repo]);
 
   // Save content whenever it changes (admin only — players read content,
   // they never write it). Separate from progress so a progress reset never
@@ -1425,6 +1451,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     }
     if (mode === "progress" || mode === "full") {
       const restored = migrateProgressData(mode === "full" ? V2.prepareImport(raw, {}).data : raw);
+      restoringRef.current = true;
       progressExtrasRef.current = restored; setActiveSession(restored.activeSession || null); setDailyProgress(restored.dailyProgress || null);
       setScore(restored.score); setStreak(restored.streak); setBestStreak(restored.bestStreak); setAttempted(restored.attempted);
       setMastery(restored.mastery); masteryRef.current = restored.mastery; setLevelsCleared(restored.levelsCleared); setLevelStats(restored.levelStats);
