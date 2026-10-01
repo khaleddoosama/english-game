@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Award, BarChart3, LogOut, Settings as SettingsIcon, Wrench, BookOpen, CheckCircle2, Download, Flag, Flame, HelpCircle, Lock, Play, Search, Target, Trash2, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
 import { V2 } from "../engine/v2";
 import { PronunciationModal, imageLinkOk } from "../features/media/media";
+import { isEmbeddedImage, storeEmbeddedImages } from "../lib/images";
 import { SessionView } from "../features/session/SessionView";
 import { Splash } from "../features/auth/LoginPage";
 import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTERY_STAGE_RANK, PRODUCTION_MODES, RECENT_RESULT_LIMIT, TOPIC_ICONS, WORDS, confusionCount, formatAccuracy, formatStars, getMasteryStage, getStarsForAccuracy, isWordKey, levelGroups, levelItemKey, levelStageBreakdown, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setLastChallengeId, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
@@ -886,6 +887,30 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     }, 150);
     return () => { cancel(); if (pendingSavesRef.current.content === undefined) return; settle(); };
   }, [loaded, customCombos, customStories, customWords, customGrammar, customChallenges, dataVersion]);
+
+  // A picture that came inside the content (an import, or a copy made in
+  // local mode) moves to the word-images bucket: as a link it isn't sent to
+  // every player with every content load. Only the values still unchanged
+  // are swapped, so an edit made meanwhile wins; one that can't be stored
+  // now is tried again with the next content change.
+  const movingPicturesRef = useRef(false);
+  const latestContentRef = useRef(null);
+  latestContentRef.current = { grammar: customGrammar, challenges: customChallenges };
+  useEffect(() => {
+    if (!loaded || !isAdmin || repo.mode !== "supabase" || movingPicturesRef.current) return;
+    const embedded = customWords.map((w) => w.image).filter(isEmbeddedImage);
+    if (!embedded.length) return;
+    movingPicturesRef.current = true;
+    storeEmbeddedImages(embedded).then((stored) => {
+      if (!stored.size) return;
+      setCustomWords((current) => {
+        const next = current.map((w) => (stored.has(w.image) ? { ...w, image: stored.get(w.image) } : w));
+        mergeCustomData(next, latestContentRef.current.grammar, latestContentRef.current.challenges, LEVEL_ORDER);
+        return next;
+      });
+      setDataVersion((value) => value + 1);
+    }).finally(() => { movingPicturesRef.current = false; });
+  }, [loaded, customWords]);
 
   // Detect newly earned badges and surface a small celebration toast
   useEffect(() => {

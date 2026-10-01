@@ -54,6 +54,32 @@ export async function uploadWordImage(file) {
   return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
+// A picture carried inside the content itself (a data: URI from an import
+// or from local mode) instead of a link: sent to every player with every
+// content load, so it belongs in the bucket.
+const EMBEDDED = /^data:image\/(png|jpe?g|webp|gif);base64,/i;
+export const isEmbeddedImage = (value) => typeof value === "string" && EMBEDDED.test(value);
+
+export function dataUrlToBlob(url) {
+  const comma = url.indexOf(",");
+  const type = /^data:([^;,]+)/i.exec(url)[1].toLowerCase();
+  const binary = atob(url.slice(comma + 1));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type });
+}
+
+// Embedded pictures -> Map(data URI -> stored URL), one upload per distinct
+// picture. One that can't be stored now stays as it is (tried again later).
+export async function storeEmbeddedImages(values, upload = uploadWordImage) {
+  const stored = new Map();
+  for (const value of new Set(values.filter(isEmbeddedImage))) {
+    try { stored.set(value, await upload(dataUrlToBlob(value))); }
+    catch (e) { console.error("Couldn't move a picture into storage:", e); }
+  }
+  return stored;
+}
+
 // Outside picture link -> a copy in our storage, so it can't break or be blocked later.
 export async function importImageLink(url) {
   if (isLocalMode) throw new Error("Copying links needs the online version.");
