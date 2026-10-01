@@ -31,8 +31,9 @@ const ttsMemory = new Map();
 function ttsStore() {
   try { return JSON.parse(localStorage.getItem(TTS_CACHE_KEY) || "{}"); } catch { return {}; }
 }
+const speechKey = (text) => String(text || "").replace(/\s+/g, " ").trim().toLowerCase();
 export async function speechUrl(text) {
-  const key = String(text || "").replace(/\s+/g, " ").trim().toLowerCase();
+  const key = speechKey(text);
   if (!key) throw new Error("Nothing to say.");
   if (ttsMemory.has(key)) return ttsMemory.get(key);
   const stored = ttsStore()[key];
@@ -50,4 +51,11 @@ export async function speechUrl(text) {
     } catch (_) {}
   }
   return url;
+}
+// A remembered link that doesn't play (an older server could hand out a
+// link to a file it never stored): forget it, so the next try asks again.
+export function forgetSpeechUrl(text) {
+  const key = speechKey(text);
+  ttsMemory.delete(key);
+  try { const all = ttsStore(); if (key in all) { delete all[key]; localStorage.setItem(TTS_CACHE_KEY, JSON.stringify(all)); } } catch (_) {}
 }

@@ -26,20 +26,36 @@ begin
   if r.status <> 'started' or r.task <> 'Ask AI about a word' or r.user_id <> v_a or r.prompt_chars <> 1234 or r.preview <> '{"term":"fork"}' then raise exception 'FAIL: logged row %', row_to_json(r); end if;
   report := report || 'gate logs; ';
 
-  -- Someone else can't finish it; the owner can, once.
-  perform set_config('request.jwt.claims', json_build_object('sub', v_b, 'role', 'authenticated')::text, true);
-  perform public.ai_call_finish(v_id, false, 'x', 1, 500, 'forged');
-  if (select status from public.ai_calls where id = v_id) <> 'started' then raise exception 'FAIL: another player finished the call'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', v_a, 'role', 'authenticated')::text, true);
+  -- No player can finish it, not even its owner: only the server can, once.
+  execute 'set local role authenticated';
+  begin
+    perform public.ai_call_finish(v_id, true, 'forged', 1, 200, null, 1, 1, 1);
+    raise exception 'FAIL: a player finished their own call';
+  exception when insufficient_privilege then null; end;
+  execute 'reset role';
+  if (select status from public.ai_calls where id = v_id) <> 'started' then raise exception 'FAIL: player finish changed the row'; end if;
+  execute 'set local role service_role';
   perform public.ai_call_finish(v_id, true, 'gemini-x', 850, 200, null, 400, 300, 120);
   perform public.ai_call_finish(v_id, false, 'other', 1, 500, 'again');
+  execute 'reset role';
   select * into r from public.ai_calls where id = v_id;
   if r.status <> 'ok' or r.model <> 'gemini-x' or r.ms <> 850 or r.input_tokens <> 300 or r.output_tokens <> 120 or r.finished_at is null then raise exception 'FAIL: finish %', row_to_json(r); end if;
-  report := report || 'finish own row once; ';
+  report := report || 'server finishes once; ';
+
+  -- Players can't put files in the pronunciation cache.
+  execute 'set local role authenticated';
+  begin
+    insert into storage.objects (bucket_id, name) values ('tts', 'v1/t_ai_forged.wav');
+    raise exception 'FAIL: a player wrote to the pronunciation cache';
+  exception when insufficient_privilege then null; end;
+  execute 'reset role';
+  report := report || 'cache is server-only; ';
 
   -- A failed call keeps its error.
   v := public.ai_gate(false, 150, 'tts', 'Pronunciation', 'see you later', 13);
+  execute 'set local role service_role';
   perform public.ai_call_finish((v ->> 'call')::bigint, false, 'gemini-tts', 40000, 503, 'The AI is very busy right now.');
+  execute 'reset role';
   if not exists (select 1 from public.ai_calls where id = (v ->> 'call')::bigint and status = 'error' and kind = 'tts' and http_status = 503 and reason like 'The AI is very busy%') then raise exception 'FAIL: error not kept'; end if;
   report := report || 'errors kept; ';
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Volume2, X } from "lucide-react";
 import { V2 } from "../../engine/v2";
-import { speechUrl } from "../../lib/ai";
+import { forgetSpeechUrl, speechUrl } from "../../lib/ai";
 import { isStoredImage } from "../../lib/images";
 // Pronunciation: two independent sources, tried in order.
 //  1. dictionaryapi.dev — free, no key, returns real human-recorded audio.
@@ -149,7 +149,7 @@ export function PronunciationModal({ term, onClose }) {
       {status === "loading" && <div className="wh-say-body"><p className="wh-say-muted">Looking for an American recording…</p></div>}
 
       {(status === "human" || status === "ai") && <div className="wh-say-body">
-        <audio ref={audioRef} src={audioUrl} controls preload="auto" className="wh-say-audio"/>
+        <audio ref={audioRef} src={audioUrl} controls preload="auto" className="wh-say-audio" onError={() => { if (status === "ai") { forgetSpeechUrl(term); setStatus("ttsOnly"); speak(); } }}/>
         <button className="wh-say-secondary" onClick={speak}><Volume2 size={12}/> Browser voice instead</button>
       </div>}
 

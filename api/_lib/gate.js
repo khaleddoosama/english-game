@@ -1,4 +1,4 @@
-import { json, PLAYER_DAILY_AI_CALLS, SUPABASE_ANON_KEY, SUPABASE_URL } from "./env.js";
+import { json, PLAYER_DAILY_AI_CALLS, serverAuth, SUPABASE_ANON_KEY, SUPABASE_URL } from "./env.js";
 
 // Asks the database gate with the caller's own token. PostgREST verifies
 // the token, so a forged or expired one never reaches Gemini. The gate
@@ -33,13 +33,15 @@ export async function gate(request, { adminOnly = false, kind = "ai", task = "",
   return deny(401, { error: "Sign in to use AI features." });
 }
 
-// Records how an allowed call went. Never fails the request: the log is
-// best effort, and waits at most 1.5 s.
-export async function finishCall(request, callId, { ok, model = null, ms = null, status = null, error = null, outputChars = null, usage = null } = {}) {
-  if (!callId || !SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+// Records how an allowed call went, with the server's key: players can't
+// finish (or rewrite) their own log rows. Never fails the request: the log
+// is best effort, and waits at most 1.5 s.
+export async function finishCall(callId, { ok, model = null, ms = null, status = null, error = null, outputChars = null, usage = null } = {}) {
+  const auth = serverAuth();
+  if (!callId || !SUPABASE_URL || !auth) return;
   const send = fetch(`${SUPABASE_URL}/rest/v1/rpc/ai_call_finish`, {
     method: "POST",
-    headers: { apikey: SUPABASE_ANON_KEY, authorization: request.headers.get("authorization") || "", "content-type": "application/json" },
+    headers: { ...auth, "content-type": "application/json" },
     body: JSON.stringify({
       p_id: callId, p_ok: !!ok, p_model: model, p_ms: Number.isFinite(ms) ? Math.round(ms) : null, p_http_status: status,
       p_error: error ? String(error).slice(0, 300) : null, p_output_chars: outputChars, p_input_tokens: usage?.inputTokens ?? null, p_output_tokens: usage?.outputTokens ?? null,

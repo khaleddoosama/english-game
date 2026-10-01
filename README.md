@@ -30,6 +30,7 @@ and fill it in to use the real backend (AI calls need `vercel dev`, since
 | `VITE_SUPABASE_URL` | browser + server | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | browser + server | Supabase publishable key |
 | `GEMINI_API_KEY` | server only | Google AI Studio key — **secret** |
+| `SUPABASE_SECRET_KEY` | server only | Supabase → Settings → API Keys → Secret key — **secret**. The server writes the shared pronunciation cache and finishes AI log rows with it; players can't (0019). Without it, audio still plays but isn't cached, and AI log rows stay "unfinished" |
 | `GEMINI_MODEL` | server | default `gemini-3.8-flash` |
 | `GEMINI_TTS_MODEL` | server | default `gemini-3.8-flash-lite-tts` |
 | `GEMINI_TTS_VOICE` | server | default `Kore` |
@@ -58,8 +59,16 @@ Migrations live in `supabase/migrations` (apply in order). They create:
   Other players' rows are readable only while ranks are on (0013)
 - `content_items` / `content_meta` — one row per word, grammar rule,
   challenge, story or combo; only the admin writes
-- `progress` (sections) and `mastery` (one row per word) — each player's own
-- `reports` — the question, options, the player's answer, reason, who and when
+- `progress` (sections) and `mastery` (one row per word) — each player's own.
+  Each section has a revision: `save_progress_v2` refuses a save made from
+  an older copy, and the game merges the two devices' play (0016). The
+  leaderboard score comes from the saved progress, not from the browser
+- `reports` — the question, options, the player's answer, reason, who and
+  when. Only the admin resolves or deletes; a player's edit keeps that
+  decision, and a deleted report can't come back (0018)
+- `item_key_aliases` and `content_drafts` (0017) — a renamed word or
+  category moves every player's progress; big saves are staged and
+  published in one step, refused if another admin saved meanwhile
 - `live_challenges`, `live_players`, `live_answers`, `live_answer_keys` (0008)
   — Live Challenge: the answer keys never reach players; answers are judged
   and timed on the server; finished matches go to `live_results`
@@ -69,10 +78,13 @@ Migrations live in `supabase/migrations` (apply in order). They create:
 - `app_settings` (0012) — sign-ups, maintenance, announcement, AI limits,
   Live limits, ranks, new-player defaults; enforced in the database
 - `ai_usage` (daily counts) and `ai_calls` (0015) — one row per AI, voice or
-  picture-copy call: who, when, feature, model, time, tokens, outcome
+  picture-copy call: who, when, feature, model, time, tokens, outcome.
+  Only the server finishes a row (0019). Which AI features exist and which
+  are admin-only is decided on the server (`api/_lib/tasks.js`)
 - `analytics` schema views (0010, 0011) for data quality, read with
   `admin_analytics` / `admin_data_issues`
-- storage buckets `word-images` and `tts`, private realtime channels `live:*`
+- storage buckets `word-images` (admin writes) and `tts` (only the server
+  writes, 0019), private realtime channels `live:*`
 
 Each feature has SQL tests in `supabase/tests/*.sql`. Run one as
 `begin; <file>; rollback;`: it ends by raising `… TESTS PASSED`, and the

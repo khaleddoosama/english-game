@@ -17,7 +17,7 @@ export async function POST(request) {
   if (denied) return denied;
   // Every way out is recorded in Admin -> AI usage, with the reason.
   const started = Date.now();
-  const fail = async (status, error) => { await finishCall(request, callId, { ok: false, ms: Date.now() - started, status, error }); return json(status, { error }); };
+  const fail = async (status, error) => { await finishCall(callId, { ok: false, ms: Date.now() - started, status, error }); return json(status, { error }); };
   let res;
   try {
     res = await fetch(source, { redirect: "follow", signal: AbortSignal.timeout(10000), headers: { "user-agent": "WordHunter-ImageImport/1.0", accept: "image/*" } });
@@ -37,6 +37,6 @@ export async function POST(request) {
     body: bytes,
   });
   if (!up.ok) return fail(502, `Storing the picture failed (${up.status}).`);
-  await finishCall(request, callId, { ok: true, ms: Date.now() - started, status: 200, outputChars: bytes.length });
+  await finishCall(callId, { ok: true, ms: Date.now() - started, status: 200, outputChars: bytes.length });
   return json(200, { url: `${SUPABASE_URL}/storage/v1/object/public/word-images/${path}` });
 }
