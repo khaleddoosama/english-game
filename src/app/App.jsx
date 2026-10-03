@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { AuthProvider, useAuth } from "../lib/auth";
 import { isLocalMode } from "../lib/supabase";
-import { createLocalRepo, createSupabaseRepo } from "../lib/repo";
+import { createSupabaseRepo } from "../lib/repo";
 import { LoginPage, Splash } from "../features/auth/LoginPage";
 import WordHunter from "./WordHunter";
 import { loadAppSettings } from "../lib/appSettings";
@@ -14,11 +14,11 @@ function Game({ user, profile }) {
   const { signOut } = useAuth();
   const isAdmin = profile?.role === "admin";
   const repo = useMemo(
-    () => (isLocalMode ? createLocalRepo() : createSupabaseRepo({ userId: user.id, isAdmin })),
+    () => createSupabaseRepo({ userId: user.id, isAdmin }),
     [user.id, isAdmin],
   );
   useEffect(() => () => repo.dispose(), [repo]);
-  return <WordHunter repo={repo} profile={profile} isAdmin={isAdmin} onSignOut={isLocalMode ? null : signOut} />;
+  return <WordHunter repo={repo} profile={profile} isAdmin={isAdmin} onSignOut={signOut} />;
 }
 
 function Gate() {
@@ -30,5 +30,14 @@ function Gate() {
 }
 
 export default function App() {
+  // Missing configuration must never select a separate local curriculum.
+  if (isLocalMode) return (
+    <main className="auth-page">
+      <section className="auth-card" role="alert">
+        <h1 className="auth-title">Connection setup required</h1>
+        <p>The game needs its Supabase connection before you can sign in. Please contact the administrator.</p>
+      </section>
+    </main>
+  );
   return <AuthProvider><Gate /></AuthProvider>;
 }
