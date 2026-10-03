@@ -1,3 +1,10 @@
+import Onboarding from "../features/learner/Onboarding";
+import Stories from "../features/learner/Stories";
+import Account from "../features/learner/Account";
+import Hearts from "../features/learner/Hearts";
+import { heartsAt, spendHeart, earnHeart, scheduleReview } from "../features/learner/learning";
+import { interactiveTraining } from "../features/learner/training";
+import JourneyAside from "../features/learner/JourneyAside";
 import Journey from "../features/journey/Journey";
 import Review from "../features/journey/Review";
 import { buildJourney, journeySession, saveJourneyAttempt, examScore, levelUnlocked, unitUnlocked, coverage, finalReady } from "../features/journey/journey";
@@ -43,6 +50,21 @@ const StudyDashboard = lazy(() => import("../features/stats/StudyDashboard"));
 export default function WordHunter({ repo, profile = null, isAdmin = true, onSignOut = null }) {
   const [loaded, setLoaded] = useState(false);
   const [journeyProgress, setJourneyProgress] = useState({});
+  const [learner, setLearner] = useState({});
+  const learnerRef = useRef({});
+  function updateLearner(next) { learnerRef.current = next; progressExtrasRef.current = {...progressExtrasRef.current, learner:next}; setLearner(next); }
+  function practiseWord(word) {
+    const q=V2.makeQuestion(word, 'gapTyping', WORDS, Math.random, 2) || V2.makeQuestion(word,'reverse',WORDS,Math.random,2);
+    if (!q) {setToast({text:'No valid practice question is available for this word yet.'});return;}
+    launchSession({id:'word-'+Date.now(),kind:'weak',title:word.word,queue:[q],answers:[],index:0,introductions:[]});
+  }
+  function recoveryPractice() {
+    const chosen=WORDS.filter(w=>w.meaning).sort((a,b)=>(masteryRef.current[a.word]?.correct||0)-(masteryRef.current[b.word]?.correct||0)).slice(0,5);
+    const queue=chosen.map(w=>V2.makeQuestion(w,'reverse',WORDS,Math.random,1)).filter(Boolean);
+    if(queue.length<5){setToast({text:'Five valid words are needed for recovery practice. Hearts also refill with time.'});return;}
+    if(activeSession?.journey?.kind==='training' && !activeSession.completed)updateLearner({...learnerRef.current,pausedTraining:activeSession});
+    launchSession({id:'recovery-'+Date.now(),kind:'weak',recovery:true,title:'Heart recovery',queue,answers:[],index:0,introductions:[]});
+  }
   const app = useAppSettings();
   // The announcement can be hidden per message (a new message shows again).
   const announcementKey = `wh-announcement-hidden:${app.announcement.length}:${app.announcement.slice(0, 40)}`;
@@ -163,16 +185,19 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const progressExtrasRef = useRef({});
   const contentNoteRef = useRef("");
   function liveContent() { return { words: WORDS, grammar: GRAMMAR, challenges: CHALLENGES, combos: customCombos, stories: customStories, note: contentNoteRef.current }; }
-  function startJourney(level, unit, kind) {
+  function startJourney(level, unit, kind, mode) {
+    if(kind==='training' && settings.hearts && heartsAt(learnerRef.current.hearts).count===0){setScreen('hearts');return;}
     const levels = buildJourney(liveContent());
     if (!levelUnlocked(levels, levels.findIndex(l=>l.id===level.id), journeyProgress)) return;
     if (unit && !unitUnlocked(level, level.units.findIndex(u=>u.id===unit.id), journeyProgress)) return;
     if (kind === 'unit' && !coverage(unit, masteryRef.current).ready) return;
     if (kind === 'final' && !finalReady(level, journeyProgress)) return;
-    try { launchSession(journeySession(liveContent(), level, unit, kind, masteryRef.current, settings.questionsPerRound, Math.random, reportQuarantine)); }
+    try { const session=mode ? interactiveTraining(unit,mode,masteryRef.current,settings.questionsPerRound) : journeySession(liveContent(), level, unit, kind, masteryRef.current, settings.questionsPerRound, Math.random, reportQuarantine);
+      if(mode)session.journey={kind:'training',levelId:level.id,unitId:unit.id};
+      launchSession(session); }
     catch(error) { setToast({text:error.message}); }
   }
-  function launchSession(session) { setActiveSession(session); setScreen("session"); }
+  function launchSession(session) { setActiveSession({...session,startedAt:session.startedAt||Date.now()}); setScreen("session"); }
   // One extra question style per word for Level Practice, built with the
   // adaptive-engine builders and converted to the V2 question shape.
   function buildPracticeExtra(wordObj, stage, rng = Math.random) {
@@ -250,10 +275,11 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   }
   function recordSessionResult(q, result, session) {
     if (q && result && session?.kind !== 'speed') markSentencesSeen(q);
-    if (!q || !result || result.reported || result.unverified || result.aiFailed || q.noTelemetry) return;
+    if (!q || !result || result.skipped || result.reported || result.unverified || result.aiFailed || q.noTelemetry) return;
     const answerKey = `${session?.id || 'session'}:${session?.index ?? -1}`;
     if (recordedSessionAnswersRef.current.has(answerKey)) return;
     recordedSessionAnswersRef.current.add(answerKey);
+    if(settings.hearts && session?.journey?.kind==='training' && !result.correct) updateLearner({...learnerRef.current,hearts:spendHeart(learnerRef.current.hearts)});
     const independentCorrect = !!result.correct && !result.assisted;
     const prevDay = todayProgress(progressExtrasRef.current.dailyProgress);
     const nextDay = { ...prevDay, answered: prevDay.answered + 1, correct: prevDay.correct + (result.correct ? 1 : 0) };
@@ -338,6 +364,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       const nextLogs=[logEntry,...(progressExtrasRef.current.sessionLogs||[])].slice(0,50);
       progressExtrasRef.current={...progressExtrasRef.current,sessionLogs:nextLogs};setSessionLogs(nextLogs);
     }
+    if(session.recovery && session.index>=session.queue.length && session.answers.filter(a=>a && !a.skipped).length>=5)updateLearner({...learnerRef.current,hearts:earnHeart(learnerRef.current.hearts)});
     const next = V2.sessionEvidence(masteryRef.current, session);
     masteryRef.current = next; setMastery(next); recordStudyDay();
     if (session.journey) {
@@ -362,7 +389,11 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       const nextSolved=[...existing.filter(e=>e.id!==session.sourceStoryId),record];
       progressExtrasRef.current={...progressExtrasRef.current,solvedStories:nextSolved};setSolvedStories(nextSolved);
     }
-    setActiveSession({...session,completed:true});
+    if(session.recovery && learnerRef.current.pausedTraining){
+      const paused=learnerRef.current.pausedTraining;
+      const {pausedTraining,...rest}=learnerRef.current;
+      updateLearner(rest);setActiveSession(paused);
+    }else setActiveSession({...session,completed:true});
     if(session.kind==="finalRecall") {
       const graded=session.answers.filter(answer=>answer&&!answer.reported&&!answer.aiFailed);
       const correct=graded.filter(answer=>answer.correct&&!answer.assisted).length;
@@ -779,7 +810,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       try {
         if (raw) hadAnyData = true;
         const data = raw ? migrateProgressData(raw) : emptyProgressData();
-        progressExtrasRef.current = data; setJourneyProgress(data.journey || {}); setActiveSession(data.activeSession || null);setDailyProgress(data.dailyProgress||null);setQuestionReports(Array.isArray(data.reports)?data.reports:[]);setSolvedStories(Array.isArray(data.solvedStories)?data.solvedStories:[]);setSessionLogs(Array.isArray(data.sessionLogs)?data.sessionLogs:[]);
+        progressExtrasRef.current = data; learnerRef.current = data.learner || {}; setLearner(learnerRef.current); setJourneyProgress(data.journey || {}); setActiveSession(data.activeSession || null);setDailyProgress(data.dailyProgress||null);setQuestionReports(Array.isArray(data.reports)?data.reports:[]);setSolvedStories(Array.isArray(data.solvedStories)?data.solvedStories:[]);setSessionLogs(Array.isArray(data.sessionLogs)?data.sessionLogs:[]);
         setScore(data.score); setStreak(data.streak); setBestStreak(data.bestStreak); setAttempted(data.attempted);
         setMastery(data.mastery); masteryRef.current = data.mastery;
         setLevelsCleared(data.levelsCleared); setLevelStats(data.levelStats); setPools(data.pools); poolsRef.current = data.pools;
@@ -842,10 +873,10 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   useEffect(() => {
     if (!loaded) return;
     return debouncedSave("progress", () => {
-      return repo.saveProgress({ ...progressExtrasRef.current, journey: journeyProgress, activeSession, schemaVersion: SCHEMA_VERSION, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings })
+      return repo.saveProgress({ ...progressExtrasRef.current, journey: journeyProgress, learner, activeSession, schemaVersion: SCHEMA_VERSION, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings })
         .catch((e) => console.error("Could not save progress:", e));
     });
-  }, [loaded, journeyProgress, activeSession, questionReports, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings, liveSeenTick]);
+  }, [loaded, learner, journeyProgress, activeSession, questionReports, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings, liveSeenTick]);
 
   // Save content whenever it changes (admin only — players read content,
   // they never write it). Separate from progress so a progress reset never
@@ -1362,7 +1393,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   }
 
   async function handleReset() {
-    progressExtrasRef.current={};setJourneyProgress({});setActiveSession(null);setDailyProgress(null);
+    progressExtrasRef.current={};learnerRef.current={};setLearner({});setJourneyProgress({});setActiveSession(null);setDailyProgress(null);
     try { await repo.resetProgress(); } catch (e) { console.error("Could not reset progress:", e); setStorageWarning("Progress couldn't be reset on the server. Check your connection and try again."); }
     const empty = emptyProgressData();
     setScore(0); setStreak(0); setBestStreak(0); setAttempted(0);
@@ -1449,7 +1480,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     if (mode === "progress" || mode === "full") {
       const restored = migrateProgressData(mode === "full" ? V2.prepareImport(raw, {}).data : raw);
       setJourneyProgress(restored.journey || {});
-      progressExtrasRef.current = restored; setActiveSession(restored.activeSession || null); setDailyProgress(restored.dailyProgress || null);
+      progressExtrasRef.current = restored; learnerRef.current=restored.learner||{};setLearner(learnerRef.current);setJourneyProgress(restored.journey||{});setActiveSession(restored.activeSession || null); setDailyProgress(restored.dailyProgress || null);
       setScore(restored.score); setStreak(restored.streak); setBestStreak(restored.bestStreak); setAttempted(restored.attempted);
       setMastery(restored.mastery); masteryRef.current = restored.mastery; setLevelsCleared(restored.levelsCleared); setLevelStats(restored.levelStats);
       setStudyStreak(restored.studyStreak); setBestStudyStreak(restored.bestStudyStreak); setLastStudyDate(restored.lastStudyDate);
@@ -1516,7 +1547,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   );
 
   return (
-    <div className={`wh-root${screen !== "admin" ? " lq-theme" : ""}${showNav ? " has-nav" : ""}${screen === "admin" ? " screen-admin" : ""}${settings.textSize !== "normal" ? ` text-${settings.textSize}` : ""}${settings.shortcuts ? "" : " no-shortcuts"}${settings.reduceMotion ? " reduce-motion" : ""}`}>
+    <div className={`wh-root${screen !== "admin" ? " lq-theme" : ""}${settings.theme === "light" && screen!=="admin" ? " lq-light" : ""}${showNav ? " has-nav" : ""}${screen === "admin" ? " screen-admin" : ""}${settings.textSize !== "normal" ? ` text-${settings.textSize}` : ""}${settings.shortcuts ? "" : " no-shortcuts"}${settings.reduceMotion ? " reduce-motion" : ""}`}>
 
       <div className={`wh-container${screen === "admin" ? " wh-container-admin" : ""}`}>
         {toast && (
@@ -1533,7 +1564,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           <div className="ui-header-top">
             <div>
               <h1 className="wh-title">{screen === "admin" ? <>WORD <span>HUNTER</span></> : <>Lingo <span>Quest</span></>}</h1>
-              <div className="wh-sub">{profile?.username && profile.id !== "local" ? `Hi ${profile.username} · ` : ""}{Object.values(journeyProgress.levels || {}).filter(l=>l.passed).length}/{buildJourney(liveContent()).length} course levels complete</div>
+              <div className="wh-sub">{profile?.username && profile.id !== "local" ? `Hi ${learner.displayName || profile.username} · ` : ""}{Object.values(journeyProgress.levels || {}).filter(l=>l.passed).length}/{buildJourney(liveContent()).length} course levels complete</div>
             </div>
             <div className="ui-header-actions">
               <SyncStatus repo={repo} />
@@ -1541,7 +1572,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
             </div>
           </div>
           <div className="wh-stats ui-stat-row">
-            <span className="ui-stat" title="Score"><b>{score}</b> pts</span>
+            {screen!=="admin" && settings.hearts && <button className="ui-stat lq-heart-stat" onClick={()=>setScreen('hearts')} title="Your hearts">♥ {heartsAt(learner.hearts).count}</button>}
+            <span className="ui-stat" title="Score"><b>{score}</b> XP</span>
             <span className="ui-stat wh-stat-streak" title="Answer streak"><Flame size={14} /> {streak}</span>
             <span className="ui-stat" title="Study streak (days in a row)"><b>{studyStreak}</b>d streak</span>
             <button className="wh-icon-btn ui-stat" onClick={() => setScreen(badgesOpen ? "levels" : "badges")} aria-pressed={badgesOpen} title="View badges">
@@ -1554,7 +1586,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
               <SettingsIcon size={13} />
             </button>
           </div>
-          {!(activeSession?.journey && activeSession.journey.kind!=="training" && screen==="session") && <div className="wh-ask-bar">
+          {screen!=="session" && !(activeSession?.journey && activeSession.journey.kind!=="training" && screen==="session") && <div className="wh-ask-bar">
             <input value={askAiTerm} onChange={event=>setAskAiTerm(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();openAskAi(askAiTerm);}}} placeholder="Look up a word…" aria-label="Ask AI about a word" enterKeyHint="search" />
             <button className="wh-icon-btn" onClick={()=>openAskAi(askAiTerm)} title="Ask AI"><HelpCircle size={15}/><span className="ui-hide-narrow"> Ask AI</span></button>
             <button className="wh-icon-btn" onClick={()=>{const term=askAiTerm.trim();if(term)setListenTerm(term);}} title="Hear it pronounced" aria-label="Listen"><Volume2 size={15}/></button>
@@ -1620,11 +1652,12 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         {badgesOpen && (
           <div className="wh-panel">
             <div className="wh-panel-header">
-              <span>Case Archive — Badges</span>
+              <span>Achievements · {earnedBadgesCount} / {BADGES.length}</span>
               <button onClick={() => setScreen("levels")} aria-label="Close badges panel">
                 <X size={15} />
               </button>
             </div>
+            {(()=>{const next=BADGES.map(b=>({b,...getBadgeProgress(b,{mastery,bestStreak})})).filter(b=>!b.earned).sort((a,b)=>b.done/b.total-a.done/a.total)[0];return next?<div className="lq-next-badge"><Trophy size={36}/><div><small>NEXT BADGE</small><h3>{next.b.label}</h3><p>{next.done} / {next.total}</p><progress value={next.done} max={next.total}/></div></div>:<p>You’ve earned every available badge!</p>;})()}
             <div className="wh-badges-grid">
               {BADGES.map((b) => {
                 const { done, total, earned } = getBadgeProgress(b, { mastery, bestStreak });
@@ -1656,27 +1689,17 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
             </div>
           </div>}
           <nav className="wh-v2-nav" aria-label="Game sections">{[["practice","Journey"],["legacy","Free practice"],["stories","Stories"]].map(([id,label])=><button key={id} aria-pressed={section===id} onClick={()=>setSection(id)}>{label}</button>)}</nav>
-          {activeSession&&!activeSession.completed&&<button className="wh-level-btn" onClick={()=>setScreen("session")}>Resume {activeSession.title} ({Math.min(activeSession.index+1,activeSession.queue.length)}/{activeSession.queue.length})</button>}
+          {activeSession&&!activeSession.completed&&<button className="wh-level-btn" onClick={()=>setScreen(settings.hearts && activeSession?.journey?.kind==="training" && heartsAt(learner.hearts).count===0 ? "hearts" : "session")}>Resume {activeSession.title} ({Math.min(activeSession.index+1,activeSession.queue.length)}/{activeSession.queue.length})</button>}
+          {section==="practice" && !learner.onboarded && <div className="lq-review-callout"><div><strong>Make this journey yours</strong><p>Choose a study goal and a starting focus.</p></div><button className="lq-primary" onClick={()=>setScreen('onboarding')}>Set up my journey</button></div>}
           {section==="practice"&&(()=>{const day=todayProgress(dailyProgress);const goal=settings.dailyGoal;const done=day.answered>=goal;return <div className={`wh-daily-goal ${done?"done":""}`}><div className="wh-daily-goal-head"><b>{done?<><CheckCircle2 size={15}/> Daily goal reached</>:<><Target size={15}/> Today's goal</>}</b><span>{day.answered} / {goal} questions{day.answered?` · ${Math.round(day.correct/day.answered*100)}% correct`:""}</span></div><div className="wh-daily-goal-bar"><span style={{width:`${Math.min(100,day.answered/goal*100)}%`}}/></div>{done&&day.answered>goal&&<small>+{day.answered-goal} bonus questions today</small>}</div>;})()}
-          {section==="stories"&&<div className="wh-panel"><h2>Stories</h2>
-            {isAdmin&&<div className="wh-story-builder"><h3>Generate a mixed-category story</h3><p className="wh-regen-meta">Choose one or more categories. Weak words are selected first and distributed across your choices.</p><div className="wh-category-multiselect">{LEVEL_ORDER.filter(category=>WORDS.some(word=>word.category===category)).map(category=><label key={category} className={`wh-category-choice ${selectedStoryCategories.includes(category)?"selected":""}`}><input type="checkbox" checked={selectedStoryCategories.includes(category)} onChange={()=>toggleStoryCategory(category)}/><span>{category}</span><small>{WORDS.filter(word=>word.category===category).length}</small></label>)}</div>{storyGenState!=="loading"&&<button className="wh-level-btn" disabled={!selectedStoryCategories.length} onClick={handleGenerateStory}>✨ Generate from {selectedStoryCategories.length||0} categor{selectedStoryCategories.length===1?"y":"ies"}</button>}{storyGenError&&storyGenState!=="loading"&&<p className="wh-regen-status error">{storyGenError}</p>}</div>}
-            {storyGenState==="loading"&&<p className="wh-regen-status">Writing and checking a new story…</p>}
-            {storyGenState&&typeof storyGenState==="object"&&<div className="wh-regen-preview">
-              <p className="wh-regen-label">New story — preview</p>
-              <p><strong>{storyGenState.title}</strong></p>
-              <p>{storyGenState.text}</p>
-              <p className="wh-regen-meta">Categories: {(storyGenState.sourceCategories||[]).join(" + ")} · Hidden targets: {storyGenState.targetWords.join(", ")} · {storyGenState.questions.length} questions{storyGenState.grammarQuestions?.length?` + ${storyGenState.grammarQuestions.length} grammar`:""}</p>
-              <div className="wh-regen-actions">
-                <button className="wh-level-btn" onClick={()=>{setCustomStories(prev=>[...prev,storyGenState]);setStoryGenState(null);}}>Add to My Stories</button>
-                <button className="wh-back-btn wh-nav-btn" onClick={handleGenerateStory}>Regenerate</button>
-                <button className="wh-back-btn wh-nav-btn" onClick={()=>setStoryGenState(null)}>Discard</button>
-              </div>
-            </div>}
-            {!customStories.length&&<p>No authored stories loaded. Import a Content v2 file to add them.</p>}{[...customStories].sort((a,b)=>a.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length-b.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length).map(story=>{const fresh=story.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length;const record=solvedStories.find(e=>e.id===story.id);return <article className="wh-v2-learn" key={story.id}><strong>{story.title}{record&&<span className="wh-story-solved-flag"><CheckCircle2 size={13}/> Solved · {record.correct}/{record.total}</span>}</strong><p>{story.questions.length}{story.grammarQuestions?.length?` + ${story.grammarQuestions.length} grammar`:""} questions · {fresh?`${fresh} new words: preview first`:"Ready for review"}</p><button className="wh-level-btn" onClick={()=>launchStory(story)}>{record?"Play again":"Open story"}</button></article>;})}</div>}
+          {section==="stories" && <Stories stories={customStories} words={WORDS} solved={solvedStories} onStart={launchStory} onExplore={openAskAi}/>}
         </>}
-        {screen === "levels" && section === "practice" && <Journey levels={buildJourney(liveContent())} progress={journeyProgress} mastery={mastery} selectedLevel={new URLSearchParams(location.search).get('level')} selectedUnit={new URLSearchParams(location.search).get('unit')} onSelect={(level,unit)=>{const params=new URLSearchParams({level});if(unit)params.set('unit',unit);navigate('/?'+params.toString());}} onStart={startJourney} onNavigate={id=>id==='stories'?setSection('stories'):setScreen(id)}/>}
-        {screen === "review" && <Review words={WORDS} mastery={mastery} onStart={startWeakReview} onAsk={openAskAi} onNavigate={setScreen}/>}
-        {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={reportSessionQuestion} onReviewReport={reviewQuestionReport} onWithdrawReport={deleteQuestionReport} onUpdateWord={isAdmin?updateWordFields:undefined} sound={settings.sound} prefs={{ autoAdvanceMs: settings.autoAdvanceMs, hints: activeSession?.journey && activeSession.journey.kind!=="training" ? false : settings.hints, speakWord: settings.speakWord }} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onResult={recordSessionResult} onAskWord={activeSession?.journey && activeSession.journey.kind!=="training" ? undefined : openAskAi}/>}
+        {screen === "levels" && section === "practice" && <div className="lq-home-layout"><Journey levels={buildJourney(liveContent())} progress={journeyProgress} mastery={mastery} selectedLevel={new URLSearchParams(location.search).get('level')} selectedUnit={new URLSearchParams(location.search).get('unit')} onSelect={(level,unit)=>{const params=new URLSearchParams({level});if(unit)params.set('unit',unit);navigate('/?'+params.toString());}} onStart={startJourney} onNavigate={id=>["stories","legacy"].includes(id)?setSection(id):setScreen(id)}/><JourneyAside words={WORDS} mastery={mastery} learner={learner} today={todayProgress(dailyProgress)} goal={settings.dailyGoal} streak={studyStreak} showRanks={app.leaderboard} onOpen={setScreen}/></div>}
+        {screen === "review" && <Review voiceRate={settings.voiceRate} words={WORDS} mastery={mastery} confusions={confusions} learner={learner} onRate={(word,rating)=>updateLearner({...learnerRef.current,reviews:scheduleReview(learnerRef.current.reviews,word,rating)})} onPractice={practiseWord} onStart={startWeakReview} onAsk={openAskAi} onNavigate={setScreen}/>}
+        {screen === "onboarding" && <Onboarding initial={learner} levels={buildJourney(liveContent())} onBack={backToLevels} onComplete={next=>{updateLearner(next);navigate('/?level='+encodeURIComponent(next.preferredLevel));}}/>}
+        {screen === "account" && <Account learner={learner} onSave={updateLearner} onBack={()=>setScreen('profile')} onSignOut={logOut}/>}
+        {screen === "hearts" && <Hearts state={learner.hearts} onPractice={recoveryPractice} onBack={backToLevels}/>}
+        {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={reportSessionQuestion} onReviewReport={reviewQuestionReport} onWithdrawReport={deleteQuestionReport} onUpdateWord={isAdmin?updateWordFields:undefined} sound={settings.sound} prefs={{ voiceRate:settings.voiceRate, autoAdvanceMs: settings.autoAdvanceMs, hints: activeSession?.journey && activeSession.journey.kind!=="training" ? false : settings.hints, speakWord: settings.speakWord }} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onTrainingBlocked={()=>setScreen("hearts")} trainingBlocked={settings.hearts && activeSession?.journey?.kind==="training" && heartsAt(learner.hearts).count===0} onResult={recordSessionResult} onAskWord={activeSession?.journey && activeSession.journey.kind!=="training" ? undefined : openAskAi}/>}
 
 
         {screen === "levels" && section === "legacy" && (
@@ -2128,11 +2151,11 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           </div>
         )}
 
-        {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge player={livePlayer} levels={LEVELS} code={route.code} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} limits={{ maxPlayers: isAdmin ? 10 : app.liveMaxPlayers, canCreate: isAdmin || app.liveCreate !== "admin", defaultCount: settings.liveQuestions ?? app.liveDefaultQuestions, defaultSeconds: settings.liveSeconds ?? app.liveDefaultSeconds, maxHours: isAdmin ? 168 : app.liveMaxHours }} /></Suspense>}
+        {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge player={livePlayer} levels={buildJourney(liveContent()).map(l=>({id:l.id,title:l.title,items:[...new Map(l.units.flatMap(u=>u.words).map(w=>[w.word,w])).values()].map(w=>({kind:"word",obj:w}))}))} code={route.code} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} limits={{ maxPlayers: isAdmin ? 10 : app.liveMaxPlayers, canCreate: isAdmin || app.liveCreate !== "admin", defaultCount: settings.liveQuestions ?? app.liveDefaultQuestions, defaultSeconds: settings.liveSeconds ?? app.liveDefaultSeconds, maxHours: isAdmin ? 168 : app.liveMaxHours }} /></Suspense>}
         {screen === "data" && <Suspense fallback={<ScreenSkeleton />}><ImportExport variant="game" isAdmin={isAdmin} tools={dataTools} onBack={backToLevels} /></Suspense>}
         {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} /></Suspense>}
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} hiddenForPlayers={isAdmin && !app.leaderboard} /></Suspense>}
-        {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage onSignOut={onSignOut ? logOut : null} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
+        {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage onSignOut={onSignOut ? logOut : null} learner={learner} settings={settings} onOpen={setScreen} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
 
         {screen === "speedResults" && (
           <div className="wh-results-card">

@@ -1,38 +1,52 @@
-# Lingo Quest implementation
+# Lingo Quest learner interface
 
-Branch: `feat/lingo-quest-responsive`, based on master `18b36ba`.
+Branch: `feat/lingo-quest-responsive`, based on master `18b36ba`. Review: https://github.com/khaleddoosama/english-game/pull/18.
 
-## Implemented first slice
+## Learning flow
 
-- Responsive purple/gold user shell, desktop side navigation and mobile bottom navigation. Admin palette and component implementation retained.
-- Course level -> ordered units -> training -> unit test -> level final challenge.
-- Units come from content rather than a fixed six-slot template; shared words can belong to multiple units, grammar-only units are included.
-- Full unit content must have recorded training attempts before its test is available. Introduction cards alone do not count.
-- Unit exam and level final require at least 70% independent correct answers. No rounding-up, empty-test passes, assisted credit or reported-question credit.
-- All unit rules and words are tested by the unit exam. Final challenges sample three words from each unit and include all its rules, prioritising production and correction. Missing valid questions block the exam instead of omitting a unit.
-- Next unit unlocks on unit pass, next course level only on final pass. Completed passes persist through failed retries and duplicate completion calls are idempotent.
-- Course progress is an additive `journey` field in the existing progress persistence and backup mechanism. No production schema changes or deployed changes.
-- Review/word bank, search, filters, word details, and existing weak-review engine.
-- Existing free-practice stays under `/practice`. Journey detail selection lives in `/?level=...&unit=...`, review at `/review`.
+Course level → ordered units → training → unit test → comprehensive final. Units come from actual content; their count is variable, shared words can belong to multiple units, and grammar-only units are included. Every unit item needs a recorded practice attempt before its test opens. Introduction cards alone do not count.
 
-## Content mapping
+Unit tests and level finals require at least 70% independent correct answers. Assisted, reported, skipped and unverified responses do not earn pass credit; percentages do not round up for unlocking. Unit tests cover all unit items. Finals sample three words from each unit and include all its rules, prioritising production/correction. Missing safe questions block an exam instead of silently omitting a unit. A unit pass opens the next unit; a final pass opens the next level. Failed retries preserve prior passes, and completion is idempotent.
 
-Course placement reads `courseLevel`, then `gatewayLevel`, then `English::Gateway::Level-*` in tags, then existing `level`. CEFR levels must not be substituted for a course number when both differ: supply `courseLevel` on words AND rules. Units preserve source array order; the Anki tag sort order is not an authoritative curriculum order. An explicit curriculum ordering model remains to be agreed for the real course.
+Listening, browser speech recognition, sentence token building and matching use the same Supabase words/examples. Speech and token building are guided practice, with no independent mastery credit. Speech checks the transcript, not pronunciation quality. Microphone denial has a typed fallback. Browser voice availability depends on the device.
 
-Supabase is the sole authoritative source for game content. Repository backups, uploaded exports and browser-local content are not curriculum sources. The app stops at a connection setup message when Supabase configuration is missing instead of opening the local repository. The existing offline cache is a copy of Supabase content; test fixtures remain isolated from application content.
+Training mistakes use hearts, with five maximum and one refill every 30 minutes. A five-question recovery round earns a heart and preserves interrupted training. Review and exams do not consume hearts; players can disable training hearts in Settings. Spaced review self-ratings schedule another card review but do not increase mastery or XP.
 
-Read-only verification on 2026-10-03 matched `.env.example` to the `word-hunter` project (`sbekepibxivyysgealpr`). Active content contains 137 words, 5 grammar rules and 1 story. Of these, 136 words and all 5 rules have `units`. None has `courseLevel`, `gatewayLevel` or `tags`; existing `level` values include A1, A2, B1, B2 and C1. These are the current server labels, not evidence of numbered Gateway placement. Numbered course placement and curriculum order therefore remain unresolved; do not infer them from a backup or uploaded export. No production content was changed.
+## Design coverage
 
-## Remaining screens and release checks
+The learner surfaces from the supplied 48-page design are implemented or connected to the existing engine. Administration is deferred.
 
-This is the initial working slice, not completion of all 48 design pages. Auth/onboarding, advanced question interactions (listening, speech, translation building), story reader presentation, league/profile/settings/data-transfer refinements, and final visual parity remain. Existing screens retain their existing functionality with shared user theme styling.
+| Design pages | Implementation |
+| --- | --- |
+| 1, 6, 19 | Journey path, responsive desktop sidebar, unit cards and unlock states |
+| 2, 18 | Sentence token building, duplicate tokens and typed alternative |
+| 3, 4 | Answer feedback, session results, XP, accuracy, time and answer review |
+| 5, 15, 20–23 | Unit guide, introduction cards, searchable word bank, details and focused review |
+| 7–9, 47 | Welcome, username sign-in/sign-up and study-goal onboarding |
+| 10–12 | Listening, matching and speech transcript practice |
+| 13, 14 | Hearts/recovery and scheduled flashcard review |
+| 16, 17, 46, 48 | Weekly leaderboard, profile, achievement progress and account settings |
+| 24–29 | Existing picture, typing, two-answer, free-form, correction and Grammar Court engines within the learner theme |
+| 30–32 | Supabase story library, paged reader, text size, word lookup and story check |
+| 33, 34 | Existing final-case flow in free practice; curriculum finals remain a separate gated flow |
+| 35–38 | Existing create/invite/lobby/play/results Live flow; actual course levels and mobile layout |
+| 39–43 | Existing speed rounds, dashboard, AI exploration and question reporting |
+| 44, 45 | Theme/voice/accessibility settings and player progress/CSV export |
 
-Browser verification passed at widths 320, 390, 768 and 1440 with no document horizontal overflow. The browser run used isolated test fixtures to complete training, both unit tests and the course final, save completion, reload and verify persisted completion, then check word-bank search and details; no page errors were recorded. Screenshots are in `docs/screenshots/`; they do not represent the production curriculum. Live Supabase content was subsequently inspected read-only as described above. Authenticated browser verification against Supabase and curriculum mapping must still be completed before merging. Persistence is covered using the existing fake repository tests. Live challenge transport already supports up to ten participants; its existing server/admin limits were retained.
+Backend-compatible adaptations: authentication remains username/password; account display names are stored in learner progress, password changes use existing Supabase Auth. OAuth, email reset, self-deletion and fictional league promotions are not represented as functional controls. Starting focus is a preference rather than a fabricated placement test or level unlock. Live retains its existing limit of ten participants. AI actions retain their existing endpoints and honest failure states.
 
-## Validation
+## Authoritative content
 
-`npm run build`, `npm test`, and `git diff --check`. The journey test suite includes course grouping, shared content, grammar coverage, exact pass threshold, failed/assisted answers, level gating, failed retries, idempotency, final content coverage, training rotation and repository round-trip.
+Supabase is the sole application curriculum source. Uploaded exports and repository backups are not used as curriculum. Missing Supabase configuration shows setup instructions instead of starting a local repository. Offline cache is a copy of previously fetched Supabase content.
 
-## Remote publishing
+The `word-hunter` project (`sbekepibxivyysgealpr`) was queried read-only on 2026-10-03. The latest snapshot contained 257 words, nine grammar rules and one story. Its actual labels include A1, A1.3, A2, A2.2, A2.3, B1, B1.1, B2 and C1, plus unassigned items. Course metadata is read in order: `courseLevel`, `gatewayLevel`, Gateway level tag, existing `level`. Existing labels are preserved; numbered placement is not invented from old exports. Source unit array order is retained. No production content or schema was changed.
 
-GitHub integration access was restored on 2026-10-03 and the separate `feat/lingo-quest-responsive` branch was created. Publishing uses the connected GitHub integration because shell Git credentials are unavailable. This branch is for review; production has not been deployed or merged.
+Journey and learner preferences are additive fields in existing progress persistence. Hearts, goals, display name, review schedules and paused sessions are saved with that progress. Existing mastery stages and scoring remain authoritative.
+
+## Verification and limits
+
+`npm test`: 159 tests passed. `npm run build` and `git diff --check` passed. Tests cover exact 70% thresholds, content grouping, grammar coverage, gating, retries, idempotency, training rotation, repository round-trip, heart timing, review scheduling, interactive question generation and story category changes.
+
+Browser verification uses a read-only snapshot of current Supabase curriculum with all authentication/database/AI requests intercepted. Its synthetic test account never reaches production; production writes are zero. Thirteen learner routes were checked at 320, 390, 768 and 1440 pixels with no document overflow. Unit training, test, comprehensive final, preference reload, word details, scheduled review, all four interactive practice modes, theme persistence, heart depletion/recovery and story reader/check were exercised. Evidence screenshots show that real curriculum inside the isolated replay, not a production authenticated session.
+
+Actual authenticated production verification remains blocked: automatic approval review rejected credentials from older conversation context because a currently approved test account is required. Microphone hardware recognition, live multiplayer transport and successful AI model responses require their respective real integrations for final end-to-end verification. Existing automated coverage and isolated fallback paths do not substitute for those checks. No merge or production deployment has been performed.

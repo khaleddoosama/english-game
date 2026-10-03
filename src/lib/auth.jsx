@@ -38,7 +38,10 @@ export function AuthProvider({ children }) {
         if (!stopped && currentId === id) setState({ loading: false, user: null, profile: null, error: "Couldn't load your account. Check your connection and try again." });
       }
     };
-    supabase.auth.getSession().then(({ data }) => apply(data.session));
+    supabase.auth.getSession().then(({ data, error }) => {
+      if(error) throw error;
+      return apply(data.session);
+    }).catch(() => { if(!stopped) setState({loading:false,user:null,profile:null,error:'Could not connect. Check your connection and sign in again.'}); });
     // Supabase warns against awaiting its own calls inside this callback.
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => { setTimeout(() => apply(session), 0); });
     return () => { stopped = true; sub.subscription.unsubscribe(); };

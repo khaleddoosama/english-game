@@ -40,6 +40,7 @@ export default function SettingsPage({ settings, onChange, onBack, onOpen, app }
         <Row label="New words per round" hint="0 = review only"><Stepper label="new words" value={settings.newWordsPerRound} min={0} max={10} onChange={(v) => set({ newWordsPerRound: v })} /></Row>
         <Row label="Weak-word review size" hint="Questions in a weak-words round"><Stepper label="review questions" value={settings.weakReviewSize} min={3} max={20} onChange={(v) => set({ weakReviewSize: v })} /></Row>
         <Row label="Daily goal" hint="Questions per day"><Stepper label="daily goal" value={settings.dailyGoal} min={5} max={100} step={5} onChange={(v) => set({ dailyGoal: v })} /></Row>
+        <Row label="Hearts in training" hint="Mistakes use one heart; review and exams are unrestricted"><Toggle label="Training hearts" checked={settings.hearts} onChange={v=>set({hearts:v})}/></Row>
         <Row label="“Pick two” questions" hint="Two People and Select Two"><Toggle label="Pick two questions" checked={settings.enablePairModes} onChange={(v) => set({ enablePairModes: v })} /></Row>
       </section>
 
@@ -49,11 +50,13 @@ export default function SettingsPage({ settings, onChange, onBack, onOpen, app }
         <Row label="Hints" hint="Show the Hint button"><Toggle label="Hints" checked={settings.hints} onChange={(v) => set({ hints: v })} /></Row>
         <Row label="Sound effects" hint="For right and wrong answers"><Toggle label="Sound effects" checked={settings.sound} onChange={(v) => set({ sound: v })} /></Row>
         <Row label="Say the word after answering" hint={voices ? "Uses your device's voice" : "Your browser has no voice"}><Toggle label="Say the word" checked={settings.speakWord && voices} onChange={(v) => set({ speakWord: v })} /></Row>
+        <Row label="Voice speed"><Choice label="Voice speed" value={settings.voiceRate} onChange={v=>set({voiceRate:v})} options={[[.5,"0.5×"],[.75,"0.75×"],[1,"Normal"],[1.25,"1.25×"]]}/></Row>
         <Row label="Speed Round length"><Choice label="Speed Round length" value={settings.speedSeconds} onChange={(v) => set({ speedSeconds: v })} options={SPEED_SECONDS_OPTIONS.map((s) => [s, s < 60 ? `${s}s` : `${s / 60} min`])} /></Row>
       </section>
 
       <section className="st-card">
         <h3><Monitor size={16} /> Display</h3>
+        <Row label="Theme"><Choice label="Theme" value={settings.theme} onChange={v=>set({theme:v})} options={[["dark","Dark"],["light","Light"]]}/></Row>
         <Row label="Text size"><Choice label="Text size" value={settings.textSize} onChange={(v) => set({ textSize: v })} options={[["normal", "Normal"], ["large", "Large"], ["xlarge", "Extra large"]]} /></Row>
         <Row label="Number keys on answers" hint="Shows 1–4 to answer with the keyboard"><Toggle label="Number keys" checked={settings.shortcuts} onChange={(v) => set({ shortcuts: v })} /></Row>
         <Row label="Reduce motion" hint="Fewer animations"><Toggle label="Reduce motion" checked={settings.reduceMotion} onChange={(v) => set({ reduceMotion: v })} /></Row>
@@ -73,6 +76,7 @@ export default function SettingsPage({ settings, onChange, onBack, onOpen, app }
           <button className="st-link" onClick={() => onOpen("data")}>Import &amp; export</button>
           <button className="st-link" onClick={() => onOpen("stats")}>Study dashboard</button>
           <button className="st-link" onClick={() => onOpen("profile")}>Profile &amp; password</button>
+          <button className="st-link" onClick={() => onOpen("onboarding")}>Study goals &amp; starting focus</button>
         </div>
       </section>
 

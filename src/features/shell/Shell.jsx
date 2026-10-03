@@ -6,8 +6,7 @@ export function BottomNav({ screen, onNavigate, isAdmin, showRanks = true }) {
   const items = [
     { id: "levels", label: "Journey", icon: Home },
     { id: "review", label: "Review", icon: BookOpen },
-    { id: "live", label: "Live", icon: Users },
-    ...(showRanks ? [{ id: "leaderboard", label: "Ranks", icon: Trophy }] : []),
+    ...(showRanks ? [{ id: "leaderboard", label: "League", icon: Trophy }] : []),
     { id: "profile", label: "Profile", icon: User },
     ...(isAdmin ? [{ id: "admin", label: "Admin", icon: ListChecks }] : []),
   ];

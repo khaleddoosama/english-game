@@ -1,0 +1,25 @@
+{
+  "errors": [],
+  "pages": [
+    "/",
+    "/review",
+    "/stories",
+    "/profile",
+    "/account",
+    "/settings",
+    "/stats",
+    "/badges",
+    "/data",
+    "/live",
+    "/leaderboard",
+    "/onboarding",
+    "/hearts"
+  ],
+  "widths": [
+    320,
+    390,
+    768,
+    1440
+  ],
+  "productionWrites": 0
+}

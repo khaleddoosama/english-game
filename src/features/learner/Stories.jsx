@@ -1,0 +1,17 @@
+import { useState } from 'react';
+import { ArrowLeft, BookOpen, ChevronRight, Volume2 } from 'lucide-react';
+import { V2 } from '../../engine/v2';
+import { speak } from './learning';
+
+export default function Stories({ stories, words, solved, onStart, onExplore }) {
+  const [selected, setSelected] = useState(null), [part, setPart] = useState(0), [fontSize, setFontSize] = useState(20), [lookup, setLookup] = useState(null);
+  if (selected) {
+    const paragraphs = selected.text.split(/\n\s*\n/).filter(Boolean);
+    const chunks = paragraphs.length > 1 ? paragraphs : selected.text.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [selected.text];
+    const pages = []; for (let i=0; i<chunks.length; i+=3) pages.push(chunks.slice(i,i+3).join('\n\n'));
+    const text = pages[part] || '', last = part === pages.length - 1;
+    function lookUp(raw) { const w = V2.findWord(words, raw.replace(/[^a-z'-]/gi,'')); if (w) setLookup(w); }
+    return <section className="lq-reader"><div className="lq-page-heading"><button className="lq-back" onClick={() => setSelected(null)}><ArrowLeft/> Stories</button><button className="lq-secondary" aria-label="Change reading text size" onClick={() => setFontSize(n => n === 26 ? 18 : n + 2)}>Aa</button></div><small>{selected.title.toUpperCase()} · PART {part+1} OF {pages.length}</small><div className="lq-reader-text" style={{fontSize}}>{text.split(/(\s+)/).map((s,i) => /^\s+$/.test(s) ? s : <button key={i} onClick={() => lookUp(s)}>{s}</button>)}</div>{lookup && <aside className="lq-reader-word"><button className="lq-back" onClick={() => setLookup(null)} aria-label="Close word details">×</button><h3>{lookup.word}</h3><p>{lookup.meaning}</p><button className="lq-secondary" onClick={() => speak(lookup.word)}><Volume2/> Listen</button><button className="lq-secondary" onClick={() => onExplore(lookup.word)}>Explore word</button></aside>}<div className="lq-unit-actions"><button className="lq-secondary" disabled={!part} onClick={() => {setPart(p=>p-1);setLookup(null);}}>Previous part</button><button className="lq-primary" onClick={() => {if(last) onStart(selected); else {setPart(p=>p+1);setLookup(null);window.scrollTo(0,0);}}}>{last ? 'Start story check' : 'Continue'}<ChevronRight/></button></div></section>;
+  }
+  return <section><div className="lq-page-heading"><div><small>READ. NOTICE. REMEMBER.</small><h2>Stories</h2><p>Short reads from your course library.</p></div><BookOpen size={40}/></div><div className="lq-story-grid">{stories.map((story,i) => { const record=solved.find(s=>s.id===story.id);return <article key={story.id} className="lq-story-card"><div className={`lq-story-art art-${i%3}`}><BookOpen size={56}/><span>{record ? 'READ AGAIN' : 'NEW STORY'}</span></div><div className="lq-story-body"><h3>{story.title}</h3><p>{story.text.slice(0,145)}…</p><div className="lq-story-meta"><span>{Math.max(1,Math.ceil(story.text.split(/\s+/).length/180))} min</span><span>{story.targetWords?.length || 0} words</span><span>{story.questions?.length || 0} questions</span>{record && <span>{record.correct}/{record.total} best</span>}</div><button className="lq-primary" onClick={() => {setSelected(story);setPart(0);}}>Read story</button></div></article>;})}</div>{!stories.length && <div className="lq-empty"><BookOpen size={42}/><h3>More stories are on the way</h3><p>Your course library has no stories yet. Your word practice is still available in Journey.</p></div>}</section>;
+}

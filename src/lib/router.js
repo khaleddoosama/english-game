@@ -72,6 +72,9 @@ export function parseRoute(path) {
     case "live": return { screen: "live", code: a ? a.toUpperCase() : null };
     case "leaderboard": return { screen: "leaderboard" };
     case "profile": return { screen: "profile" };
+    case "account": return { screen: "account" };
+    case "onboarding": return { screen: "onboarding" };
+    case "hearts": return { screen: "hearts" };
     case "stats": return { screen: "stats" };
     case "badges": return { screen: "badges" };
     case "data": return { screen: "data" };
@@ -88,7 +91,7 @@ export function pathFor(screen, extra = {}) {
     case "levels": return extra.section === "stories" ? "/stories" : extra.section === "legacy" ? "/practice" : "/";
     case "live": return extra.code ? `/live/${enc(extra.code)}` : "/live";
     case "admin": return `/admin${extra.section && extra.section !== "overview" ? `/${enc(extra.section)}` : ""}${extra.item != null ? `/${enc(extra.item)}` : ""}`;
-    case "review": case "leaderboard": case "profile": case "stats": case "badges": case "data": case "settings": return `/${screen}`;
+    case "review": case "leaderboard": case "profile": case "account": case "onboarding": case "hearts": case "stats": case "badges": case "data": case "settings": return `/${screen}`;
     default: return "/play";
   }
 }

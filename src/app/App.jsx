@@ -32,7 +32,7 @@ function Gate() {
 export default function App() {
   // Missing configuration must never select a separate local curriculum.
   if (isLocalMode) return (
-    <main className="auth-page">
+    <main className="auth-screen lq-auth">
       <section className="auth-card" role="alert">
         <h1 className="auth-title">Connection setup required</h1>
         <p>The game needs its Supabase connection before you can sign in. Please contact the administrator.</p>
