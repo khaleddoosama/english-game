@@ -682,3 +682,4 @@
 }
 .wh-live-you { font-family: var(--font-mono); font-size: 13px; color: var(--paper-dim); }
 .wh-live-waiting span.away { opacity: 0.45; text-decoration: line-through; }
+.wh-course-empty { margin:0; padding:14px 16px; border:1px dashed var(--line, #4a4336); border-radius:12px; color:var(--text-dim, #bfb6a3); font-size:14px; line-height:1.5; }

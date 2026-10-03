@@ -11,7 +11,10 @@ import { importImageLink, uploadWordImage } from "../../../lib/images";
 import { Badge, ConfirmDialog, Drawer, Notice } from "../adminUi";
 
 const TYPES = ["vocab", "idiom", "phrasal", "binomial", "fyi"];
-const LEVELS = ["", "A1", "A2", "B1", "B2", "C1", "C2"];
+// The level: a course level (A1.2 …, shown in "By course level") or a
+// plain difficulty (A1 – C2). The session is the class within the level.
+const LEVELS = ["", ...V2.COURSE_LEVELS, "A1", "A2", "B1", "B2", "C1", "C2"];
+const sessionNumber = (v) => { const n = Number(String(v ?? "").trim()); return Number.isInteger(n) && n > 0 ? n : undefined; };
 const lines = (v) => String(v || "").split("\n").map((x) => x.trim()).filter(Boolean);
 const commas = (v) => String(v || "").split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
 const ARABIC = /[؀-ۿ]/;
@@ -26,7 +29,7 @@ export function toForm(w = {}) {
   const mistake = w.commonMistake || (Array.isArray(w.commonMistakes) ? w.commonMistakes[0] : null) || {};
   return {
     word: w.word || "", type: w.type || "vocab", category: w.category || "", subCategory: w.subCategory || "", units: arr(w.units).join(", "),
-    level: w.level || "", register: w.register || "", partsOfSpeech: arr(w.partsOfSpeech).join(", "),
+    level: w.level || "", session: w.session != null ? String(w.session) : "", register: w.register || "", partsOfSpeech: arr(w.partsOfSpeech).join(", "),
     meaning: w.meaning || "", situations: situations.join("\n"), gaps: gaps.join("\n"), hints: arr(w.hints).join("\n"),
     synonyms: arr(w.synonyms).join(", "), antonyms: arr(w.antonyms).join(", "), opposite: w.opposite || "",
     collocations: arr(w.collocations).join("\n"), wordFamily: familyText(w.wordFamily),
@@ -39,7 +42,7 @@ export function fromForm(f, base = {}) {
   const next = {
     ...base,
     word: f.word.trim(), type: f.type, category: f.category.trim(), subCategory: f.subCategory.trim() || undefined, units: commas(f.units),
-    level: f.level || undefined, register: f.register.trim() || undefined, partsOfSpeech: commas(f.partsOfSpeech),
+    level: f.level || undefined, session: sessionNumber(f.session), register: f.register.trim() || undefined, partsOfSpeech: commas(f.partsOfSpeech),
     meaning: f.meaning.trim(), situation: situations[0] || "", situations, gap: gaps[0] || "", gaps, hints: lines(f.hints),
     synonyms: commas(f.synonyms), antonyms: commas(f.antonyms), opposite: f.opposite.trim() || undefined,
     collocations: lines(f.collocations),
@@ -175,7 +178,8 @@ export function WordEditor({ word, content, stats, onSave, onDelete, onClose }) 
               <label className="adm-field"><span>Type</span><select className="adm-select" value={form.type} onChange={(e) => set("type")(e.target.value)}>{[...new Set([...TYPES, form.type])].map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
               <Text label="Category" hint="a new name makes a new category" value={form.category} onChange={set("category")} list="adm-word-cats" />
               <Text label="Unit / group" value={form.subCategory} onChange={set("subCategory")} />
-              <label className="adm-field"><span>Level</span><select className="adm-select" value={form.level} onChange={(e) => set("level")(e.target.value)}>{LEVELS.map((l) => <option key={l} value={l}>{l || "—"}</option>)}</select></label>
+              <label className="adm-field"><span>Level</span><select className="adm-select" value={form.level} onChange={(e) => set("level")(e.target.value)}>{[...new Set([...LEVELS, form.level])].map((l) => <option key={l} value={l}>{l || "—"}</option>)}</select></label>
+              <Text label="Session" hint="the class in that level, e.g. 3" value={form.session} onChange={set("session")} placeholder="—" />
               <Text label="Parts of speech" hint="comma-separated" value={form.partsOfSpeech} onChange={set("partsOfSpeech")} placeholder="noun, verb" />
               <Text label="Units" hint="comma-separated" value={form.units} onChange={set("units")} />
               <Text label="Register" value={form.register} onChange={set("register")} placeholder="informal" />

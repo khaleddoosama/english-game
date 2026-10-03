@@ -139,7 +139,7 @@ export function normalizeSettings(raw) {
     enablePairModes: s.enablePairModes !== false,
     sound: s.sound !== false,
     dailyGoal: Math.max(5, Math.min(100, Number(s.dailyGoal) || DEFAULT_SETTINGS.dailyGoal)),
-    levelView: s.levelView === "group" ? "group" : "lesson",
+    levelView: ["group", "course"].includes(s.levelView) ? s.levelView : "lesson",
     autoAdvanceMs: AUTO_ADVANCE_OPTIONS.includes(Number(s.autoAdvanceMs)) ? Number(s.autoAdvanceMs) : DEFAULT_SETTINGS.autoAdvanceMs,
     hints: s.hints !== false,
     speakWord: s.speakWord === true,

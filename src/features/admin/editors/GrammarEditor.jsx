@@ -67,7 +67,8 @@ export function GrammarEditor({ rule, isNew, content, stats, onSave, onDelete, o
             <Text label="Rule" value={draft.rule} onChange={(v) => setDraft({ rule: v })} placeholder="e.g. Going to (plans and predictions)" />
             <div className="adm-form-grid">
               <Text label="Lesson" hint="the category it's practised in" value={draft.category} onChange={(v) => setDraft({ category: v })} list="gr-lessons" />
-              <label className="adm-field"><span>Level</span><select className="adm-select" value={draft.level || ""} onChange={(e) => setDraft({ level: e.target.value })}><option value="">—</option>{GRAMMAR_LEVELS.map((l) => <option key={l}>{l}</option>)}</select></label>
+              <label className="adm-field"><span>Level</span><select className="adm-select" value={draft.level || ""} onChange={(e) => setDraft({ level: e.target.value })}><option value="">—</option>{[...new Set([...GRAMMAR_LEVELS, ...(draft.level ? [draft.level] : [])])].map((l) => <option key={l}>{l}</option>)}</select></label>
+              <Text label="Session" hint="the class in that level, e.g. 3" value={draft.session != null ? String(draft.session) : ""} onChange={(v) => setDraft({ session: v })} placeholder="—" />
               <label className="adm-field"><span>Id <small className="adm-muted">· {isNew ? "keeps players' progress; can't change later" : "fixed"}</small></span><input className="adm-input mono" value={draft.id} disabled={!isNew} onChange={(e) => setDraft({ id: e.target.value })} /></label>
             </div>
             <datalist id="gr-lessons">{lessons.map((c) => <option key={c} value={c} />)}</datalist>

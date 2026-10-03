@@ -543,6 +543,25 @@ function grammarQuestion(g,item,turn,rng=Math.random){
   if(item.type==='fix')return {...base,mode:'grammarFix',type:'typing',prompt:`Fix the mistake and write the whole sentence:\n“${item.sentence}”`,answers:[item.answer],sentence:item.sentence,modelOnly:true,freeformKind:'grammarFix'};
   return null;
 }
+// ---- Course levels ----
+// The Gateway course's levels are named A1.1, A1.2, A1.3, A2.1 … C2.3 and
+// sit in an item's `level` (a plain A1–C2 there is the item's own
+// difficulty, not a course level). `session` is the class within it.
+const BANDS=['A1','A2','B1','B2','C1','C2'];
+const COURSE_LEVEL=/^([ABC][12])\.(\d{1,2})$/i;
+// The choices editors offer: A1.1 … C2.3 (three course levels a band).
+const COURSE_LEVELS=BANDS.flatMap(b=>[1,2,3].map(n=>`${b}.${n}`));
+function courseLevelOf(item){const m=COURSE_LEVEL.exec(String(item?.level??'').trim());return m&&Number(m[2])>0?`${m[1].toUpperCase()}.${Number(m[2])}`:null;}
+function sessionOf(item){const n=Number(item?.session);return Number.isInteger(n)&&n>0?n:null;}
+// A1.1 < A1.2 < … < A2.1 < … < C2.3; anything else after.
+function courseLevelRank(id){const m=COURSE_LEVEL.exec(String(id||''));return m?BANDS.indexOf(m[1].toUpperCase())*100+Number(m[2]):Infinity;}
+// Gateway numbers its levels three to a band, from A1.1 = 3: A1.2 = 4,
+// A1.3 = 5, A2.1 = 6 … B1.1 = 9.
+function gatewayLevel(id){const m=COURSE_LEVEL.exec(String(id||''));const sub=m?Number(m[2]):0;return m&&sub>=1&&sub<=3?3+BANDS.indexOf(m[1].toUpperCase())*3+sub-1:null;}
+// How hard a word is, for the order new words come in: A1 < A2 < … and,
+// for course levels, A1.2 < A1.3 < A2.1. Unknown sits in the middle.
+function difficultyRank(item){const v=String(item?.level||'').trim().toUpperCase();const m=COURSE_LEVEL.exec(v);if(m)return BANDS.indexOf(m[1].toUpperCase())+Number(m[2])/10;const i=BANDS.indexOf(v);return i<0?2.5:i;}
+
 function practice(content,mastery={},category=null,rng=Math.random,quarantine=null,opts={}){
   const isQuarantined=(word,mode)=>!!quarantine&&quarantine.has(`${String(word).trim().toLowerCase()}|${mode}`);
   const pools=opts.pools||{};
@@ -558,10 +577,15 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // ("unit" / "subCategory") to the lesson's words that have none.
   const unitsOf=w=>Array.isArray(w.units)?w.units:[];
   const inGroup=w=>opts.unit?unitsOf(w).includes(opts.unit):opts.subCategory?w.subCategory===opts.subCategory:opts.noGroup==='unit'?!unitsOf(w).length:opts.noGroup?!w.subCategory:true;
-  const source=content.words.filter(w=>(!category||topic(w.category)===topic(category))&&inGroup(w));
-  const levelRank=w=>{const i=['A1','A2','B1','B2','C1','C2'].indexOf(String(w.level||'').toUpperCase());return i<0?2.5:i;};
+  // opts.courseLevel narrows the round to one course level, from every
+  // lesson (opts.session to one class of it, opts.noSession to its words
+  // with no class); opts.noCourseLevel to the words with no course level.
+  const courseRound=!!(opts.courseLevel||opts.noCourseLevel);
+  const inCourse=w=>opts.courseLevel?courseLevelOf(w)===opts.courseLevel&&(opts.session==null||sessionOf(w)===opts.session)&&(!opts.noSession||sessionOf(w)===null):opts.noCourseLevel?!courseLevelOf(w):true;
+  const source=content.words.filter(w=>(!category||topic(w.category)===topic(category))&&inGroup(w)&&inCourse(w));
+  const inSource=label=>source.some(w=>norm(w.word)===norm(label));
   // New words come in level order (A2 before B1…), random within a level.
-  const fresh=shuffleCopy(source.filter(w=>!known(mastery[w.word])),rng).sort((a,b)=>levelRank(a)-levelRank(b)).slice(0,newWordsPerRound);
+  const fresh=shuffleCopy(source.filter(w=>!known(mastery[w.word])),rng).sort((a,b)=>difficultyRank(a)-difficultyRank(b)).slice(0,newWordsPerRound);
   // No spaced repetition: known words are picked in rotation. Words missed
   // last time come first; everything else goes least recently reviewed
   // first, so a word answered correctly goes to the back of the line and
@@ -603,10 +627,10 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // repetition they rotate like words: at most one of each per session,
   // least recently reviewed first.
   const lastSeenKey=key=>mastery[key]?.lastReviewedAt||0;
-  const comboPool=(content.combos||[]).filter(c=>(!category||topic(c.category)===topic(category))&&c.words.every(w=>known(mastery[findWord(content.words,w)?.word]))&&!c.words.some(w=>isQuarantined(w,'multi')));
+  const comboPool=(content.combos||[]).filter(c=>(!category||topic(c.category)===topic(category))&&(!courseRound||c.words.every(inSource))&&c.words.every(w=>known(mastery[findWord(content.words,w)?.word]))&&!c.words.some(w=>isQuarantined(w,'multi')));
   for(const c of shuffleCopy(comboPool,rng).sort((a,b)=>lastSeenKey(`combo:${a.id}`)-lastSeenKey(`combo:${b.id}`)).slice(0,1)){const comboKey=`combo:${c.id}`;const item=pickPoolVariant(pools,comboKey,{situation:c.situation,prompt:c.prompt});try{candidates.push(activityQuestion({mode:'multi',targetWords:c.words,prompt:`${item.situation}\n${item.prompt}`,explanation:c.explanation,progressKey:comboKey,poolType:'combo',poolItemId:item.id},content.words,`combo:${c.id}:${item.id}`,rng));}catch{}}
   const challengePool=[];
-  for(const c of content.challenges||[])if(['impostor','reverseImpostor'].includes(c.type||c.mode)&&!c.steps&&c.options?.length>=2&&c.answer&&(!category||topic(c.category)===topic(category))){const targets=(c.linkedWords||[]).filter(w=>norm(w)===norm(c.answer));if(targets.length&&targets.every(w=>['Learned','Mastered'].includes(stage(mastery[w])))&&!targets.some(w=>isQuarantined(w,'impostor'))){const refs=c.options.map(o=>findWord(content.words,o)).filter(Boolean);if(refs.every((a,i)=>refs.slice(i+1).every(b=>compatible(a,b))))challengePool.push({c,targets});}}
+  for(const c of content.challenges||[])if(['impostor','reverseImpostor'].includes(c.type||c.mode)&&!c.steps&&c.options?.length>=2&&c.answer&&(!category||topic(c.category)===topic(category))&&(!courseRound||(c.linkedWords||[]).some(inSource))){const targets=(c.linkedWords||[]).filter(w=>norm(w)===norm(c.answer));if(targets.length&&targets.every(w=>['Learned','Mastered'].includes(stage(mastery[w])))&&!targets.some(w=>isQuarantined(w,'impostor'))){const refs=c.options.map(o=>findWord(content.words,o)).filter(Boolean);if(refs.every((a,i)=>refs.slice(i+1).every(b=>compatible(a,b))))challengePool.push({c,targets});}}
   for(const {c,targets} of shuffleCopy(challengePool,rng).sort((a,b)=>lastSeenKey(`challenge:${a.c.id}`)-lastSeenKey(`challenge:${b.c.id}`)).slice(0,1))candidates.push({id:`challenge:${c.id}`,mode:'impostor',type:'mcq',targets,progressKey:`challenge:${c.id}`,prompt:c.prompt,answers:[c.answer],options:shuffleCopy(c.options,rng),explanation:c.explanation});
   // Grammar lives inside word sessions: rules from the same lesson as this
   // session's words, one question per rule, 1–2 rules per session. Rules
@@ -614,8 +638,9 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // reviewed) and each rule steps through its own questions in turn.
   const grammarTopics=new Set((category?[category]:chosen.map(w=>w.category)).map(topic));
   const missedKey=key=>{const r=mastery[key]?.lastResult;return r&&r!=='correct'?1:0;};
-  // A unit round only asks that unit's grammar rules.
-  const grammarPool=(content.grammar||[]).filter(g=>g&&g.id&&grammarTopics.has(topic(g.category))&&(!opts.unit||unitsOf(g).includes(opts.unit))&&grammarQuestions(g).length);
+  // A unit round only asks that unit's grammar rules; a course-level round
+  // only the rules of that level (and class, when the rule names one).
+  const grammarPool=(content.grammar||[]).filter(g=>g&&g.id&&(courseRound?(opts.courseLevel?courseLevelOf(g)===opts.courseLevel&&(opts.session==null||sessionOf(g)===null||sessionOf(g)===opts.session):!courseLevelOf(g)&&grammarTopics.has(topic(g.category))):grammarTopics.has(topic(g.category)))&&(!opts.unit||unitsOf(g).includes(opts.unit))&&grammarQuestions(g).length);
   const grammarQueue=shuffleCopy(grammarPool,rng).sort((a,b)=>missedKey(`grammar:${b.id}`)-missedKey(`grammar:${a.id}`)||lastSeenKey(`grammar:${a.id}`)-lastSeenKey(`grammar:${b.id}`)).slice(0,questionsPerRound>=10?2:1).map(g=>{
     const grammarKey=`grammar:${g.id}`;
     // Old single-question rules keep their AI variant pool.
@@ -697,5 +722,5 @@ function sessionEvidence(mastery,session,now=Date.now()){
 }
 function reinforcement(s){if(s.extraAdded||s.kind!=='practice')return s;const wrong=s.queue.filter((q,i)=>s.answers[i]&&!s.answers[i].correct&&!s.answers[i].reported).flatMap(q=>q.targets);const added=[];for(const q of s.reserves||[]){if(added.length>=2)break;if(!q.targets.some(t=>wrong.includes(t)))continue;if([...s.queue,...added].slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))))continue;const shown=new Set([...s.queue,...added].flatMap(questionSentences));if(questionSentences(q).some(t=>shown.has(t)))continue;added.push(q);}return {...s,queue:[...s.queue,...added],extraAdded:true};}
 
-return { norm, sentence, makeQuestion, pictureQuestion, isIllustration, linkAntonyms, outsideAntonyms, antonymsOf, collocationQuestion, familyQuestion, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, questionSentences, seenRecently, SEEN_FRESH_HOURS, grammarQuestions, grammarQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
+return { COURSE_LEVELS, courseLevelOf, sessionOf, courseLevelRank, gatewayLevel, difficultyRank, norm, sentence, makeQuestion, pictureQuestion, isIllustration, linkAntonyms, outsideAntonyms, antonymsOf, collocationQuestion, familyQuestion, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, questionSentences, seenRecently, SEEN_FRESH_HOURS, grammarQuestions, grammarQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
 })();

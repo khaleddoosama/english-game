@@ -118,6 +118,25 @@ refresh or a shared link opens the same view:
 `/admin/<section>/<item>?filters`, e.g. `/admin/words?hasPicture=false`,
 `/admin/grammar/g5`, `/admin/ai?status=error`.
 
+## Course levels
+
+Home can list the practice three ways (the toggle above the lessons, or
+Settings → Home layout): **By lesson**, **By unit**, and **By course
+level**. The last follows the Gateway course: a word's or grammar rule's
+`level` holds its course level, `A1.1`, `A1.2`, `A1.3`, `A2.1` … `C2.3`
+(three to a band: Gateway level 4 = A1.2, 5 = A1.3, 6 = A2.1 … 9 = B1.1),
+and `session` the class number in that level. In an import file:
+
+```json
+{ "word": "Bite the bullet", "category": "Pet Peeves", "level": "A1.2", "session": 1, … }
+```
+
+Each level is a group in course order, with a card for the whole level and
+one per session; a new level shows up as soon as a word has it. A plain
+`A1` – `C2` in `level` is the word's difficulty, not a course level, so
+those words appear under "No course level yet". A level or session the
+game can't read is listed as a warning when the file is checked.
+
 ## Admin panel
 
 Signed in as an admin, the **Admin** tab opens (Back to game and Log out

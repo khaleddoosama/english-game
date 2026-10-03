@@ -6,7 +6,8 @@ import { V2 } from "../../../engine/v2";
 import { callAiJsonAdmin } from "../../../engine/ai";
 
 export const GRAMMAR_TYPES = { choose: "Choose", judge: "Right or wrong?", fix: "Fix the sentence" };
-export const GRAMMAR_LEVELS = ["A1", "A2", "B1", "B2", "C1"];
+// Course levels (A1.2 …) first, then plain difficulty levels.
+export const GRAMMAR_LEVELS = [...V2.COURSE_LEVELS, "A1", "A2", "B1", "B2", "C1"];
 export const blankGrammarQuestion = (type) => (type === "choose" ? { type, prompt: "", options: ["", "", ""], answer: "", explanation: "" } : type === "judge" ? { type, sentence: "", correct: false, fix: "", explanation: "" } : { type, sentence: "", answer: "", explanation: "" });
 export const isSingleQuestionRule = (g) => !Array.isArray(g?.questions);
 
@@ -29,6 +30,8 @@ export function cleanGrammarDraft(d) {
   });
   const out = { ...d, id: t(d.id), rule: t(d.rule), category: t(d.category), level: t(d.level), explanation: t(d.explanation), examples: (d.examples || []).map(t).filter(Boolean), commonMistakes: (d.commonMistakes || []).map((m) => ({ sentence: t(m.sentence), correction: t(m.correction), why: t(m.why) })).filter((m) => m.sentence && m.correction && m.why), questions };
   if (!out.level) delete out.level;
+  const session = Number(String(out.session ?? "").trim());
+  if (Number.isInteger(session) && session > 0) out.session = session; else delete out.session;
   return out;
 }
 // Problems that block saving, as [{ at: null | question index, text }].

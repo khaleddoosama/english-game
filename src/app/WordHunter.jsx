@@ -1,11 +1,11 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Award, BarChart3, LogOut, Settings as SettingsIcon, Wrench, BookOpen, CheckCircle2, Download, Flag, Flame, HelpCircle, Lock, Play, Search, Target, Trash2, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
+import { ArrowLeft, Award, GraduationCap, BarChart3, LogOut, Settings as SettingsIcon, Wrench, BookOpen, CheckCircle2, Download, Flag, Flame, HelpCircle, Lock, Play, Search, Target, Trash2, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
 import { V2 } from "../engine/v2";
 import { PronunciationModal, imageLinkOk } from "../features/media/media";
 import { isEmbeddedImage, storeEmbeddedImages } from "../lib/images";
 import { SessionView } from "../features/session/SessionView";
 import { Splash } from "../features/auth/LoginPage";
-import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTERY_STAGE_RANK, PRODUCTION_MODES, RECENT_RESULT_LIMIT, TOPIC_ICONS, WORDS, confusionCount, formatAccuracy, formatStars, getMasteryStage, getStarsForAccuracy, isWordKey, levelGroups, levelItemKey, levelStageBreakdown, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setLastChallengeId, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
+import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTERY_STAGE_RANK, PRODUCTION_MODES, RECENT_RESULT_LIMIT, TOPIC_ICONS, WORDS, confusionCount, formatAccuracy, formatStars, getMasteryStage, getStarsForAccuracy, isWordKey, courseLevelGroups, levelGroups, levelItemKey, levelStageBreakdown, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setLastChallengeId, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildEntryQuestion, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, entryFileMeta, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, uniqueStrings, v2SessionFromEntries } from "../engine/questions";
 import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, locateReportSource, normalizeAnswerText, reviewReportedQuestion, spellingDistanceInfo } from "../engine/ai";
 import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
@@ -936,18 +936,31 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     const level = LEVELS[index]; if(!level) return;
     setCurrentLevelIndex(index);
     const sessionTitle = group ? `${level.title} · ${group.title}` : level.title;
-    // New-word intake follows the last round in this level: a strong round
-    // (90%+) earns two extra new words, a rough one (under 60%) holds back
-    // two so the missed words get room. 0 in Settings still means none.
+    startPractice(sessionTitle, level.title, group ? { title: sessionTitle, ...(group.id ? { [group.field === "unit" ? "unit" : "subCategory"]: group.id } : { noGroup: group.field }) } : {}, (w) => w.category === level.title);
+  }
+  // A course level (A1.2 …) from every lesson: the whole level, one session
+  // ({ session }), or its words with no session ({ noSession }). No level:
+  // the words that have no course level yet.
+  function startCourseLevel(level, part = null) {
+    setCurrentLevelIndex(null);
+    const title = !level ? "No course level" : part?.session ? `${level.id} · Session ${part.session}` : part?.noSession ? `${level.id} · Other words` : level.id;
+    const opts = !level ? { noCourseLevel: true } : { courseLevel: level.id, ...(part?.session ? { session: part.session } : part?.noSession ? { noSession: true } : {}) };
+    const inRound = (w) => (level ? V2.courseLevelOf(w) === level.id && (!part?.session || V2.sessionOf(w) === part.session) && (!part?.noSession || V2.sessionOf(w) === null) : !V2.courseLevelOf(w));
+    startPractice(title, null, { title, ...opts }, inRound);
+  }
+  function startPractice(sessionTitle, category, narrow, inRound) {
+    // New-word intake follows the last round here: a strong round (90%+)
+    // earns two extra new words, a rough one (under 60%) holds back two so
+    // the missed words get room. 0 in Settings still means none.
     const lastRound = sessionLogs.find((log) => log.kind === "practice" && log.title === sessionTitle && log.total > 0);
     const lastAccuracy = lastRound ? lastRound.correct / lastRound.total : null;
     const baseNew = settings.newWordsPerRound;
     const newWordsPerRound = baseNew === 0 || lastAccuracy === null ? baseNew : lastAccuracy >= 0.9 ? Math.min(10, baseNew + 2) : lastAccuracy < 0.6 ? Math.max(1, baseNew - 2) : baseNew;
-    const session = V2.practice(liveContent(), masteryRef.current, level.title, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound, pools: poolsRef.current, extraQuestion: buildPracticeExtra, confusions: confusionsRef.current, seen: progressExtrasRef.current.seenSentences || {}, ...(group ? { title: sessionTitle, ...(group.id ? { [group.field === "unit" ? "unit" : "subCategory"]: group.id } : { noGroup: group.field }) } : {}) });
+    const session = V2.practice(liveContent(), masteryRef.current, category, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound, pools: poolsRef.current, extraQuestion: buildPracticeExtra, confusions: confusionsRef.current, seen: progressExtrasRef.current.seenSentences || {}, ...narrow });
     // Words whose gap sentences have all been read get new ones written now,
     // so the next rounds have fresh sentences instead of shrinking.
     const seenNow = progressExtrasRef.current.seenSentences || {};
-    const exhausted = WORDS.filter((w) => w.category === level.title && V2.known(masteryRef.current[w.word]) && /_{2,}/.test(w.gap || "") && V2.poolItems(w, "gap", poolsRef.current?.[w.word]?.gap).every((it) => V2.seenRecently(seenNow, it.text))).slice(0, 8);
+    const exhausted = WORDS.filter((w) => inRound(w) && V2.known(masteryRef.current[w.word]) && /_{2,}/.test(w.gap || "") && V2.poolItems(w, "gap", poolsRef.current?.[w.word]?.gap).every((it) => V2.seenRecently(seenNow, it.text))).slice(0, 8);
     if (exhausted.length) triggerGeneration(exhausted.map((w) => ({ word: w.word, poolType: "gap" })), poolsRef.current);
     if (newWordsPerRound > baseNew && session.introductions.length > baseNew) setToast({ text: `Strong last round here — ${session.introductions.length} new words this time.` });
     launchSession(session);
@@ -1754,11 +1767,57 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
         {screen === "levels" && section === "practice" && LEVELS.length > 0 && (
           <div className="wh-level-view-toggle" role="group" aria-label="Show levels">
-            {[["lesson", "By lesson"], ["group", "By unit"]].map(([id, label]) => (
+            {[["lesson", "By lesson"], ["group", "By unit"], ["course", "By course level"]].map(([id, label]) => (
               <button key={id} className={settings.levelView === id ? "active" : ""} aria-pressed={settings.levelView === id} onClick={() => setSettings((prev) => ({ ...prev, levelView: id }))}>{label}</button>
             ))}
           </div>
         )}
+
+        {/* By course level: the Gateway course's levels (A1.2 …) from every
+            lesson, each split into its sessions. */}
+        {screen === "levels" && section === "practice" && settings.levelView === "course" && (() => {
+          const { levels: courseLevels, none } = courseLevelGroups();
+          const card = (key, title, meta, items, onPlay) => {
+            const counts = levelStageBreakdown({ items }, mastery);
+            return (
+              <div key={key} className="wh-level-card">
+                <div className="wh-level-icon"><GraduationCap size={20} /></div>
+                <div className="wh-level-info">
+                  <div className="wh-level-title">{title}</div>
+                  <div className="wh-level-meta">{meta}</div>
+                  <div className="wh-level-stage-bar" aria-hidden="true">
+                    <span className="wh-level-stage-seg mastered" style={{ width: `${(counts.Mastered / items.length) * 100}%` }} />
+                    <span className="wh-level-stage-seg learned" style={{ width: `${(counts.Learned / items.length) * 100}%` }} />
+                    <span className="wh-level-stage-seg familiar" style={{ width: `${(counts.Familiar / items.length) * 100}%` }} />
+                  </div>
+                  <div className="wh-level-meta wh-level-stage-detail">{counts.Mastered} mastered · {counts.Learned} learned · {counts.Familiar} familiar · {counts.New} new</div>
+                </div>
+                <button className="wh-level-btn" onClick={onPlay}><Play size={13} /> Practice</button>
+              </div>
+            );
+          };
+          const count = (items) => { const w = items.filter((it) => it.kind === "word").length, g = items.length - w; return [w && `${w} word${w === 1 ? "" : "s"}`, g && `${g} grammar rule${g === 1 ? "" : "s"}`].filter(Boolean).join(" · "); };
+          return (
+            <div className="wh-levels-list wh-course-levels">
+              {!courseLevels.length && <p className="wh-course-empty">No words have a course level yet. Give a word its level (for example <b>A1.2</b>, and a <b>session</b> number) in the import file or the word editor, and it shows here.</p>}
+              {courseLevels.map((level) => (
+                <div key={level.id} className="wh-level-group-block">
+                  <h3 className="wh-level-group-heading">{level.id}{level.gateway && <small> · Gateway level {level.gateway}</small>} <small>{count(level.items)}{level.sessions.length ? ` · ${level.sessions.length} session${level.sessions.length === 1 ? "" : "s"}` : ""}</small></h3>
+                  {level.sessions.length > 0 && card(`${level.id}-all`, `All of ${level.id}`, count(level.items), level.items, () => startCourseLevel(level))}
+                  {level.sessions.map((s) => card(`${level.id}-s${s.session}`, s.title, count(s.items), s.items, () => startCourseLevel(level, { session: s.session })))}
+                  {level.sessions.length > 0 && level.unsorted.length > 0 && card(`${level.id}-other`, "No session", count(level.unsorted), level.unsorted, () => startCourseLevel(level, { noSession: true }))}
+                  {!level.sessions.length && card(`${level.id}-all`, level.id, count(level.items), level.items, () => startCourseLevel(level))}
+                </div>
+              ))}
+              {none.length > 0 && (
+                <div className="wh-level-group-block">
+                  <h3 className="wh-level-group-heading">No course level yet <small>{count(none)}</small></h3>
+                  {card("none", "Words without a course level", count(none), none, () => startCourseLevel(null))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* By unit: each lesson's course units as their own cards. */}
         {screen === "levels" && section === "practice" && settings.levelView === "group" && (
@@ -1800,7 +1859,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           </div>
         )}
 
-        {screen === "levels" && section === "practice" && settings.levelView !== "group" && (
+        {screen === "levels" && section === "practice" && settings.levelView !== "group" && settings.levelView !== "course" && (
           <div className="wh-levels-list">
             {LEVELS.map((level, i) => {
               const unlocked = isLevelUnlocked(i);

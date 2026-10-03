@@ -156,6 +156,33 @@ export function levelGroups(level) {
   const list = [...groups.values()];
   return [...list.filter((g) => g.id), ...list.filter((g) => !g.id)];
 }
+// Course levels (A1.1 … C2.3, see V2.courseLevelOf) as groups, in course
+// order, each split into its sessions; words with no course level are
+// returned apart (`none`). Grammar rules join the level they name.
+export function courseLevelGroups(words = WORDS, grammar = GRAMMAR) {
+  const levels = new Map();
+  const none = [];
+  const add = (item) => {
+    const id = V2.courseLevelOf(item.obj);
+    if (!id) { if (item.kind === "word") none.push(item); return; }
+    if (!levels.has(id)) levels.set(id, { id, title: id, gateway: V2.gatewayLevel(id), items: [] });
+    levels.get(id).items.push(item);
+  };
+  for (const w of words) add({ kind: "word", obj: w });
+  for (const g of grammar) add({ kind: "grammar", obj: g });
+  const list = [...levels.values()].sort((a, b) => V2.courseLevelRank(a.id) - V2.courseLevelRank(b.id));
+  for (const level of list) {
+    const bySession = new Map();
+    level.unsorted = [];
+    for (const it of level.items) {
+      const n = V2.sessionOf(it.obj);
+      if (n === null) level.unsorted.push(it);
+      else { if (!bySession.has(n)) bySession.set(n, []); bySession.get(n).push(it); }
+    }
+    level.sessions = [...bySession].sort((a, b) => a[0] - b[0]).map(([session, items]) => ({ session, title: `Session ${session}`, items }));
+  }
+  return { levels: list, none };
+}
 export function levelStageBreakdown(level, mastery) {
   const counts = { New: 0, Familiar: 0, Learned: 0, Mastered: 0 };
   level.items.forEach((it) => { counts[getMasteryStage(mastery[levelItemKey(it)], it)] += 1; });

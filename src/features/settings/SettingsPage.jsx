@@ -57,7 +57,7 @@ export default function SettingsPage({ settings, onChange, onBack, onOpen, app }
         <Row label="Text size"><Choice label="Text size" value={settings.textSize} onChange={(v) => set({ textSize: v })} options={[["normal", "Normal"], ["large", "Large"], ["xlarge", "Extra large"]]} /></Row>
         <Row label="Number keys on answers" hint="Shows 1–4 to answer with the keyboard"><Toggle label="Number keys" checked={settings.shortcuts} onChange={(v) => set({ shortcuts: v })} /></Row>
         <Row label="Reduce motion" hint="Fewer animations"><Toggle label="Reduce motion" checked={settings.reduceMotion} onChange={(v) => set({ reduceMotion: v })} /></Row>
-        <Row label="Home shows lessons"><Choice label="Home layout" value={settings.levelView} onChange={(v) => set({ levelView: v })} options={[["lesson", "By lesson"], ["group", "By unit"]]} /></Row>
+        <Row label="Home shows lessons"><Choice label="Home layout" value={settings.levelView} onChange={(v) => set({ levelView: v })} options={[["lesson", "By lesson"], ["group", "By unit"], ["course", "By course level"]]} /></Row>
       </section>
 
       <section className="st-card">
