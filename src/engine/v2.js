@@ -662,7 +662,20 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   for(let k=grammarQueue.length-1;k>=0;k--)queue.splice(Math.min(spots[k],queue.length),0,grammarQueue[k]);
   return {kind:'practice',id:`session-${Date.now()}-${rng()}`,title:opts.title||category||'Practice',queue,introductions:fresh,index:0,answers:[],initialLength:queue.length,targetLength:questionsPerRound,reserves:candidates,extraAdded:false};
 }
-function storySession(story,words,mastery={},rng=Math.random){const introductions=story.targetWords.map(w=>findWord(words,w)).filter(w=>!known(mastery[w.word]));const scoped=story.sourceCategories?.length?words.filter(w=>story.sourceCategories.includes(w.category)):words;const optionSource=scoped.length>=4?scoped:words;const queue=story.questions.map((q,i)=>activityQuestion(q,optionSource,`${story.id}:${i}`,rng));for(const g of story.grammarQuestions||[])queue.push({...g,options:shuffleCopy(g.options,rng)});return {id:`story-${story.id}-${Date.now()}`,sourceStoryId:story.id,kind:'story',title:story.title,text:story.text,queue,introductions,unfairTargets:introductions.map(w=>w.word),index:0,answers:[]};}
+function storySession(story,words,mastery={},rng=Math.random){
+  const references=(story.targetWords||[]).map(w=>findWord(words,w));
+  if(references.some(w=>!w))throw Error('This story refers to words missing from the course library. Ask the administrator to review it.');
+  const introductions=references.filter(w=>!known(mastery[w.word]));
+  const targets=new Set(references.map(w=>norm(w.word)));
+  // Imported stories can span source categories. Keep every target in
+  // the scoped pool, even when its current category differs from the story.
+  const scoped=story.sourceCategories?.length?words.filter(w=>story.sourceCategories.includes(w.category)||targets.has(norm(w.word))):words;
+  const optionSource=scoped.length>=4?scoped:words;
+  const queue=(story.questions||[]).map((q,i)=>activityQuestion(q,optionSource,`${story.id}:${i}`,rng));
+  for(const g of story.grammarQuestions||[])queue.push({...g,options:shuffleCopy(g.options,rng)});
+  if(!queue.length)throw Error('This story has no check questions yet. You can still read it.');
+  return {id:`story-${story.id}-${Date.now()}`,sourceStoryId:story.id,kind:'story',title:story.title,text:story.text,queue,introductions,unfairTargets:introductions.map(w=>w.word),index:0,answers:[]};
+}
 function chainSession(group,words,mastery={},rng=Math.random){const queue=shuffleCopy(words.filter(w=>w.chainGroup===group&&w.opposite&&known(mastery[w.word])&&known(mastery[findWord(words,w.opposite)?.word])),rng).map((w,i)=>{const target=findWord(words,w.opposite);if(!target)return null;const options=optionWords([target],words,4,rng).map(x=>x.word);return options.length<2?null:{id:`chain:${i}`,mode:'opposite',type:'mcq',prompt:`What is the opposite of “${w.word}”?`,answers:[target.word],targets:[target.word],options,explanation:`${w.word} ↔ ${target.word}`};}).filter(Boolean);return {id:`chain-${Date.now()}`,kind:'chain',title:group,queue,introductions:[],index:0,answers:[]};}
 function grade(q,value,words=[]){const a=Array.isArray(value)?value:[value];const correct=a.length===q.answers.length&&q.answers.every(x=>a.some(v=>sentence(v)===sentence(x)||sentence(v)===sentence(bareWord(x))));let spelling=false;if(!correct&&q.type==='typing'&&!q.modelOnly&&!findWord(words,value)){const x=norm(value),y=norm(bareWord(q.answers[0]));if(x.length>=3){const d=Array.from({length:x.length+1},(_,i)=>[i]);for(let j=0;j<=y.length;j++)d[0][j]=j;for(let i=1;i<=x.length;i++)for(let j=1;j<=y.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(x[i-1]!==y[j-1]));spelling=d[x.length][y.length]<=1;}}return {correct,spelling,unverified:!correct&&q.modelOnly};}
 function sessionEvidence(mastery,session,now=Date.now()){

@@ -65,11 +65,16 @@ export function parseRoute(path) {
   const [head, a, b] = parts;
   if (!head) return { screen: "levels", section: "practice" };
   switch (head) {
+    case "practice": return { screen: "levels", section: "legacy" };
+    case "review": return { screen: "review" };
     case "stories": return { screen: "levels", section: "stories" };
     case "play": return { screen: "play" };
     case "live": return { screen: "live", code: a ? a.toUpperCase() : null };
     case "leaderboard": return { screen: "leaderboard" };
     case "profile": return { screen: "profile" };
+    case "account": return { screen: "account" };
+    case "onboarding": return { screen: "onboarding" };
+    case "hearts": return { screen: "hearts" };
     case "stats": return { screen: "stats" };
     case "badges": return { screen: "badges" };
     case "data": return { screen: "data" };
@@ -83,10 +88,10 @@ export function parseRoute(path) {
 export function pathFor(screen, extra = {}) {
   const enc = encodeURIComponent;
   switch (screen) {
-    case "levels": return extra.section === "stories" ? "/stories" : "/";
+    case "levels": return extra.section === "stories" ? "/stories" : extra.section === "legacy" ? "/practice" : "/";
     case "live": return extra.code ? `/live/${enc(extra.code)}` : "/live";
     case "admin": return `/admin${extra.section && extra.section !== "overview" ? `/${enc(extra.section)}` : ""}${extra.item != null ? `/${enc(extra.item)}` : ""}`;
-    case "leaderboard": case "profile": case "stats": case "badges": case "data": case "settings": return `/${screen}`;
+    case "review": case "leaderboard": case "profile": case "account": case "onboarding": case "hearts": case "stats": case "badges": case "data": case "settings": return `/${screen}`;
     default: return "/play";
   }
 }

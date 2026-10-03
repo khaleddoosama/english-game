@@ -1,0 +1,254 @@
+{
+  "source": "Supabase",
+  "sourceVersion": 14,
+  "scope": "Applied first repair batch to Supabase version 15; superseded by final version 18",
+  "preserve": [
+    "word",
+    "grammar.id",
+    "existing ids and progress"
+  ],
+  "changes": [
+    {
+      "word": "Black and blue",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "adjective phrase"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Bottle things up",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "phrasal verb"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Does it ring any bells?",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "expression"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Excuse me for living!",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "expression"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Feel blue",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "verb phrase"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Feel like a kid with a new toy",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "verb phrase"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Hit the jackpot",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "verb phrase"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Hold on",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "phrasal verb"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Hold your horses",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "verb phrase"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "I can live with that",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "expression"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Live and learn",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "expression"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Man up",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "phrasal verb"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Memory lane",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "noun phrase"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Peace and quiet",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "noun phrase"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Pick up the pieces",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "verb phrase"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Pull yourself together",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "verb phrase"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "See red",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "verb phrase"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "This blows",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "expression"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Tooth and nail",
+      "field": "partsOfSpeech",
+      "before": null,
+      "proposed": [
+        "adverbial phrase"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Upset",
+      "field": "partsOfSpeech",
+      "before": [
+        "adjective",
+        "noun"
+      ],
+      "proposed": [
+        "adjective",
+        "verb",
+        "noun"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Sprain",
+      "field": "partsOfSpeech",
+      "before": [
+        "noun"
+      ],
+      "proposed": [
+        "noun",
+        "verb"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Sneeze",
+      "field": "partsOfSpeech",
+      "before": [
+        "verb"
+      ],
+      "proposed": [
+        "verb",
+        "noun"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Referee",
+      "field": "partsOfSpeech",
+      "before": [
+        "noun"
+      ],
+      "proposed": [
+        "noun",
+        "verb"
+      ],
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Afraid",
+      "field": "meaning",
+      "before": "Feeling fear (always followed by 'of').",
+      "proposed": "Feeling fear; commonly used with of + noun/-ing, to + verb, or a that-clause.",
+      "status": "applied-and-verified"
+    },
+    {
+      "word": "Afraid",
+      "field": "hints",
+      "before": [
+        "Scared (always followed by 'of').",
+        "Starts with 'afr-'."
+      ],
+      "proposed": [
+        "Feeling scared or worried about something.",
+        "Starts with afr-."
+      ],
+      "status": "applied-and-verified"
+    }
+  ],
+  "appliedVersion": 15
+}

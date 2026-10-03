@@ -4,8 +4,8 @@ import { isLocalMode } from "../../lib/supabase";
 import { fetchLeaderboard } from "./socialApi";
 
 const TABS = [
-  { id: "week", label: "This week", value: (p) => p.week_score, unit: "pts" },
-  { id: "all", label: "All time", value: (p) => p.score, unit: "pts" },
+  { id: "week", label: "This week", value: (p) => p.week_score, unit: "XP" },
+  { id: "all", label: "All time", value: (p) => p.score, unit: "XP" },
   { id: "live", label: "Live wins", value: (p) => p.live_wins, unit: "wins", extra: (p) => `${p.live_played} played` },
 ];
 
@@ -22,7 +22,8 @@ export default function Leaderboard({ me, hiddenForPlayers = false }) {
   const t = TABS.find((x) => x.id === tab);
   return (
     <section className="ui-page">
-      <header className="ui-page-head"><h2><Trophy size={20} /> Leaderboard</h2></header>
+      <header className="ui-page-head"><h2><Trophy size={20} /> Weekly league</h2></header>
+      <p className="lq-muted">Real scores from your course community. Weekly points reset each Monday.</p>
       <div className="ui-segmented" role="tablist">
         {TABS.map((x) => <button key={x.id} role="tab" aria-selected={tab === x.id} onClick={() => setTab(x.id)}>{x.label}</button>)}
       </div>

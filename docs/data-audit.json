@@ -1,0 +1,2004 @@
+{
+  "checkedAt": "2026-10-03T18:32:37.924Z",
+  "source": "Supabase read-only snapshot",
+  "version": 13,
+  "missingStableIds": 121,
+  "counts": {
+    "words": 257,
+    "grammar": 9,
+    "stories": 1,
+    "challenges": 0,
+    "combos": 0
+  },
+  "schemaErrors": [],
+  "levels": [
+    {
+      "level": "A1",
+      "units": [
+        "Visiting-the-Doctor"
+      ],
+      "uniqueWords": 2,
+      "rules": 0,
+      "finalQuestions": 2
+    },
+    {
+      "level": "A1.3",
+      "units": [
+        "Feelings-and-Emotions"
+      ],
+      "uniqueWords": 29,
+      "rules": 1,
+      "finalQuestions": 4
+    },
+    {
+      "level": "A2",
+      "units": [
+        "Sports",
+        "Visiting-the-Doctor",
+        "Body-Parts",
+        "Common-Health-Problems"
+      ],
+      "uniqueWords": 25,
+      "rules": 2,
+      "finalQuestions": 11
+    },
+    {
+      "level": "A2.2",
+      "units": [
+        "Memories-and-Fear"
+      ],
+      "uniqueWords": 34,
+      "rules": 1,
+      "finalQuestions": 4
+    },
+    {
+      "level": "A2.3",
+      "units": [
+        "Embarrassing-Moments",
+        "Dreams-and-Sleeping"
+      ],
+      "uniqueWords": 37,
+      "rules": 2,
+      "finalQuestions": 8
+    },
+    {
+      "level": "B1",
+      "units": [
+        "Visiting-the-Doctor",
+        "Common-Health-Problems",
+        "Sports",
+        "Healthy-Nutrition",
+        "Body-Parts"
+      ],
+      "uniqueWords": 58,
+      "rules": 2,
+      "finalQuestions": 14
+    },
+    {
+      "level": "B1.1",
+      "units": [
+        "Goals-and-Dreams"
+      ],
+      "uniqueWords": 23,
+      "rules": 1,
+      "finalQuestions": 4
+    },
+    {
+      "level": "B2",
+      "units": [
+        "Common-Health-Problems",
+        "Body-Parts",
+        "Healthy-Nutrition",
+        "Sports"
+      ],
+      "uniqueWords": 27,
+      "rules": 0,
+      "finalQuestions": 8
+    },
+    {
+      "level": "C1",
+      "units": [
+        "Healthy-Nutrition",
+        "Visiting-the-Doctor"
+      ],
+      "uniqueWords": 2,
+      "rules": 0,
+      "finalQuestions": 2
+    },
+    {
+      "level": "Unassigned",
+      "units": [
+        "Feelings-and-Emotions",
+        "Fears",
+        "Unassigned"
+      ],
+      "uniqueWords": 20,
+      "rules": 0,
+      "finalQuestions": 7
+    }
+  ],
+  "rounds": [
+    {
+      "level": "A1",
+      "unit": "Visiting-the-Doctor",
+      "words": 2,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 2,
+          "maxQuestions": 2
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 2,
+          "maxQuestions": 2
+        },
+        "listen": {
+          "questions": 2
+        },
+        "speak": {
+          "questions": 2
+        },
+        "build": {
+          "questions": 2
+        },
+        "match": {
+          "questions": 1
+        }
+      },
+      "trainingCoverage": {
+        "done": 2,
+        "total": 2,
+        "ready": true,
+        "runs": 1
+      }
+    },
+    {
+      "level": "A1.3",
+      "unit": "Feelings-and-Emotions",
+      "words": 29,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 30,
+          "maxQuestions": 30
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 30,
+        "total": 30,
+        "ready": true,
+        "runs": 3
+      }
+    },
+    {
+      "level": "A2",
+      "unit": "Sports",
+      "words": 6,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 6,
+          "maxQuestions": 6
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 6,
+          "maxQuestions": 6
+        },
+        "listen": {
+          "questions": 6
+        },
+        "speak": {
+          "questions": 6
+        },
+        "build": {
+          "questions": 6
+        },
+        "match": {
+          "questions": 2
+        }
+      },
+      "trainingCoverage": {
+        "done": 6,
+        "total": 6,
+        "ready": true,
+        "runs": 1
+      }
+    },
+    {
+      "level": "A2",
+      "unit": "Visiting-the-Doctor",
+      "words": 17,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 18,
+          "maxQuestions": 18
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 18,
+        "total": 18,
+        "ready": true,
+        "runs": 2
+      }
+    },
+    {
+      "level": "A2",
+      "unit": "Body-Parts",
+      "words": 2,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 2,
+          "maxQuestions": 2
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 2,
+          "maxQuestions": 2
+        },
+        "listen": {
+          "questions": 2
+        },
+        "speak": {
+          "questions": 2
+        },
+        "build": {
+          "questions": 2
+        },
+        "match": {
+          "questions": 1
+        }
+      },
+      "trainingCoverage": {
+        "done": 2,
+        "total": 2,
+        "ready": true,
+        "runs": 1
+      }
+    },
+    {
+      "level": "A2",
+      "unit": "Common-Health-Problems",
+      "words": 3,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 4,
+          "maxQuestions": 4
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 4,
+          "maxQuestions": 4
+        },
+        "listen": {
+          "questions": 3
+        },
+        "speak": {
+          "questions": 3
+        },
+        "build": {
+          "questions": 3
+        },
+        "match": {
+          "questions": 1
+        }
+      },
+      "trainingCoverage": {
+        "done": 4,
+        "total": 4,
+        "ready": true,
+        "runs": 1
+      }
+    },
+    {
+      "level": "A2.2",
+      "unit": "Memories-and-Fear",
+      "words": 34,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 35,
+          "maxQuestions": 35
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 35,
+        "total": 35,
+        "ready": true,
+        "runs": 4
+      }
+    },
+    {
+      "level": "A2.3",
+      "unit": "Embarrassing-Moments",
+      "words": 16,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 17,
+          "maxQuestions": 17
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 17,
+        "total": 17,
+        "ready": true,
+        "runs": 2
+      }
+    },
+    {
+      "level": "A2.3",
+      "unit": "Dreams-and-Sleeping",
+      "words": 21,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 22,
+          "maxQuestions": 22
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 22,
+        "total": 22,
+        "ready": true,
+        "runs": 2
+      }
+    },
+    {
+      "level": "B1",
+      "unit": "Visiting-the-Doctor",
+      "words": 25,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 25,
+          "maxQuestions": 25
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 25,
+        "total": 25,
+        "ready": true,
+        "runs": 3
+      }
+    },
+    {
+      "level": "B1",
+      "unit": "Common-Health-Problems",
+      "words": 25,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 26,
+          "maxQuestions": 26
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 26,
+        "total": 26,
+        "ready": true,
+        "runs": 3
+      }
+    },
+    {
+      "level": "B1",
+      "unit": "Sports",
+      "words": 1,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 1,
+          "maxQuestions": 1
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 1,
+          "maxQuestions": 1
+        },
+        "listen": {
+          "questions": 1
+        },
+        "speak": {
+          "questions": 1
+        },
+        "build": {
+          "questions": 1
+        },
+        "match": {
+          "unavailable": "This unit does not have enough content for this activity. Try word training."
+        }
+      },
+      "trainingCoverage": {
+        "done": 1,
+        "total": 1,
+        "ready": true,
+        "runs": 1
+      }
+    },
+    {
+      "level": "B1",
+      "unit": "Healthy-Nutrition",
+      "words": 6,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 7,
+          "maxQuestions": 7
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 7,
+          "maxQuestions": 7
+        },
+        "listen": {
+          "questions": 6
+        },
+        "speak": {
+          "questions": 6
+        },
+        "build": {
+          "questions": 6
+        },
+        "match": {
+          "questions": 2
+        }
+      },
+      "trainingCoverage": {
+        "done": 7,
+        "total": 7,
+        "ready": true,
+        "runs": 1
+      }
+    },
+    {
+      "level": "B1",
+      "unit": "Body-Parts",
+      "words": 2,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 2,
+          "maxQuestions": 2
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 2,
+          "maxQuestions": 2
+        },
+        "listen": {
+          "questions": 2
+        },
+        "speak": {
+          "questions": 2
+        },
+        "build": {
+          "questions": 2
+        },
+        "match": {
+          "questions": 1
+        }
+      },
+      "trainingCoverage": {
+        "done": 2,
+        "total": 2,
+        "ready": true,
+        "runs": 1
+      }
+    },
+    {
+      "level": "B1.1",
+      "unit": "Goals-and-Dreams",
+      "words": 23,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 24,
+          "maxQuestions": 24
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 24,
+        "total": 24,
+        "ready": true,
+        "runs": 3
+      }
+    },
+    {
+      "level": "B2",
+      "unit": "Common-Health-Problems",
+      "words": 11,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 11,
+          "maxQuestions": 11
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 11,
+          "maxQuestions": 11
+        },
+        "listen": {
+          "questions": 11
+        },
+        "speak": {
+          "questions": 11
+        },
+        "build": {
+          "questions": 11
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 11,
+        "total": 11,
+        "ready": true,
+        "runs": 1
+      }
+    },
+    {
+      "level": "B2",
+      "unit": "Body-Parts",
+      "words": 1,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 1,
+          "maxQuestions": 1
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 1,
+          "maxQuestions": 1
+        },
+        "listen": {
+          "questions": 1
+        },
+        "speak": {
+          "questions": 1
+        },
+        "build": {
+          "questions": 1
+        },
+        "match": {
+          "unavailable": "This unit does not have enough content for this activity. Try word training."
+        }
+      },
+      "trainingCoverage": {
+        "done": 1,
+        "total": 1,
+        "ready": true,
+        "runs": 1
+      }
+    },
+    {
+      "level": "B2",
+      "unit": "Healthy-Nutrition",
+      "words": 14,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 14,
+          "maxQuestions": 14
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 14,
+        "total": 14,
+        "ready": true,
+        "runs": 2
+      }
+    },
+    {
+      "level": "B2",
+      "unit": "Sports",
+      "words": 1,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 1,
+          "maxQuestions": 1
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 1,
+          "maxQuestions": 1
+        },
+        "listen": {
+          "questions": 1
+        },
+        "speak": {
+          "questions": 1
+        },
+        "build": {
+          "questions": 1
+        },
+        "match": {
+          "unavailable": "This unit does not have enough content for this activity. Try word training."
+        }
+      },
+      "trainingCoverage": {
+        "done": 1,
+        "total": 1,
+        "ready": true,
+        "runs": 1
+      }
+    },
+    {
+      "level": "C1",
+      "unit": "Healthy-Nutrition",
+      "words": 1,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 1,
+          "maxQuestions": 1
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 1,
+          "maxQuestions": 1
+        },
+        "listen": {
+          "questions": 1
+        },
+        "speak": {
+          "questions": 1
+        },
+        "build": {
+          "questions": 1
+        },
+        "match": {
+          "unavailable": "This unit does not have enough content for this activity. Try word training."
+        }
+      },
+      "trainingCoverage": {
+        "done": 1,
+        "total": 1,
+        "ready": true,
+        "runs": 1
+      }
+    },
+    {
+      "level": "C1",
+      "unit": "Visiting-the-Doctor",
+      "words": 1,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 1,
+          "maxQuestions": 1
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 1,
+          "maxQuestions": 1
+        },
+        "listen": {
+          "questions": 1
+        },
+        "speak": {
+          "questions": 1
+        },
+        "build": {
+          "questions": 1
+        },
+        "match": {
+          "unavailable": "This unit does not have enough content for this activity. Try word training."
+        }
+      },
+      "trainingCoverage": {
+        "done": 1,
+        "total": 1,
+        "ready": true,
+        "runs": 1
+      }
+    },
+    {
+      "level": "Unassigned",
+      "unit": "Feelings-and-Emotions",
+      "words": 15,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 15,
+          "maxQuestions": 15
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 15,
+        "total": 15,
+        "ready": true,
+        "runs": 2
+      }
+    },
+    {
+      "level": "Unassigned",
+      "unit": "Fears",
+      "words": 4,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 4,
+          "maxQuestions": 4
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 4,
+          "maxQuestions": 4
+        },
+        "listen": {
+          "questions": 4
+        },
+        "speak": {
+          "questions": 4
+        },
+        "build": {
+          "questions": 4
+        },
+        "match": {
+          "questions": 1
+        }
+      },
+      "trainingCoverage": {
+        "done": 4,
+        "total": 4,
+        "ready": true,
+        "runs": 1
+      }
+    },
+    {
+      "level": "Unassigned",
+      "unit": "Unassigned",
+      "words": 1,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 1,
+          "maxQuestions": 1
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 1,
+          "maxQuestions": 1
+        },
+        "listen": {
+          "questions": 1
+        },
+        "speak": {
+          "questions": 1
+        },
+        "build": {
+          "questions": 1
+        },
+        "match": {
+          "unavailable": "This unit does not have enough content for this activity. Try word training."
+        }
+      },
+      "trainingCoverage": {
+        "done": 1,
+        "total": 1,
+        "ready": true,
+        "runs": 1
+      }
+    }
+  ],
+  "storyChecks": [
+    {
+      "id": "story-gen-1790978279889",
+      "title": "The Secret Recipe",
+      "questions": 10
+    }
+  ],
+  "duplicateDefinitions": [],
+  "findings": [
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Ache",
+      "detail": "My back has been aching since I lifted those boxes."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Acrophobia",
+      "detail": "Rana refused to go up the Cairo Tower with her friends. Even standing on a chair to change a light bulb makes her feel sick."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Acrophobic",
+      "detail": "When his friends went up the climbing wall, Omar stayed on the ground holding their bags. Looking up made his legs feel weak."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Addicted",
+      "detail": "Mazen checks his phone the moment he wakes up and even during dinner. When the battery dies, he feels nervous and can't relax."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "ADHD",
+      "detail": "In class, Ziad can't sit in his chair for more than five minutes. He starts many tasks, forgets them quickly and is always tapping his feet."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Afraid",
+      "detail": "Youssef never swims in the sea, even on hot days. When the water reaches his knees, he runs back to the beach."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Ailurophobic",
+      "detail": "Whenever a cat walks into the garden, Fady runs inside and closes the door. He won't visit his aunt because she keeps three of them."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Amnesia",
+      "detail": "After the car crash, the young man woke up in hospital. He didn't know his own name, his job or the woman holding his hand."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Amusing",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Amusing",
+      "detail": "Grandpa told a story about a goat that ate his newspaper every morning. Everyone smiled and chuckled, though nobody laughed out loud."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Anger",
+      "detail": "When Sami feels his face getting hot during an argument, he walks away and counts to ten. Then he comes back and talks calmly."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Angry",
+      "detail": "Someone took Samir's parking space even though he was waiting with his signal on. Samir got out of the car and shouted at the driver."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Annoyed",
+      "detail": "The tap in Salma's kitchen dripped all night. It wasn't a big problem, but the sound kept her awake and irritated."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Annoying",
+      "detail": "The man behind Ola in the cinema kept talking on his phone and kicking her seat. She couldn't enjoy the film at all."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Ashamed",
+      "detail": "Khaled shouted at his little sister for breaking his headphones. Later he found out the dog had done it, and he couldn't look her in the eye."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Asked",
+      "detail": "Yesterday Nour didn't understand the homework. After class she went to her teacher and requested a second explanation."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Avoid",
+      "detail": "After the embarrassing party, Sherif took the long way to work every day. He didn't want to meet anyone who had been there."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Benign tumor",
+      "detail": "The doctor told her the tumor was benign, so no surgery was needed."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Black and blue",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Black and blue",
+      "detail": "Omar fell off his bike down a rocky hill. The next day, his arms and legs were covered in dark marks."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Blow up",
+      "detail": "The argument blew up when no one could agree on the treatment plan."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Bottle things up",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Bottle things up",
+      "detail": "Hassan never tells anyone when something is wrong at work. He keeps smiling, but at home he suddenly explodes over little problems."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Brain concussion",
+      "detail": "During the match, two players jumped for the ball and hit heads. One of them felt dizzy and confused, and the doctor told him to rest for two weeks."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Breakthrough",
+      "detail": "For two years, the scientists tested hundreds of ideas that didn't work. Then one night, a small change in the formula finally solved the problem."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "butter someone up",
+      "detail": "He kept complimenting his boss, trying to butter her up before asking for a raise."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Caress",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Caress",
+      "detail": "The old man sat by his wife's hospital bed. He softly moved his fingers across her hand and her grey hair while she slept."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Claustrophobia",
+      "detail": "Yasser always takes the stairs, even to the tenth floor. Inside a lift, his heart races and he feels the walls are closing in on him."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Committed to",
+      "detail": "When Ahmed signed up for the charity run, he promised to raise money for the hospital. Even with a broken toe, he didn't break his word."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Contribute to",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Contribute to",
+      "detail": "Scary clown films, frightening pictures online and bad childhood memories all play a part. Together, they help explain why so many people fear clowns."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Creepy",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Creepy",
+      "detail": "The old doll in Grandma's attic has glass eyes that seem to follow you. Nobody in the family wants to sleep in that room."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Cuddle",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Cuddle",
+      "detail": "On cold winter nights, Laila and her little son lie under a big blanket on the sofa. She holds him close in her arms while they watch cartoons."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Cynophobia",
+      "detail": "Whenever Karim sees a neighbour walking a pet on a lead, he crosses to the other side of the street. Even a small puppy makes his hands sweat."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Dedicated to",
+      "detail": "Ramy practises the piano for four hours every day, even on holidays. He gave up football and parties so he can play better."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Déjà vu",
+      "detail": "The first time Omar walked into the new café, he stopped at the door. He felt sure he had stood in that exact spot before, hearing that same song."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Dentophobia",
+      "detail": "Samy has had a toothache for months, but he still hasn't booked an appointment. The sound of the drill alone makes him feel faint."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Desperate",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Desperate",
+      "detail": "Hamdy hasn't paid his rent for three months. He calls every company in town every day, ready to accept any job at all."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Devoted to",
+      "detail": "Since his wife became ill, Samir has stopped travelling for work. He spends every day by her side, reading to her and making her laugh."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Devotion",
+      "detail": "For forty years, Uncle Fathy has never missed one of his club's home games. He has watched them in sun, rain and even on his wedding day."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Disappointed",
+      "detail": "Tarek studied hard and expected a top mark in maths. When he saw a C on his paper, his face fell."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Disciplined",
+      "detail": "Every night, Laila goes to bed at ten, even when her friends go out. She wakes at six to study before work and never skips a day."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Does it ring any bells?",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Does it ring any bells?",
+      "detail": "Nour was talking to an old classmate about a teacher called Mr. Samy. She wasn't sure her friend remembered him, so she asked if the name sounded familiar."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Enthusiastic",
+      "detail": "In her first English class, Huda answered every question and asked the teacher for extra homework. She loved the subject from day one."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Excited",
+      "detail": "The night before their first trip to the sea, the children couldn't sleep. They packed their swimsuits three times and kept asking if it was morning yet."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Excuse me for living!",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Excuse me for living!",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Excuse me for living!",
+      "detail": "Nada's roommate complained about how she washed the dishes, folded the towels and even how she breathed. Nada threw her hands up and answered with a sarcastic line."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Express",
+      "detail": "Mazen finds it hard to tell his wife when he is unhappy. So he writes her short letters to share what he feels inside."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Familiar",
+      "detail": "At the wedding, a woman smiled at Laila from across the room. Laila was sure she knew that face from somewhere, but she couldn't say where."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Feel blue",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Feel blue",
+      "detail": "Since her best friend moved to Canada, Dina has been quiet and sad. She doesn't want to go out, and she misses their long talks."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Feel like a kid with a new toy",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Feel like a kid with a new toy",
+      "detail": "When Hany finally bought the camera he had wanted for years, he took pictures of everything — the cat, his shoes, the sky. He couldn't stop smiling."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Fish memory",
+      "detail": "Kareem asked his wife the same question three times in ten minutes. Later he forgot where he put his phone while he was holding it."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Freak out",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Freak out",
+      "detail": "When Mai saw a tiny spider on her pillow, she screamed, jumped onto a chair and refused to come down. Her brother laughed for an hour."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Funeral",
+      "detail": "After their grandfather died, the whole family gathered at the mosque and then the cemetery. Hundreds of neighbours came to say goodbye."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Furious",
+      "detail": "When Adel found out his business partner had stolen from him, his face turned red. He slammed the door so hard that a picture fell off the wall."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Fury",
+      "detail": "After the unfair goal, the crowd lost all control. People threw bottles onto the pitch and screamed at the officials."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Gesturing",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Gesturing",
+      "detail": "When Emad gets excited about football, his arms fly around and his hands draw shapes in the air. His friends move their drinks away from him."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Goosebumps",
+      "detail": "When the singer hit the last high note, the whole hall went silent. Mariam looked down and saw the tiny hairs on her arms standing up."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "have a sweet tooth",
+      "detail": "My father ate half of the cake alone — he has a sweet tooth."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Hit the jackpot",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Hit the jackpot",
+      "detail": "Hany bought an old painting at a street market for 50 pounds. An expert later told him it was worth half a million."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Hold on",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Hold on",
+      "detail": "Ali was about to lock the front door when he realized his phone was still inside. He raised his hand and asked his friend to wait a moment."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Hold your horses",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Hold your horses",
+      "detail": "Ziad wanted to buy the first car he saw at the showroom. His father stopped him and said they should compare prices first."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Hope",
+      "detail": "Rana sent her CV to a big company last week. Every morning she checks her email, wishing for good news."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "I can live with that",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "I can live with that",
+      "detail": "The new job pays a bit less than Ahmed hoped, but it is close to home and the team is friendly. He thinks for a moment and accepts the offer."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Inappropriate",
+      "detail": "At a serious business meeting, Tamer told a rude joke about his boss. Nobody laughed, and the room went silent."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Insane",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Insane",
+      "detail": "Karim wants to quit his safe job tomorrow and spend all his savings on lottery tickets. His friends think he has completely lost his mind."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Intense",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Intense",
+      "detail": "In August, the sun in Aswan is so strong that people stay inside from noon until five. Even the street dogs lie in the shade all day."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "ligament",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_units",
+      "item": "ligament",
+      "detail": "Placed in an Unassigned unit"
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Live and learn",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Live and learn",
+      "detail": "Nader tried to fix his laptop himself and made it much worse. He laughed, paid the repair shop and said next time he will ask an expert first."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Low self-esteem",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Low self-esteem",
+      "detail": "Since school, Reem has believed she is less clever and less pretty than everyone else. She never shares her ideas because she thinks they're worthless."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Malignant tumor",
+      "detail": "The biopsy confirmed the tumor was malignant and required immediate surgery."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Man up",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Man up",
+      "detail": "Kamal was too scared to tell his boss about the mistake he made. His friend told him to stop hiding and face the problem like a strong person."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Memorable",
+      "detail": "Hassan and Dina got married on a boat on the Nile at sunset. Twenty years later, their guests still talk about that evening."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Memory lane",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Memory lane",
+      "detail": "At the family dinner, Dad brought out a box of old photos. Everyone spent the evening laughing about holidays and birthdays from twenty years ago."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Meticulous",
+      "detail": "Before sending any report, Rana checks every number twice and fixes even tiny spelling mistakes. Her manager has never found an error in her work."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Milestone",
+      "detail": "This month, Omar's small bakery sold its 10,000th cake. The whole team celebrated because it was a big step for the business."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Mortified",
+      "detail": "During her presentation, Rana accidentally called her teacher 'Mum' in front of thirty students. Her face went bright red and she wanted to disappear."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Motivate",
+      "detail": "Before every match, the captain gives a short speech about the team's families and fans. The players run onto the pitch full of energy."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Motivated",
+      "detail": "After watching a video about a 70-year-old marathon runner, Adel bought new trainers the same night. He went for his first run at 6 a.m. the next morning."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Motivation",
+      "detail": "Hana trains every morning at 5 a.m. Her biggest reason is her little daughter, who she wants to see grow up healthy."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Move on",
+      "detail": "Hana was embarrassed for weeks after she fell at her graduation. Finally, she laughed about it with her friends and stopped thinking about it."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Nail",
+      "detail": "Dina practised her presentation every evening for two weeks. On the day, she answered every question confidently, and the client signed the contract on the spot."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Needy",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Needy",
+      "detail": "Whenever his girlfriend goes out with her friends, Wael sends her twenty messages an hour. He gets upset if she doesn't reply right away."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Nostalgia",
+      "detail": "When an old cartoon song came on the radio, Nour smiled and felt a little sad at the same time. It took her straight back to her childhood Fridays."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Nostalgic",
+      "detail": "Grandpa held the black-and-white photo of his village school and went quiet. He smiled softly, missing the days when he ran there barefoot."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Optimistic",
+      "detail": "Our team lost the first three games of the season. Still, Karim is sure they will win the cup by the end of the year."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Overcome",
+      "detail": "Ali used to shake when he spoke in front of people. He practised every day for a month, and last week he gave a speech at his brother's wedding."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Pass out",
+      "detail": "It was 45 degrees in the exam hall and the air conditioner was broken. Halfway through the test, Ola felt dizzy and fell to the floor."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Pathetic",
+      "detail": "Ahmed promised to help his friend move house. He arrived three hours late, carried one small box and then left to take a nap."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Peace and quiet",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Peace and quiet",
+      "detail": "After a week of shouting kids and loud traffic, Rana drove to a small village. She sat by the river with only the birds around her."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Perseverance",
+      "detail": "It took Ola seven years, two failed shops and a lot of debt to build her clothing brand. Today it sells in five countries."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Persist",
+      "detail": "Mona failed her driving test three times. Instead of giving up, she booked a fourth test and finally passed."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Pessimistic",
+      "detail": "Before every exam, Hazem tells his friends he will fail, even when he has studied well. He always expects the worst."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Pick up the pieces",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Pick up the pieces",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Pick up the pieces",
+      "detail": "After a fire destroyed his small shop, Mr. Fathy didn't quit. He rented a new place, called his old customers and slowly started again."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Pipe dream",
+      "detail": "Tarek says he will be a millionaire by next summer. He has no job, no savings and no business plan."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Positive",
+      "detail": "After Kareem lost his job, he didn't complain. He said it was a chance to learn new skills and find something better."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Proud",
+      "detail": "When Laila crossed the finish line of her first marathon, her father had tears in his eyes. He told everyone around him, 'That's my daughter!'"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Psychiatrist",
+      "detail": "Nada's depression was getting worse, so her GP sent her to a specialist doctor. He talked with her about her feelings and gave her a prescription."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Pull yourself together",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Pull yourself together",
+      "detail": "Mostafa was crying in the car park after failing his driving test. His friend gave him a tissue and said he had to calm down before driving home."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Put off",
+      "detail": "Karim has needed to see the dentist for months. Every week he says he will call next week instead."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Realistic",
+      "detail": "Mona wants to speak English fluently. Instead of expecting it in one month, she plans to study every day for two years."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Realize",
+      "detail": "Huda was enjoying her coffee when she looked at the clock on the wall. It was already 9:30, and her train had left ten minutes ago."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Recall",
+      "detail": "A police officer asked Hany to describe the car he saw. He closed his eyes and slowly brought back the colour, the shape and part of the number plate."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Recognize",
+      "detail": "At the airport, a man with a long grey beard waved at Tarek. Only when he smiled did Tarek see it was his old school friend."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Referee",
+      "detail": "In the last minute, a defender pushed the striker inside the box. The man in black blew his whistle and pointed to the penalty spot."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Remind",
+      "detail": "Mona always forgets to take her medicine at night. Her husband sends her a short message at ten o'clock every evening."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Reminisce",
+      "detail": "At the school reunion, five old classmates sat around one table until midnight. They laughed about their teachers, school trips and silly fights."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Ridiculous",
+      "detail": "Hesham came to a formal wedding dinner in shorts, flip-flops and a beach hat. People couldn't stop laughing when they saw him."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Sarcastic",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Sarcastic",
+      "detail": "When rain ruined their beach day, Tamer looked up and said, 'Wow, perfect weather for swimming!' Everyone knew he meant the opposite."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Satisfied",
+      "detail": "After the repair, Nadia tested her washing machine twice. It worked perfectly, and she was happy with the result and the price."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Scrupulous",
+      "detail": "Fady's clients trust him completely. He always tells them the full price at the start, even when a cheaper option means less money for him."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "See red",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "See red",
+      "detail": "Mahmoud is usually calm, but when someone is rude to his mother, he loses control in a second. His face goes hot and he starts shouting."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Shameful",
+      "detail": "A rich businessman took money that was meant for poor families. When the news came out, everyone called it a disgraceful thing to do."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Sharp memory",
+      "detail": "At ninety, Grandma knows the birthday of every one of her twenty grandchildren. She also knows all their phone numbers without a list."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Shiver",
+      "detail": "Ali forgot his jacket on a winter night in the desert. As the wind blew, his whole body shook and his teeth made a clicking sound."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Shrink",
+      "detail": "Laila washed her new wool sweater in very hot water by mistake. When she took it out, it only fit her little sister."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Slip",
+      "detail": "The cleaner had just washed the shop floor. Hassan walked in quickly, his feet slid out from under him, and he landed on his back."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Stay up",
+      "detail": "I stayed up until 3 AM watching a series and regretted it the next morning."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Suck fest",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Suck fest",
+      "detail": "The training day lasted eight hours, the speaker read from his slides, and the air conditioning was broken. Everyone left tired and angry."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Thankful",
+      "detail": "When Aya's car broke down at night, a stranger stopped and drove her home. She still thinks of his kindness every time she drives that road."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "This blows",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "This blows",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "This blows",
+      "detail": "Sherif's flight was cancelled, his bag was lost and it started to rain. Standing outside the airport, he shook his head and summed it up in two words."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Thrive",
+      "detail": "After moving to a big city, Karim found a great job, made new friends and started a running club. Life there suits him perfectly."
+    },
+    {
+      "severity": "medium",
+      "code": "missing_pos",
+      "item": "Tooth and nail",
+      "detail": "partsOfSpeech must be a non-empty array"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Tooth and nail",
+      "detail": "The small village didn't want a factory built next to its school. The people protested, wrote to newspapers and went to court for three years until they won."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Total loss",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Total loss",
+      "detail": "Ahmed spent six months and all his savings on a small online shop. It sold nothing, and in the end he closed it with nothing to show for it."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Trauma",
+      "detail": "Years after the earthquake, Ahmed still can't sleep in a dark room. Loud noises make his heart race and bring the terrible night back."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Tremble",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Tremble",
+      "detail": "Sara finally met her favourite singer after the concert. When she held out her notebook for his autograph, her hands were shaking so much she nearly dropped it."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Trembles",
+      "detail": "Every time Mona talks about the car accident, her voice becomes weak and unsteady. Her hands shake too, even though the room is warm."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Trip",
+      "detail": "Mariam was walking into the wedding hall when her heel caught on a cable on the floor. She fell forward, and everyone turned to look."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Turn down",
+      "detail": "Salma was offered a well-paid job in Dubai. She said no because she wanted to stay close to her parents."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Unwavering",
+      "detail": "Hassan's parents believed in his music career from day one. Even when he had no money and no fans, they never once doubted him."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Upset",
+      "detail": "Lina's best friend shouted at her in front of the whole class. Lina went home and cried in her room all evening."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Vivid memory",
+      "detail": "Sara was only five when she first saw the sea, but she can still picture it like a film. She can describe the blue water, the cold sand and her father's laugh."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Worried",
+      "detail": "Ahmed's daughter was two hours late from school and her phone was off. He kept looking out of the window every few minutes."
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Zone out",
+      "detail": "I zoned out completely during the lecture and missed everything the teacher said."
+    }
+  ]
+}

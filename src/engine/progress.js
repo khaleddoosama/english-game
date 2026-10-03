@@ -123,7 +123,7 @@ export const DEFAULT_SETTINGS = {
   textSize: "normal", shortcuts: true, reduceMotion: false,
   // Defaults for challenges I create.
   // null: use the admin's defaults (app settings).
-  liveQuestions: null, liveSeconds: null,
+  liveQuestions: null, liveSeconds: null, theme: "dark", voiceRate: 1, hearts: true,
 };
 export const AUTO_ADVANCE_OPTIONS = [0, 1000, 2000, 3000];
 export const SPEED_SECONDS_OPTIONS = [30, 45, 60, 90, 120];
@@ -139,6 +139,9 @@ export function normalizeSettings(raw) {
     enablePairModes: s.enablePairModes !== false,
     sound: s.sound !== false,
     dailyGoal: Math.max(5, Math.min(100, Number(s.dailyGoal) || DEFAULT_SETTINGS.dailyGoal)),
+    theme: s.theme === "light" ? "light" : "dark",
+    voiceRate: [.5,.75,1,1.25].includes(Number(s.voiceRate)) ? Number(s.voiceRate) : 1,
+    hearts: s.hearts !== false,
     levelView: s.levelView === "group" ? "group" : "lesson",
     autoAdvanceMs: AUTO_ADVANCE_OPTIONS.includes(Number(s.autoAdvanceMs)) ? Number(s.autoAdvanceMs) : DEFAULT_SETTINGS.autoAdvanceMs,
     hints: s.hints !== false,

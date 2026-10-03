@@ -1,0 +1,3251 @@
+{
+  "source": "Supabase",
+  "fromVersion": 14,
+  "toVersion": 18,
+  "applied": true,
+  "preserved": [
+    "word",
+    "grammar.id",
+    "all existing ids",
+    "units",
+    "level",
+    "category",
+    "position",
+    "deleted"
+  ],
+  "records": [
+    {
+      "kind": "grammar",
+      "key": "gr-so-that-can-could",
+      "changes": [
+        {
+          "field": "commonMistakes",
+          "beforePresent": true,
+          "before": [
+            {
+              "why": "The action is in the past, so use could.",
+              "sentence": "I slept early so that I can wake up early.",
+              "correction": "I slept early so that I could wake up early."
+            },
+            {
+              "why": "After can/could, use the base verb without to.",
+              "sentence": "I exercise so that I can to stay fit.",
+              "correction": "I exercise so that I can stay fit."
+            }
+          ],
+          "afterPresent": true,
+          "after": [
+            {
+              "why": "Both the bedtime and the intended waking belong to a past plan, so use could.",
+              "sentence": "Last Monday I went to bed early so that I can wake up in time for work the next day.",
+              "correction": "Last Monday I went to bed early so that I could wake up in time for work the next day."
+            },
+            {
+              "why": "After can/could, use the base verb without to.",
+              "sentence": "I exercise so that I can to stay fit.",
+              "correction": "I exercise so that I can stay fit."
+            }
+          ]
+        },
+        {
+          "field": "questions",
+          "beforePresent": true,
+          "before": [
+            {
+              "type": "choose",
+              "answer": "could",
+              "prompt": "I went to bed early last night so that I ______ rest.",
+              "options": [
+                "could",
+                "can",
+                "could to",
+                "can to"
+              ],
+              "explanation": "A past action (went) → so that + could + base verb."
+            },
+            {
+              "type": "choose",
+              "answer": "can",
+              "prompt": "I walk every day so that I ______ stay healthy.",
+              "options": [
+                "can",
+                "could",
+                "can to",
+                "could to"
+              ],
+              "explanation": "A present habit → so that + can + base verb."
+            },
+            {
+              "fix": "She took the painkiller so that she could sleep.",
+              "type": "judge",
+              "correct": false,
+              "sentence": "She took the painkiller so that she can sleep.",
+              "explanation": "Took is past, so the purpose uses could."
+            },
+            {
+              "type": "judge",
+              "correct": true,
+              "sentence": "I eat vegetables so that I can stay strong.",
+              "alternative": "I eat vegetables so that I could stay strong.",
+              "explanation": "Eat is present, so the purpose uses can."
+            },
+            {
+              "type": "fix",
+              "answer": "I stretched before the race so that I could run faster.",
+              "sentence": "I stretched before the race so that I can run faster.",
+              "explanation": "Stretched is past, so use could."
+            },
+            {
+              "type": "fix",
+              "answer": "I drink water so that I can stay hydrated.",
+              "sentence": "I drink water so that I can to stay hydrated.",
+              "explanation": "After can, use the base verb without to."
+            }
+          ],
+          "afterPresent": true,
+          "after": [
+            {
+              "type": "choose",
+              "answer": "could",
+              "prompt": "I went to bed early last night so that I ______ rest.",
+              "options": [
+                "could",
+                "can",
+                "could to",
+                "can to"
+              ],
+              "explanation": "A past action (went) → so that + could + base verb."
+            },
+            {
+              "type": "choose",
+              "answer": "can",
+              "prompt": "I walk every day so that I ______ stay healthy.",
+              "options": [
+                "can",
+                "could",
+                "can to",
+                "could to"
+              ],
+              "explanation": "A present habit → so that + can + base verb."
+            },
+            {
+              "fix": "Last Monday she took the painkiller so that she could sleep that night.",
+              "type": "judge",
+              "correct": false,
+              "sentence": "Last Monday she took the painkiller so that she can sleep that night.",
+              "explanation": "The intended sleep belongs to a finished past night, so use could."
+            },
+            {
+              "type": "judge",
+              "correct": true,
+              "sentence": "I eat vegetables so that I can stay strong.",
+              "alternative": "I eat vegetables so that I could stay strong.",
+              "explanation": "Eat is present, so the purpose uses can."
+            },
+            {
+              "type": "fix",
+              "answer": "Yesterday I stretched before the race so that I could run faster in that race.",
+              "sentence": "Yesterday I stretched before the race so that I can run faster in that race.",
+              "explanation": "Both the stretching and the intended running belong to yesterday, so use could."
+            },
+            {
+              "type": "fix",
+              "answer": "I drink water so that I can stay hydrated.",
+              "sentence": "I drink water so that I can to stay hydrated.",
+              "explanation": "After can, use the base verb without to."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "stories",
+      "key": "story-gen-1790978279889",
+      "changes": [
+        {
+          "field": "questions",
+          "beforePresent": true,
+          "before": [
+            {
+              "mode": "mcq",
+              "prompt": "How did the sight of the sudden illness affect Liam emotionally?",
+              "targetWord": "Terrifying",
+              "explanation": "Liam's hands shook with genuine horror because the experience caused extreme fear, making it terrifying."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "What mild cold symptom was Nora experiencing when she arrived?",
+              "targetWord": "Got the sniffles",
+              "explanation": "Nora repeatedly wiped her lightly running nose with tissues, meaning she got the sniffles."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "How did Nora feel about the heating pipe breaking again?",
+              "targetWord": "Sick and tired",
+              "explanation": "She was thoroughly annoyed because the exact same problem kept repeating, showing she was sick and tired of it."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "What happened when Nora put salt in the sugar bowl and swapped the charts?",
+              "targetWord": "Mixed up",
+              "explanation": "Nora confused which items belonged where and blended the files incorrectly, showing she was mixed up."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "What action did Liam finally take while cleaning the counter with Nora?",
+              "targetWord": "Bring up",
+              "explanation": "Liam chose to introduce the topic of the powder into their discussion, which means to bring it up."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "What was Liam's state of mind regarding the green powder before his boss warned him?",
+              "targetWord": "Obsessed",
+              "explanation": "Liam could not stop thinking about the powder and examined its label dozens of times every day, showing he was obsessed."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "What did Liam witness someone do with half a spoonful of the powder?",
+              "targetWord": "Consume",
+              "explanation": "Liam saw someone take the powder into their body by swallowing it in warm tea, meaning they consumed it."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "What kind of professional was Liam's boss at the village clinic?",
+              "targetWord": "Dietitian",
+              "explanation": "His boss was an expert who planned healthy meals and nutrition for clinic patients, which describes a dietitian."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "What condition did the person seem to develop after drinking the tea?",
+              "targetWord": "Flu",
+              "explanation": "The person suffered from high fever, severe body aches, and deep exhaustion, which are typical symptoms of the flu."
+            }
+          ],
+          "afterPresent": true,
+          "after": [
+            {
+              "mode": "mcq",
+              "prompt": "Which word best describes the frightening experience Liam witnessed?",
+              "targetWord": "Terrifying",
+              "explanation": "The experience caused Liam extreme fear, so it was terrifying."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "What mild cold symptom was Nora experiencing when she arrived?",
+              "targetWord": "Got the sniffles",
+              "explanation": "Nora repeatedly wiped her lightly running nose with tissues, meaning she got the sniffles."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "How did Nora feel about the heating pipe breaking again?",
+              "targetWord": "Sick and tired",
+              "explanation": "She was thoroughly annoyed because the exact same problem kept repeating, showing she was sick and tired of it."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "What happened when Nora put salt in the sugar bowl and swapped the charts?",
+              "targetWord": "Mixed up",
+              "explanation": "Nora confused which items belonged where and blended the files incorrectly, showing she was mixed up."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "What action did Liam finally take while cleaning the counter with Nora?",
+              "targetWord": "Bring up",
+              "explanation": "Liam chose to introduce the topic of the powder into their discussion, which means to bring it up."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "What was Liam's state of mind regarding the green powder before his boss warned him?",
+              "targetWord": "Obsessed",
+              "explanation": "Liam could not stop thinking about the powder and examined its label dozens of times every day, showing he was obsessed."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "What did Liam witness someone do with half a spoonful of the powder?",
+              "targetWord": "Consume",
+              "explanation": "Liam saw someone take the powder into their body by swallowing it in warm tea, meaning they consumed it."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "What kind of professional was Liam's boss at the village clinic?",
+              "targetWord": "Dietitian",
+              "explanation": "His boss was an expert who planned healthy meals and nutrition for clinic patients, which describes a dietitian."
+            },
+            {
+              "mode": "mcq",
+              "prompt": "Which illness had the patient already been diagnosed with earlier in the week?",
+              "targetWord": "Flu",
+              "explanation": "The story explicitly says the patient had been diagnosed with flu. The symptoms alone would not identify a particular illness."
+            }
+          ]
+        },
+        {
+          "field": "text",
+          "beforePresent": true,
+          "before": "Liam worked late in the kitchen of the old village clinic. For weeks, he could not stop thinking about a mysterious green powder found in the pantry, reading its label dozens of times every day. His boss, an expert who planned healthy meals for all patients, warned him to leave the jar alone. However, Liam saw someone swallow half a spoonful of the powder in a cup of warm tea. A sudden high fever, severe body aches, and deep exhaustion struck that person just an hour later. That sight was so frightening that Liam's hands shook with genuine horror. Soon after, his helper Nora arrived and could not stop wiping her lightly dripping nose with tissues. Nora was thoroughly annoyed because the same heating pipe had broken for the fourth time that week. She was so flustered that she put salt in the sugar bowl and confused the morning charts with the evening files. Liam hesitated, but finally decided to mention the strange powder while they cleaned the counter. He kept ______ the lock on the back door until Nora asked him to calm down. After that, Nora locked the dark room herself and they left together.",
+          "afterPresent": true,
+          "after": "Liam worked late in the kitchen of the old village clinic. For weeks, he could not stop thinking about a mysterious green powder found in the pantry, reading its label dozens of times every day. His boss, an expert who planned healthy meals for all patients, warned him to leave the jar alone. However, Liam saw someone swallow half a spoonful of the powder in a cup of warm tea. That patient had already been diagnosed with flu earlier in the week and still had a high fever, severe body aches, and deep exhaustion. That sight was so frightening that Liam's hands shook with genuine horror. Soon after, his helper Nora arrived and could not stop wiping her lightly dripping nose with tissues. Nora was thoroughly annoyed because the same heating pipe had broken for the fourth time that week. She was so flustered that she put salt in the sugar bowl and confused the morning charts with the evening files. Liam hesitated, but finally decided to mention the strange powder while they cleaned the counter. He kept checking the lock on the back door until Nora asked him to calm down. After that, Nora locked the dark room herself and they left together."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Ache",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "My back has been aching since I lifted those boxes.",
+          "afterPresent": true,
+          "after": "My legs ache after that long walk."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "My back has been aching since I lifted those boxes."
+          ],
+          "afterPresent": true,
+          "after": [
+            "My legs ache after that long walk."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Acrophobia",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Rana refused to go up the Cairo Tower with her friends. Even standing on a chair to change a light bulb makes her feel sick.",
+          "afterPresent": true,
+          "after": "Her acrophobia stops her from enjoying the view from tall buildings."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Acrophobic",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "When his friends went up the climbing wall, Omar stayed on the ground holding their bags. Looking up made his legs feel weak.",
+          "afterPresent": true,
+          "after": "He is acrophobic, so he refuses to climb ladders or stand near balconies."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Addicted",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Mazen checks his phone the moment he wakes up and even during dinner. When the battery dies, he feels nervous and can't relax.",
+          "afterPresent": true,
+          "after": "My brother is addicted to video games — he plays until four in the morning."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "ADHD",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "In class, Ziad can't sit in his chair for more than five minutes. He starts many tasks, forgets them quickly and is always tapping his feet.",
+          "afterPresent": true,
+          "after": "The doctor said my son's trouble focusing at school could be a sign of ADHD."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Afraid",
+      "changes": [
+        {
+          "field": "hints",
+          "beforePresent": true,
+          "before": [
+            "Scared (always followed by 'of').",
+            "Starts with 'afr-'."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Feeling scared or worried about something.",
+            "Starts with afr-."
+          ]
+        },
+        {
+          "field": "meaning",
+          "beforePresent": true,
+          "before": "Feeling fear (always followed by 'of').",
+          "afterPresent": true,
+          "after": "Feeling fear; commonly used with of + noun/-ing, to + verb, or a that-clause."
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Youssef never swims in the sea, even on hot days. When the water reaches his knees, he runs back to the beach.",
+          "afterPresent": true,
+          "after": "My little brother is afraid of the dark, so he sleeps with the light on."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Ailurophobic",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Whenever a cat walks into the garden, Fady runs inside and closes the door. He won't visit his aunt because she keeps three of them.",
+          "afterPresent": true,
+          "after": "She is ailurophobic, so she never visits houses that have pets that meow."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Amnesia",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "After the car crash, the young man woke up in hospital. He didn't know his own name, his job or the woman holding his hand.",
+          "afterPresent": true,
+          "after": "In the film, the hero has amnesia and doesn't know who he is."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Amusing",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Grandpa told a story about a goat that ate his newspaper every morning. Everyone smiled and chuckled, though nobody laughed out loud.",
+          "afterPresent": true,
+          "after": "The film was amusing, but not funny enough to make me laugh out loud."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Anger",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "verb"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "When Sami feels his face getting hot during an argument, he walks away and counts to ten. Then he comes back and talks calmly.",
+          "afterPresent": true,
+          "after": "Yoga helps me control my anger when I'm stressed at work."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Angry",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Someone took Samir's parking space even though he was waiting with his signal on. Samir got out of the car and shouted at the driver.",
+          "afterPresent": true,
+          "after": "My mother gets angry when we leave dirty dishes in the sink."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Annoyed",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The tap in Salma's kitchen dripped all night. It wasn't a big problem, but the sound kept her awake and irritated.",
+          "afterPresent": true,
+          "after": "I get a bit annoyed when people chew gum loudly next to me."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Annoying",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The man behind Ola in the cinema kept talking on his phone and kicking her seat. She couldn't enjoy the film at all.",
+          "afterPresent": true,
+          "after": "It's really annoying when people don't reply to your messages for days."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Ashamed",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Khaled shouted at his little sister for breaking his headphones. Later he found out the dog had done it, and he couldn't look her in the eye.",
+          "afterPresent": true,
+          "after": "He felt ashamed of himself after lying to his best friend."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Asked",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Yesterday Nour didn't understand the homework. After class she went to her teacher and requested a second explanation.",
+          "afterPresent": true,
+          "after": "Yesterday she asked me to help her move to her new flat."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Avoid",
+      "changes": [
+        {
+          "field": "opposite",
+          "beforePresent": true,
+          "before": "Bring up",
+          "afterPresent": false,
+          "after": null
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "After the embarrassing party, Sherif took the long way to work every day. He didn't want to meet anyone who had been there.",
+          "afterPresent": true,
+          "after": "I try to avoid fast food because it makes me feel tired."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Bandage",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "verb"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Benign tumor",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The doctor told her the tumor was benign, so no surgery was needed.",
+          "afterPresent": true,
+          "after": "Good news: the scan showed a benign tumor, not cancer."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "The doctor told her the tumor was benign, so no surgery was needed."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Good news: the scan showed a benign tumor, not cancer."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Black and blue",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "adjective phrase"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Omar fell off his bike down a rocky hill. The next day, his arms and legs were covered in dark marks.",
+          "afterPresent": true,
+          "after": "After the rugby match, his legs were black and blue from all the kicks."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Blow up",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The argument blew up when no one could agree on the treatment plan.",
+          "afterPresent": true,
+          "after": "Small problems at work can suddenly blow up into a big angry argument if nobody talks about them."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "The argument blew up when no one could agree on the treatment plan."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Small problems at work can suddenly blow up into a big angry argument if nobody talks about them."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Bottle",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "verb"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Bottle things up",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "phrasal verb"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Hassan never tells anyone when something is wrong at work. He keeps smiling, but at home he suddenly explodes over little problems.",
+          "afterPresent": true,
+          "after": "It's not healthy to bottle things up; talk to someone you trust when you're sad."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Brain concussion",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "During the match, two players jumped for the ball and hit heads. One of them felt dizzy and confused, and the doctor told him to rest for two weeks.",
+          "afterPresent": true,
+          "after": "After falling off his bike without a helmet, Ali was taken to hospital with a brain concussion."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Breakthrough",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "For two years, the scientists tested hundreds of ideas that didn't work. Then one night, a small change in the formula finally solved the problem.",
+          "afterPresent": true,
+          "after": "After months of struggling with grammar, I finally had a breakthrough and everything made sense."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Bring up",
+      "changes": [
+        {
+          "field": "antonyms",
+          "beforePresent": true,
+          "before": [
+            "avoid"
+          ],
+          "afterPresent": true,
+          "after": []
+        },
+        {
+          "field": "opposite",
+          "beforePresent": true,
+          "before": "Avoid",
+          "afterPresent": false,
+          "after": null
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Bruise",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "verb"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "butter someone up",
+      "changes": [
+        {
+          "field": "gap",
+          "beforePresent": true,
+          "before": "She brought her boss coffee every morning to ______ before asking for a day off.",
+          "afterPresent": true,
+          "after": "Some employees ______ by praising them before asking for a favour."
+        },
+        {
+          "field": "gaps",
+          "beforePresent": true,
+          "before": [
+            "She brought her boss coffee every morning to ______ before asking for a day off.",
+            "Don't try to ______ — the answer is still no."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Some employees ______ by praising them before asking for a favour.",
+            "People sometimes ______ to get special treatment through flattery."
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "He kept complimenting his boss, trying to butter her up before asking for a raise.",
+          "afterPresent": true,
+          "after": "People sometimes butter someone up at work when they want a favour."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "He kept complimenting his boss, trying to butter her up before asking for a raise."
+          ],
+          "afterPresent": true,
+          "after": [
+            "People sometimes butter someone up at work when they want a favour."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Caress",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The old man sat by his wife's hospital bed. He softly moved his fingers across her hand and her grey hair while she slept.",
+          "afterPresent": true,
+          "after": "The mother began to gently caress the sleeping baby's cheek."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Cast",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "verb"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Chronic disease",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Diabetes and hypertension are both examples of chronic diseases.",
+          "afterPresent": true,
+          "after": "Asthma is a chronic disease that many people live with for their whole life."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "Diabetes and hypertension are both examples of chronic diseases."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Asthma is a chronic disease that many people live with for their whole life."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Claustrophobia",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Yasser always takes the stairs, even to the tenth floor. Inside a lift, his heart races and he feels the walls are closing in on him.",
+          "afterPresent": true,
+          "after": "Because of her claustrophobia, she can't sit in the back seat of a small car for long."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Committed to",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "When Ahmed signed up for the charity run, he promised to raise money for the hospital. Even with a broken toe, he didn't break his word.",
+          "afterPresent": true,
+          "after": "The company says it is committed to cutting its plastic waste by half."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Consume",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The machine consumes a lot of electricity.",
+          "afterPresent": true,
+          "after": "Big cars consume more fuel than small ones."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "The machine consumes a lot of electricity."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Big cars consume more fuel than small ones."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Consumer",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Consumers today are more aware of the ingredients in their food.",
+          "afterPresent": true,
+          "after": "Every consumer has the right to know what is in their food."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "Consumers today are more aware of the ingredients in their food."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Every consumer has the right to know what is in their food."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Contribute to",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Scary clown films, frightening pictures online and bad childhood memories all play a part. Together, they help explain why so many people fear clowns.",
+          "afterPresent": true,
+          "after": "Stress and bad sleep can contribute to headaches."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Cough",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "verb"
+          ],
+          "afterPresent": true,
+          "after": [
+            "verb",
+            "noun"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "He has been coughing all night because of his cold.",
+          "afterPresent": true,
+          "after": "The thick smoke got into our throats and made everyone cough."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "He has been coughing all night because of his cold."
+          ],
+          "afterPresent": true,
+          "after": [
+            "The thick smoke got into our throats and made everyone cough."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Creepy",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The old doll in Grandma's attic has glass eyes that seem to follow you. Nobody in the family wants to sleep in that room.",
+          "afterPresent": true,
+          "after": "The empty hospital was creepy at night, with lights going on and off by themselves."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Cuddle",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "On cold winter nights, Laila and her little son lie under a big blanket on the sofa. She holds him close in her arms while they watch cartoons.",
+          "afterPresent": true,
+          "after": "The little boy wanted to cuddle up next to his mum during the scary film."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Cynophobia",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Whenever Karim sees a neighbour walking a pet on a lead, he crosses to the other side of the street. Even a small puppy makes his hands sweat.",
+          "afterPresent": true,
+          "after": "Because of his cynophobia, he won't visit friends who keep a big dog in the house."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Daydream",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "I was daydreaming about my next holiday instead of paying attention in the meeting.",
+          "afterPresent": true,
+          "after": "Stop looking out of the window — don't daydream in class!"
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "I was daydreaming about my next holiday instead of paying attention in the meeting."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Stop looking out of the window — don't daydream in class!"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Dedicated to",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Ramy practises the piano for four hours every day, even on holidays. He gave up football and parties so he can play better.",
+          "afterPresent": true,
+          "after": "She is so dedicated to her research that she often forgets to eat lunch."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Déjà vu",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The first time Omar walked into the new café, he stopped at the door. He felt sure he had stood in that exact spot before, hearing that same song.",
+          "afterPresent": true,
+          "after": "I had never visited this town, but walking down the main street gave me a strong feeling of déjà vu."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Dentophobia",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Samy has had a toothache for months, but he still hasn't booked an appointment. The sound of the drill alone makes him feel faint.",
+          "afterPresent": true,
+          "after": "His dentophobia is so bad that he only visits the clinic when the pain is unbearable."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Desperate",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Hamdy hasn't paid his rent for three months. He calls every company in town every day, ready to accept any job at all.",
+          "afterPresent": true,
+          "after": "After two days in the desert, the travellers were desperate for water."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Devoted to",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Since his wife became ill, Samir has stopped travelling for work. He spends every day by her side, reading to her and making her laugh.",
+          "afterPresent": true,
+          "after": "The old man is completely devoted to his dog and takes it everywhere."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Devotion",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "For forty years, Uncle Fathy has never missed one of his club's home games. He has watched them in sun, rain and even on his wedding day.",
+          "afterPresent": true,
+          "after": "Her devotion to her patients made her the most loved nurse in the hospital."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Disappointed",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Tarek studied hard and expected a top mark in maths. When he saw a C on his paper, his face fell.",
+          "afterPresent": true,
+          "after": "We were disappointed with the hotel — it looked much better in the photos."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Disciplined",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Every night, Laila goes to bed at ten, even when her friends go out. She wakes at six to study before work and never skips a day.",
+          "afterPresent": true,
+          "after": "Athletes have to be very disciplined: early nights, strict meals and training every single day."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Does it ring any bells?",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "expression"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Nour was talking to an old classmate about a teacher called Mr. Samy. She wasn't sure her friend remembered him, so she asked if the name sounded familiar.",
+          "afterPresent": true,
+          "after": "A: My cousin Tarek went to your school. does it ring any bells? B: Hmm, no, I don't remember him."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Drool",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "verb"
+          ],
+          "afterPresent": true,
+          "after": [
+            "verb",
+            "noun"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "He fell asleep on the sofa and woke up to find he had drooled on the cushion.",
+          "afterPresent": true,
+          "after": "Babies often drool when their first teeth are coming."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "He fell asleep on the sofa and woke up to find he had drooled on the cushion."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Babies often drool when their first teeth are coming."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Elbow",
+      "changes": [
+        {
+          "field": "collocationChecks",
+          "beforePresent": true,
+          "before": [
+            {
+              "wrong": [
+                "beat",
+                "kicked",
+                "touched"
+              ],
+              "answer": "hit",
+              "sentence": "He ______ his elbow on the door and it really hurt.",
+              "explanation": "Hit your elbow on something."
+            }
+          ],
+          "afterPresent": true,
+          "after": [
+            {
+              "wrong": [
+                "kicked",
+                "listened",
+                "slept"
+              ],
+              "answer": "hit",
+              "sentence": "He ______ his elbow on the door and it really hurt.",
+              "explanation": "Hit your elbow on something."
+            }
+          ]
+        },
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "verb"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Enthusiastic",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "In her first English class, Huda answered every question and asked the teacher for extra homework. She loved the subject from day one.",
+          "afterPresent": true,
+          "after": "The new volunteers were very enthusiastic and offered to help with every job."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Examine",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The doctor examined the patient and wrote a prescription.",
+          "afterPresent": true,
+          "after": "The doctor needs to examine your throat."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "The doctor examined the patient and wrote a prescription."
+          ],
+          "afterPresent": true,
+          "after": [
+            "The doctor needs to examine your throat."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Excited",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The night before their first trip to the sea, the children couldn't sleep. They packed their swimsuits three times and kept asking if it was morning yet.",
+          "afterPresent": true,
+          "after": "The kids are so excited about their holiday that they can't sit still."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Excuse me for living!",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "expression"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Nada's roommate complained about how she washed the dishes, folded the towels and even how she breathed. Nada threw her hands up and answered with a sarcastic line.",
+          "afterPresent": true,
+          "after": "A: You're standing in my way again! B: Oh, excuse me for living!"
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Express",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "verb"
+          ],
+          "afterPresent": true,
+          "after": [
+            "verb",
+            "adjective",
+            "noun"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Mazen finds it hard to tell his wife when he is unhappy. So he writes her short letters to share what he feels inside.",
+          "afterPresent": true,
+          "after": "Some children draw pictures to express feelings they can't put into words."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Familiar",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "At the wedding, a woman smiled at Laila from across the room. Laila was sure she knew that face from somewhere, but she couldn't say where.",
+          "afterPresent": true,
+          "after": "His voice sounds familiar — have we met before?"
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Feel blue",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "verb phrase"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Since her best friend moved to Canada, Dina has been quiet and sad. She doesn't want to go out, and she misses their long talks.",
+          "afterPresent": true,
+          "after": "Rainy winter days always make me feel blue."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Feel like a kid with a new toy",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "verb phrase"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "When Hany finally bought the camera he had wanted for years, he took pictures of everything — the cat, his shoes, the sky. He couldn't stop smiling.",
+          "afterPresent": true,
+          "after": "Since Grandpa got his first smartphone, he has used it all day — he must feel like a kid with a new toy."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Fracture",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "verb"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Freak out",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "When Mai saw a tiny spider on her pillow, she screamed, jumped onto a chair and refused to come down. Her brother laughed for an hour.",
+          "afterPresent": true,
+          "after": "My sister will freak out if she finds a cockroach in the kitchen."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Funeral",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "After their grandfather died, the whole family gathered at the mosque and then the cemetery. Hundreds of neighbours came to say goodbye.",
+          "afterPresent": true,
+          "after": "Everyone wore black to the funeral of the old teacher."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Furious",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "When Adel found out his business partner had stolen from him, his face turned red. He slammed the door so hard that a picture fell off the wall.",
+          "afterPresent": true,
+          "after": "Dad was furious when he saw the huge scratch on his brand-new car."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Fury",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "After the unfair goal, the crowd lost all control. People threw bottles onto the pitch and screamed at the officials.",
+          "afterPresent": true,
+          "after": "In a moment of fury, he threw his phone against the wall and broke it."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Gesturing",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "When Emad gets excited about football, his arms fly around and his hands draw shapes in the air. His friends move their drinks away from him.",
+          "afterPresent": true,
+          "after": "She kept gesturing wildly at the bus to make the driver stop."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Good",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "adjective"
+          ],
+          "afterPresent": true,
+          "after": [
+            "adjective",
+            "noun"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Goosebumps",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "When the singer hit the last high note, the whole hall went silent. Mariam looked down and saw the tiny hairs on her arms standing up.",
+          "afterPresent": true,
+          "after": "That song is so beautiful that it gives me goosebumps every time."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "have a sweet tooth",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "My father ate half of the cake alone — he has a sweet tooth.",
+          "afterPresent": true,
+          "after": "I have a sweet tooth, so I can never say no to dessert."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "My father ate half of the cake alone — he has a sweet tooth."
+          ],
+          "afterPresent": true,
+          "after": [
+            "I have a sweet tooth, so I can never say no to dessert."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Heave",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "verb"
+          ],
+          "afterPresent": true,
+          "after": [
+            "verb",
+            "noun"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "He just heaved the ball downfield without thinking.",
+          "afterPresent": true,
+          "after": "It took three men to heave the big box onto the truck."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "He just heaved the ball downfield without thinking."
+          ],
+          "afterPresent": true,
+          "after": [
+            "It took three men to heave the big box onto the truck."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Hit the jackpot",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "verb phrase"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Hany bought an old painting at a street market for 50 pounds. An expert later told him it was worth half a million.",
+          "afterPresent": true,
+          "after": "When I found a cheap flat right next to my office, I really hit the jackpot."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Hold on",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "phrasal verb"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Ali was about to lock the front door when he realized his phone was still inside. He raised his hand and asked his friend to wait a moment.",
+          "afterPresent": true,
+          "after": "Hold on a second — I think I left my keys in the car."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Hold your horses",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "verb phrase"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Ziad wanted to buy the first car he saw at the showroom. His father stopped him and said they should compare prices first.",
+          "afterPresent": true,
+          "after": "Hold your horses! Let's read the contract carefully before we sign it."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Hope",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Rana sent her CV to a big company last week. Every morning she checks her email, wishing for good news.",
+          "afterPresent": true,
+          "after": "I hope the weather is nice for our picnic tomorrow."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "I can live with that",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "expression"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The new job pays a bit less than Ahmed hoped, but it is close to home and the team is friendly. He thinks for a moment and accepts the offer.",
+          "afterPresent": true,
+          "after": "A: The room is small, but it has a great view. B: Fine, I can live with that."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Ill",
+      "changes": [
+        {
+          "field": "gap",
+          "beforePresent": true,
+          "before": "She was ______ for a week with the flu.",
+          "afterPresent": true,
+          "after": "She stayed in bed because she was ______ with the flu all week."
+        },
+        {
+          "field": "gaps",
+          "beforePresent": true,
+          "before": [
+            "She was ______ for a week with the flu.",
+            "My grandfather is seriously ______ in hospital, so we visit him every day."
+          ],
+          "afterPresent": true,
+          "after": [
+            "She stayed in bed because she was ______ with the flu all week.",
+            "My grandfather is seriously ______ in hospital, so we visit him every day."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Inappropriate",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "At a serious business meeting, Tamer told a rude joke about his boss. Nobody laughed, and the room went silent.",
+          "afterPresent": true,
+          "after": "Using your phone during a job interview is inappropriate."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Insane",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Karim wants to quit his safe job tomorrow and spend all his savings on lottery tickets. His friends think he has completely lost his mind.",
+          "afterPresent": true,
+          "after": "Driving at 200 kilometres an hour on a busy road is insane!"
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Intense",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "In August, the sun in Aswan is so strong that people stay inside from noon until five. Even the street dogs lie in the shade all day.",
+          "afterPresent": true,
+          "after": "The pain in my tooth was so intense that I couldn't sleep all night."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Interpretation",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "There are many different interpretations of what it means to dream about water.",
+          "afterPresent": true,
+          "after": "Each student gave a different interpretation of the poem."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "There are many different interpretations of what it means to dream about water."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Each student gave a different interpretation of the poem."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Joint",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "adjective"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The knee is one of the largest joints in the human body.",
+          "afterPresent": true,
+          "after": "Her hip joint hurts when it's cold."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "The knee is one of the largest joints in the human body."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Her hip joint hurts when it's cold."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Live and learn",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "expression"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Nader tried to fix his laptop himself and made it much worse. He laughed, paid the repair shop and said next time he will ask an expert first.",
+          "afterPresent": true,
+          "after": "I paid too much for that old car, but you live and learn, right?"
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Low self-esteem",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Since school, Reem has believed she is less clever and less pretty than everyone else. She never shares her ideas because she thinks they're worthless.",
+          "afterPresent": true,
+          "after": "Years of criticism from his father left him with low self-esteem."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Malignant tumor",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The biopsy confirmed the tumor was malignant and required immediate surgery.",
+          "afterPresent": true,
+          "after": "Doctors must act fast when they find a malignant tumor because it can spread."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "The biopsy confirmed the tumor was malignant and required immediate surgery."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Doctors must act fast when they find a malignant tumor because it can spread."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Man up",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "phrasal verb"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Kamal was too scared to tell his boss about the mistake he made. His friend told him to stop hiding and face the problem like a strong person.",
+          "afterPresent": true,
+          "after": "Stop complaining about the cold water and man up — just jump in!"
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Memorable",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Hassan and Dina got married on a boat on the Nile at sunset. Twenty years later, their guests still talk about that evening.",
+          "afterPresent": true,
+          "after": "Our trip to Siwa was the most memorable holiday we've ever had."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Memory lane",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "noun phrase"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "At the family dinner, Dad brought out a box of old photos. Everyone spent the evening laughing about holidays and birthdays from twenty years ago.",
+          "afterPresent": true,
+          "after": "Looking through my old school yearbook took me down memory lane."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Meticulous",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Before sending any report, Rana checks every number twice and fixes even tiny spelling mistakes. Her manager has never found an error in her work.",
+          "afterPresent": true,
+          "after": "He is meticulous about his car — he cleans every corner with a toothbrush."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Milestone",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "This month, Omar's small bakery sold its 10,000th cake. The whole team celebrated because it was a big step for the business.",
+          "afterPresent": true,
+          "after": "Turning eighteen is an important milestone in every teenager's life."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Mortified",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "During her presentation, Rana accidentally called her teacher 'Mum' in front of thirty students. Her face went bright red and she wanted to disappear.",
+          "afterPresent": true,
+          "after": "I was mortified when I noticed I had worn my shirt inside out all day."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Motivate",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Before every match, the captain gives a short speech about the team's families and fans. The players run onto the pitch full of energy.",
+          "afterPresent": true,
+          "after": "Good teachers know how to motivate even the laziest students."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Motivated",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "After watching a video about a 70-year-old marathon runner, Adel bought new trainers the same night. He went for his first run at 6 a.m. the next morning.",
+          "afterPresent": true,
+          "after": "I feel really motivated after talking to my coach — I want to start today."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Motivation",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Hana trains every morning at 5 a.m. Her biggest reason is her little daughter, who she wants to see grow up healthy.",
+          "afterPresent": true,
+          "after": "His main motivation for learning English is to get a job abroad."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Move on",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Hana was embarrassed for weeks after she fell at her graduation. Finally, she laughed about it with her friends and stopped thinking about it.",
+          "afterPresent": true,
+          "after": "The exam didn't go well, but it's time to forget it and move on."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Nail",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Dina practised her presentation every evening for two weeks. On the day, she answered every question confidently, and the client signed the contract on the spot.",
+          "afterPresent": true,
+          "after": "Don't worry about the interview — you're going to nail it!"
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Needy",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Whenever his girlfriend goes out with her friends, Wael sends her twenty messages an hour. He gets upset if she doesn't reply right away.",
+          "afterPresent": true,
+          "after": "He's very needy in relationships — he wants his partner's attention every minute of the day."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Nostalgia",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "When an old cartoon song came on the radio, Nour smiled and felt a little sad at the same time. It took her straight back to her childhood Fridays.",
+          "afterPresent": true,
+          "after": "Old family photos always fill my grandmother with nostalgia for her village."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Nostalgic",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Grandpa held the black-and-white photo of his village school and went quiet. He smiled softly, missing the days when he ran there barefoot.",
+          "afterPresent": true,
+          "after": "Grandpa gave a nostalgic smile as he looked at the photo of his old village."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Optimistic",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Our team lost the first three games of the season. Still, Karim is sure they will win the cup by the end of the year.",
+          "afterPresent": true,
+          "after": "The doctor is optimistic that my father will make a full recovery."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Overcome",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Ali used to shake when he spoke in front of people. He practised every day for a month, and last week he gave a speech at his brother's wedding.",
+          "afterPresent": true,
+          "after": "With the help of a good teacher, she managed to overcome her fear of maths."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Pale",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "adjective"
+          ],
+          "afterPresent": true,
+          "after": [
+            "adjective",
+            "verb"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Pass out",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "It was 45 degrees in the exam hall and the air conditioner was broken. Halfway through the test, Ola felt dizzy and fell to the floor.",
+          "afterPresent": true,
+          "after": "If you don't drink water in this heat, you might pass out."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Pathetic",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Ahmed promised to help his friend move house. He arrived three hours late, carried one small box and then left to take a nap.",
+          "afterPresent": true,
+          "after": "The team's performance was pathetic — they didn't take a single shot all game."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Patient",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "adjective"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The doctor saw ten patients this morning.",
+          "afterPresent": true,
+          "after": "Dr. Ali has already seen every patient on his list today."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "The doctor saw ten patients this morning."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Dr. Ali has already seen every patient on his list today."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Peace and quiet",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "noun phrase"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "After a week of shouting kids and loud traffic, Rana drove to a small village. She sat by the river with only the birds around her.",
+          "afterPresent": true,
+          "after": "I'm going to the beach house this weekend to get some peace and quiet away from the city."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Perseverance",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "It took Ola seven years, two failed shops and a lot of debt to build her clothing brand. Today it sells in five countries.",
+          "afterPresent": true,
+          "after": "It took years of perseverance and many failures before her business finally made a profit."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Persist",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Mona failed her driving test three times. Instead of giving up, she booked a fourth test and finally passed.",
+          "afterPresent": true,
+          "after": "If you persist with your practice, you will see results in a few months."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Pessimistic",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Before every exam, Hazem tells his friends he will fail, even when he has studied well. He always expects the worst.",
+          "afterPresent": true,
+          "after": "My uncle is so pessimistic that he expects every new plan to fail."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Pick up the pieces",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "verb phrase"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "After a fire destroyed his small shop, Mr. Fathy didn't quit. He rented a new place, called his old customers and slowly started again.",
+          "afterPresent": true,
+          "after": "After the divorce, it took her a year to pick up the pieces and start a new life."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Pipe dream",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Tarek says he will be a millionaire by next summer. He has no job, no savings and no business plan.",
+          "afterPresent": true,
+          "after": "Owning a house by the sea is just a pipe dream on my salary."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Playoffs",
+      "changes": [
+        {
+          "field": "antonyms",
+          "beforePresent": true,
+          "before": [
+            "regular season"
+          ],
+          "afterPresent": true,
+          "after": []
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Positive",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "After Kareem lost his job, he didn't complain. He said it was a chance to learn new skills and find something better.",
+          "afterPresent": true,
+          "after": "Try to stay positive even when things go wrong."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Proud",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "When Laila crossed the finish line of her first marathon, her father had tears in his eyes. He told everyone around him, 'That's my daughter!'",
+          "afterPresent": true,
+          "after": "You finished the whole project by yourself — you should be proud of yourself."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Psychiatrist",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Nada's depression was getting worse, so her GP sent her to a specialist doctor. He talked with her about her feelings and gave her a prescription.",
+          "afterPresent": true,
+          "after": "The psychiatrist prescribed medicine to help with his anxiety."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Pull yourself together",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "verb phrase"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Mostafa was crying in the car park after failing his driving test. His friend gave him a tissue and said he had to calm down before driving home.",
+          "afterPresent": true,
+          "after": "Stop crying and pull yourself together — the guests will arrive in five minutes."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Put off",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Karim has needed to see the dentist for months. Every week he says he will call next week instead.",
+          "afterPresent": true,
+          "after": "I always put off cleaning my room until the weekend."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Rash",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "adjective"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Realistic",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Mona wants to speak English fluently. Instead of expecting it in one month, she plans to study every day for two years.",
+          "afterPresent": true,
+          "after": "Be realistic — you can't lose twenty kilos in two weeks."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Realize",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Huda was enjoying her coffee when she looked at the clock on the wall. It was already 9:30, and her train had left ten minutes ago.",
+          "afterPresent": true,
+          "after": "I didn't realize how late it was until the café started to close."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Recall",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "verb"
+          ],
+          "afterPresent": true,
+          "after": [
+            "verb",
+            "noun"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "A police officer asked Hany to describe the car he saw. He closed his eyes and slowly brought back the colour, the shape and part of the number plate.",
+          "afterPresent": true,
+          "after": "I can't recall where I parked the car this morning."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Recognize",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "At the airport, a man with a long grey beard waved at Tarek. Only when he smiled did Tarek see it was his old school friend.",
+          "afterPresent": true,
+          "after": "I didn't recognize my cousin at first because he had grown a beard."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Referee",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "verb"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "In the last minute, a defender pushed the striker inside the box. The man in black blew his whistle and pointed to the penalty spot.",
+          "afterPresent": true,
+          "after": "The referee showed the defender a red card for the dangerous tackle."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Remind",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Mona always forgets to take her medicine at night. Her husband sends her a short message at ten o'clock every evening.",
+          "afterPresent": true,
+          "after": "Can you remind me to call the doctor tomorrow morning?"
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Reminisce",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "At the school reunion, five old classmates sat around one table until midnight. They laughed about their teachers, school trips and silly fights.",
+          "afterPresent": true,
+          "after": "My parents love to reminisce about the year they met."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Ridiculous",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Hesham came to a formal wedding dinner in shorts, flip-flops and a beach hat. People couldn't stop laughing when they saw him.",
+          "afterPresent": true,
+          "after": "Paying 200 pounds for a small cup of coffee is ridiculous!"
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Safe and sound",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "He had an accident but he was safe and sound.",
+          "afterPresent": true,
+          "after": "After the storm, the sailors returned to the harbour safe and sound."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "He had an accident but he was safe and sound."
+          ],
+          "afterPresent": true,
+          "after": [
+            "After the storm, the sailors returned to the harbour safe and sound."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Sarcastic",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "When rain ruined their beach day, Tamer looked up and said, 'Wow, perfect weather for swimming!' Everyone knew he meant the opposite.",
+          "afterPresent": true,
+          "after": "Don't take him seriously — he's being sarcastic when he says he loves Mondays."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Satisfied",
+      "changes": [
+        {
+          "field": "opposite",
+          "beforePresent": true,
+          "before": "Disappointed",
+          "afterPresent": false,
+          "after": null
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "After the repair, Nadia tested her washing machine twice. It worked perfectly, and she was happy with the result and the price.",
+          "afterPresent": true,
+          "after": "Are you satisfied with your new phone, or do you want to return it?"
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Scrupulous",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Fady's clients trust him completely. He always tells them the full price at the start, even when a cheaper option means less money for him.",
+          "afterPresent": true,
+          "after": "He's so scrupulous that he returned the extra money the cashier gave him by mistake."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "See red",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "verb phrase"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Mahmoud is usually calm, but when someone is rude to his mother, he loses control in a second. His face goes hot and he starts shouting.",
+          "afterPresent": true,
+          "after": "When someone pushes in front of me in a queue, I see red."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Shameful",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "A rich businessman took money that was meant for poor families. When the news came out, everyone called it a disgraceful thing to do.",
+          "afterPresent": true,
+          "after": "Lying to your own mother to get money is shameful."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Sharp memory",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "At ninety, Grandma knows the birthday of every one of her twenty grandchildren. She also knows all their phone numbers without a list.",
+          "afterPresent": true,
+          "after": "Grandma has a sharp memory; she knows every grandchild's birthday without a calendar."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Shiver",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "verb"
+          ],
+          "afterPresent": true,
+          "after": [
+            "verb",
+            "noun"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Ali forgot his jacket on a winter night in the desert. As the wind blew, his whole body shook and his teeth made a clicking sound.",
+          "afterPresent": true,
+          "after": "Close the window — the cold air is making the baby shiver."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Shrink",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Laila washed her new wool sweater in very hot water by mistake. When she took it out, it only fit her little sister.",
+          "afterPresent": true,
+          "after": "Wool clothes can shrink if you wash them in very hot water."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Sick",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "She stayed at home because she was sick.",
+          "afterPresent": true,
+          "after": "She was sick with a cold and stayed home from work."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "She stayed at home because she was sick."
+          ],
+          "afterPresent": true,
+          "after": [
+            "She was sick with a cold and stayed home from work."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Sign",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "verb"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Sleep disorder",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Insomnia and sleep apnea are two of the most common sleep disorders.",
+          "afterPresent": true,
+          "after": "Snoring very loudly can be a sign of a sleep disorder."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "Insomnia and sleep apnea are two of the most common sleep disorders."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Snoring very loudly can be a sign of a sleep disorder."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Slip",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The cleaner had just washed the shop floor. Hassan walked in quickly, his feet slid out from under him, and he landed on his back.",
+          "afterPresent": true,
+          "after": "Walk slowly — it's easy to slip on the ice outside."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Sneeze",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "verb"
+          ],
+          "afterPresent": true,
+          "after": [
+            "verb",
+            "noun"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "She sneezed three times during the class.",
+          "afterPresent": true,
+          "after": "Pepper always makes me sneeze — achoo!"
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "She sneezed three times during the class."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Pepper always makes me sneeze — achoo!"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Sniff",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "verb"
+          ],
+          "afterPresent": true,
+          "after": [
+            "verb",
+            "noun"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "She sniffed the medicine to check what it smelled like.",
+          "afterPresent": true,
+          "after": "The dog stopped to sniff every tree in the park."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "She sniffed the medicine to check what it smelled like."
+          ],
+          "afterPresent": true,
+          "after": [
+            "The dog stopped to sniff every tree in the park."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Sprain",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "verb"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "He sprained his ankle during the match and had to sit out for a week.",
+          "afterPresent": true,
+          "after": "She twisted her ankle on the stairs — it's a bad sprain, but the bone isn't broken."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "He sprained his ankle during the match and had to sit out for a week."
+          ],
+          "afterPresent": true,
+          "after": [
+            "She twisted her ankle on the stairs — it's a bad sprain, but the bone isn't broken."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Stay up",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "I stayed up until 3 AM watching a series and regretted it the next morning.",
+          "afterPresent": true,
+          "after": "Kids are allowed to stay up late on Friday nights to watch a movie."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "I stayed up until 3 AM watching a series and regretted it the next morning."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Kids are allowed to stay up late on Friday nights to watch a movie."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Strain",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "verb"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Stroke",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "verb"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Suck fest",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The training day lasted eight hours, the speaker read from his slides, and the air conditioning was broken. Everyone left tired and angry.",
+          "afterPresent": true,
+          "after": "The concert was a complete suck fest: bad sound, long queues and a two-hour delay."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Supplement",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "noun",
+            "verb"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Many people take vitamin D supplements in winter when there is less sunlight.",
+          "afterPresent": true,
+          "after": "My doctor told me to take an iron supplement every day."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "Many people take vitamin D supplements in winter when there is less sunlight."
+          ],
+          "afterPresent": true,
+          "after": [
+            "My doctor told me to take an iron supplement every day."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Swallow",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "verb"
+          ],
+          "afterPresent": true,
+          "after": [
+            "verb",
+            "noun"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Swell",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "verb"
+          ],
+          "afterPresent": true,
+          "after": [
+            "verb",
+            "noun"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Thankful",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "When Aya's car broke down at night, a stranger stopped and drove her home. She still thinks of his kindness every time she drives that road.",
+          "afterPresent": true,
+          "after": "I'm so thankful to my neighbour for feeding my cat while I was away."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "This blows",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "expression"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Sherif's flight was cancelled, his bag was lost and it started to rain. Standing outside the airport, he shook his head and summed it up in two words.",
+          "afterPresent": true,
+          "after": "We have to work on the holiday? this blows."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Thrive",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "After moving to a big city, Karim found a great job, made new friends and started a running club. Life there suits him perfectly.",
+          "afterPresent": true,
+          "after": "Some plants thrive in hot, dry weather while others die."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Tooth and nail",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": false,
+          "before": null,
+          "afterPresent": true,
+          "after": [
+            "adverbial phrase"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The small village didn't want a factory built next to its school. The people protested, wrote to newspapers and went to court for three years until they won.",
+          "afterPresent": true,
+          "after": "The workers fought tooth and nail to keep their jobs."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Total loss",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Ahmed spent six months and all his savings on a small online shop. It sold nothing, and in the end he closed it with nothing to show for it.",
+          "afterPresent": true,
+          "after": "The party was a total loss: the food was cold, the music was bad, and nobody came."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Trauma",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Years after the earthquake, Ahmed still can't sleep in a dark room. Loud noises make his heart race and bring the terrible night back.",
+          "afterPresent": true,
+          "after": "Children who live through a war often need help to deal with the trauma."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Tremble",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Sara finally met her favourite singer after the concert. When she held out her notebook for his autograph, her hands were shaking so much she nearly dropped it.",
+          "afterPresent": true,
+          "after": "His knees began to tremble as he walked onto the stage."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Trembles",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Every time Mona talks about the car accident, her voice becomes weak and unsteady. Her hands shake too, even though the room is warm.",
+          "afterPresent": true,
+          "after": "Her voice trembles whenever she talks about the night of the fire."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Trip",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Mariam was walking into the wedding hall when her heel caught on a cable on the floor. She fell forward, and everyone turned to look.",
+          "afterPresent": true,
+          "after": "Be careful not to trip over the toys on the stairs."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Turn down",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Salma was offered a well-paid job in Dubai. She said no because she wanted to stay close to her parents.",
+          "afterPresent": true,
+          "after": "Why did you turn down such a good job offer?"
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Unwavering",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Hassan's parents believed in his music career from day one. Even when he had no money and no fans, they never once doubted him.",
+          "afterPresent": true,
+          "after": "Thanks to her family's unwavering support, she finished her studies."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Upset",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "adjective",
+            "noun"
+          ],
+          "afterPresent": true,
+          "after": [
+            "adjective",
+            "verb",
+            "noun"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Lina's best friend shouted at her in front of the whole class. Lina went home and cried in her room all evening.",
+          "afterPresent": true,
+          "after": "Don't be upset — I'm sure he didn't mean to hurt your feelings."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Vivid memory",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Sara was only five when she first saw the sea, but she can still picture it like a film. She can describe the blue water, the cold sand and her father's laugh.",
+          "afterPresent": true,
+          "after": "I have a vivid memory of my first trip to the sea — I can still see the colour of the water."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Worried",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "Ahmed's daughter was two hours late from school and her phone was off. He kept looking out of the window every few minutes.",
+          "afterPresent": true,
+          "after": "She looks worried about tomorrow's job interview — she can't stop biting her nails."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Wrap",
+      "changes": [
+        {
+          "field": "partsOfSpeech",
+          "beforePresent": true,
+          "before": [
+            "verb"
+          ],
+          "afterPresent": true,
+          "after": [
+            "verb",
+            "noun"
+          ]
+        },
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "The nurse wrapped his ankle with a bandage.",
+          "afterPresent": true,
+          "after": "Please wrap the present in the red paper."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "The nurse wrapped his ankle with a bandage."
+          ],
+          "afterPresent": true,
+          "after": [
+            "Please wrap the present in the red paper."
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Zone out",
+      "changes": [
+        {
+          "field": "situation",
+          "beforePresent": true,
+          "before": "I zoned out completely during the lecture and missed everything the teacher said.",
+          "afterPresent": true,
+          "after": "It's easy to zone out when a meeting goes on for two hours."
+        },
+        {
+          "field": "situations",
+          "beforePresent": true,
+          "before": [
+            "I zoned out completely during the lecture and missed everything the teacher said."
+          ],
+          "afterPresent": true,
+          "after": [
+            "It's easy to zone out when a meeting goes on for two hours."
+          ]
+        }
+      ]
+    }
+  ]
+}

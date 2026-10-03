@@ -62,9 +62,9 @@ export default function ImportExport({ variant = "game", isAdmin, tools, onBack 
 function ExportCard({ isAdmin, tools }) {
   const options = [
     { id: "backup", icon: FileJson, title: "Full backup", text: "Your progress and the game content in one file. Keep it safe, or use it to restore later." },
+    { id: "wordsCsv", icon: FileSpreadsheet, title: "Word bank CSV", text: "Your course words and meanings for a spreadsheet." },
     ...(isAdmin ? [
       { id: "content", icon: FileJson, title: "Content only", text: "Words, grammar, stories and challenges, without anyone's progress. Good for an AI or a colleague to review and send back." },
-      { id: "wordsCsv", icon: FileSpreadsheet, title: "Words spreadsheet", text: "Every word with its meaning, sentences and links, as CSV for Excel or Google Sheets." },
     ] : []),
   ];
   const [kind, setKind] = useState("backup");
