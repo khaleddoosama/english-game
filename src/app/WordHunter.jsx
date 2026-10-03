@@ -938,14 +938,15 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     const sessionTitle = group ? `${level.title} · ${group.title}` : level.title;
     startPractice(sessionTitle, level.title, group ? { title: sessionTitle, ...(group.id ? { [group.field === "unit" ? "unit" : "subCategory"]: group.id } : { noGroup: group.field }) } : {}, (w) => w.category === level.title);
   }
-  // A course level (A1.2 …) from every lesson: the whole level, one session
-  // ({ session }), or its words with no session ({ noSession }). No level:
-  // the words that have no course level yet.
+  // A course level (A1.2 …) from every lesson: the whole level, one of its
+  // sessions ({ unit }), or its words in no session ({ noUnit }). No
+  // level: the words that have no course level yet.
   function startCourseLevel(level, part = null) {
     setCurrentLevelIndex(null);
-    const title = !level ? "No course level" : part?.session ? `${level.id} · Session ${part.session}` : part?.noSession ? `${level.id} · Other words` : level.id;
-    const opts = !level ? { noCourseLevel: true } : { courseLevel: level.id, ...(part?.session ? { session: part.session } : part?.noSession ? { noSession: true } : {}) };
-    const inRound = (w) => (level ? V2.courseLevelOf(w) === level.id && (!part?.session || V2.sessionOf(w) === part.session) && (!part?.noSession || V2.sessionOf(w) === null) : !V2.courseLevelOf(w));
+    const title = !level ? "No course level" : part?.unit ? `${level.id} · ${part.title || part.unit}` : part?.noUnit ? `${level.id} · Other words` : level.id;
+    const opts = !level ? { noCourseLevel: true } : { courseLevel: level.id, ...(part?.unit ? { unit: part.unit } : part?.noUnit ? { noGroup: "unit" } : {}) };
+    const unitsOf = (w) => (Array.isArray(w.units) ? w.units : []);
+    const inRound = (w) => (level ? V2.courseLevelOf(w) === level.id && (!part?.unit || unitsOf(w).includes(part.unit)) && (!part?.noUnit || !unitsOf(w).length) : !V2.courseLevelOf(w));
     startPractice(title, null, { title, ...opts }, inRound);
   }
   function startPractice(sessionTitle, category, narrow, inRound) {
@@ -1799,13 +1800,13 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           const count = (items) => { const w = items.filter((it) => it.kind === "word").length, g = items.length - w; return [w && `${w} word${w === 1 ? "" : "s"}`, g && `${g} grammar rule${g === 1 ? "" : "s"}`].filter(Boolean).join(" · "); };
           return (
             <div className="wh-levels-list wh-course-levels">
-              {!courseLevels.length && <p className="wh-course-empty">No words have a course level yet. Give a word its level (for example <b>A1.2</b>, and a <b>session</b> number) in the import file or the word editor, and it shows here.</p>}
+              {!courseLevels.length && <p className="wh-course-empty">No words have a course level yet. Give a word its course level (for example <b>A1.2</b>, or the Gateway level, <b>Level-4</b>) and its session in <b>units</b>, in the import file or the word editor, and it shows here.</p>}
               {courseLevels.map((level) => (
                 <div key={level.id} className="wh-level-group-block">
                   <h3 className="wh-level-group-heading">{level.id}{level.gateway && <small> · Gateway level {level.gateway}</small>} <small>{count(level.items)}{level.sessions.length ? ` · ${level.sessions.length} session${level.sessions.length === 1 ? "" : "s"}` : ""}</small></h3>
                   {level.sessions.length > 0 && card(`${level.id}-all`, `All of ${level.id}`, count(level.items), level.items, () => startCourseLevel(level))}
-                  {level.sessions.map((s) => card(`${level.id}-s${s.session}`, s.title, count(s.items), s.items, () => startCourseLevel(level, { session: s.session })))}
-                  {level.sessions.length > 0 && level.unsorted.length > 0 && card(`${level.id}-other`, "No session", count(level.unsorted), level.unsorted, () => startCourseLevel(level, { noSession: true }))}
+                  {level.sessions.map((s) => card(`${level.id}-${s.unit}`, s.title, count(s.items), s.items, () => startCourseLevel(level, { unit: s.unit, title: s.title })))}
+                  {level.sessions.length > 0 && level.unsorted.length > 0 && card(`${level.id}-other`, "Other words", count(level.unsorted), level.unsorted, () => startCourseLevel(level, { noUnit: true }))}
                   {!level.sessions.length && card(`${level.id}-all`, level.id, count(level.items), level.items, () => startCourseLevel(level))}
                 </div>
               ))}

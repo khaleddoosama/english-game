@@ -157,8 +157,10 @@ export function levelGroups(level) {
   return [...list.filter((g) => g.id), ...list.filter((g) => !g.id)];
 }
 // Course levels (A1.1 … C2.3, see V2.courseLevelOf) as groups, in course
-// order, each split into its sessions; words with no course level are
-// returned apart (`none`). Grammar rules join the level they name.
+// order, each split into its sessions: the items' `units` (an item in two
+// sessions is in both), in the order they first appear. Words with no
+// course level are returned apart (`none`). Grammar rules join the level
+// they name.
 export function courseLevelGroups(words = WORDS, grammar = GRAMMAR) {
   const levels = new Map();
   const none = [];
@@ -172,14 +174,14 @@ export function courseLevelGroups(words = WORDS, grammar = GRAMMAR) {
   for (const g of grammar) add({ kind: "grammar", obj: g });
   const list = [...levels.values()].sort((a, b) => V2.courseLevelRank(a.id) - V2.courseLevelRank(b.id));
   for (const level of list) {
-    const bySession = new Map();
+    const byUnit = new Map();
     level.unsorted = [];
     for (const it of level.items) {
-      const n = V2.sessionOf(it.obj);
-      if (n === null) level.unsorted.push(it);
-      else { if (!bySession.has(n)) bySession.set(n, []); bySession.get(n).push(it); }
+      const units = (Array.isArray(it.obj.units) ? it.obj.units : []).map((u) => String(u).trim()).filter(Boolean);
+      if (!units.length) level.unsorted.push(it);
+      for (const unit of new Set(units)) { if (!byUnit.has(unit)) byUnit.set(unit, []); byUnit.get(unit).push(it); }
     }
-    level.sessions = [...bySession].sort((a, b) => a[0] - b[0]).map(([session, items]) => ({ session, title: `Session ${session}`, items }));
+    level.sessions = [...byUnit].map(([unit, items]) => ({ unit, title: unit.replace(/[-_]+/g, " "), items }));
   }
   return { levels: list, none };
 }

@@ -30,8 +30,6 @@ export function cleanGrammarDraft(d) {
   });
   const out = { ...d, id: t(d.id), rule: t(d.rule), category: t(d.category), level: t(d.level), explanation: t(d.explanation), examples: (d.examples || []).map(t).filter(Boolean), commonMistakes: (d.commonMistakes || []).map((m) => ({ sentence: t(m.sentence), correction: t(m.correction), why: t(m.why) })).filter((m) => m.sentence && m.correction && m.why), questions };
   if (!out.level) delete out.level;
-  const session = Number(String(out.session ?? "").trim());
-  if (Number.isInteger(session) && session > 0) out.session = session; else delete out.session;
   return out;
 }
 // Problems that block saving, as [{ at: null | question index, text }].

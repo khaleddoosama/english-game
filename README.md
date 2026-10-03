@@ -124,18 +124,22 @@ Home can list the practice three ways (the toggle above the lessons, or
 Settings → Home layout): **By lesson**, **By unit**, and **By course
 level**. The last follows the Gateway course: a word's or grammar rule's
 `level` holds its course level, `A1.1`, `A1.2`, `A1.3`, `A2.1` … `C2.3`
-(three to a band: Gateway level 4 = A1.2, 5 = A1.3, 6 = A2.1 … 9 = B1.1),
-and `session` the class number in that level. In an import file:
+(three to a band: Gateway level 4 = A1.2, 5 = A1.3, 6 = A2.1, 7 = A2.2,
+8 = A2.3, 9 = B1.1), and its `units` the session(s) it was taught in, as
+in the Anki tags (`English::Memories-and-Fear` → `"Memories-and-Fear"`).
+An import also accepts the Gateway form, `"Level-7"`, `"Gateway 7"` or the
+whole tag `"English::Gateway::Level-7"`, and stores it as `A2.2`:
 
 ```json
-{ "word": "Bite the bullet", "category": "Pet Peeves", "level": "A1.2", "session": 1, … }
+{ "word": "Nostalgia", "category": "Emotions Psychology", "level": "A2.2", "units": ["Memories-and-Fear"], … }
 ```
 
 Each level is a group in course order, with a card for the whole level and
-one per session; a new level shows up as soon as a word has it. A plain
-`A1` – `C2` in `level` is the word's difficulty, not a course level, so
-those words appear under "No course level yet". A level or session the
-game can't read is listed as a warning when the file is checked.
+one per session (in the order the words first appear); a new level shows
+up as soon as a word has it. A plain `A1` – `C2` in `level` is the word's
+difficulty, not a course level, so those words appear under "No course
+level yet". A level the game can't read is listed as a warning when the
+file is checked.
 
 ## Admin panel
 

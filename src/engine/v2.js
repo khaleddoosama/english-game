@@ -159,6 +159,8 @@ function applyRenames(content = {}, renames) {
 // for the Import Center to show. Merge with mergeContent(existing, data).
 function prepareImport(data, existing = {}) {
   const n = normalizeV3(withoutRemovedFields(data || {}), existing);
+  const levels = list => Array.isArray(list) ? list.map(x => x && typeof x === 'object' && x.level != null && normalizeLevel(x.level) !== x.level ? { ...x, level: normalizeLevel(x.level) } : x) : list;
+  n.content = { ...n.content, ...(n.content?.words ? { words: levels(n.content.words) } : {}), ...(n.content?.grammar ? { grammar: levels(n.content.grammar) } : {}) };
   return { data: n.content, existing: applyRenames(withoutRemovedFields(existing), n.renames), errors: n.errors, warnings: n.warnings, renames: n.renames, levelOrder: n.levelOrder };
 }
 function mergeContent(old = {}, incoming = {}) {
@@ -546,18 +548,24 @@ function grammarQuestion(g,item,turn,rng=Math.random){
 // ---- Course levels ----
 // The Gateway course's levels are named A1.1, A1.2, A1.3, A2.1 … C2.3 and
 // sit in an item's `level` (a plain A1–C2 there is the item's own
-// difficulty, not a course level). `session` is the class within it.
+// difficulty, not a course level). The level's sessions are its `units`
+// (Memories-and-Fear …), as in the Anki tags.
 const BANDS=['A1','A2','B1','B2','C1','C2'];
 const COURSE_LEVEL=/^([ABC][12])\.(\d{1,2})$/i;
 // The choices editors offer: A1.1 … C2.3 (three course levels a band).
 const COURSE_LEVELS=BANDS.flatMap(b=>[1,2,3].map(n=>`${b}.${n}`));
 function courseLevelOf(item){const m=COURSE_LEVEL.exec(String(item?.level??'').trim());return m&&Number(m[2])>0?`${m[1].toUpperCase()}.${Number(m[2])}`:null;}
-function sessionOf(item){const n=Number(item?.session);return Number.isInteger(n)&&n>0?n:null;}
 // A1.1 < A1.2 < … < A2.1 < … < C2.3; anything else after.
 function courseLevelRank(id){const m=COURSE_LEVEL.exec(String(id||''));return m?BANDS.indexOf(m[1].toUpperCase())*100+Number(m[2]):Infinity;}
 // Gateway numbers its levels three to a band, from A1.1 = 3: A1.2 = 4,
 // A1.3 = 5, A2.1 = 6 … B1.1 = 9.
 function gatewayLevel(id){const m=COURSE_LEVEL.exec(String(id||''));const sub=m?Number(m[2]):0;return m&&sub>=1&&sub<=3?3+BANDS.indexOf(m[1].toUpperCase())*3+sub-1:null;}
+function courseLevelFromGateway(n){n=Number(n);if(!Number.isInteger(n)||n<3||n>=3+BANDS.length*3)return null;return `${BANDS[Math.floor((n-3)/3)]}.${(n-3)%3+1}`;}
+// A level written the Gateway way ("Level-7", "Gateway 7", the Anki tag
+// "English::Gateway::Level-7") as its course level (A2.2); anything else
+// as it was.
+const GATEWAY_LEVEL=/^(?:english::)?(?:gateway(?:::|[\s_-]*))?(?:level)?[\s:_-]*(\d{1,2})$/i;
+function normalizeLevel(value){if(typeof value!=='string'&&typeof value!=='number')return value;const v=String(value).trim();if(COURSE_LEVEL.test(v))return courseLevelOf({level:v});if(!/[a-z]/i.test(v))return value;const m=GATEWAY_LEVEL.exec(v);return m&&courseLevelFromGateway(m[1])||value;}
 // How hard a word is, for the order new words come in: A1 < A2 < … and,
 // for course levels, A1.2 < A1.3 < A2.1. Unknown sits in the middle.
 function difficultyRank(item){const v=String(item?.level||'').trim().toUpperCase();const m=COURSE_LEVEL.exec(v);if(m)return BANDS.indexOf(m[1].toUpperCase())+Number(m[2])/10;const i=BANDS.indexOf(v);return i<0?2.5:i;}
@@ -578,10 +586,10 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   const unitsOf=w=>Array.isArray(w.units)?w.units:[];
   const inGroup=w=>opts.unit?unitsOf(w).includes(opts.unit):opts.subCategory?w.subCategory===opts.subCategory:opts.noGroup==='unit'?!unitsOf(w).length:opts.noGroup?!w.subCategory:true;
   // opts.courseLevel narrows the round to one course level, from every
-  // lesson (opts.session to one class of it, opts.noSession to its words
-  // with no class); opts.noCourseLevel to the words with no course level.
+  // lesson (with opts.unit, to one of its sessions); opts.noCourseLevel
+  // to the words with no course level.
   const courseRound=!!(opts.courseLevel||opts.noCourseLevel);
-  const inCourse=w=>opts.courseLevel?courseLevelOf(w)===opts.courseLevel&&(opts.session==null||sessionOf(w)===opts.session)&&(!opts.noSession||sessionOf(w)===null):opts.noCourseLevel?!courseLevelOf(w):true;
+  const inCourse=w=>opts.courseLevel?courseLevelOf(w)===opts.courseLevel:opts.noCourseLevel?!courseLevelOf(w):true;
   const source=content.words.filter(w=>(!category||topic(w.category)===topic(category))&&inGroup(w)&&inCourse(w));
   const inSource=label=>source.some(w=>norm(w.word)===norm(label));
   // New words come in level order (A2 before B1…), random within a level.
@@ -639,8 +647,8 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   const grammarTopics=new Set((category?[category]:chosen.map(w=>w.category)).map(topic));
   const missedKey=key=>{const r=mastery[key]?.lastResult;return r&&r!=='correct'?1:0;};
   // A unit round only asks that unit's grammar rules; a course-level round
-  // only the rules of that level (and class, when the rule names one).
-  const grammarPool=(content.grammar||[]).filter(g=>g&&g.id&&(courseRound?(opts.courseLevel?courseLevelOf(g)===opts.courseLevel&&(opts.session==null||sessionOf(g)===null||sessionOf(g)===opts.session):!courseLevelOf(g)&&grammarTopics.has(topic(g.category))):grammarTopics.has(topic(g.category)))&&(!opts.unit||unitsOf(g).includes(opts.unit))&&grammarQuestions(g).length);
+  // only the rules of that level (and session).
+  const grammarPool=(content.grammar||[]).filter(g=>g&&g.id&&(courseRound?(opts.courseLevel?courseLevelOf(g)===opts.courseLevel:!courseLevelOf(g)&&grammarTopics.has(topic(g.category))):grammarTopics.has(topic(g.category)))&&(!opts.unit||unitsOf(g).includes(opts.unit))&&grammarQuestions(g).length);
   const grammarQueue=shuffleCopy(grammarPool,rng).sort((a,b)=>missedKey(`grammar:${b.id}`)-missedKey(`grammar:${a.id}`)||lastSeenKey(`grammar:${a.id}`)-lastSeenKey(`grammar:${b.id}`)).slice(0,questionsPerRound>=10?2:1).map(g=>{
     const grammarKey=`grammar:${g.id}`;
     // Old single-question rules keep their AI variant pool.
@@ -722,5 +730,5 @@ function sessionEvidence(mastery,session,now=Date.now()){
 }
 function reinforcement(s){if(s.extraAdded||s.kind!=='practice')return s;const wrong=s.queue.filter((q,i)=>s.answers[i]&&!s.answers[i].correct&&!s.answers[i].reported).flatMap(q=>q.targets);const added=[];for(const q of s.reserves||[]){if(added.length>=2)break;if(!q.targets.some(t=>wrong.includes(t)))continue;if([...s.queue,...added].slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))))continue;const shown=new Set([...s.queue,...added].flatMap(questionSentences));if(questionSentences(q).some(t=>shown.has(t)))continue;added.push(q);}return {...s,queue:[...s.queue,...added],extraAdded:true};}
 
-return { COURSE_LEVELS, courseLevelOf, sessionOf, courseLevelRank, gatewayLevel, difficultyRank, norm, sentence, makeQuestion, pictureQuestion, isIllustration, linkAntonyms, outsideAntonyms, antonymsOf, collocationQuestion, familyQuestion, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, questionSentences, seenRecently, SEEN_FRESH_HOURS, grammarQuestions, grammarQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
+return { COURSE_LEVELS, courseLevelOf, courseLevelRank, gatewayLevel, courseLevelFromGateway, normalizeLevel, difficultyRank, norm, sentence, makeQuestion, pictureQuestion, isIllustration, linkAntonyms, outsideAntonyms, antonymsOf, collocationQuestion, familyQuestion, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, questionSentences, seenRecently, SEEN_FRESH_HOURS, grammarQuestions, grammarQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
 })();

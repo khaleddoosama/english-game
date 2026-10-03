@@ -23,28 +23,18 @@ const importError = (message, extra = {}) => Object.assign(new Error(message), {
 // Reads and checks a file against the current content. Throws an Error with
 // `issues` (and `json: true` for a parse error) when it can't be used;
 // otherwise returns what applying it would change.
-// A level that is neither a course level (A1.2 …) nor a plain difficulty
-// (A1 – C2), or a session that isn't a class number, would quietly keep a
-// word out of "By course level": say so before importing.
+// A level that is neither a course level (A1.2 …, or a Gateway level such
+// as "Level-7", turned into A2.2 on import) nor a plain difficulty (A1 –
+// C2) would quietly keep a word out of "By course level": say so first.
 const PLAIN_LEVEL = /^(A1|A2|B1|B2|C1|C2)$/i;
 export function courseLevelWarnings(items) {
-  const badLevels = new Map(), badSessions = new Map();
-  let orphanSessions = 0;
+  const bad = new Map();
   for (const item of items) {
-    if (!item || typeof item !== "object") continue;
-    const level = item.level == null ? "" : String(item.level).trim();
-    if (level && !V2.courseLevelOf(item) && !PLAIN_LEVEL.test(level)) badLevels.set(level, (badLevels.get(level) || 0) + 1);
-    if (item.session != null && String(item.session).trim() !== "") {
-      if (V2.sessionOf(item) === null) badSessions.set(String(item.session), (badSessions.get(String(item.session)) || 0) + 1);
-      else if (!V2.courseLevelOf(item)) orphanSessions++;
-    }
+    if (!item || typeof item !== "object" || item.level == null || String(item.level).trim() === "") continue;
+    const level = String(item.level).trim();
+    if (!V2.courseLevelOf({ level: V2.normalizeLevel(level) }) && !PLAIN_LEVEL.test(level)) bad.set(level, (bad.get(level) || 0) + 1);
   }
-  const n = (k) => `${k} item${k === 1 ? "" : "s"}`;
-  return [
-    ...[...badLevels].map(([v, k]) => `level "${v}" (${n(k)}) isn't a course level like A1.2 (Gateway level 4 = A1.2, 5 = A1.3, 6 = A2.1 …): not shown in "By course level"`),
-    ...[...badSessions].map(([v, k]) => `session "${v}" (${n(k)}) isn't a class number like 3: ignored`),
-    ...(orphanSessions ? [`${n(orphanSessions)} ${orphanSessions === 1 ? "has" : "have"} a session but no course level: the session is ignored`] : []),
-  ];
+  return [...bad].map(([v, k]) => `level "${v}" (${k} item${k === 1 ? "" : "s"}) isn't a course level like A1.2 or Level-4 (Gateway level 4 = A1.2, 5 = A1.3, 6 = A2.1 …): not shown in "By course level"`);
 }
 
 export function inspectImport(text, current) {
