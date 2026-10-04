@@ -1,0 +1,659 @@
+{
+  "checkedAt": "2026-10-04T10:22:37.518Z",
+  "source": "Supabase read-only snapshot",
+  "version": 20,
+  "missingStableIds": 121,
+  "counts": {
+    "words": 257,
+    "grammar": 9,
+    "stories": 1,
+    "challenges": 0,
+    "combos": 0
+  },
+  "schemaErrors": [],
+  "levels": [
+    {
+      "level": "A1.2",
+      "units": [
+        "Visiting-the-Doctor"
+      ],
+      "uniqueWords": 45,
+      "rules": 1,
+      "finalQuestions": 4
+    },
+    {
+      "level": "A1.3",
+      "units": [
+        "Feelings-and-Emotions"
+      ],
+      "uniqueWords": 29,
+      "rules": 1,
+      "finalQuestions": 4
+    },
+    {
+      "level": "A2",
+      "units": [
+        "Sports",
+        "Body-Parts"
+      ],
+      "uniqueWords": 12,
+      "rules": 0,
+      "finalQuestions": 6
+    },
+    {
+      "level": "A2.2",
+      "units": [
+        "Memories-and-Fear",
+        "Common-Health-Problems"
+      ],
+      "uniqueWords": 71,
+      "rules": 3,
+      "finalQuestions": 9
+    },
+    {
+      "level": "A2.3",
+      "units": [
+        "Healthy-Nutrition",
+        "Embarrassing-Moments",
+        "Dreams-and-Sleeping"
+      ],
+      "uniqueWords": 58,
+      "rules": 3,
+      "finalQuestions": 12
+    },
+    {
+      "level": "B1.1",
+      "units": [
+        "Goals-and-Dreams"
+      ],
+      "uniqueWords": 23,
+      "rules": 1,
+      "finalQuestions": 4
+    },
+    {
+      "level": "Unassigned",
+      "units": [
+        "Feelings-and-Emotions",
+        "Fears"
+      ],
+      "uniqueWords": 19,
+      "rules": 0,
+      "finalQuestions": 6
+    }
+  ],
+  "rounds": [
+    {
+      "level": "A1.2",
+      "unit": "Visiting-the-Doctor",
+      "words": 45,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 46,
+          "maxQuestions": 46
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 46,
+        "total": 46,
+        "ready": true,
+        "runs": 5
+      }
+    },
+    {
+      "level": "A1.3",
+      "unit": "Feelings-and-Emotions",
+      "words": 29,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 30,
+          "maxQuestions": 30
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 30,
+        "total": 30,
+        "ready": true,
+        "runs": 3
+      }
+    },
+    {
+      "level": "A2",
+      "unit": "Sports",
+      "words": 8,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 8,
+          "maxQuestions": 8
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 8,
+          "maxQuestions": 8
+        },
+        "listen": {
+          "questions": 8
+        },
+        "speak": {
+          "questions": 8
+        },
+        "build": {
+          "questions": 8
+        },
+        "match": {
+          "questions": 2
+        }
+      },
+      "trainingCoverage": {
+        "done": 8,
+        "total": 8,
+        "ready": true,
+        "runs": 1
+      }
+    },
+    {
+      "level": "A2",
+      "unit": "Body-Parts",
+      "words": 4,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 4,
+          "maxQuestions": 4
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 4,
+          "maxQuestions": 4
+        },
+        "listen": {
+          "questions": 4
+        },
+        "speak": {
+          "questions": 4
+        },
+        "build": {
+          "questions": 4
+        },
+        "match": {
+          "questions": 1
+        }
+      },
+      "trainingCoverage": {
+        "done": 4,
+        "total": 4,
+        "ready": true,
+        "runs": 1
+      }
+    },
+    {
+      "level": "A2.2",
+      "unit": "Memories-and-Fear",
+      "words": 34,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 35,
+          "maxQuestions": 35
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 35,
+        "total": 35,
+        "ready": true,
+        "runs": 4
+      }
+    },
+    {
+      "level": "A2.2",
+      "unit": "Common-Health-Problems",
+      "words": 37,
+      "rules": 2,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 39,
+          "maxQuestions": 39
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 39,
+        "total": 39,
+        "ready": true,
+        "runs": 4
+      }
+    },
+    {
+      "level": "A2.3",
+      "unit": "Healthy-Nutrition",
+      "words": 21,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 22,
+          "maxQuestions": 22
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 22,
+        "total": 22,
+        "ready": true,
+        "runs": 2
+      }
+    },
+    {
+      "level": "A2.3",
+      "unit": "Embarrassing-Moments",
+      "words": 16,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 17,
+          "maxQuestions": 17
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 17,
+        "total": 17,
+        "ready": true,
+        "runs": 2
+      }
+    },
+    {
+      "level": "A2.3",
+      "unit": "Dreams-and-Sleeping",
+      "words": 21,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 22,
+          "maxQuestions": 22
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 22,
+        "total": 22,
+        "ready": true,
+        "runs": 2
+      }
+    },
+    {
+      "level": "B1.1",
+      "unit": "Goals-and-Dreams",
+      "words": 23,
+      "rules": 1,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 24,
+          "maxQuestions": 24
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 24,
+        "total": 24,
+        "ready": true,
+        "runs": 3
+      }
+    },
+    {
+      "level": "Unassigned",
+      "unit": "Feelings-and-Emotions",
+      "words": 15,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 12,
+          "maxQuestions": 12
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 15,
+          "maxQuestions": 15
+        },
+        "listen": {
+          "questions": 12
+        },
+        "speak": {
+          "questions": 12
+        },
+        "build": {
+          "questions": 12
+        },
+        "match": {
+          "questions": 3
+        }
+      },
+      "trainingCoverage": {
+        "done": 15,
+        "total": 15,
+        "ready": true,
+        "runs": 2
+      }
+    },
+    {
+      "level": "Unassigned",
+      "unit": "Fears",
+      "words": 4,
+      "rules": 0,
+      "modes": {
+        "training": {
+          "runs": 10,
+          "minQuestions": 4,
+          "maxQuestions": 4
+        },
+        "unit": {
+          "runs": 10,
+          "minQuestions": 4,
+          "maxQuestions": 4
+        },
+        "listen": {
+          "questions": 4
+        },
+        "speak": {
+          "questions": 4
+        },
+        "build": {
+          "questions": 4
+        },
+        "match": {
+          "questions": 1
+        }
+      },
+      "trainingCoverage": {
+        "done": 4,
+        "total": 4,
+        "ready": true,
+        "runs": 1
+      }
+    }
+  ],
+  "storyChecks": [
+    {
+      "id": "story-gen-1790978279889",
+      "title": "The Secret Recipe",
+      "questions": 10
+    }
+  ],
+  "duplicateDefinitions": [],
+  "findings": [
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Amusing",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Caress",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Contribute to",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Creepy",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Cuddle",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Desperate",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Excuse me for living!",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "review",
+      "code": "example_lemma_not_found",
+      "item": "Fish memory",
+      "detail": "Kareem asked his wife the same question three times in ten minutes. Later he forgot where he put his phone while he was holding it."
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Freak out",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Gesturing",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Insane",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Intense",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Low self-esteem",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Needy",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Pick up the pieces",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Sarcastic",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Suck fest",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "This blows",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Total loss",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    },
+    {
+      "severity": "high",
+      "code": "missing_level",
+      "item": "Tremble",
+      "detail": "Placed in Unassigned; this level participates in Journey gates"
+    }
+  ],
+  "verification": {
+    "recordsChanged": 36,
+    "fieldsChanged": 45,
+    "rowsCompared": 267,
+    "identityAndPlacementPreserved": true,
+    "newChaoticImagePreserved": true,
+    "semanticPairs": 23,
+    "optionSetsChecked": 4600,
+    "allReviewedPairsExcluded": true,
+    "journeyGenerationRuns": 240
+  }
+}

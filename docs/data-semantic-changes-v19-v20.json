@@ -1,0 +1,591 @@
+{
+  "fromVersion": 19,
+  "toVersion": 20,
+  "recordsChanged": 36,
+  "fieldsChanged": 45,
+  "changes": [
+    {
+      "kind": "words",
+      "key": "Angry",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": true,
+      "before": [
+        "Anger",
+        "Fury",
+        "Furious",
+        "Annoyed",
+        "Annoying",
+        "Upset"
+      ],
+      "afterPresent": true,
+      "after": [
+        "Anger",
+        "Fury",
+        "Furious",
+        "Annoyed",
+        "Annoying",
+        "Upset",
+        "Disappointed"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Annoyed",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": true,
+      "before": [
+        "Anger",
+        "Angry",
+        "Fury",
+        "Furious",
+        "Annoying",
+        "Upset"
+      ],
+      "afterPresent": true,
+      "after": [
+        "Anger",
+        "Angry",
+        "Fury",
+        "Furious",
+        "Annoying",
+        "Upset",
+        "Disappointed"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Annoying",
+      "field": "gap",
+      "beforePresent": true,
+      "before": "It's really ______ when people don't reply to your messages for days.",
+      "afterPresent": true,
+      "after": "The repeated tapping is mildly irritating — it is ______."
+    },
+    {
+      "kind": "words",
+      "key": "Annoying",
+      "field": "situation",
+      "beforePresent": true,
+      "before": "It's really annoying when people don't reply to your messages for days.",
+      "afterPresent": true,
+      "after": "The repeated tapping is mildly irritating — it is annoying."
+    },
+    {
+      "kind": "words",
+      "key": "Avoid",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Put off"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Brain concussion",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Injury"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Broken arm",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Injury"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Bruise",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Injury"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Cure",
+      "field": "synonyms",
+      "beforePresent": true,
+      "before": [
+        "Heal",
+        "remedy",
+        "treatment"
+      ],
+      "afterPresent": true,
+      "after": [
+        "remedy"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Dietitian",
+      "field": "synonyms",
+      "beforePresent": true,
+      "before": [
+        "Nutritionist"
+      ],
+      "afterPresent": true,
+      "after": []
+    },
+    {
+      "kind": "words",
+      "key": "Dietitian",
+      "field": "meaning",
+      "beforePresent": true,
+      "before": "A trained professional who advises people about food and nutrition.",
+      "afterPresent": true,
+      "after": "A trained food-and-nutrition professional who plans diets and helps manage nutritional needs, including in healthcare."
+    },
+    {
+      "kind": "words",
+      "key": "Disappointed",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": true,
+      "before": [
+        "Upset"
+      ],
+      "afterPresent": true,
+      "after": [
+        "Upset",
+        "Angry",
+        "Annoyed",
+        "Furious"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Dizzy",
+      "field": "gaps",
+      "beforePresent": true,
+      "before": [
+        "The fast spinning ride made me feel ______, as if the room was going round.",
+        "If you feel ______, sit down and put your head down."
+      ],
+      "afterPresent": true,
+      "after": [
+        "The fast spinning ride made me feel ______, as if the room was going round.",
+        "After turning round and round, I felt ______, as if everything was still spinning."
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Dizzy",
+      "field": "meaning",
+      "beforePresent": true,
+      "before": "Feeling unsteady or as if you or your surroundings are spinning.",
+      "afterPresent": true,
+      "after": "Feeling unsteady, faint, or as if you or your surroundings are spinning."
+    },
+    {
+      "kind": "words",
+      "key": "Fracture",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Injury"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Furious",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": true,
+      "before": [
+        "Anger",
+        "Angry",
+        "Fury",
+        "Annoyed",
+        "Annoying",
+        "Upset"
+      ],
+      "afterPresent": true,
+      "after": [
+        "Anger",
+        "Angry",
+        "Fury",
+        "Annoyed",
+        "Annoying",
+        "Upset",
+        "Disappointed"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Heal",
+      "field": "synonyms",
+      "beforePresent": true,
+      "before": [
+        "Cure",
+        "recover",
+        "get better"
+      ],
+      "afterPresent": true,
+      "after": [
+        "recover",
+        "get better"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Ill",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": true,
+      "before": [
+        "Sick",
+        "Under the weather"
+      ],
+      "afterPresent": true,
+      "after": [
+        "Sick",
+        "Under the weather",
+        "Nauseous"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Injury",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Fracture",
+        "Sprain",
+        "Strain",
+        "Bruise",
+        "Broken arm",
+        "Brain concussion"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Insomnia",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Sleep disorder"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Lightheaded",
+      "field": "situation",
+      "beforePresent": true,
+      "before": "Every day, when I suddenly wake up, I'm lightheaded.",
+      "afterPresent": true,
+      "after": "After standing up quickly, I felt lightheaded, as if I might faint."
+    },
+    {
+      "kind": "words",
+      "key": "Lightheaded",
+      "field": "situations",
+      "beforePresent": true,
+      "before": [
+        "Every day, when I suddenly wake up, I'm lightheaded."
+      ],
+      "afterPresent": true,
+      "after": [
+        "After standing up quickly, I felt lightheaded, as if I might faint."
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Move on",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Pick up the pieces"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Nauseous",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Ill",
+        "Under the weather",
+        "Sick"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Nutritionist",
+      "field": "situation",
+      "beforePresent": true,
+      "before": "The nutritionist recommended cutting sugar from my diet completely.",
+      "afterPresent": true,
+      "after": "The nutritionist explained how different foods fit into a balanced diet."
+    },
+    {
+      "kind": "words",
+      "key": "Nutritionist",
+      "field": "synonyms",
+      "beforePresent": true,
+      "before": [
+        "Dietitian"
+      ],
+      "afterPresent": true,
+      "after": []
+    },
+    {
+      "kind": "words",
+      "key": "Nutritionist",
+      "field": "meaning",
+      "beforePresent": true,
+      "before": "A person who studies or advises on food and nutrition.",
+      "afterPresent": true,
+      "after": "A person who studies nutrition or advises people about food and healthy eating; qualifications can vary."
+    },
+    {
+      "kind": "words",
+      "key": "Nutritionist",
+      "field": "situations",
+      "beforePresent": true,
+      "before": [
+        "The nutritionist recommended cutting sugar from my diet completely."
+      ],
+      "afterPresent": true,
+      "after": [
+        "The nutritionist explained how different foods fit into a balanced diet."
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Pick up the pieces",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Move on"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Proud",
+      "field": "meaning",
+      "beforePresent": true,
+      "before": "Pleased about something you or someone close to you achieved (followed by 'of').",
+      "afterPresent": true,
+      "after": "Pleased about something you or someone close to you achieved."
+    },
+    {
+      "kind": "words",
+      "key": "Put off",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Avoid"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Recall",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Recognize"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Recognize",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": true,
+      "before": [
+        "Interpret"
+      ],
+      "afterPresent": true,
+      "after": [
+        "Interpret",
+        "Recall"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Reminisce",
+      "field": "meaning",
+      "beforePresent": true,
+      "before": "To talk or think together about happy times in the past.",
+      "afterPresent": true,
+      "after": "To think, talk, or write with pleasure about experiences from the past."
+    },
+    {
+      "kind": "words",
+      "key": "Sick",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": true,
+      "before": [
+        "Ill",
+        "Under the weather"
+      ],
+      "afterPresent": true,
+      "after": [
+        "Ill",
+        "Under the weather",
+        "Nauseous"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Sleep disorder",
+      "field": "commonMistakes",
+      "beforePresent": true,
+      "before": [
+        {
+          "why": "The usual term is 'sleep disorder'.",
+          "sentence": "She has a sleeping disorder.",
+          "correction": "She has a sleep disorder."
+        }
+      ],
+      "afterPresent": true,
+      "after": [
+        {
+          "why": "Use 'has' with the singular subject 'he' in the present simple.",
+          "sentence": "He have a sleep disorder.",
+          "correction": "He has a sleep disorder."
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Sleep disorder",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Insomnia",
+        "Sleep paralysis",
+        "Sleepwalking",
+        "Sleep talking",
+        "Snoring"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Sleep disorder",
+      "field": "commonMistake",
+      "beforePresent": true,
+      "before": {
+        "why": "The usual term is 'sleep disorder'.",
+        "sentence": "She has a sleeping disorder.",
+        "correction": "She has a sleep disorder."
+      },
+      "afterPresent": true,
+      "after": {
+        "why": "Use 'has' with the singular subject 'he' in the present simple.",
+        "sentence": "He have a sleep disorder.",
+        "correction": "He has a sleep disorder."
+      }
+    },
+    {
+      "kind": "words",
+      "key": "Sleep paralysis",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Sleep disorder"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Sleep talking",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Sleep disorder"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Sleepwalking",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Sleep disorder"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Snoring",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Sleep disorder"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Sprain",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Injury"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Strain",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": false,
+      "before": null,
+      "afterPresent": true,
+      "after": [
+        "Injury"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Under the weather",
+      "field": "excludeFromSameOptionsWith",
+      "beforePresent": true,
+      "before": [
+        "Ill",
+        "Sick"
+      ],
+      "afterPresent": true,
+      "after": [
+        "Ill",
+        "Sick",
+        "Nauseous"
+      ]
+    }
+  ]
+}
