@@ -1,0 +1,9 @@
+{
+  "version": 21,
+  "wordsWithAlternatives": 13,
+  "prompts": 26,
+  "alternatives": 64,
+  "checks": 218,
+  "findings": [],
+  "passed": true
+}

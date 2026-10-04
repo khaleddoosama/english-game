@@ -294,6 +294,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     });
     if (independentCorrect) setScore((value) => value + 10);
 
+    // A valid synonym earns the question score, but cannot retire the target's production prompt.
+    const targetCorrect = independentCorrect && !result.alternativeAccepted;
     if (q.poolType === 'combo' || q.poolType === 'grammar') {
       const key = q.progressKey;
       if (key) {
@@ -304,10 +306,10 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           if (item.id !== q.poolItemId) return item;
           found = true;
           const attempts = Number(item.attempts || 0) + 1;
-          const correctCount = Number(item.correctCount || 0) + (independentCorrect ? 1 : 0);
+          const correctCount = Number(item.correctCount || 0) + (targetCorrect ? 1 : 0);
           return { ...item, attempts, correctCount, lockedUntil: correctCount >= 2 ? now + LOCK_DAYS * 86400000 : item.lockedUntil };
         });
-        if (!found) items.push({ id: q.poolItemId, attempts: 1, correctCount: independentCorrect ? 1 : 0, lockedUntil: null });
+        if (!found) items.push({ id: q.poolItemId, attempts: 1, correctCount: targetCorrect ? 1 : 0, lockedUntil: null });
         const nextPools = { ...snapshot, [key]: { ...snapshot[key], variant: items } };
         poolsRef.current = nextPools; setPools(nextPools);
         const stillFresh = items.some((it) => !it.lockedUntil || it.lockedUntil <= now);
@@ -320,7 +322,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         const items=wordPools[q.poolType].map(item=>{
           if(item.id!==q.poolItemId)return item;
           const attempts=Number(item.attempts||0)+1;
-          const correctCount=Number(item.correctCount||0)+(independentCorrect?1:0);
+          const correctCount=Number(item.correctCount||0)+(targetCorrect?1:0);
           return {...item,attempts,correctCount,lockedUntil:correctCount>=2?now+LOCK_DAYS*86400000:item.lockedUntil};
         });
         const nextWordPools={...wordPools,[q.poolType]:items}, nextPools={...snapshot,[wordObj.word]:nextWordPools};
@@ -329,7 +331,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         // besides the text just shown is still fresh, write a new one now so
         // the next time this word comes up it has a different sentence.
         const freshOthers=items.some(it=>it.id!==q.poolItemId&&(!it.lockedUntil||it.lockedUntil<=now));
-        if(poolNeedsGeneration(nextWordPools,q.poolType)||(independentCorrect&&!freshOthers))triggerGeneration([{word:wordObj.word,poolType:q.poolType}],nextPools);
+        if(poolNeedsGeneration(nextWordPools,q.poolType)||(targetCorrect&&!freshOthers))triggerGeneration([{word:wordObj.word,poolType:q.poolType}],nextPools);
       }
     }
 

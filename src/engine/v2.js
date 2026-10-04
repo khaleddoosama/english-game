@@ -424,6 +424,22 @@ function validateContent(data, existing={}) {
     for(const k of ['opposite','chainGroup','distractorGroup','plainForm'])if(w[k]!==undefined)text(w[k],`${p}.${k}`);
     if(w.opposite && norm(w.opposite)!=='none')refs([w.opposite],`${p}.opposite`);
     if(w.excludeFromSameOptionsWith!==undefined)refs(w.excludeFromSameOptionsWith,`${p}.excludeFromSameOptionsWith`,0);
+    if(w.acceptedWrittenAnswers!==undefined){
+      if(!Array.isArray(w.acceptedWrittenAnswers))err(`${p}.acceptedWrittenAnswers`,'expected array');
+      else {const seenPrompts=new Set();w.acceptedWrittenAnswers.forEach((entry,j)=>{
+        const ep=`${p}.acceptedWrittenAnswers[${j}]`;
+        if(!obj(entry)){err(ep,'expected object');return;}
+        if(!['typing','gapTyping'].includes(entry.mode))err(`${ep}.mode`,'expected typing or gapTyping');
+        text(entry.prompt,`${ep}.prompt`);
+        const prompts=entry.mode==='typing'?[w.meaning]:[w.gap,...(Array.isArray(w.gaps)?w.gaps:[])];
+        if(!prompts.some(t=>typeof t==='string'&&sentence(t)===sentence(entry.prompt)))err(`${ep}.prompt`,'must match an authored prompt for this mode');
+        const key=entry.mode+'|'+sentence(entry.prompt);
+        if(seenPrompts.has(key))err(ep,'duplicate prompt');seenPrompts.add(key);
+        if(!Array.isArray(entry.answers)||!entry.answers.length)err(`${ep}.answers`,'expected non-empty array');
+        else {entry.answers.forEach((answer,k)=>text(answer,`${ep}.answers[${k}]`));if(new Set(entry.answers.map(sentence)).size!==entry.answers.length)err(`${ep}.answers`,'duplicate answers');if(entry.answers.some(a=>sentence(a)===sentence(w.word)))err(`${ep}.answers`,'canonical answer is already accepted');}
+      });}
+    }
+
     if(w.illustration!==undefined&&!isIllustration(w.illustration))err(`${p}.illustration`,'expected an inline <svg> drawing (no scripts, at most 12000 characters)');if(w.pictureAvoid!==undefined&&(!Array.isArray(w.pictureAvoid)||w.pictureAvoid.some(x=>typeof x!=='string')))err(`${p}.pictureAvoid`,'expected an array of strings');if(w.collocationChecks!==undefined){if(!Array.isArray(w.collocationChecks))err(`${p}.collocationChecks`,'expected array');else w.collocationChecks.forEach((c,j)=>{const cp=`${p}.collocationChecks[${j}]`;if(!c||typeof c!=='object')return err(cp,'expected an object');if(typeof c.sentence!=='string'||(c.sentence.match(/_{2,}/g)||[]).length!==1)err(`${cp}.sentence`,'needs exactly one ______');text(c.answer,`${cp}.answer`);if(!Array.isArray(c.wrong)||c.wrong.filter(x=>typeof x==='string'&&x.trim()).length<2)err(`${cp}.wrong`,'expected at least two wrong options');else if(c.wrong.some(x=>norm(x)===norm(c.answer)))err(`${cp}.wrong`,'a wrong option equals the answer');});}if(w.units!==undefined&&(!Array.isArray(w.units)||w.units.some(u=>typeof u!=='string')))err(`${p}.units`,'expected an array of strings');if(w.antonyms!==undefined&&(!Array.isArray(w.antonyms)||w.antonyms.some(a=>typeof a!=='string')))err(`${p}.antonyms`,'expected an array of strings');if(w.hints!==undefined){if(!Array.isArray(w.hints))err(`${p}.hints`,'expected array');else w.hints.forEach((h,j)=>text(h,`${p}.hints[${j}]`));}
     for(const [f,ks] of [['transformExample',['before','after']],['commonMistake',['sentence','correction','why']]])if(w[f]!==undefined){if(!obj(w[f]))err(`${p}.${f}`,'expected object');else ks.forEach(k=>text(w[f][k],`${p}.${f}.${k}`));}
     if(w.transformExample&&!['phrasal','fyi'].includes(w.type))err(`${p}.transformExample`,'only phrasal/fyi');
@@ -497,6 +513,13 @@ function pickWordVariant(pools,w,poolType,rng=Math.random,seen=null){
   const tied=candidates.filter(it=>Number(it.attempts||0)===least);
   return tied[Math.floor(rng()*tied.length)];
 }
+// Alternatives are authored for one exact prompt and mode. Never infer
+// them from synonyms or carry them into a new AI-written pool variant.
+function writtenAlternatives(w,mode,prompt){
+  const entries=Array.isArray(w.acceptedWrittenAnswers)?w.acceptedWrittenAnswers:[];
+  const entry=entries.find(e=>e&&e.mode===mode&&typeof e.prompt==='string'&&sentence(e.prompt)===sentence(prompt));
+  return [...new Set((Array.isArray(entry?.answers)?entry.answers:[]).filter(a=>typeof a==='string'&&a.trim()).map(a=>a.trim()))];
+}
 function makeQuestion(w,mode,words,rng=Math.random,difficulty=1,pools=null,boost=null,seen=null) {
   const poolType=POOL_FOR_MODE[mode];
   const variant=poolType&&pools?pickWordVariant(pools,w,poolType,rng,seen):null;
@@ -506,8 +529,8 @@ function makeQuestion(w,mode,words,rng=Math.random,difficulty=1,pools=null,boost
   const pool=poolType&&pools?{poolType,poolItemId:usable?variant.id:'seed'}:{};
   const q={id:`${w.word}:${mode}`,mode,targets:[w.word],hints:w.hints||[],explanation:w.meaning,type:'mcq',answers:[w.word],difficulty,...pool};
   if(mode==='transform')return {...q,type:'typing',prompt:`Use “${w.word}” to rewrite: ${w.transformExample.before}`,answers:[w.transformExample.after],explanation:w.transformExample.after,modelOnly:true};
-  if(mode==='typing')return {...q,type:'typing',prompt:w.meaning};
-  if(mode==='gapTyping')return {...q,type:'typing',prompt:w.gap};
+  if(mode==='typing')return {...q,type:'typing',prompt:w.meaning,acceptedAnswers:writtenAlternatives(w,mode,w.meaning)};
+  if(mode==='gapTyping')return {...q,type:'typing',prompt:w.gap,acceptedAnswers:writtenAlternatives(w,mode,w.gap)};
   q.prompt=mode==='meaning'?w.word:mode==='reverse'?w.meaning:mode==='gap'?w.gap:w.situation;
   // Easier questions take at most one distractor from the word's own
   // subCategory; from difficulty 3 all of them may (Strain, Fracture, Bruise…).
@@ -677,10 +700,12 @@ function storySession(story,words,mastery={},rng=Math.random){
   return {id:`story-${story.id}-${Date.now()}`,sourceStoryId:story.id,kind:'story',title:story.title,text:story.text,queue,introductions,unfairTargets:introductions.map(w=>w.word),index:0,answers:[]};
 }
 function chainSession(group,words,mastery={},rng=Math.random){const queue=shuffleCopy(words.filter(w=>w.chainGroup===group&&w.opposite&&known(mastery[w.word])&&known(mastery[findWord(words,w.opposite)?.word])),rng).map((w,i)=>{const target=findWord(words,w.opposite);if(!target)return null;const options=optionWords([target],words,4,rng).map(x=>x.word);return options.length<2?null:{id:`chain:${i}`,mode:'opposite',type:'mcq',prompt:`What is the opposite of “${w.word}”?`,answers:[target.word],targets:[target.word],options,explanation:`${w.word} ↔ ${target.word}`};}).filter(Boolean);return {id:`chain-${Date.now()}`,kind:'chain',title:group,queue,introductions:[],index:0,answers:[]};}
-function grade(q,value,words=[]){const a=Array.isArray(value)?value:[value];const correct=a.length===q.answers.length&&q.answers.every(x=>a.some(v=>sentence(v)===sentence(x)||sentence(v)===sentence(bareWord(x))));let spelling=false;if(!correct&&q.type==='typing'&&!q.modelOnly&&!findWord(words,value)){const x=norm(value),y=norm(bareWord(q.answers[0]));if(x.length>=3){const d=Array.from({length:x.length+1},(_,i)=>[i]);for(let j=0;j<=y.length;j++)d[0][j]=j;for(let i=1;i<=x.length;i++)for(let j=1;j<=y.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(x[i-1]!==y[j-1]));spelling=d[x.length][y.length]<=1;}}return {correct,spelling,unverified:!correct&&q.modelOnly};}
+function grade(q,value,words=[]){const a=Array.isArray(value)?value:[value];const canonicalCorrect=a.length===q.answers.length&&q.answers.every(x=>a.some(v=>sentence(v)===sentence(x)||sentence(v)===sentence(bareWord(x))));
+const alternativeAccepted=!canonicalCorrect&&q.type==='typing'&&!q.modelOnly&&['typing','gapTyping'].includes(q.mode)&&q.answers.length===1&&a.length===1&&(Array.isArray(q.acceptedAnswers)?q.acceptedAnswers:[]).some(x=>typeof x==='string'&&x.trim()&&sentence(a[0])===sentence(x));
+const correct=canonicalCorrect||alternativeAccepted;let spelling=false;if(!correct&&q.type==='typing'&&!q.modelOnly&&!findWord(words,value)){const x=norm(value),y=norm(bareWord(q.answers[0]));if(x.length>=3){const d=Array.from({length:x.length+1},(_,i)=>[i]);for(let j=0;j<=y.length;j++)d[0][j]=j;for(let i=1;i<=x.length;i++)for(let j=1;j<=y.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(x[i-1]!==y[j-1]));spelling=d[x.length][y.length]<=1;}}return {correct,spelling,unverified:!correct&&q.modelOnly,...(alternativeAccepted?{alternativeAccepted:true}:{})};}
 function sessionEvidence(mastery,session,now=Date.now()){
   const next={...mastery};const grouped={};
-  session.queue.forEach((q,i)=>{const a=session.answers[i];if(!a||a.reported||a.unverified||a.aiFailed||q.noMastery||session.kind==='speed')return;for(const key of q.progressKeys?.length?q.progressKeys:q.progressKey?[q.progressKey]:q.targets){if(session.unfairTargets?.includes(key))continue;(grouped[key] ||= []).push({...a,mode:q.mode,type:q.type,difficulty:q.difficulty||1});}});
+  session.queue.forEach((q,i)=>{const a=session.answers[i];if(!a||a.reported||a.unverified||a.aiFailed||a.alternativeAccepted||q.noMastery||session.kind==='speed')return;for(const key of q.progressKeys?.length?q.progressKeys:q.progressKey?[q.progressKey]:q.targets){if(session.unfairTargets?.includes(key))continue;(grouped[key] ||= []).push({...a,mode:q.mode,type:q.type,difficulty:q.difficulty||1});}});
   for(const [key,results] of Object.entries(grouped)){
     const s=next[key]||{};if((s.appliedSessions||[]).includes(session.id))continue;
     const independent=results.filter(a=>!a.assisted);const ok=independent.length>0&&results.every(a=>a.correct&&!a.assisted);

@@ -1,0 +1,393 @@
+{
+  "fromVersion": 20,
+  "toVersion": 21,
+  "changes": [
+    {
+      "kind": "words",
+      "key": "Dietitian",
+      "field": "acceptedWrittenAnswers",
+      "beforePresent": false,
+      "before": null,
+      "after": [
+        {
+          "mode": "gapTyping",
+          "prompt": "The ______ made a meal plan to help me lower my cholesterol.",
+          "answers": [
+            "nutritionist",
+            "dietician"
+          ]
+        },
+        {
+          "mode": "gapTyping",
+          "prompt": "Ask a ______ before you start a very strict diet.",
+          "answers": [
+            "nutritionist",
+            "dietician"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Disappointed",
+      "field": "acceptedWrittenAnswers",
+      "beforePresent": false,
+      "before": null,
+      "after": [
+        {
+          "mode": "gapTyping",
+          "prompt": "We were ______ with the hotel — it looked much better in the photos.",
+          "answers": [
+            "upset",
+            "angry",
+            "annoyed",
+            "furious"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Fish memory",
+      "field": "gap",
+      "beforePresent": true,
+      "before": "My brother has a ______ — he forgets what I told him five minutes ago.",
+      "after": "In class, we jokingly call a very poor memory a \"______\"."
+    },
+    {
+      "kind": "words",
+      "key": "Fish memory",
+      "field": "hints",
+      "beforePresent": true,
+      "before": [
+        "A joke about a small animal that swims and forgets fast.",
+        "Two words; the second starts with 'mem-'."
+      ],
+      "after": [
+        "In everyday English, say 'a memory like a sieve'.",
+        "The course label has two words; the second starts with 'mem-'."
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Fish memory",
+      "field": "meaning",
+      "beforePresent": true,
+      "before": "A very poor memory; forgetting things very quickly (informal).",
+      "after": "A very poor memory: forgetting things very quickly. The course uses a playful label for this."
+    },
+    {
+      "kind": "words",
+      "key": "Fish memory",
+      "field": "situation",
+      "beforePresent": true,
+      "before": "Kareem asked his wife the same question three times in ten minutes. Later he forgot where he put his phone while he was holding it.",
+      "after": "In class, we used \"fish memory\" as a joke about forgetting things; in everyday English, I say, \"I have a memory like a sieve.\""
+    },
+    {
+      "kind": "words",
+      "key": "Fish memory",
+      "field": "partsOfSpeech",
+      "beforePresent": true,
+      "before": [
+        "noun"
+      ],
+      "after": [
+        "noun phrase"
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Fish memory",
+      "field": "acceptedWrittenAnswers",
+      "beforePresent": false,
+      "before": null,
+      "after": [
+        {
+          "mode": "typing",
+          "prompt": "A very poor memory: forgetting things very quickly. The course uses a playful label for this.",
+          "answers": [
+            "poor memory",
+            "bad memory",
+            "memory like a sieve"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Ill",
+      "field": "acceptedWrittenAnswers",
+      "beforePresent": false,
+      "before": null,
+      "after": [
+        {
+          "mode": "typing",
+          "prompt": "Not well; suffering from a disease.",
+          "answers": [
+            "sick",
+            "unwell"
+          ]
+        },
+        {
+          "mode": "gapTyping",
+          "prompt": "She stayed in bed because she was ______ with the flu all week.",
+          "answers": [
+            "sick",
+            "unwell"
+          ]
+        },
+        {
+          "mode": "gapTyping",
+          "prompt": "My grandfather is seriously ______ in hospital, so we visit him every day.",
+          "answers": [
+            "sick",
+            "unwell"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Lightheaded",
+      "field": "acceptedWrittenAnswers",
+      "beforePresent": false,
+      "before": null,
+      "after": [
+        {
+          "mode": "typing",
+          "prompt": "Feeling faint, as if you might lose consciousness.",
+          "answers": [
+            "faint"
+          ]
+        },
+        {
+          "mode": "gapTyping",
+          "prompt": "I skipped breakfast and felt ______ during the meeting, as if I was going to faint.",
+          "answers": [
+            "dizzy",
+            "faint",
+            "woozy"
+          ]
+        },
+        {
+          "mode": "gapTyping",
+          "prompt": "Stand up slowly or you might feel ______.",
+          "answers": [
+            "dizzy",
+            "faint",
+            "woozy"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Move on",
+      "field": "acceptedWrittenAnswers",
+      "beforePresent": false,
+      "before": null,
+      "after": [
+        {
+          "mode": "gapTyping",
+          "prompt": "The exam didn't go well, but it's time to forget it and ______.",
+          "answers": [
+            "pick up the pieces"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Nauseous",
+      "field": "acceptedWrittenAnswers",
+      "beforePresent": false,
+      "before": null,
+      "after": [
+        {
+          "mode": "typing",
+          "prompt": "Feeling as if you might vomit.",
+          "answers": [
+            "queasy",
+            "sick"
+          ]
+        },
+        {
+          "mode": "gapTyping",
+          "prompt": "The smell of the fish made me feel ______.",
+          "answers": [
+            "queasy",
+            "sick"
+          ]
+        },
+        {
+          "mode": "gapTyping",
+          "prompt": "Some medicines can make you ______, so eat something first.",
+          "answers": [
+            "queasy",
+            "sick"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Nutritionist",
+      "field": "acceptedWrittenAnswers",
+      "beforePresent": false,
+      "before": null,
+      "after": [
+        {
+          "mode": "gapTyping",
+          "prompt": "The ______ explained which foods give us the most energy.",
+          "answers": [
+            "dietitian",
+            "dietician"
+          ]
+        },
+        {
+          "mode": "gapTyping",
+          "prompt": "She works as a sports ______ for a football team.",
+          "answers": [
+            "dietitian",
+            "dietician"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Pick up the pieces",
+      "field": "acceptedWrittenAnswers",
+      "beforePresent": false,
+      "before": null,
+      "after": [
+        {
+          "mode": "gapTyping",
+          "prompt": "After the divorce, it took her a year to ______ and start a new life.",
+          "answers": [
+            "move on",
+            "recover"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Put off",
+      "field": "acceptedWrittenAnswers",
+      "beforePresent": false,
+      "before": null,
+      "after": [
+        {
+          "mode": "typing",
+          "prompt": "To delay doing something, usually because you don't want to do it.",
+          "answers": [
+            "postpone",
+            "delay"
+          ]
+        },
+        {
+          "mode": "gapTyping",
+          "prompt": "I always ______ cleaning my room until the weekend.",
+          "answers": [
+            "postpone",
+            "delay",
+            "avoid"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Recognize",
+      "field": "acceptedWrittenAnswers",
+      "beforePresent": false,
+      "before": null,
+      "after": [
+        {
+          "mode": "gapTyping",
+          "prompt": "I didn't ______ my cousin at first because he had grown a beard.",
+          "answers": [
+            "recall"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Sick",
+      "field": "acceptedWrittenAnswers",
+      "beforePresent": false,
+      "before": null,
+      "after": [
+        {
+          "mode": "typing",
+          "prompt": "Not feeling well because of a disease or infection.",
+          "answers": [
+            "ill",
+            "unwell"
+          ]
+        },
+        {
+          "mode": "gapTyping",
+          "prompt": "I had a fever and felt too ______ to go to work, so I stayed in bed.",
+          "answers": [
+            "ill",
+            "unwell"
+          ]
+        },
+        {
+          "mode": "gapTyping",
+          "prompt": "Grandma was ______ last week, but she's feeling much better now.",
+          "answers": [
+            "ill",
+            "unwell"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "words",
+      "key": "Under the weather",
+      "field": "acceptedWrittenAnswers",
+      "beforePresent": false,
+      "before": null,
+      "after": [
+        {
+          "mode": "typing",
+          "prompt": "Feeling slightly ill; informal.",
+          "answers": [
+            "sick",
+            "ill",
+            "unwell",
+            "off colour",
+            "off color"
+          ]
+        },
+        {
+          "mode": "gapTyping",
+          "prompt": "Maya is feeling a bit ______ today, so she's staying home with a cup of tea.",
+          "answers": [
+            "sick",
+            "ill",
+            "unwell",
+            "off colour",
+            "off color"
+          ]
+        },
+        {
+          "mode": "gapTyping",
+          "prompt": "I won't come to the party tonight — I'm a little ______.",
+          "answers": [
+            "sick",
+            "ill",
+            "unwell",
+            "off colour",
+            "off color"
+          ]
+        }
+      ]
+    }
+  ]
+}
