@@ -73,7 +73,10 @@ Migrations live in `supabase/migrations` (apply in order). They create:
   — Live Challenge: the answer keys never reach players; answers are judged
   and timed on the server; finished matches go to `live_results`. Since
   0020 a player sees no question before pressing Start, then one at a time;
-  the creator's result is marked and doesn't count as a Live win
+  the creator's result is marked and doesn't count as a Live win. Since
+  0023, once a challenge is over every member sees every player's answers
+  (never before), and "Retry challenge" leaves the new challenge's code on
+  the old one (`live_set_next`) so the other players are offered it
 - `admin_audit` — every change with field-by-field before/after (0009);
   entries can be deleted only through `admin_audit_delete` / `admin_audit_clear`,
   which leave a note (0014)

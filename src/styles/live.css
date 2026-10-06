@@ -144,8 +144,16 @@
 .lv-table small { font-weight: 400; color: #6b6252; }
 .lv-review { margin: 0; padding-left: 22px; display: grid; gap: 8px; font-size: 14px; }
 .lv-review li { display: grid; gap: 2px; }
-.lv-review li.good small { color: var(--green); }
-.lv-review li.bad small { color: var(--red); }
+.lv-review > li { gap: 4px; padding-bottom: 8px; border-bottom: 1px solid rgba(28,26,23,0.08); }
+.lv-review-key { color: #6b6252; }
+.lv-review-people { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 2px; }
+.lv-review-people li { display: grid; grid-template-columns: minmax(64px, 28%) 1fr auto; gap: 8px; align-items: baseline; padding: 3px 6px; border-radius: 6px; font-size: 13px; }
+.lv-review-people li.good { color: var(--green); }
+.lv-review-people li.bad { color: var(--red); }
+.lv-review-people li.me { background: rgba(201,162,39,0.14); font-weight: 600; }
+.lv-rp-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lv-rp-pick { overflow-wrap: anywhere; }
+.lv-rp-ms { font-family: var(--font-mono); font-size: 12px; color: #6b6252; }
 
 @media (max-width: 520px) {
   .wh-card.lv-form, .wh-card.lv-lobby, .wh-card.lv-results, .wh-card.lv-center { padding: 22px 16px 18px 20px; }

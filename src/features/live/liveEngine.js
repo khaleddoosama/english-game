@@ -1,6 +1,6 @@
 import { V2 } from "../../engine/v2";
 import { imageLinkOk } from "../media/media";
-import { WORDS } from "../../engine/data";
+import { WORDS, levelGroups } from "../../engine/data";
 import { buildQuestion, canBuildWhoAmI, legacyQuestionToV2 } from "../../engine/questions";
 // Live Challenge question building (rules and scoring: liveRules.js;
 // server calls: liveApi.js; the screens: LiveChallenge.jsx).
@@ -124,3 +124,26 @@ export function liveQuestions(words, count, { pools = null, seen = {}, rng = Mat
 }
 // Word options start with a capital, as in the normal question box.
 export function liveOption(opt, q) { const t = String(opt); return q.mode !== "meaning" && q.mode !== "collocation" && q.mode !== "grammar" && t.trim().split(/\s+/).length <= 4 && /^[a-z]/.test(t) ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
+
+// The name a challenge gets when its creator doesn't type one.
+export const liveAutoTitle = (level, groups, unit) => (level ? `${level.title}${unit ? ` · ${groups.find((g) => g.id === unit)?.title || unit}` : ""}` : "Mixed lessons");
+
+// "Retry challenge": the settings of a finished challenge, as the values of
+// the new-challenge form (the form checks them against what it offers). What
+// no longer exists, like a deleted lesson, falls back to the form's default.
+export function retryDefaults(view, levels) {
+  const s = view.settings || {};
+  const at = s.lesson ? levels.findIndex((l) => l.title === s.lesson) : -1;
+  const level = at >= 0 ? levels[at] : null;
+  const groups = level ? levelGroups(level).filter((g) => g.id) : [];
+  const unit = level && s.unit && groups.some((g) => g.id === s.unit) ? s.unit : "";
+  const kinds = (Array.isArray(s.kinds) ? s.kinds : []).filter((k) => LIVE_KINDS.some((x) => x.id === k));
+  return {
+    from: view.code, sourceTitle: view.title,
+    lesson: level ? String(at) : "all", unit,
+    count: s.requested || view.question_count, seconds: view.seconds, maxPlayers: view.max_players, startMode: view.start_mode,
+    kinds: kinds.length ? kinds : null, reveal: s.reveal !== false,
+    // A name the creator typed carries over; the automatic one follows the lesson.
+    title: view.title && view.title !== liveAutoTitle(level, groups, unit) ? view.title : "",
+  };
+}

@@ -1,9 +1,9 @@
 import { playCue } from "../../lib/sound";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, CheckCircle2, Clock, Copy, Crown, Eye, EyeOff, Link2, LogOut, Play as PlayIcon, Plus, Share2, Timer, Trophy, UserMinus, Users, X } from "lucide-react";
+import { Check, CheckCircle2, Clock, Copy, Crown, Eye, EyeOff, Link2, LogOut, Play as PlayIcon, Plus, RotateCcw, Share2, Timer, Trophy, UserMinus, Users, X } from "lucide-react";
 import { WordPicture } from "../media/media";
 import { levelGroups } from "../../engine/data";
-import { LIVE_KINDS, liveOption, liveQuestions } from "./liveEngine";
+import { LIVE_KINDS, liveAutoTitle, liveOption, liveQuestions, retryDefaults } from "./liveEngine";
 import { FEEDBACK_MS, MAX_PLAYERS, MIN_PLAYERS, challengeLink, codeFromInput, formatMs, standings } from "./liveRules";
 import { getLiveApi, withRetry } from "./liveApi";
 import { openLiveChannel } from "./transport";
@@ -41,19 +41,23 @@ const rulesText = (v) => [
 
 export function LiveChallenge({ player, levels, code, onOpenCode, onExit, sound = true, pools = null, getSeen = () => ({}), onSeen = () => {}, onRefresh = () => {}, limits = {} }) {
   const api = useMemo(() => getLiveApi(() => player), [player]);
+  // "Retry challenge": the settings of a finished challenge, carried to the new-challenge form.
+  const [retry, setRetry] = useState(null);
+  const canRetry = limits.canCreate !== false && levels.length > 0;
   return (
     <div className="lv">
       {code
-        ? <ChallengeRoom key={code} api={api} code={code} player={player} sound={sound} onHome={() => onOpenCode(null)} onSeen={onSeen} />
-        : <LiveHome api={api} player={player} levels={levels} pools={pools} getSeen={getSeen} onRefresh={onRefresh} onOpenCode={onOpenCode} onExit={onExit} limits={limits} />}
+        ? <ChallengeRoom key={code} api={api} code={code} player={player} sound={sound} onHome={() => onOpenCode(null)} onOpen={onOpenCode} canRetry={canRetry}
+            onRetry={(view) => { setRetry(retryDefaults(view, levels)); onOpenCode(null); }} onSeen={onSeen} />
+        : <LiveHome api={api} player={player} levels={levels} pools={pools} getSeen={getSeen} onRefresh={onRefresh} onOpenCode={onOpenCode} onExit={onExit} limits={limits} retry={retry} onRetryDone={() => setRetry(null)} />}
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ home */
 
-function LiveHome({ api, player, levels, pools, getSeen, onRefresh, onOpenCode, onExit, limits }) {
-  const [creating, setCreating] = useState(false);
+function LiveHome({ api, player, levels, pools, getSeen, onRefresh, onOpenCode, onExit, limits, retry, onRetryDone }) {
+  const [creating, setCreating] = useState(!!retry);
   const [joinText, setJoinText] = useState("");
   const [joinError, setJoinError] = useState(null);
   const [mine, setMine] = useState(null);
@@ -63,7 +67,13 @@ function LiveHome({ api, player, levels, pools, getSeen, onRefresh, onOpenCode, 
     if (!c) { setJoinError("Paste the challenge link, or type its 6-character code."); return; }
     onOpenCode(c);
   };
-  if (creating) return <CreateForm api={api} levels={levels} pools={pools} getSeen={getSeen} onRefresh={onRefresh} onCancel={() => setCreating(false)} onCreated={onOpenCode} limits={limits} />;
+  if (creating) return <CreateForm api={api} levels={levels} pools={pools} getSeen={getSeen} onRefresh={onRefresh} limits={limits} initial={retry}
+    onCancel={() => { setCreating(false); onRetryDone(); }}
+    onCreated={(code) => {
+      // Leave the new code on the finished challenge so the others can join from its results.
+      if (retry?.from) api.setNext(retry.from, code).catch(() => {});
+      onRetryDone(); onOpenCode(code);
+    }} />;
   const open = (mine || []).filter((c) => c.state !== "done");
   const past = (mine || []).filter((c) => c.state === "done");
   return (
@@ -125,19 +135,21 @@ function Segmented({ label, value, options, onChange }) {
   );
 }
 
-function CreateForm({ api, levels, pools, getSeen, onRefresh, onCancel, onCreated, limits }) {
+function CreateForm({ api, levels, pools, getSeen, onRefresh, onCancel, onCreated, limits, initial = null }) {
   const cap = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, limits.maxPlayers || MAX_PLAYERS));
-  const [lesson, setLesson] = useState("all");
-  const [unit, setUnit] = useState("");
-  const [count, setCount] = useState(limits.defaultCount || 10);
-  const [seconds, setSeconds] = useState(limits.defaultSeconds ?? 20);
-  const [maxPlayers, setMaxPlayers] = useState(cap);
-  const [startMode, setStartMode] = useState("together");
+  // From "Retry challenge": the old settings, each kept only if this form still offers it.
+  const init = initial || {};
+  const [lesson, setLesson] = useState(init.lesson ?? "all");
+  const [unit, setUnit] = useState(init.unit ?? "");
+  const [count, setCount] = useState(COUNTS.includes(init.count) ? init.count : limits.defaultCount || 10);
+  const [seconds, setSeconds] = useState(SECONDS.some(([v]) => v === init.seconds) ? init.seconds : limits.defaultSeconds ?? 20);
+  const [maxPlayers, setMaxPlayers] = useState(init.maxPlayers >= MIN_PLAYERS ? Math.min(cap, init.maxPlayers) : cap);
+  const [startMode, setStartMode] = useState(["together", "anytime"].includes(init.startMode) ? init.startMode : "together");
   const hourOptions = HOURS.filter(([h]) => h <= (limits.maxHours || 168));
   const [hours, setHours] = useState(Math.min(24, hourOptions.at(-1)?.[0] || 24));
-  const [kinds, setKinds] = useState(LIVE_KINDS.map((k) => k.id));
-  const [reveal, setReveal] = useState(true);
-  const [title, setTitle] = useState("");
+  const [kinds, setKinds] = useState(init.kinds || LIVE_KINDS.map((k) => k.id));
+  const [reveal, setReveal] = useState(init.reveal ?? true);
+  const [title, setTitle] = useState(init.title || "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const level = lesson === "all" ? null : levels[Number(lesson)];
@@ -153,7 +165,7 @@ function CreateForm({ api, levels, pools, getSeen, onRefresh, onCancel, onCreate
     return src.flatMap((l) => l.items.filter((it) => it.kind === "grammar").map((it) => it.obj))
       .filter((g) => !unit || (groups[0]?.field === "unit" ? (g.units || []).includes(unit) : g.subCategory === unit));
   }, [levels, level, unit]);
-  const autoTitle = level ? `${level.title}${unit ? ` · ${groups.find((g) => g.id === unit)?.title || unit}` : ""}` : "Mixed lessons";
+  const autoTitle = liveAutoTitle(level, groups, unit);
 
   async function create() {
     setError(null);
@@ -173,7 +185,8 @@ function CreateForm({ api, levels, pools, getSeen, onRefresh, onCancel, onCreate
 
   return (
     <section className="wh-card lv-form">
-      <div className="lv-form-head"><h2>New challenge</h2><button className="lv-icon" onClick={onCancel} aria-label="Cancel"><X size={18} /></button></div>
+      <div className="lv-form-head"><h2>{initial ? "Retry challenge" : "New challenge"}</h2><button className="lv-icon" onClick={onCancel} aria-label="Cancel"><X size={18} /></button></div>
+      {initial && <p className="lv-note">Same settings as “{initial.sourceTitle}”. Change anything you like, then create it. The others in that challenge will be offered the new one.</p>}
       <div className="lv-grid">
         <label className="lv-field"><span>Words from</span>
           <select value={lesson} onChange={(e) => { setLesson(e.target.value); setUnit(""); }}>
@@ -217,7 +230,7 @@ function CreateForm({ api, levels, pools, getSeen, onRefresh, onCancel, onCreate
 
 /* ------------------------------------------------------------ challenge */
 
-function ChallengeRoom({ api, code, player, onHome, onSeen, sound }) {
+function ChallengeRoom({ api, code, player, onHome, onOpen, canRetry, onRetry, onSeen, sound }) {
   const [view, setView] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [error, setError] = useState(null);
@@ -276,7 +289,21 @@ function ChallengeRoom({ api, code, player, onHome, onSeen, sound }) {
     return () => clearInterval(t);
   }, [view?.state, channelState, refresh]);
 
+  // A finished challenge is checked for a rematch the creator made, for half an hour.
+  useEffect(() => {
+    if (!view || view.state !== "done" || !view.member || view.settings?.next_code) return;
+    if (Date.now() - (Date.parse(view.ended_at || view.expires_at) || Date.now()) > 30 * 60000) return;
+    const t = setInterval(refresh, 8000);
+    return () => clearInterval(t);
+  }, [view?.state, view?.member, view?.settings?.next_code, view?.ended_at, refresh]);
+
   const send = (event, payload = {}) => channelRef.current?.send(event, payload);
+  // From the results: go to the rematch, joining it first unless I made it. If it can't be joined
+  // (full, already started) its own page says why.
+  async function openNext(next, mine) {
+    if (!mine) { setBusy(true); try { await api.join(next); } catch { /* the invite page explains */ } setBusy(false); }
+    onOpen(next);
+  }
   async function act(fn, after) {
     setBusy(true); setError(null);
     try { const r = await fn(); if (r && typeof r === "object" && r.code) keep(r); after?.(r); }
@@ -303,7 +330,7 @@ function ChallengeRoom({ api, code, player, onHome, onSeen, sound }) {
     onStart={() => act(() => api.start(code), () => { send("start"); refresh(); })}
     onLeave={() => act(() => api.leave(code), () => { send("left", { user_id: player.id }); onHome(); })}
     onRemove={(id) => act(() => api.removePlayer(code, id), () => { send("left", { user_id: id }); refresh(); })} />;
-  if (view.state === "done") return <Results {...common} onHome={onHome} />;
+  if (view.state === "done") return <Results {...common} canRetry={canRetry} onRetry={onRetry} onOpenNext={openNext} onHome={onHome} />;
   if (!me?.started_at) return <Ready {...common} onBegin={() => act(() => api.begin(code))} onLeave={() => act(() => api.leave(code), onHome)} />;
   if (!me.finished_at) return <Play {...common} api={api} code={code} sound={sound} onSeen={onSeen} onNext={addQuestion}
     onProgress={(row, done) => { setLocalMe(row); send("progress", { user_id: player.id, answered: row.answered, correct: row.correct, total_ms: row.total_ms, finished_at: row.finished_at, started_at: row.started_at }); if (done) { send("end"); refresh(); } else if (row.finished_at) refresh(); }}
@@ -525,11 +552,26 @@ function Waiting({ view, me, player, online, busy, error, isHost, onEnd }) {
   );
 }
 
-function Results({ view, player, onHome }) {
+function Results({ view, player, busy, canRetry, onRetry, onOpenNext, onHome }) {
   const ranked = [...view.players].filter((p) => p.rank != null).sort((a, b) => a.rank - b.rank || a.total_ms - b.total_ms);
   const winners = ranked.filter((p) => p.rank === 1);
-  const myAnswers = new Map((view.my_answers || []).map((a) => [a.idx, a]));
-  const [showReview, setShowReview] = useState(false);
+  // Every player's answers (once it's over). A server without them gives only mine.
+  const everyone = Array.isArray(view.all_answers);
+  const [showReview, setShowReview] = useState(everyone);
+  const answers = useMemo(() => {
+    const byQuestion = new Map();
+    for (const a of everyone ? view.all_answers : (view.my_answers || []).map((x) => ({ ...x, user_id: player.id }))) {
+      if (!byQuestion.has(a.idx)) byQuestion.set(a.idx, new Map());
+      byQuestion.get(a.idx).set(a.user_id, a);
+    }
+    return byQuestion;
+  }, [view.all_answers, view.my_answers, everyone, player.id]);
+  // Me first, then the others by rank; someone who never pressed Start has nothing to show.
+  const order = everyone
+    ? view.players.filter((p) => p.started_at || p.user_id === player.id).sort((a, b) => (a.user_id === player.id ? -1 : b.user_id === player.id ? 1 : (a.rank ?? 99) - (b.rank ?? 99)))
+    : view.players.filter((p) => p.user_id === player.id);
+  const nextCode = view.settings?.next_code || null;
+  const nextBy = view.players.find((p) => p.user_id === view.settings?.next_by);
   return (
     <section className="wh-card lv-results">
       <p className="lv-kicker">{view.title} · final</p>
@@ -546,17 +588,33 @@ function Results({ view, player, onHome }) {
         ))}</tbody>
       </table>}
       <p className="lv-note">Most right answers wins. A tie goes to whoever finished, then to the fastest total time. The creator made the questions, so their result doesn't count toward Live wins on the leaderboard.</p>
+      <div className="lv-row">
+        {nextCode
+          ? <button className="lv-btn gold" disabled={busy} onClick={() => onOpenNext(nextCode, nextBy?.user_id === player.id)}><RotateCcw size={15} /> {nextBy?.user_id === player.id ? "Open the new challenge" : busy ? "Joining…" : "Join the new challenge"}</button>
+          : canRetry && <button className="lv-btn gold" onClick={() => onRetry(view)}><RotateCcw size={15} /> Retry challenge</button>}
+        <button className="lv-btn ghost" onClick={onHome}>New challenge</button>
+      </div>
+      {nextCode && nextBy && nextBy.user_id !== player.id && <p className="lv-note"><b>{nextBy.username}</b> made a new challenge.</p>}
       {view.key && <>
-        <button className="lv-btn ghost" onClick={() => setShowReview((v) => !v)}>{showReview ? "Hide my answers" : "Review my answers"}</button>
+        <button className="lv-btn ghost" onClick={() => setShowReview((v) => !v)}>{showReview ? "Hide the answers" : order.length > 1 ? "See everyone's answers" : "Review my answers"}</button>
         {showReview && <ol className="lv-review">{view.questions.map((q, i) => {
-          const a = myAnswers.get(i), k = view.key[i] || {};
-          return <li key={i} className={a?.correct ? "good" : "bad"}>
+          const k = view.key[i] || {};
+          return <li key={i}>
             <span>{q.mode === "meaning" ? <>What does <b>{q.prompt}</b> mean?</> : q.prompt}</span>
-            <small>{a ? (a.correct ? <>✓ {a.choice}</> : <>✗ {a.choice ?? "no answer"} · right: <b>{k.answer}</b></>) : <>not answered · right: <b>{k.answer}</b></>}{a ? ` · ${formatMs(a.ms)}` : ""}</small>
+            <small className="lv-review-key">Right answer: <b>{k.answer != null ? liveOption(k.answer, q) : "?"}</b></small>
+            <ul className="lv-review-people">
+              {order.map((p) => {
+                const a = answers.get(i)?.get(p.user_id), mine = p.user_id === player.id;
+                return <li key={p.user_id} className={`${a?.correct ? "good" : "bad"}${mine ? " me" : ""}`}>
+                  <span className="lv-rp-name">{mine ? "You" : p.username}</span>
+                  <span className="lv-rp-pick">{a ? <>{a.correct ? "✓" : "✗"} {a.choice != null ? liveOption(a.choice, q) : "no answer"}</> : "didn't answer"}</span>
+                  <span className="lv-rp-ms">{a ? formatMs(a.ms) : ""}</span>
+                </li>;
+              })}
+            </ul>
           </li>;
         })}</ol>}
       </>}
-      <div className="lv-row"><button className="lv-btn gold" onClick={onHome}>New challenge</button></div>
     </section>
   );
 }

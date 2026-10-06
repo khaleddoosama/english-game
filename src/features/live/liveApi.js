@@ -37,6 +37,8 @@ function supabaseApi(client) {
     end: (code) => rpc("live_end", { p_code: code }),
     leave: (code) => rpc("live_leave", { p_code: code }),
     removePlayer: (code, userId) => rpc("live_remove_player", { p_code: code, p_user: userId }),
+    // After a finished challenge: "the rematch is this new one" (first one wins).
+    setNext: (code, next) => rpc("live_set_next", { p_code: code, p_next: next }),
     mine: () => rpc("live_mine"),
   };
 }
@@ -75,15 +77,18 @@ export function createLocalLiveApi({ storage, me, now = () => Date.now(), clock 
     const rankOf = (id) => c.results?.find((r) => r.user_id === id)?.rank ?? null;
     return {
       code: c.code, title: c.title, host_id: c.host_id, host: c.host, question_count: c.question_count, seconds: c.seconds,
-      max_players: c.max_players, start_mode: c.start_mode, settings: c.settings, state: c.state, created_at: c.created_at,
+      max_players: c.max_players, start_mode: c.start_mode, settings: member ? c.settings : withoutRematch(c.settings), state: c.state, created_at: c.created_at,
       started_at: c.started_at, ended_at: c.ended_at, expires_at: c.expires_at, now: iso(now()), member,
       questions: member ? visibleQuestions(c.questions, c.state, prog(c.code, uid)) : null,
       key: member && c.state === "done" ? c.key : null,
       players: players(c).map((p) => ({ ...p, rank: rankOf(p.user_id) })),
+      // Everyone's answers, only once it's over (same rule as the server).
+      all_answers: member && c.state === "done" ? c.members.flatMap((m) => prog(c.code, m.user_id).answers.map((a) => ({ user_id: m.user_id, idx: a.idx, choice: a.choice ?? null, correct: !!a.correct, ms: a.ms }))) : null,
       my_answers: member ? prog(c.code, uid).answers : null,
     };
   }
   const publicRow = (p) => { const { answers, last_at, ...row } = p; return row; };
+  const withoutRematch = (settings) => { const { next_code, next_by, ...rest } = settings || {}; return rest; };
 
   return {
     mode: "local",
@@ -180,6 +185,18 @@ export function createLocalLiveApi({ storage, me, now = () => Date.now(), clock 
       if (prog(c.code, userId).started_at) return;
       c.members = c.members.filter((m) => m.user_id !== userId);
       storage.removeItem(progKey(c.code, userId));
+      save(c);
+    },
+    async setNext(code, next) {
+      const c = mustGet(code), uid = me().id, to = String(next || "").trim().toUpperCase();
+      if (to === c.code) fail("A challenge can't be its own rematch.", "22023");
+      if (!c.members.some((m) => m.user_id === uid)) fail("You weren't in this challenge.", "42501");
+      settle(c);
+      if (c.state !== "done") fail("This challenge is still running.", "55000");
+      const n = load(to);
+      if (!n || n.host_id !== uid) fail("Create the new challenge first.", "42501");
+      if (c.settings?.next_code) return;
+      c.settings = { ...c.settings, next_code: n.code, next_by: uid };
       save(c);
     },
     async mine() {
