@@ -13,9 +13,12 @@ const fields = ['words','combos','stories','grammar','challenges'];
 // instead of either repeating the same fixed example forever or just
 // going quiet. `seed` supplies the original authored content for the
 // synthetic "seed" entry; AI-generated variants carry their own content.
-function pickPoolVariant(pools,key,seed){
+function variantItems(pools,key,seed){
   const stored=pools?.[key]?.variant;
-  const arr=(stored&&stored.length?stored:[{id:'seed',attempts:0,correctCount:0,lockedUntil:null}]).map(item=>item.id==='seed'?{...item,...seed}:item);
+  return (stored&&stored.length?stored:[{id:'seed',attempts:0,correctCount:0,lockedUntil:null}]).map(item=>item.id==='seed'?{...item,...seed}:item);
+}
+function pickPoolVariant(pools,key,seed){
+  const arr=variantItems(pools,key,seed);
   const now=Date.now();
   const unlocked=arr.filter(it=>!it.lockedUntil||it.lockedUntil<=now);
   const candidates=unlocked.length?unlocked:arr;
@@ -545,6 +548,43 @@ function grammarQuestion(g,item,turn,rng=Math.random){
   if(item.type==='fix')return {...base,mode:'grammarFix',type:'typing',prompt:`Fix the mistake and write the whole sentence:\n“${item.sentence}”`,answers:[item.answer],sentence:item.sentence,modelOnly:true,freeformKind:'grammarFix'};
   return null;
 }
+// ---- Grammar questions written by the game ----
+// After a grammar question is asked, the game keeps one fresh question ready
+// for that rule, written by AI in the background (see grammarNeedsVariant),
+// so the next round shows a new one instead of the same again. They live in
+// the player's pools (grammar:<rule id> → variant), ids starting "gen-".
+const GRAMMAR_VARIANT_MAX=20;
+const isOpenVariant=(it,now)=>!it.lockedUntil||it.lockedUntil<=now;
+function writtenGrammarVariants(pools,g,now=Date.now()){
+  return variantItems(pools,`grammar:${g.id}`,{}).filter(it=>String(it.id).startsWith('gen-')&&it.prompt&&Array.isArray(it.options)&&it.options.length>=2&&it.answer&&!it.flagged&&isOpenVariant(it,now));
+}
+// How many questions of this rule could be shown next round: its own and the
+// written ones, not read in the last SEEN_FRESH_HOURS.
+function grammarReady(g,pools,seen,now=Date.now()){
+  const unseen=t=>!seenRecently(seen,t,SEEN_FRESH_HOURS,now);
+  if(Array.isArray(g.questions)){
+    const own=grammarQuestions(g).filter((it,i)=>{const q=grammarQuestion(g,it,i,()=>0.5);return q&&!questionSentences(q).some(t=>!unseen(t));}).length;
+    return own+writtenGrammarVariants(pools,g,now).filter(it=>unseen(it.prompt)).length;
+  }
+  return variantItems(pools,`grammar:${g.id}`,{prompt:g.prompt,options:g.options,answer:g.answer,explanation:g.explanation}).filter(it=>it.prompt&&isOpenVariant(it,now)&&unseen(it.prompt)).length;
+}
+// True when no question of this rule is ready for next time and there's room
+// for another written one: time to write a new one.
+function grammarNeedsVariant(g,pools,seen,now=Date.now()){
+  if(!g||!g.id||!grammarQuestions(g).length)return false;
+  const made=variantItems(pools,`grammar:${g.id}`,{}).filter(it=>String(it.id).startsWith('gen-')).length;
+  return made<GRAMMAR_VARIANT_MAX&&grammarReady(g,pools,seen,now)<1;
+}
+// One of the rule's own questions as an example the AI imitates (the format
+// of its question: fill the blank, or choose the correct sentence).
+function grammarVariantBase(g){
+  const list=grammarQuestions(g),c=list.find(q=>q.type==='choose');
+  if(c)return {prompt:c.prompt,options:c.options,answer:c.answer,explanation:c.explanation||g.explanation||''};
+  const j=list.find(q=>q.type==='judge'),f=list.find(q=>q.type==='fix');
+  if(j)return {prompt:'Which sentence is correct?',options:j.correct?[j.sentence,j.alternative]:[j.sentence,j.fix],answer:j.correct?j.sentence:j.fix,explanation:j.explanation||g.explanation||''};
+  if(f)return {prompt:'Which sentence is correct?',options:[f.sentence,f.answer],answer:f.answer,explanation:f.explanation||g.explanation||''};
+  return {prompt:g.prompt,options:g.options,answer:g.answer,explanation:g.explanation||''};
+}
 // ---- Course levels ----
 // The Gateway course's levels are named A1.1, A1.2, A1.3, A2.1 … C2.3 and
 // sit in an item's `level` (a plain A1–C2 there is the item's own
@@ -652,16 +692,31 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   const grammarQueue=shuffleCopy(grammarPool,rng).sort((a,b)=>missedKey(`grammar:${b.id}`)-missedKey(`grammar:${a.id}`)||lastSeenKey(`grammar:${a.id}`)-lastSeenKey(`grammar:${b.id}`)).slice(0,questionsPerRound>=10?2:1).map(g=>{
     const grammarKey=`grammar:${g.id}`;
     // Old single-question rules keep their AI variant pool.
-    // Read in the last SEEN_FRESH_HOURS → the rule sits this round out, like a
-    // rule with several questions (otherwise its one question comes back in
-    // every round).
-    if(!Array.isArray(g.questions)){const item=pickPoolVariant(pools,grammarKey,{prompt:g.prompt,options:g.options,answer:g.answer,explanation:g.explanation});const one={id:`grammar:${g.id}:${item.id}`,mode:'grammarChoose',type:'mcq',prompt:item.prompt,answers:[item.answer],options:shuffleCopy(item.options,rng),targets:[],progressKey:grammarKey,poolType:'grammar',poolItemId:item.id,explanation:item.explanation};return questionSentences(one).some(t=>seenRecently(opts.seen,t))?null:one;}
+    // The rule's own question and the ones the game wrote for it (see
+    // grammarNeedsVariant): the least-asked one not read in the last
+    // SEEN_FRESH_HOURS. Nothing fresh → the rule sits this round out.
+    if(!Array.isArray(g.questions)){
+      const all=variantItems(pools,grammarKey,{prompt:g.prompt,options:g.options,answer:g.answer,explanation:g.explanation}).filter(it=>it.prompt&&Array.isArray(it.options)&&it.answer);
+      const nowG=Date.now(),open=all.filter(it=>!it.lockedUntil||it.lockedUntil<=nowG);
+      const ready=(open.length?open:all).filter(it=>!seenRecently(opts.seen,it.prompt));
+      if(!ready.length)return null;
+      const least=Math.min(...ready.map(it=>Number(it.attempts||0))),tied=ready.filter(it=>Number(it.attempts||0)===least);
+      const item=tied[Math.floor(rng()*tied.length)];
+      return {id:`grammar:${g.id}:${item.id}`,mode:'grammarChoose',type:'mcq',prompt:item.prompt,answers:[item.answer],options:shuffleCopy(item.options,rng),targets:[],progressKey:grammarKey,poolType:'grammar',poolItemId:item.id,explanation:item.explanation};
+    }
     // From this rule's turn, the first question not read in the last
     // SEEN_FRESH_HOURS (the turn only moves when a session is completed, so
     // a left-early session would otherwise repeat it). All read recently →
     // the rule sits this round out.
     const list=grammarQuestions(g);const turn=(mastery[grammarKey]?.total||0)%list.length;
     for(let k=0;k<list.length;k++){const i=(turn+k)%list.length;const q=grammarQuestion(g,list[i],i,rng);if(q&&!questionSentences(q).some(t=>seenRecently(opts.seen,t)))return q;}
+    // All of its own were read recently: one the game wrote for this rule.
+    const written=writtenGrammarVariants(pools,g).filter(it=>!seenRecently(opts.seen,it.prompt));
+    if(written.length){
+      const least=Math.min(...written.map(it=>Number(it.attempts||0))),tied=written.filter(it=>Number(it.attempts||0)===least);
+      const item=tied[Math.floor(rng()*tied.length)];
+      return {id:`grammar:${g.id}:${item.id}`,mode:'grammarChoose',type:'mcq',prompt:item.prompt,answers:[item.answer],options:shuffleCopy(item.options,rng),targets:[],progressKey:`grammar:${g.id}`,poolType:'grammar',poolItemId:item.id,rule:g.rule,explanation:[item.explanation,g.rule&&`Rule: ${g.rule}`].filter(Boolean).join('\n')};
+    }
     return null;
   }).filter(Boolean);
   const queue=[],counts={}, weights={meaning:3,reverse:3,gap:3,gapTyping:3,situation:2,typing:3,order:2,transform:2,multi:1,grammarCourt:1,whoami:2,opposite:2,antonym:2,collocation:2,family:2,picture:3,twopeople:2,selecttwo:2,idiomDetective:2,story:2};
@@ -733,5 +788,5 @@ function sessionEvidence(mastery,session,now=Date.now()){
 }
 function reinforcement(s){if(s.extraAdded||s.kind!=='practice')return s;const wrong=s.queue.filter((q,i)=>s.answers[i]&&!s.answers[i].correct&&!s.answers[i].reported).flatMap(q=>q.targets);const added=[];for(const q of s.reserves||[]){if(added.length>=2)break;if(!q.targets.some(t=>wrong.includes(t)))continue;if([...s.queue,...added].slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))))continue;const shown=new Set([...s.queue,...added].flatMap(questionSentences));if(questionSentences(q).some(t=>shown.has(t)))continue;added.push(q);}return {...s,queue:[...s.queue,...added],extraAdded:true};}
 
-return { COURSE_LEVELS, courseLevelOf, courseLevelRank, gatewayLevel, courseLevelFromGateway, normalizeLevel, difficultyRank, norm, sentence, makeQuestion, pictureQuestion, isIllustration, linkAntonyms, outsideAntonyms, antonymsOf, collocationQuestion, familyQuestion, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, questionSentences, seenRecently, SEEN_FRESH_HOURS, grammarQuestions, grammarQuestion, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
+return { COURSE_LEVELS, courseLevelOf, courseLevelRank, gatewayLevel, courseLevelFromGateway, normalizeLevel, difficultyRank, norm, sentence, makeQuestion, pictureQuestion, isIllustration, linkAntonyms, outsideAntonyms, antonymsOf, collocationQuestion, familyQuestion, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, questionSentences, seenRecently, SEEN_FRESH_HOURS, grammarQuestions, grammarQuestion, grammarReady, grammarNeedsVariant, grammarVariantBase, writtenGrammarVariants, GRAMMAR_VARIANT_MAX, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
 })();

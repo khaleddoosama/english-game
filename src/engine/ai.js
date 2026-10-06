@@ -607,17 +607,23 @@ export async function generateComboVariant(combo) {
   return { situation, prompt };
 }
 
-// Same idea for a grammarCourt question — a fresh example of the same
-// rule (not the same sentence pair forever) once the current one is mastered.
-export async function generateGrammarVariant(g) {
-  const instructions = `Use B1-or-easier English. You write short grammar-correction multiple-choice questions for an English vocabulary game. You are given an existing question testing one grammar rule (a common-mistake sentence and its correction). Write ONE brand-new example testing the SAME rule with different wording/context — not the same sentence reworded slightly. Respond with ONLY raw JSON, no markdown fences: {"prompt":"...","options":["<wrong sentence>","<correct sentence>"],"answer":"<must exactly match the correct sentence in options>","explanation":"one short sentence on why"}`;
-  const payload = { existingPrompt: g.prompt, existingOptions: g.options, existingAnswer: g.answer, existingExplanation: g.explanation || "" };
-  const raw = await callAiJson(instructions, payload, 500, { task: "New grammar question" });
+// A new question for the same grammar rule, in the same format as the
+// example (fill the blank, or choose the correct sentence), different
+// wording and context. `g` is {rule, prompt, options, answer, explanation};
+// `avoid` lists prompts already used so the new one isn't a repeat.
+export async function generateGrammarVariant(g, avoid = []) {
+  const instructions = `Use B1-or-easier English. You write short multiple-choice grammar questions for an English learning game. You are given the grammar rule and one example question for it. Write ONE brand-new question testing the SAME rule, in the SAME format as the example (if the example prompt has a blank ______, write a sentence with exactly one ______ and options that fill it; if the example asks which sentence is correct, give full sentences as options), with different wording, people and context — not the example reworded. Exactly one option must be correct for a clear grammatical reason, the wrong options must be wrong for a clear reason, and the options must be 2 to 4 different strings. Do not repeat any of the prompts in avoidPrompts. Respond with ONLY raw JSON, no markdown fences: {"prompt":"...","options":["..."],"answer":"<must exactly match one of the options>","explanation":"one short sentence on why"}`;
+  const payload = { rule: g.rule || "", ruleExplanation: g.ruleExplanation || "", example: { prompt: g.prompt, options: g.options, answer: g.answer, explanation: g.explanation || "" }, avoidPrompts: avoid.slice(-12) };
+  const raw = await callAiJson(instructions, payload, 600, { task: "New grammar question" });
   const prompt = String(raw?.prompt || "").trim();
-  const options = Array.isArray(raw?.options) ? raw.options.map(String).map((s) => s.trim()).filter(Boolean) : [];
+  const options = Array.isArray(raw?.options) ? [...new Set(raw.options.map(String).map((x) => x.trim()).filter(Boolean))] : [];
   const answer = String(raw?.answer || "").trim();
   const explanation = String(raw?.explanation || "").trim();
-  if (!prompt || options.length < 2 || !answer || !options.includes(answer)) throw new Error("AI returned an incomplete grammar variant.");
+  if (!prompt || options.length < 2 || options.length > 4 || !answer || !options.includes(answer)) throw new Error("AI returned an incomplete grammar variant.");
+  const norm = (t) => String(t).toLowerCase().replace(/\s+/g, " ").trim();
+  if ([g.prompt, ...avoid].some((p) => norm(p) === norm(prompt))) throw new Error("AI repeated a grammar question.");
+  // The format of the example: a blank stays a blank.
+  if (/_{2,}/.test(g.prompt || "") && (prompt.match(/_{2,}/g) || []).length !== 1) throw new Error("AI variant lost its blank.");
   return { prompt, options, answer, explanation };
 }
 

@@ -297,6 +297,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       }
     }
 
+    // Any grammar question, with or without written variants of its own.
+    if (String(q.progressKey || '').startsWith('grammar:')) keepGrammarFresh(q.progressKey.slice(8));
+
     if (result.correct || !['mcq', 'multi'].includes(q.type)) return;
     const selected = Array.isArray(result.value) ? result.value : [result.value];
     const answerSet = new Set((q.answers || []).map(V2.norm));
@@ -705,6 +708,17 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   // pools (progressKey-keyed, not word-keyed) — fires once a combo/grammar
   // question's pool has no fresh (unlocked) item left, i.e. it's just been
   // answered correctly twice.
+  // After a grammar question is asked: if nothing is ready for that rule next
+  // time, write a new one in the background, so the next round shows it
+  // instead of the same question again. A failed try (AI off, busy, over the
+  // day's limit) waits ten minutes before the next.
+  const variantFailedRef = useRef(new Map());
+  function keepGrammarFresh(id) {
+    const g = (liveContent().grammar || []).find((x) => x.id === id);
+    if (!g || !V2.grammarNeedsVariant(g, poolsRef.current, progressExtrasRef.current.seenSentences || {})) return;
+    if (Date.now() - (variantFailedRef.current.get(id) || 0) < 600000) return;
+    triggerVariantGeneration("grammar", `grammar:${id}`);
+  }
   async function triggerVariantGeneration(poolType, key) {
     const genKey = `variant::${poolType}::${key}`;
     if (pendingGenRef.current.has(genKey)) return;
@@ -726,7 +740,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       } else if (poolType === "grammar") {
         const g = (content.grammar || []).find((x) => x.id === id);
         if (!g) return;
-        const variant = await generateGrammarVariant(g);
+        const base = V2.grammarVariantBase(g);
+        const used = [...V2.grammarQuestions(g).map((x) => x.prompt || x.sentence), ...(poolsRef.current[key]?.variant || []).map((x) => x.prompt)].filter(Boolean);
+        const variant = await generateGrammarVariant({ rule: g.rule, ruleExplanation: g.explanation, ...base }, used);
         setPools((prev) => {
           const existing = prev[key]?.variant?.length ? prev[key].variant : [];
           const newItem = { id: `gen-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, prompt: variant.prompt, options: variant.options, answer: variant.answer, explanation: variant.explanation, attempts: 0, correctCount: 0, lockedUntil: null, flagged: false };
@@ -737,6 +753,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       }
     } catch (e) {
       console.error("Variant generation failed:", e);
+      variantFailedRef.current.set(key.slice(key.indexOf(":") + 1), Date.now());
     } finally {
       pendingGenRef.current.delete(genKey);
     }
