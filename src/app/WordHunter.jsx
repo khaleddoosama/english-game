@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Award, GraduationCap, BarChart3, LogOut, Settings as SettingsIcon, Wrench, BookOpen, CheckCircle2, Download, Flag, Flame, HelpCircle, Lock, Play, Search, Target, Trash2, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
 import { V2 } from "../engine/v2";
 import { PronunciationModal, imageLinkOk } from "../features/media/media";
@@ -14,6 +14,8 @@ import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsi
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
+import { loadPersonalContent } from "../features/library/libraryApi";
+import { personalPracticeContent, selectedStories, sessionFitsLibrary } from "../features/library/scope";
 import { importModeError, inspectImport, wordsCsv } from "../features/data/transfer";
 // Screens most players open rarely load on demand, keeping the first
 // download small: Admin (and all its tools), Live, Leaderboard, Profile.
@@ -35,6 +37,8 @@ const PLAY_SCREENS = new Set(["session", "playing", "results", "reviewResults", 
 const AdminPanel = lazy(() => import("../features/admin/AdminPanel").then((m) => ({ default: m.AdminPanel })));
 const LiveChallenge = lazy(() => import("../features/live/LiveChallenge").then((m) => ({ default: m.LiveChallenge })));
 const Leaderboard = lazy(() => import("../features/social/Leaderboard"));
+const LibraryPage = lazy(() => import("../features/library/LibraryPage"));
+const FriendsPage = lazy(() => import("../features/social/FriendsPage"));
 const ProfilePage = lazy(() => import("../features/social/ProfilePage"));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage"));
 const ImportExport = lazy(() => import("../features/data/ImportExport"));
@@ -42,6 +46,9 @@ const StudyDashboard = lazy(() => import("../features/stats/StudyDashboard"));
 
 export default function WordHunter({ repo, profile = null, isAdmin = true, onSignOut = null }) {
   const [loaded, setLoaded] = useState(false);
+  const [personalContent, setPersonalContent] = useState(null);
+  const catalogueOrderRef = useRef([]);
+  const onlineLibrary = repo.mode === "supabase";
   const app = useAppSettings();
   // The announcement can be hidden per message (a new message shows again).
   const announcementKey = `wh-announcement-hidden:${app.announcement.length}:${app.announcement.slice(0, 40)}`;
@@ -69,7 +76,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     setStoryGenState("loading");
     setStoryGenError("");
     try {
-      const usedElsewhere=new Set(customStories.flatMap(story=>(story.targetWords||[]).map(w=>V2.norm(w))));
+      const usedElsewhere=new Set(studyStories.flatMap(story=>(story.targetWords||[]).map(w=>V2.norm(w))));
       const weakOrder=new Map(getWeakWordCandidates(WORDS,mastery,confusions).map((item,index)=>[item.word.word,index]));
       // Words already used as a target in an earlier generated story are
       // pushed to the back of each category's pool (not hard-excluded) —
@@ -161,7 +168,12 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   useEffect(() => { if (route.screen !== "play" && playScreen !== "session") setPlayScreen("session"); }, [route.screen]);
   const progressExtrasRef = useRef({});
   const contentNoteRef = useRef("");
-  function liveContent() { return { words: WORDS, grammar: GRAMMAR, challenges: CHALLENGES, combos: customCombos, stories: customStories, note: contentNoteRef.current }; }
+  function mergeCatalogueData(words, grammar, challenges, order) {
+    if (!onlineLibrary || screen === "admin" || !loaded) catalogueOrderRef.current = order;
+    mergeCustomData(words, grammar, challenges, order);
+  }
+  function liveContent() { return { words: customWords, grammar: customGrammar, challenges: customChallenges, combos: customCombos, stories: customStories, note: contentNoteRef.current }; }
+  function studyContent() { return personalPracticeContent({ words: WORDS, grammar: GRAMMAR, challenges: CHALLENGES }, { combos: customCombos, stories: customStories }); }
   function launchSession(session) { setActiveSession(session); setScreen("session"); }
   // One extra question style per word for Level Practice, built with the
   // adaptive-engine builders and converted to the V2 question shape.
@@ -402,7 +414,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     const renames={words:[{from,to:nextWord.word}],categories:[]};
     const words=customWords.map(w=>V2.norm(w.word)===V2.norm(from)?nextWord:w);
     const linked=V2.applyRenames({words,combos:customCombos,stories:customStories,challenges:customChallenges,grammar:customGrammar},renames);
-    mergeCustomData(linked.words,customGrammar,linked.challenges,LEVEL_ORDER);
+    mergeCatalogueData(linked.words,customGrammar,linked.challenges,LEVEL_ORDER);
     setCustomWords(linked.words);setCustomCombos(linked.combos);setCustomStories(linked.stories);setCustomChallenges(linked.challenges);
     migrateRenamedProgress(renames);setDataVersion(v=>v+1);
   }
@@ -420,7 +432,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   }
   function updateWordFields(wordName, patch) {
     const next = customWords.map((w) => (V2.norm(w.word) === V2.norm(wordName) ? { ...w, ...patch } : w));
-    mergeCustomData(next, customGrammar, customChallenges, LEVEL_ORDER);
+    mergeCatalogueData(next, customGrammar, customChallenges, LEVEL_ORDER);
     setCustomWords(next);
     setDataVersion((v) => v + 1);
   }
@@ -462,14 +474,14 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     if(!order.includes(canonical)){const at=order.findIndex(t=>dup.has(t));order.splice(at<0?order.length:at,0,canonical);}
     order=order.filter(t=>!dup.has(t));
     setCustomWords(nextWords);setCustomGrammar(nextGrammar);setCustomChallenges(nextChallenges);setCustomCombos(nextCombos);setCustomStories(nextStories);
-    mergeCustomData(nextWords,nextGrammar,nextChallenges,order);
+    mergeCatalogueData(nextWords,nextGrammar,nextChallenges,order);
     migrateRenamedProgress({words:[],categories:[...dup].map(from=>({from,to:canonical}))});setDataVersion(value=>value+1);
   }
   function removeEmptyLevels(){
     const used=new Set([...customWords,...customGrammar,...customChallenges,...customCombos,...customStories].map(item=>item.category).filter(Boolean));
     const order=LEVEL_ORDER.filter(title=>used.has(title));
     const removed=LEVEL_ORDER.length-order.length;
-    if(removed){mergeCustomData(customWords,customGrammar,customChallenges,order);setDataVersion(value=>value+1);}
+    if(removed){mergeCatalogueData(customWords,customGrammar,customChallenges,order);setDataVersion(value=>value+1);}
     return removed;
   }
   function updateAdminContent(field,nextList){
@@ -483,7 +495,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       const nextCombos=customCombos.map(adjust).filter(Boolean),nextStories=customStories.map(adjust).filter(Boolean);
       const nextOrder=nextList.map(level=>String(level.title||"").trim()).filter(Boolean);
       setCustomWords(nextWords);setCustomGrammar(nextGrammar);setCustomChallenges(nextChallenges);setCustomCombos(nextCombos);setCustomStories(nextStories);
-      mergeCustomData(nextWords,nextGrammar,nextChallenges,nextOrder);
+      mergeCatalogueData(nextWords,nextGrammar,nextChallenges,nextOrder);
       if(renamed.size)migrateRenamedProgress({words:[],categories:[...renamed].map(([from,to])=>({from,to}))});
       setDataVersion(value=>value+1);return;
     }
@@ -495,7 +507,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     if(field==="challenges")setCustomChallenges(nextList);
     if(field==="combos")setCustomCombos(nextList);
     if(field==="stories")setCustomStories(nextList);
-    mergeCustomData(nextWords,nextGrammar,nextChallenges,LEVEL_ORDER);
+    mergeCatalogueData(nextWords,nextGrammar,nextChallenges,LEVEL_ORDER);
     setDataVersion(value=>value+1);
   }
 
@@ -558,7 +570,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     const errors=V2.validateContent({schemaVersion:2,kind:"content",words:[entry]},liveContent());
     if(errors.length){setAskAiError(`Cannot add this card: ${errors[0]}`);return;}
     const next=[...customWords,entry];
-    mergeCustomData(next,customGrammar,customChallenges,LEVEL_ORDER);
+    mergeCatalogueData(next,customGrammar,customChallenges,LEVEL_ORDER);
     setCustomWords(next);setDataVersion(value=>value+1);
     setAskAiResult(previous=>({...previous,alreadyInCollection:true}));
     setToast({kind:"import",text:`${entry.word} added to your collection`});
@@ -764,9 +776,15 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     (async () => {
       let levelOrder = LEVEL_ORDER;
       let hadAnyData = false;
-      let custom = null, raw = null;
+      let custom = null, raw = null, personal = null;
       try {
-        [custom, raw] = await Promise.all([repo.loadContent(), repo.loadProgress()]);
+        const [catalogue, progress, selected] = await Promise.all([
+          onlineLibrary && !isAdmin ? Promise.resolve(null) : repo.loadContent(),
+          repo.loadProgress(),
+          onlineLibrary ? loadPersonalContent(profile.id) : Promise.resolve(null),
+        ]);
+        personal = selected; custom = catalogue || personal; raw = progress;
+        if (onlineLibrary) setPersonalContent(personal);
       } catch (e) {
         console.error("Could not load game data:", e);
         setLoadError(e?.message || "Network error");
@@ -780,12 +798,14 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         setCustomGrammar(custom.grammar || []);
         setCustomChallenges(Array.isArray(custom.challenges) ? custom.challenges : []);
         levelOrder = custom.levelOrder || LEVEL_ORDER;
-        mergeCustomData(custom.words || [], custom.grammar || [], custom.challenges || [], levelOrder);
+        catalogueOrderRef.current = levelOrder;
+        mergeCatalogueData(custom.words || [], custom.grammar || [], custom.challenges || [], levelOrder);
       }
 
       try {
         if (raw) hadAnyData = true;
         const data = raw ? migrateProgressData(raw) : emptyProgressData();
+        if (onlineLibrary && !sessionFitsLibrary(data.activeSession, personal?.words || [])) data.activeSession = null;
         applyProgressData(data);
         // A new player starts with the admin's defaults (Admin -> Settings).
         setSettings(normalizeSettings(raw?.settings ? data.settings : { ...getAppSettings().newPlayerDefaults }));
@@ -801,6 +821,41 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       }
     })();
   }, [repo]);
+
+  // The admin edits the catalogue; every account practises its personal
+  // selection. Keep the full catalogue in custom state so a study selection
+  // can never accidentally publish deletions of everybody else's words.
+  const adminScope = isAdmin && screen === "admin";
+  useLayoutEffect(() => {
+    if (!loaded || !onlineLibrary || !personalContent) return;
+    const content = adminScope
+      ? { words: customWords, grammar: customGrammar, challenges: customChallenges, levelOrder: catalogueOrderRef.current }
+      : personalContent;
+    mergeCustomData(content.words || [], content.grammar || [], content.challenges || [], content.levelOrder || []);
+    setDataVersion(v => v + 1);
+  }, [loaded, onlineLibrary, adminScope, personalContent, customWords, customGrammar, customChallenges]);
+  const studyStories = onlineLibrary ? selectedStories(customStories, personalContent?.words || []) : customStories;
+  async function refreshPersonalLibrary() {
+    if (!onlineLibrary) return;
+    const [content, catalogue] = await Promise.all([loadPersonalContent(profile.id), isAdmin ? repo.loadContent() : Promise.resolve(null)]);
+    setPersonalContent(content);
+    if (catalogue) {
+      setCustomWords(catalogue.words || []); setCustomGrammar(catalogue.grammar || []); setCustomChallenges(catalogue.challenges || []);
+      setCustomStories(catalogue.stories || []); setCustomCombos(catalogue.combos || []);
+      catalogueOrderRef.current = catalogue.levelOrder || [];
+    }
+    if (!isAdmin) {
+      setCustomWords(content.words || []); setCustomGrammar(content.grammar || []); setCustomChallenges(content.challenges || []);
+    }
+    setActiveSession(current => sessionFitsLibrary(current, content.words || []) ? current : null);
+  }
+  // Refresh the user's selection after changes on another device.
+  useEffect(() => {
+    if (!loaded || !onlineLibrary) return;
+    const refresh = () => { if (!adminScope && contentWritesRef.current === 0 && document.visibilityState === "visible") refreshPersonalLibrary().catch(e => setStorageWarning(e.message)); };
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, [loaded, onlineLibrary, profile?.id, adminScope]);
 
   // Save progress whenever it changes (after initial load). Debounced so a
   // burst of typing collapses into one save; the repo sends only what
@@ -879,7 +934,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     let counted = true;
     const settle = () => { if (counted) { counted = false; contentWritesRef.current--; } };
     const cancel = debouncedSave("content", () => {
-      const content = { note: contentNoteRef.current, combos: customCombos, stories: customStories, words: customWords, grammar: customGrammar, challenges: customChallenges, levelOrder: LEVEL_ORDER };
+      const content = { note: contentNoteRef.current, combos: customCombos, stories: customStories, words: customWords, grammar: customGrammar, challenges: customChallenges, levelOrder: onlineLibrary ? catalogueOrderRef.current : LEVEL_ORDER };
       const renames = pendingRenamesRef.current.splice(0);
       return contentSavingRef.current = contentSavingRef.current.then(() => repo.saveContent(content, { renames })).catch((e) => {
         console.error("Could not save content:", e);
@@ -888,7 +943,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       }).finally(settle);
     }, 150);
     return () => { cancel(); if (pendingSavesRef.current.content === undefined) return; settle(); };
-  }, [loaded, customCombos, customStories, customWords, customGrammar, customChallenges, dataVersion]);
+  }, [loaded, customCombos, customStories, customWords, customGrammar, customChallenges, dataVersion, adminScope]);
 
   // A picture that came inside the content (an import, or a copy made in
   // local mode) moves to the word-images bucket: as a link it isn't sent to
@@ -907,7 +962,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       if (!stored.size) return;
       setCustomWords((current) => {
         const next = current.map((w) => (stored.has(w.image) ? { ...w, image: stored.get(w.image) } : w));
-        mergeCustomData(next, latestContentRef.current.grammar, latestContentRef.current.challenges, LEVEL_ORDER);
+        mergeCatalogueData(next, latestContentRef.current.grammar, latestContentRef.current.challenges, LEVEL_ORDER);
         return next;
       });
       setDataVersion((value) => value + 1);
@@ -959,7 +1014,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     const lastAccuracy = lastRound ? lastRound.correct / lastRound.total : null;
     const baseNew = settings.newWordsPerRound;
     const newWordsPerRound = baseNew === 0 || lastAccuracy === null ? baseNew : lastAccuracy >= 0.9 ? Math.min(10, baseNew + 2) : lastAccuracy < 0.6 ? Math.max(1, baseNew - 2) : baseNew;
-    const session = V2.practice(liveContent(), masteryRef.current, category, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound, pools: poolsRef.current, extraQuestion: buildPracticeExtra, confusions: confusionsRef.current, seen: progressExtrasRef.current.seenSentences || {}, ...narrow });
+    const session = V2.practice(studyContent(), masteryRef.current, category, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound, pools: poolsRef.current, extraQuestion: buildPracticeExtra, confusions: confusionsRef.current, seen: progressExtrasRef.current.seenSentences || {}, ...narrow });
     // Words whose gap sentences have all been read get new ones written now,
     // so the next rounds have fresh sentences instead of shrinking.
     const seenNow = progressExtrasRef.current.seenSentences || {};
@@ -1440,7 +1495,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   // deliberately leaves imported content untouched.
   async function handleWipeEverything() {
     await handleReset();
-    mergeCustomData([], [], [], [], []);
+    mergeCatalogueData([], [], [], [], []);
     setCustomWords([]); setCustomGrammar([]); setCustomChallenges([]);
     setCustomCombos([]); setCustomStories([]);
     setDataVersion((v) => v + 1);
@@ -1451,7 +1506,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     const content = V2.contentOnly(liveContent());
     return {
       ...progressExtrasRef.current, ...content, kind: "backup", schemaVersion: SCHEMA_VERSION, contentSchemaVersion: 2,
-      activeSession, levelOrder: LEVEL_ORDER, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings,
+      activeSession, levelOrder: isAdmin && onlineLibrary ? catalogueOrderRef.current : LEVEL_ORDER, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings,
     };
   }
   function downloadBackup() {
@@ -1502,7 +1557,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       const baseOrder = [...new Set(LEVEL_ORDER.map((t) => catMap.get(t) || t))];
       const order = restoreProgress && Array.isArray(raw.levelOrder) ? raw.levelOrder : insertLevelTitles(baseOrder, [...new Set([...(prep.levelOrder || []), ...[...content.words, ...content.grammar, ...content.challenges].map((x) => x.category).filter(Boolean)])]);
       contentNoteRef.current = data.note || contentNoteRef.current;
-      mergeCustomData(content.words, content.grammar, content.challenges, order);
+      mergeCatalogueData(content.words, content.grammar, content.challenges, order);
       setCustomWords(content.words); setCustomGrammar(content.grammar); setCustomChallenges(content.challenges); setCustomCombos(content.combos); setCustomStories(content.stories);
       if (!restoreProgress) migrateRenamedProgress(prep.renames);
     }
@@ -1636,7 +1691,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
             </article>}
           </aside>
         </div>}
-        {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} onSignOut={onSignOut ? logOut : null} loggingOut={loggingOut} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onRenameWord={renameWord} onResolveReport={resolveQuestionReport} onReopenReport={reopenQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} dataTools={dataTools}/></Suspense>}
+        {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} onSignOut={onSignOut ? logOut : null} loggingOut={loggingOut} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:catalogueOrderRef.current.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onRenameWord={renameWord} onResolveReport={resolveQuestionReport} onReopenReport={reopenQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} dataTools={dataTools}/></Suspense>}
         {confirmAction && (
           <div className="wh-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmAction(null); }}>
           <div className="wh-panel wh-confirm-panel" role="alertdialog">
@@ -1705,7 +1760,10 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} today={todayProgress(dailyProgress)} dailyGoal={settings.dailyGoal}
           weakReviewCount={Math.min(weakCandidates.length, settings.weakReviewSize)} onWeakReview={startWeakReview} onPlayLevel={(i) => startLevel(i)} onBack={backToLevels} /></Suspense>}
 
+        {screen === "library" && <Suspense fallback={<ScreenSkeleton />}><LibraryPage userId={profile?.id} words={personalContent?.words || (onlineLibrary ? [] : customWords)} local={!onlineLibrary} onChanged={refreshPersonalLibrary} /></Suspense>}
+        {screen === "friends" && <Suspense fallback={<ScreenSkeleton />}><FriendsPage userId={profile?.id} local={!onlineLibrary} onLibraryChanged={refreshPersonalLibrary} /></Suspense>}
         {screen === "levels" && <>
+          {onlineLibrary && <div className="wh-fresh-copy-banner"><p><b>My words · {personalContent?.words?.length || 0}</b> — practise the words you choose.</p><button className="wh-level-btn" onClick={()=>setScreen("library")}>{personalContent?.words?.length ? "Manage my words" : "Choose your first words"}</button></div>}
           {app.announcement && !announcementHidden && <div className={`wh-announcement ${app.announcementTone}`} role="status"><p>{app.announcement}</p><button aria-label="Hide this message" onClick={hideAnnouncement}><X size={15} /></button></div>}
           {showFreshCopyPrompt && <div className="wh-fresh-copy-banner">
             <p><b>Fresh copy detected.</b> No saved progress or content found here — if you have a backup from a previous version, restore it now before you start playing.</p>
@@ -1731,7 +1789,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
                 <button className="wh-back-btn wh-nav-btn" onClick={()=>setStoryGenState(null)}>Discard</button>
               </div>
             </div>}
-            {!customStories.length&&<p>No authored stories loaded. Import a Content v2 file to add them.</p>}{[...customStories].sort((a,b)=>a.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length-b.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length).map(story=>{const fresh=story.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length;const record=solvedStories.find(e=>e.id===story.id);return <article className="wh-v2-learn" key={story.id}><strong>{story.title}{record&&<span className="wh-story-solved-flag"><CheckCircle2 size={13}/> Solved · {record.correct}/{record.total}</span>}</strong><p>{story.questions.length}{story.grammarQuestions?.length?` + ${story.grammarQuestions.length} grammar`:""} questions · {fresh?`${fresh} new words: preview first`:"Ready for review"}</p><button className="wh-level-btn" onClick={()=>launchStory(story)}>{record?"Play again":"Open story"}</button></article>;})}</div>}
+            {!studyStories.length&&<p>No stories for your selected words yet. Choose categories below to write a practice story.</p>}{[...studyStories].sort((a,b)=>a.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length-b.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length).map(story=>{const fresh=story.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length;const record=solvedStories.find(e=>e.id===story.id);return <article className="wh-v2-learn" key={story.id}><strong>{story.title}{record&&<span className="wh-story-solved-flag"><CheckCircle2 size={13}/> Solved · {record.correct}/{record.total}</span>}</strong><p>{story.questions.length}{story.grammarQuestions?.length?` + ${story.grammarQuestions.length} grammar`:""} questions · {fresh?`${fresh} new words: preview first`:"Ready for review"}</p><button className="wh-level-btn" onClick={()=>launchStory(story)}>{record?"Play again":"Open story"}</button></article>;})}</div>}
         </>}
         {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={reportSessionQuestion} onReviewReport={reviewQuestionReport} onWithdrawReport={deleteQuestionReport} onUpdateWord={isAdmin?updateWordFields:undefined} sound={settings.sound} prefs={{ autoAdvanceMs: settings.autoAdvanceMs, hints: settings.hints, speakWord: settings.speakWord }} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onResult={recordSessionResult} onAskWord={openAskAi}/>}
 
@@ -2235,6 +2293,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         {screen === "data" && <Suspense fallback={<ScreenSkeleton />}><ImportExport variant="game" isAdmin={isAdmin} tools={dataTools} onBack={backToLevels} /></Suspense>}
         {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} /></Suspense>}
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} hiddenForPlayers={isAdmin && !app.leaderboard} /></Suspense>}
+        {screen === "profile" && (app.leaderboard || isAdmin) && <button className="wh-level-btn" onClick={()=>setScreen("leaderboard")}>View rankings</button>}
         {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage onSignOut={onSignOut ? logOut : null} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
 
         {screen === "speedResults" && (

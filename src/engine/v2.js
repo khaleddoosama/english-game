@@ -611,6 +611,9 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
     // No "situation" mode: the situation is the word's example sentence and
     // contains the word, so the gap sentence is the context question.
     let modes=st==='New'?['meaning','reverse']:st==='Familiar'?['reverse','gap',...((s.correct||0)>=1?['gapTyping']:[])]:['typing','gapTyping','gap'];
+    // A personal library can start with one word: use supported recall
+    // questions instead of making multiple-choice distractors from other users' words.
+    if(content.words.length<2&&['New','Familiar'].includes(st))modes=['typing','gapTyping'];
     if(['Learned','Mastered'].includes(st)){if(['phrasal','fyi'].includes(w.type)&&w.transformExample)modes.push('transform');}
     // Production gate: a word held at PRODUCTION_GATE_STEP (or already
     // Learned/Mastered) with zero correct productions only gets typing modes
@@ -677,7 +680,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // round early instead of cycling the same few words over and over.
   const wordUses={};
   while(queue.length<wordSlots&&candidates.length){
-    const eligible=candidates.map((q,i)=>({q,i})).filter(({q})=>!(queue.length===0&&q.targets.includes(lastIntro)) && !questionSentences(q).some(t=>usedSentences.has(t)) && !q.targets.some(t=>(wordUses[t]||0)>=2) && !queue.slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))) && !(queue.length>=2&&queue.slice(-2).every(p=>p.mode===q.mode)));
+    const eligible=candidates.map((q,i)=>({q,i})).filter(({q})=>!(chosen.length>1&&queue.length===0&&q.targets.includes(lastIntro)) && !questionSentences(q).some(t=>usedSentences.has(t)) && !q.targets.some(t=>(wordUses[t]||0)>=2) && !queue.slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))) && !(queue.length>=2&&queue.slice(-2).every(p=>p.mode===q.mode)));
     if(!eligible.length)break;
     eligible.sort((a,b)=>{
       const aFresh=a.q.targets.some(t=>!usedWords.has(t))?0:1;
