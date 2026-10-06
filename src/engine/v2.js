@@ -652,7 +652,10 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   const grammarQueue=shuffleCopy(grammarPool,rng).sort((a,b)=>missedKey(`grammar:${b.id}`)-missedKey(`grammar:${a.id}`)||lastSeenKey(`grammar:${a.id}`)-lastSeenKey(`grammar:${b.id}`)).slice(0,questionsPerRound>=10?2:1).map(g=>{
     const grammarKey=`grammar:${g.id}`;
     // Old single-question rules keep their AI variant pool.
-    if(!Array.isArray(g.questions)){const item=pickPoolVariant(pools,grammarKey,{prompt:g.prompt,options:g.options,answer:g.answer,explanation:g.explanation});return {id:`grammar:${g.id}:${item.id}`,mode:'grammarChoose',type:'mcq',prompt:item.prompt,answers:[item.answer],options:shuffleCopy(item.options,rng),targets:[],progressKey:grammarKey,poolType:'grammar',poolItemId:item.id,explanation:item.explanation};}
+    // Read in the last SEEN_FRESH_HOURS → the rule sits this round out, like a
+    // rule with several questions (otherwise its one question comes back in
+    // every round).
+    if(!Array.isArray(g.questions)){const item=pickPoolVariant(pools,grammarKey,{prompt:g.prompt,options:g.options,answer:g.answer,explanation:g.explanation});const one={id:`grammar:${g.id}:${item.id}`,mode:'grammarChoose',type:'mcq',prompt:item.prompt,answers:[item.answer],options:shuffleCopy(item.options,rng),targets:[],progressKey:grammarKey,poolType:'grammar',poolItemId:item.id,explanation:item.explanation};return questionSentences(one).some(t=>seenRecently(opts.seen,t))?null:one;}
     // From this rule's turn, the first question not read in the last
     // SEEN_FRESH_HOURS (the turn only moves when a session is completed, so
     // a left-early session would otherwise repeat it). All read recently →
