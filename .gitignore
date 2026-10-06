@@ -8,3 +8,10 @@ dist
 
 # Supabase CLI local state
 supabase/.temp/
+
+# Never commit recovery dumps or database connection credentials
+backups/
+*.dump
+*.backup
+.pgpass
+.pg_service.conf

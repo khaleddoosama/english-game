@@ -83,3 +83,9 @@ these migrations to the production database until the owner requests it.
 No production migration or production deployment is included in this branch.
 AI correctness still depends on the model; malformed or low-confidence output
 fails closed and the admin can inspect/edit the resulting shared catalogue.
+
+## Backup and rollback preparation
+
+See [the backup/rollback runbook](backup-rollback.md) and the read-only
+`ops/backup-inventory.sql`. They prepare recovery and restore verification;
+no production backup, restore, schema change or deployment was performed.
