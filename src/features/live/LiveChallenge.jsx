@@ -43,7 +43,7 @@ export function LiveChallenge({ player, levels, code, onOpenCode, onExit, sound 
   return (
     <div className="lv">
       {code
-        ? <ChallengeRoom key={code} api={api} code={code} player={player} onHome={() => onOpenCode(null)} onSeen={onSeen} />
+        ? <ChallengeRoom key={code} api={api} code={code} player={player} sound={sound} onHome={() => onOpenCode(null)} onSeen={onSeen} />
         : <LiveHome api={api} player={player} levels={levels} pools={pools} getSeen={getSeen} onRefresh={onRefresh} onOpenCode={onOpenCode} onExit={onExit} limits={limits} />}
     </div>
   );
@@ -210,7 +210,7 @@ function CreateForm({ api, levels, pools, getSeen, onRefresh, onCancel, onCreate
 
 /* ------------------------------------------------------------ challenge */
 
-function ChallengeRoom({ api, code, player, onHome, onSeen }) {
+function ChallengeRoom({ api, code, player, onHome, onSeen, sound }) {
   const [view, setView] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [error, setError] = useState(null);
