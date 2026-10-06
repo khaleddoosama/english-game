@@ -125,7 +125,7 @@
 .adm-pager { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px 12px; font-size: 13px; color: var(--adm-ink-2); }
 .adm-pager-info { flex: 1; min-width: 140px; }
 .adm-pager-size { display: inline-flex; align-items: center; gap: 6px; }
-.adm-pager-size select { padding: 4px 6px; border-radius: 6px; border: 1px solid var(--adm-line-strong); background: var(--adm-card); font: inherit; }
+.adm-pager-size select { padding: 4px 6px; border-radius: 6px; border: 1px solid var(--adm-line-strong); background: var(--adm-card); color: var(--adm-ink); font: inherit; }
 .adm-pager-nav { display: inline-flex; align-items: center; gap: 2px; }
 .adm-pager-nav button { min-width: 32px; height: 32px; padding: 0 8px; border: 1px solid transparent; border-radius: 7px; background: none; cursor: pointer; font: 500 13px var(--font-body); color: var(--adm-ink-2); display: grid; place-items: center; }
 .adm-pager-nav button:hover:not(:disabled) { background: #eef0ec; }

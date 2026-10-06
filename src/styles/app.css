@@ -4,11 +4,14 @@
 .wh-v2-nav button { background:var(--ink-soft);color:var(--paper);border:1px solid var(--gold-soft);border-radius:4px;padding:12px;cursor:pointer; }
 .wh-v2-nav button[aria-pressed="true"] {background:var(--gold);color:var(--ink);}
 .wh-v2-learn {border-bottom:1px solid var(--gold-soft);padding:14px 0;overflow-wrap:anywhere;}
-.wh-v2-input {box-sizing:border-box;width:100%;font:inherit;padding:14px;margin:12px 0;}
+.wh-v2-input {box-sizing:border-box;width:100%;font:inherit;padding:14px;margin:12px 0;background:#fffdf8;color:var(--ink);border:1.5px solid #9b8f79;border-radius:4px;color-scheme:light;}
 .wh-v2-story {background:var(--ink-soft);border:1px solid var(--gold-soft);padding:14px;margin:12px 0;}
 .wh-v2-story p {white-space:pre-wrap;max-height:35vh;overflow:auto;line-height:1.8;}
 .wh-v2-notice {color:var(--gold);}
-.wh-level-card .wh-back-btn, .wh-card .wh-back-btn {color:var(--ink);}
+.wh-level-card .wh-back-btn, .wh-card .wh-back-btn,
+.wh-ai-drawer-card .wh-back-btn, .wh-ai-drawer-card .wh-icon-btn {color:var(--ink);}
+.wh-level-card .wh-back-btn:hover, .wh-card .wh-back-btn:hover,
+.wh-ai-drawer-card .wh-back-btn:hover {color:var(--ink);text-decoration:underline;}
 @media(max-width:480px) {.wh-level-card{flex-wrap:wrap}.wh-level-info{min-width:140px}.wh-v2-nav button{flex:1;min-width:130px}}
 .wh-panel .wh-level-btn {margin:8px 8px 14px 0;}
 .wh-import-error {white-space:pre-wrap;}
@@ -436,6 +439,14 @@
 .wh-option.wrong { border-color: var(--red); background: rgba(179,58,58,0.16); }
 .wh-option.reveal { border-color: var(--green); background: rgba(79,121,66,0.18); font-weight: 600; }
 
+/* Report choices live on a dark modal, unlike the light question card. */
+.wh-panel .wh-report-reasons .wh-option { background: var(--ink-raised); color: var(--paper); border-color: var(--line); }
+.wh-panel .wh-report-reasons .wh-option:hover:not(:disabled),
+.wh-panel .wh-report-reasons .wh-option:focus-visible { background: var(--ink-soft); border-color: var(--gold); }
+.wh-panel .wh-report-reasons .wh-option.picked,
+.wh-panel .wh-report-reasons .wh-option.picked:hover:not(:disabled),
+.wh-panel .wh-report-reasons .wh-option.picked:focus-visible { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+
 .wh-type-form { display: flex; gap: 10px; margin: 0 10px; }
 .wh-type-input {
   flex: 1; font-family: 'Libre Franklin', sans-serif; font-size: 16px;
@@ -502,7 +513,7 @@
 .wh-live-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
 .wh-live-head h2 { display:flex; align-items:center; gap:8px; margin:0; font-size:18px; }
 .wh-live-field { display:flex; flex-direction:column; gap:4px; margin:10px 0; font-size:13px; }
-.wh-live-field input, .wh-live-field select { padding:9px 10px; border:1px solid #b9ab8c; border-radius:6px; font-size:15px; background:#fffdf8; }
+.wh-live-field input, .wh-live-field select { padding:9px 10px; border:1px solid #b9ab8c; border-radius:6px; font-size:15px; background:#fffdf8; color:var(--ink); color-scheme:light; }
 .wh-live-code-input { text-transform:uppercase; letter-spacing:6px; font-size:22px !important; max-width:160px; }
 .wh-live-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
 .wh-live-code { font:700 44px 'IBM Plex Mono',monospace; letter-spacing:10px; text-align:center; padding:14px; margin:10px 0; border:2px dashed var(--gold-soft); border-radius:10px; }
