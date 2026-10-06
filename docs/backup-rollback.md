@@ -56,7 +56,7 @@ Storage أو إعدادات المنصات. لا ننسخ JWT/API keys الخا�
 
 تحتاج Supabase CLI بإصدار مسجل، Docker، وPostgres 17/psql. نفذ على جهاز موثوق.
 الأوامر التالية أمثلة تشغيل يدوي؛ لم تنفذ هنا. استخدم مجلدًا خاصًا خارج المستودع
-بصلاحيات مقيدة. لا تضع password في الأوامر أو الشات؛ `link` يطلبها تفاعليًا.
+بصلاحيات مقيدة، وحدد مسارات output مطلقة لأن workdir قد يغير مكانها. لا تضع password في الأوامر أو الشات؛ `link` يطلبها تفاعليًا.
 
 ```bash
 supabase --version
@@ -69,11 +69,13 @@ supabase link --project-ref sbekepibxivyysgealpr
 المرتبط، نفذ الأمثلة التالية (استبدل المسار بمسارك الحقيقي):
 
 ```bash
-supabase db dump --linked --workdir /path/to/english-game --role-only -f roles.sql
-supabase db dump --linked --workdir /path/to/english-game -f schema.sql
-supabase db dump --linked --workdir /path/to/english-game --data-only --use-copy -x storage.buckets_vectors -x storage.vector_indexes -f data.sql
-supabase db dump --linked --workdir /path/to/english-game --schema supabase_migrations -f history_schema.sql
-supabase db dump --linked --workdir /path/to/english-game --schema supabase_migrations --data-only --use-copy -f history_data.sql
+RECOVERY_DIR=/secure/wordhunter-backups/RELEASE
+# أنشئ هذا المجلد الخاص بصلاحيات مقيدة أولًا، واستبدل RELEASE بمعرف الإصدار.
+supabase db dump --linked --workdir /path/to/english-game --role-only -f "$RECOVERY_DIR/roles.sql"
+supabase db dump --linked --workdir /path/to/english-game -f "$RECOVERY_DIR/schema.sql"
+supabase db dump --linked --workdir /path/to/english-game --data-only --use-copy -x storage.buckets_vectors -x storage.vector_indexes -f "$RECOVERY_DIR/data.sql"
+supabase db dump --linked --workdir /path/to/english-game --schema supabase_migrations -f "$RECOVERY_DIR/history_schema.sql"
+supabase db dump --linked --workdir /path/to/english-game --schema supabase_migrations --data-only --use-copy -f "$RECOVERY_DIR/history_data.sql"
 ```
 
 Supabase CLI يفلتر schemas/roles المحجوزة؛ أي تعديلات مخصصة على `auth` أو `storage`
@@ -81,7 +83,7 @@ Supabase CLI يفلتر schemas/roles المحجوزة؛ أي تعديلات م�
 أن schema.sql يشمل تلك التعديلات. يمكن استخراج diff باستخدام:
 
 ```bash
-supabase db diff --linked --workdir /path/to/english-game --schema auth,storage > auth-storage-changes.sql
+supabase db diff --linked --workdir /path/to/english-game --schema auth,storage > "$RECOVERY_DIR/auth-storage-changes.sql"
 ```
 
 تحقق من exit status لكل أمر ومن الملفات، ووجود بيانات الجداول الأساسية/Auth في dump.
@@ -89,6 +91,7 @@ supabase db diff --linked --workdir /path/to/english-game --schema auth,storage 
 connection service أو prompt آمن، واحفظ الناتج خاصًا:
 
 ```bash
+cd "$RECOVERY_DIR"
 psql 'service=wordhunter_source' --no-psqlrc --file /path/to/english-game/ops/backup-inventory.sql > source-inventory.txt
 sha256sum roles.sql schema.sql data.sql history_schema.sql history_data.sql auth-storage-changes.sql > SHA256SUMS
 ```
