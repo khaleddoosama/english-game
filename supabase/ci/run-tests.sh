@@ -13,6 +13,9 @@ for f in supabase/migrations/*.sql; do
 done
 # The tests act as the first admin.
 psql "$PGURL" -v ON_ERROR_STOP=1 -q -c "select public.register_player('ci_admin', 'secret1')" -c "update public.profiles set role = 'admin' where username = 'ci_admin'" >/dev/null
+# Recovery inventory must execute successfully in its own read-only transaction.
+psql "$PGURL" -v ON_ERROR_STOP=1 -q -f ops/backup-inventory.sql >/dev/null
+echo "ok    read-only backup inventory"
 fail=0
 for f in supabase/tests/*.sql; do
   out=$(printf 'begin;\n\\i %s\nrollback;\n' "$f" | psql "$PGURL" -q 2>&1 || true)

@@ -8,6 +8,8 @@ import { FEEDBACK_MS, MAX_PLAYERS, MIN_PLAYERS, challengeLink, codeFromInput, fo
 import { getLiveApi, withRetry } from "./liveApi";
 import { openLiveChannel } from "./transport";
 import "../../styles/live.css";
+import { InviteFriends } from "../social/FriendsPage";
+import { isLocalMode } from "../../lib/supabase";
 
 // Live Challenge: the creator picks the words and the rules, gets a link
 // (/live/CODE) and sends it to one friend or a whole group (2-10 players).
@@ -359,7 +361,7 @@ function Invite({ view, busy, error, onJoin, onHome }) {
   );
 }
 
-function ShareBox({ view }) {
+function ShareBox({ view, canInvite = false }) {
   const link = challengeLink(view.code);
   const [copied, setCopied] = useState(false);
   const message = `Join my Word Hunter challenge "${view.title}" (${view.question_count} questions): ${link}`;
@@ -368,6 +370,7 @@ function ShareBox({ view }) {
   return (
     <div className="lv-share">
       <p className="lv-kicker">Send this link to one friend or a group</p>
+      {!isLocalMode && canInvite && <InviteFriends userId={view.host_id} code={view.code} />}
       <div className="lv-link"><input readOnly value={link} onFocus={(e) => e.target.select()} aria-label="Challenge link" /><button className="lv-btn" onClick={copy}>{copied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy</>}</button></div>
       <div className="lv-row">
         {typeof navigator !== "undefined" && navigator.share && <button className="lv-btn ghost" onClick={share}><Share2 size={14} /> Share…</button>}
@@ -403,7 +406,7 @@ function Lobby({ view, player, online, busy, error, isHost, onStart, onLeave, on
     <section className="wh-card lv-lobby">
       <div className="lv-form-head"><div><p className="lv-kicker">Waiting room · {view.players.length}/{view.max_players} players</p><h2>{view.title}</h2></div></div>
       <Rules view={view} />
-      <ShareBox view={view} />
+      <ShareBox view={view} canInvite={isHost} />
       <PlayerList view={view} player={player} online={online} isHost={isHost} onRemove={onRemove} />
       {isHost && <p className="lv-note">You made these questions, so you can play along, but your result won't count toward Live wins.</p>}
       {isHost
@@ -545,7 +548,7 @@ function Waiting({ view, me, player, online, busy, error, isHost, onEnd }) {
         ? `The challenge stays open for others (${timeLeft(view.expires_at)}). Results are final when it's full or time runs out.`
         : `Waiting for ${left} player${left === 1 ? "" : "s"} to finish…`}</p>
       <Race view={view} player={player} online={online} />
-      {view.start_mode === "anytime" && view.players.length < view.max_players && <ShareBox view={view} />}
+      {view.start_mode === "anytime" && view.players.length < view.max_players && <ShareBox view={view} canInvite={isHost} />}
       {isHost && <button className="lv-btn ghost" disabled={busy} onClick={onEnd}>End the challenge now</button>}
       {error && <p className="lv-error">{error}</p>}
     </section>

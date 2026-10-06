@@ -86,11 +86,11 @@ export function wordProblems(item, all, original) {
 export function Area({ label, hint, value, onChange, rows = 2, mono }) {
   return <label className="adm-field"><span>{label}{hint && <small className="adm-muted"> · {hint}</small>}</span><textarea className={`adm-input adm-textarea ${mono ? "mono" : ""}`} rows={rows} value={value} onChange={(e) => onChange(e.target.value)} /></label>;
 }
-export function Text({ label, hint, value, onChange, list, placeholder }) {
-  return <label className="adm-field"><span>{label}{hint && <small className="adm-muted"> · {hint}</small>}</span><input className="adm-input" value={value} list={list} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} /></label>;
+export function Text({ label, hint, value, onChange, list, placeholder, readOnly = false }) {
+  return <label className="adm-field"><span>{label}{hint && <small className="adm-muted"> · {hint}</small>}</span><input className="adm-input" value={value} readOnly={readOnly} list={list} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} /></label>;
 }
 
-export function WordEditor({ word, content, stats, onSave, onDelete, onClose }) {
+export function WordEditor({ word, content, stats, onSave, onDelete, onClose, personal = false, generateWord }) {
   const isNew = !word;
   const words = content.words || [];
   const categories = useMemo(() => [...new Set([...(content.levels || []).map((l) => l.title), ...words.map((w) => w.category).filter(Boolean)])].sort((a, b) => a.localeCompare(b)), [content, words]);
@@ -114,20 +114,23 @@ export function WordEditor({ word, content, stats, onSave, onDelete, onClose }) 
   const dirty = json != null || !sameItem(item, word || fromForm(toForm({ type: "vocab", category: "" })));
   const gapWarn = lines(form.gaps).filter((g) => !/_{2,}/.test(g));
 
-  function save() {
+  async function save() {
     let next = item;
     if (json != null) { try { next = JSON.parse(json); } catch { setErrors(["The JSON isn't valid. Fix it or switch back to the form."]); return; } }
     const problems = wordProblems(next, words, word);
+    if (personal && word && next.word !== word.word) problems.push("Keep the word spelling unchanged to preserve your progress.");
     if (!problems.length) problems.push(...V2.validateContent({ schemaVersion: 2, kind: "content", words: [next] }, content).slice(0, 5));
     if (problems.length) { setErrors(problems); return; }
     if (next._autoStub && next.meaning && next.situation) delete next._autoStub;
-    onSave(next, word);
+    setBusy("save");
+    try { await onSave(next, word); } catch (e) { setErrors([e.message]); } finally { setBusy(null); }
   }
   async function aiFill() {
     if (!form.word.trim()) { setErrors(["Type the word first."]); return; }
     setBusy("ai"); setErrors([]); setNote(null);
     try {
-      const g = await askAiForWord(form.word, item);
+      const g = generateWord ? await generateWord(form.word, item) : await askAiForWord(form.word, item);
+      if (generateWord) { const incoming = toForm(g); setForm(f => Object.fromEntries(Object.entries(f).map(([k,v]) => [k, (isNew && k === "type" && v === "vocab") ? incoming[k] : String(v || "").trim() ? v : incoming[k]]))); setNote("AI filled the empty fields. Review them before saving."); setBusy(null); return; }
       const filled = [];
       const fill = (k, v) => { if (!String(form[k] || "").trim() && v) { filled.push(k); return v; } return form[k]; };
       setForm((f) => ({
@@ -173,7 +176,7 @@ export function WordEditor({ word, content, stats, onSave, onDelete, onClose }) 
           <section className="adm-editor-sec">
             <h4>Basics</h4>
             <div className="adm-form-grid">
-              <Text label="Word" hint={isNew ? "" : "renaming keeps players' progress"} value={form.word} onChange={set("word")} />
+              <Text label="Word" hint={isNew ? "" : personal ? "fixed to preserve your progress" : "renaming keeps players' progress"} value={form.word} readOnly={personal && !!word} onChange={set("word")} />
               <label className="adm-field"><span>Type</span><select className="adm-select" value={form.type} onChange={(e) => set("type")(e.target.value)}>{[...new Set([...TYPES, form.type])].map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
               <Text label="Category" hint="a new name makes a new category" value={form.category} onChange={set("category")} list="adm-word-cats" />
               <Text label="Unit / group" value={form.subCategory} onChange={set("subCategory")} />
@@ -213,7 +216,7 @@ export function WordEditor({ word, content, stats, onSave, onDelete, onClose }) 
             </div>
             <Text label="Why" value={form.mistakeWhy} onChange={set("mistakeWhy")} />
           </section>
-          <section className="adm-editor-sec">
+          {!personal && <section className="adm-editor-sec">
             <h4>Picture</h4>
             <div className="adm-picture">
               {extra.image || extra.illustration ? <WordPicture word={{ ...item }} className="adm-picture-img" /> : <div className="adm-picture-empty">No picture</div>}
@@ -223,7 +226,7 @@ export function WordEditor({ word, content, stats, onSave, onDelete, onClose }) 
                 {extra.image && <button className="adm-link" onClick={() => setExtra((x) => ({ ...x, image: undefined }))}><X size={13} /> Remove picture{extra.illustration ? " (the drawing stays)" : ""}</button>}
               </div>
             </div>
-          </section>
+          </section>}
         </>}
         <footer className="adm-editor-foot">
           <button className="adm-btn primary" onClick={save} disabled={!!busy}>{isNew ? "Add word" : "Save changes"}</button>
@@ -233,7 +236,7 @@ export function WordEditor({ word, content, stats, onSave, onDelete, onClose }) 
           {!isNew && <button className="adm-btn danger" onClick={() => setConfirmDelete(true)}><Trash2 size={15} /> Delete</button>}
         </footer>
       </div>
-      {confirmDelete && <ConfirmDialog title={`Delete “${word.word}”?`} danger confirmLabel="Delete" body={<p>It disappears from every player's game. Their learning history stays in their progress but stops counting. You can bring it back from the Activity log.</p>} onCancel={() => setConfirmDelete(false)} onConfirm={() => { setConfirmDelete(false); onDelete(word); }} />}
+      {confirmDelete && <ConfirmDialog title={`Delete “${word.word}”?`} danger confirmLabel="Delete" body={<p>{personal ? "Remove it from your library? Your progress stays saved." : "It disappears from every player's game. Their learning history stays in their progress but stops counting. You can bring it back from the Activity log."}</p>} onCancel={() => setConfirmDelete(false)} onConfirm={async () => { setConfirmDelete(false); setBusy("save"); try { await onDelete(word); } catch(e) { setErrors([e.message]); } finally { setBusy(null); } }} />}
       {confirmClose && <ConfirmDialog title="Discard your changes?" confirmLabel="Discard" danger body={<p>The word hasn't been saved.</p>} onCancel={() => setConfirmClose(false)} onConfirm={() => { setConfirmClose(false); onClose(); }} />}
     </Drawer>
   );

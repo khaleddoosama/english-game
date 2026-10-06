@@ -662,6 +662,9 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
     // No "situation" mode: the situation is the word's example sentence and
     // contains the word, so the gap sentence is the context question.
     let modes=st==='New'?['meaning','reverse']:st==='Familiar'?['reverse','gap',...((s.correct||0)>=1?['gapTyping']:[])]:['typing','gapTyping','gap'];
+    // A personal library can start with one word: use supported recall
+    // questions instead of making multiple-choice distractors from other users' words.
+    if(content.words.length<2&&['New','Familiar'].includes(st))modes=['typing','gapTyping'];
     if(['Learned','Mastered'].includes(st)){if(['phrasal','fyi'].includes(w.type)&&w.transformExample)modes.push('transform');}
     // Production gate: a word held at PRODUCTION_GATE_STEP (or already
     // Learned/Mastered) with zero correct productions only gets typing modes
@@ -695,7 +698,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // session's words, one question per rule, 1–2 rules per session. Rules
   // rotate like words (missed last time first, then least recently
   // reviewed) and each rule steps through its own questions in turn.
-  const grammarTopics=new Set((category?[category]:chosen.map(w=>w.category)).map(topic));
+  const grammarTopics=new Set((category?[category]:chosen.length?chosen.map(w=>w.category):(content.grammar||[]).map(g=>g.category)).map(topic));
   const missedKey=key=>{const r=mastery[key]?.lastResult;return r&&r!=='correct'?1:0;};
   // A unit round only asks that unit's grammar rules; a course-level round
   // only the rules of that level (and session).
@@ -746,7 +749,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // round early instead of cycling the same few words over and over.
   const wordUses={};
   while(queue.length<wordSlots&&candidates.length){
-    const eligible=candidates.map((q,i)=>({q,i})).filter(({q})=>!(queue.length===0&&q.targets.includes(lastIntro)) && !questionSentences(q).some(t=>usedSentences.has(t)) && !q.targets.some(t=>(wordUses[t]||0)>=2) && !queue.slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))) && !(queue.length>=2&&queue.slice(-2).every(p=>p.mode===q.mode)));
+    const eligible=candidates.map((q,i)=>({q,i})).filter(({q})=>!(chosen.length>1&&queue.length===0&&q.targets.includes(lastIntro)) && !questionSentences(q).some(t=>usedSentences.has(t)) && !q.targets.some(t=>(wordUses[t]||0)>=2) && !queue.slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))) && !(queue.length>=2&&queue.slice(-2).every(p=>p.mode===q.mode)));
     if(!eligible.length)break;
     eligible.sort((a,b)=>{
       const aFresh=a.q.targets.some(t=>!usedWords.has(t))?0:1;
@@ -759,7 +762,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // At most one grammar question per 4 word questions, so a short round
   // (e.g. the very first one) stays about the words. Spread the rest
   // through the round (never first), e.g. at 1/3 and 2/3.
-  grammarQueue.splice(Math.floor(queue.length/4));
+  if(source.length)grammarQueue.splice(Math.floor(queue.length/4));
   const spots=grammarQueue.map((_,k)=>Math.max(1,Math.round(queue.length*(k+1)/(grammarQueue.length+1))));
   for(let k=grammarQueue.length-1;k>=0;k--)queue.splice(Math.min(spots[k],queue.length),0,grammarQueue[k]);
   return {kind:'practice',id:`session-${Date.now()}-${rng()}`,title:opts.title||category||'Practice',queue,introductions:fresh,index:0,answers:[],initialLength:queue.length,targetLength:questionsPerRound,reserves:candidates,extraAdded:false};
