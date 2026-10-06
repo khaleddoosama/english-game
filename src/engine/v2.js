@@ -2,7 +2,15 @@ import { PRODUCTION_GATE_STEP } from "./constants";
 // Embedded offline engine; isolated names preserve the existing game.
 export const V2 = (() => {
 // Content v2 and offline session engine. No network calls or player state in content.
-const norm = v => String(v ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+// Option picking normalises every word's meaning for every question, so the
+// same few thousand strings come back constantly; the cache is capped.
+const normCache = new Map();
+const norm = v => {
+  const s = String(v ?? '');
+  let r = normCache.get(s);
+  if (r === undefined) { r = s.trim().replace(/\s+/g, ' ').toLowerCase(); if (normCache.size > 20000) normCache.clear(); normCache.set(s, r); }
+  return r;
+};
 const sentence = v => norm(v).replace(/\s+([,.!?;:])/g, '$1');
 const shuffleCopy = (a, rng = Math.random) => { const b = [...a]; for(let i=b.length-1;i>0;i--){const j=Math.floor(rng()*(i+1)); [b[i],b[j]]=[b[j],b[i]];} return b; };
 const topic = s => norm(s).replace(/\s+[ivxlcdm]+$/i, '');
@@ -245,8 +253,11 @@ const posKey = w => basePos((w.partsOfSpeech || [])[0]) || (['idiom', 'binomial'
 const wordCount = w => Math.min(3, bareWord(w.word).trim().split(/\s+/).length);
 const isPluralNoun = w => wordCount(w) === 1 && /[^s]s$/i.test(bareWord(w.word).trim());
 const DEF_STOP = new Set('a an the of to or and in on for with that is are be as by it its your you someone something when which who from at this very often usually'.split(' '));
-const defTokens = s => new Set(norm(s).replace(/[^a-z ]/g, ' ').split(/\s+/).filter(t => t.length > 2 && !DEF_STOP.has(t)));
-const firstWord = s => norm(s).split(/\s+/)[0] || '';
+// Both run over every word in the game for each Meaning question, so the
+// results are kept by text (a pure function of it; edits just add entries).
+const memoByText = fn => { const cache = new Map(); return s => { const k = String(s ?? ''); if (!cache.has(k)) { if (cache.size > 5000) cache.clear(); cache.set(k, fn(k)); } return cache.get(k); }; };
+const defTokens = memoByText(s => new Set(norm(s).replace(/[^a-z ]/g, ' ').split(/\s+/).filter(t => t.length > 2 && !DEF_STOP.has(t))));
+const firstWord = memoByText(s => norm(s).split(/\s+/)[0] || '');
 // "noun phrase" → noun, "phrasal verb" → verb, "adverbial phrase" → adverb.
 function basePos(pos) {
   const p = norm(pos);

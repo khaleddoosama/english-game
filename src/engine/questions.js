@@ -554,7 +554,7 @@ export function firstPersonify(meaning) {
   if (!meaning) return null;
   let m = meaning.trim();
   if (/^(to\s|an?\s|the\s|someone\b|something\b|used to say\b)/i.test(m)) return null;
-  m = m.replace(/\s*\([^)]*\)\s*$/, "").trim();
+  m = m.replace(/[.!?\s]+$/, "").replace(/\s*\([^)]*\)$/, "").replace(/[.!?\s]+$/, "");
   if (!m) return null;
   return `I'm ${m.charAt(0).toLowerCase()}${m.slice(1)}.`;
 }

@@ -117,7 +117,11 @@
 .lv-feedback .bad { color: var(--red); }
 .lv-feedback small, .lv-muted { color: #6b6252; }
 .lv-side { background: var(--ink-soft); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
-.lv-side h3 { font-family: var(--font-mono); font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+.lv-side h3 { font-family: var(--font-mono); font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); margin: 0; }
+.lv-side-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.lv-side.collapsed { padding: 8px 12px; }
+.lv-side.collapsed .lv-side-head { margin-bottom: 4px; }
+.lv-side.collapsed .lv-muted { margin: 0; font-size: 12px; }
 .lv-race { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; width: 100%; text-align: left; }
 .lv-race li { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13px; padding: 6px 8px; border-radius: var(--radius-sm); }
 .lv-race li.me { background: rgba(201,162,39,0.14); }

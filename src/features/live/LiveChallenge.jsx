@@ -1,6 +1,6 @@
 import { playCue } from "../../lib/sound";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, CheckCircle2, Clock, Copy, Crown, Link2, LogOut, Play as PlayIcon, Plus, Share2, Timer, Trophy, UserMinus, Users, X } from "lucide-react";
+import { Check, CheckCircle2, Clock, Copy, Crown, Eye, EyeOff, Link2, LogOut, Play as PlayIcon, Plus, Share2, Timer, Trophy, UserMinus, Users, X } from "lucide-react";
 import { WordPicture } from "../media/media";
 import { levelGroups } from "../../engine/data";
 import { LIVE_KINDS, liveOption, liveQuestions } from "./liveEngine";
@@ -16,6 +16,7 @@ import "../../styles/live.css";
 
 const COUNTS = [5, 10, 15, 20, 25, 30];
 const SECONDS = [[0, "No limit"], [10, "10s"], [15, "15s"], [20, "20s"], [30, "30s"], [45, "45s"], [60, "60s"]];
+const RACE_KEY = "wh-live-race";
 const HOURS = [[1, "1 hour"], [6, "6 hours"], [24, "1 day"], [72, "3 days"], [168, "7 days"]];
 
 function preloadPictures(questions) {
@@ -146,12 +147,18 @@ function CreateForm({ api, levels, pools, getSeen, onRefresh, onCancel, onCreate
     return src.flatMap((l) => l.items.filter((it) => it.kind === "word").map((it) => it.obj))
       .filter((w) => !unit || (groups[0]?.field === "unit" ? (w.units || []).includes(unit) : w.subCategory === unit));
   }, [levels, level, unit]);
+  // The grammar rules of the same lessons (and unit), for the Grammar question type.
+  const grammar = useMemo(() => {
+    const src = level ? [level] : levels;
+    return src.flatMap((l) => l.items.filter((it) => it.kind === "grammar").map((it) => it.obj))
+      .filter((g) => !unit || (groups[0]?.field === "unit" ? (g.units || []).includes(unit) : g.subCategory === unit));
+  }, [levels, level, unit]);
   const autoTitle = level ? `${level.title}${unit ? ` · ${groups.find((g) => g.id === unit)?.title || unit}` : ""}` : "Mixed lessons";
 
   async function create() {
     setError(null);
     if (!kinds.length) { setError("Pick at least one question type."); return; }
-    const questions = liveQuestions(words, count, { pools, seen: getSeen(), kinds });
+    const questions = liveQuestions(words, count, { pools, seen: getSeen(), kinds, grammar });
     if (questions.length < 3) { setError("Not enough words with safe multiple-choice questions here. Pick more lessons or more question types."); return; }
     setBusy(true);
     try {
@@ -427,6 +434,9 @@ function Play({ view, me, player, online, api, code, sound, onSeen, onNext, onPr
   const [pending, setPending] = useState(null);
   const [problem, setProblem] = useState(null);
   const [now, setNow] = useState(() => performance.now());
+  // The race can be hidden for players it pressures; remembered on this device.
+  const [raceHidden, setRaceHidden] = useState(() => { try { return localStorage.getItem(RACE_KEY) === "hidden"; } catch { return false; } });
+  const toggleRace = () => setRaceHidden((hidden) => { try { localStorage.setItem(RACE_KEY, hidden ? "shown" : "hidden"); } catch { /* not remembered */ } return !hidden; });
   const shownAt = useRef(performance.now());
   const limit = view.seconds * 1000;
   useEffect(() => { shownAt.current = performance.now(); setNow(performance.now()); }, [idx]);
@@ -443,7 +453,7 @@ function Play({ view, me, player, online, api, code, sound, onSeen, onNext, onPr
     setPending({ choice }); setProblem(null);
     try {
       const r = await withRetry(() => api.answer(code, idx, choice, ms));
-      if (r.sentences?.length) onSeen({ mode: q.mode, prompt: q.prompt, sentences: r.sentences });
+      if (r.sentences?.length) onSeen({ mode: "live", prompt: q.prompt, sentences: r.sentences }); // "live": definition questions are remembered too
       if (r.next) onNext(idx + 1, r.next); // its picture loads while the card shows
       setFeedback({ ...r, choice });
       if (sound) playCue(r.correct ? "correct" : "wrong"); // time running out counts as wrong
@@ -486,7 +496,13 @@ function Play({ view, me, player, online, api, code, sound, onSeen, onNext, onPr
           {problem && <span className="lv-error">{problem}</span>}
         </div>
       </section>
-      <aside className="lv-side"><h3>Race</h3><Race view={view} player={player} online={online} /></aside>
+      <aside className={`lv-side ${raceHidden ? "collapsed" : ""}`}>
+        <div className="lv-side-head">
+          <h3>Race</h3>
+          <button type="button" className="lv-icon" onClick={toggleRace} aria-expanded={!raceHidden} aria-label={raceHidden ? "Show the race" : "Hide the race"} title={raceHidden ? "Show the race" : "Hide the race"}>{raceHidden ? <Eye size={16} /> : <EyeOff size={16} />}</button>
+        </div>
+        {raceHidden ? <p className="lv-muted">Hidden. Your own score is at the top of the question.</p> : <Race view={view} player={player} online={online} />}
+      </aside>
     </div>
   );
 }

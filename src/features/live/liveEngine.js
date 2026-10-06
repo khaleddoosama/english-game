@@ -1,57 +1,126 @@
 import { V2 } from "../../engine/v2";
 import { imageLinkOk } from "../media/media";
 import { WORDS } from "../../engine/data";
-import { shuffle } from "../../engine/questions";
+import { buildQuestion, canBuildWhoAmI, legacyQuestionToV2 } from "../../engine/questions";
 // Live Challenge question building (rules and scoring: liveRules.js;
 // server calls: liveApi.js; the screens: LiveChallenge.jsx).
 export const LIVE_KINDS = [
   { id: "meaning", label: "Meaning" },
   { id: "reverse", label: "Word from meaning" },
   { id: "gap", label: "Fill the gap" },
+  { id: "whoami", label: "Who am I?" },
+  { id: "opposite", label: "Opposites" },
+  { id: "antonym", label: "Opposite clue" },
   { id: "picture", label: "Picture" },
   { id: "collocation", label: "Word partners" },
   { id: "family", label: "Word family" },
+  { id: "grammar", label: "Grammar" },
 ];
+// What a Live match remembers about the host's earlier play, in the same
+// "seen" record as practice: a sentence read in the last 20 hours, and also
+// (new) each word and each question type of a word asked in Live, so a
+// definition question that has no sentence is rotated too.
+export const liveKey = (kind, name) => V2.sentence(`live ${kind} ${String(name).toLowerCase()}`);
+
 // Multiple-choice questions only: typed answers would turn a spelling slip
 // into a lost match. Each question carries everything it needs, because the
 // other players don't have the host's words.
-// Fresh first: sentences come from the word's pools (the AI-written ones
-// too), and a question whose sentence the host never read beats one read
-// long ago, which beats one read in the last 20 hours. Definition questions
-// (meaning / reverse) aren't tracked, so they count as fresh.
-export function liveQuestions(words, count, { pools = null, seen = {}, rng = Math.random, kinds = null } = {}) {
-  const allowed = (kinds?.length ? kinds : LIVE_KINDS.map((k) => k.id));
+//
+// Variety: the questions are picked one at a time, each time the one whose
+// type has been used least so far, so a match is a mix of types and not
+// mostly definitions. Fresh first: a question nobody on this device read
+// recently beats one read long ago, which beats one read in the last 20
+// hours, and a word asked in the last 20 hours (any type) waits behind words
+// that weren't. `grammar` is a list of grammar rules to draw questions from.
+export function liveQuestions(words, count, { pools = null, seen = {}, rng = Math.random, kinds = null, grammar = [] } = {}) {
+  const allowed = new Set(kinds?.length ? kinds : LIVE_KINDS.map((k) => k.id));
+  const shuffle = (list) => V2.shuffleCopy(list, rng);
+  const now = Date.now(), window = V2.SEEN_FRESH_HOURS * 3600000;
+  const lastSeen = (keys) => Math.max(0, ...keys.map((k) => Number(seen?.[k] || 0)));
+  // 0 never read · 1 read over 20h ago · 2 read in the last 20h
+  const tierOf = (keys) => { const last = lastSeen(keys); return !last ? 0 : now - last >= window ? 1 : 2; };
+
+  // A question from the practice builders (Who am I?, Opposites): a single
+  // multiple-choice question that doesn't spell out its own answer.
+  const fromLegacy = (kind, w) => {
+    const built = legacyQuestionToV2(buildQuestion(kind, w, pools, { difficulty: 2 }), { kind: "word", wordObj: w }, kind);
+    const q = built.length === 1 ? built[0] : null;
+    if (!q || q.type !== "mcq" || q.noMastery) return null;
+    if ((q.answers || []).some((a) => String(a).length > 2 && V2.norm(q.prompt).includes(V2.norm(a)))) return null;
+    // Practice shows its own heading above an Opposites word; Live shows only the prompt.
+    return kind === "opposite" ? { ...q, prompt: `What is the opposite of “${q.prompt}”?` } : q;
+  };
+  // Opposite clue: an antonym from outside the game points at this word.
+  const antonym = (w) => {
+    const clues = V2.outsideAntonyms(w, WORDS);
+    if (!clues.length) return null;
+    const clue = clues[Math.floor(rng() * clues.length)];
+    // The word itself stays; the others must not also be opposites of the clue.
+    const others = V2.optionWords([w], WORDS, 6, rng).filter((x) => x.word !== w.word && !V2.antonymsOf(x).some((a) => V2.norm(a) === V2.norm(clue))).slice(0, 3).map((x) => x.word);
+    if (others.length < 2) return null;
+    const options = shuffle([w.word, ...others]);
+    return { mode: "antonym", type: "mcq", prompt: `The opposite of “${clue}” is…`, options, answers: [w.word], explanation: `${w.word} ↔ ${clue}. ${w.meaning || ""}`.trim() };
+  };
   const build = (w, kind) => {
     try {
       return kind === "picture" ? V2.pictureQuestion(w, WORDS, rng, false, imageLinkOk)
         : kind === "collocation" ? V2.collocationQuestion(w, WORDS, rng, false)
         : kind === "family" ? V2.familyQuestion(w, rng, false)
+        : kind === "whoami" ? (canBuildWhoAmI(w) ? fromLegacy("whoami", w) : null)
+        : kind === "opposite" ? (w.opposite ? fromLegacy("opposite", w) : null)
+        : kind === "antonym" ? antonym(w)
         : kind === "gap" && !/_{2,}/.test(w.gap || "") && !(pools?.[w.word]?.gap || []).length ? null
-        : V2.makeQuestion(w, kind, WORDS, rng, 2, pools, null, seen);
+        : kind === "meaning" || kind === "reverse" || kind === "gap" ? V2.makeQuestion(w, kind, WORDS, rng, 2, pools, null, seen)
+        : null;
     } catch { return null; }
   };
-  const now = Date.now();
-  const freshness = (q) => { // 0 never read · 1 read over 20h ago · 2 read recently
-    const keys = V2.questionSentences(q);
-    if (!keys.length) return 0;
-    const last = Math.max(...keys.map((k) => Number(seen?.[k] || 0)));
-    return !last ? 0 : now - last >= V2.SEEN_FRESH_HOURS * 3600000 ? 1 : 2;
-  };
-  const picks = [];
-  for (const w of shuffle(words)) {
-    const options = allowed
-      .map((kind) => build(w, kind))
-      .filter((q) => q && q.type === "mcq" && q.prompt && Array.isArray(q.options) && q.options.length >= 3 && q.answers?.[0])
-      .map((q) => ({ q, tier: freshness(q), last: Math.max(0, ...V2.questionSentences(q).map((k) => Number(seen?.[k] || 0))) }));
-    if (!options.length) continue;
-    const best = Math.min(...options.map((o) => o.tier));
-    const pool = options.filter((o) => o.tier === best);
-    const pick = best === 0 ? pool[Math.floor(rng() * pool.length)] : pool.sort((a, b) => a.last - b.last)[0];
-    picks.push({ w, ...pick });
+  const usable = (q) => q && q.type === "mcq" && q.prompt && Array.isArray(q.options) && q.options.length >= 3 && q.answers?.[0];
+
+  // Candidates: the words (a limited, freshest-first sample, so a big mixed
+  // lesson doesn't build a question of every type for every word) and the
+  // grammar rules.
+  const sample = Math.max(count * 2, 24);
+  const wordEntries = shuffle(words)
+    .map((w) => ({ w, wordTier: tierOf([liveKey("word", w.word)]) }))
+    .sort((a, b) => a.wordTier - b.wordTier)
+    .slice(0, sample)
+    .map(({ w }) => {
+      const wordKey = liveKey("word", w.word);
+      const options = [...allowed].filter((k) => k !== "grammar").map((kind) => {
+        const q = build(w, kind);
+        if (!usable(q)) return null;
+        const keys = [...new Set([...V2.questionSentences(q), liveKey(kind, w.word), wordKey])];
+        return { kind, q, keys, name: w.word, tier: tierOf(keys), exact: tierOf(keys.filter((k) => k !== wordKey)) };
+      }).filter(Boolean);
+      return { name: w.word, options };
+    });
+  const grammarEntries = allowed.has("grammar") ? (grammar || []).filter((g) => g?.id).map((g) => {
+    const own = V2.grammarQuestions(g).map((item, i) => V2.grammarQuestion(g, item, i, rng));
+    const written = V2.writtenGrammarVariants(pools, g).map((item) => ({ mode: "grammarChoose", type: "mcq", prompt: item.prompt, answers: [item.answer], options: shuffle(item.options), explanation: item.explanation }));
+    const ruleKey = liveKey("rule", g.id);
+    const options = [...own, ...written].filter(usable).map((q) => {
+      const keys = [...new Set([...V2.questionSentences(q), ruleKey])];
+      return { kind: "grammar", q: { ...q, mode: "grammar", options: q.options.slice(0, 4) }, keys, name: g.rule || g.id, tier: tierOf(keys), exact: tierOf(keys.filter((k) => k !== ruleKey)) };
+    });
+    return { name: g.rule || g.id, options: options.filter((o) => o.q.options.includes(o.q.answers[0])) };
+  }) : [];
+
+  // One at a time: lowest score first. A stale word costs as much as using a
+  // type four more times, a recent one eight more; asking the very same
+  // question again (not just the same word) costs a further two or four, so
+  // with few words a repeat comes back as a different type.
+  const used = {}, picks = [];
+  let remaining = shuffle([...wordEntries, ...grammarEntries].filter((e) => e.options.length));
+  while (picks.length < count && remaining.length) {
+    let best = null;
+    for (const e of remaining) for (const o of e.options) {
+      const score = o.tier * 4 + o.exact * 2 + (used[o.kind] || 0) + rng() * 0.5;
+      if (!best || score < best.score) best = { score, e, o };
+    }
+    picks.push(best.o); used[best.o.kind] = (used[best.o.kind] || 0) + 1;
+    remaining = remaining.filter((e) => e !== best.e);
   }
-  // Words with a fresh question first; stale ones only fill the gaps.
-  picks.sort((a, b) => a.tier - b.tier);
-  return picks.slice(0, count).map(({ w, q }) => ({ mode: q.mode, prompt: q.prompt, options: q.options, answer: q.answers[0], word: w.word, explanation: q.explanation || "", picture: q.picture || null, photo: q.photo || null, sentences: V2.questionSentences(q) }));
+  return picks.map((o) => ({ mode: o.q.mode, prompt: o.q.prompt, options: o.q.options, answer: o.q.answers[0], word: o.name, explanation: o.q.explanation || "", picture: o.q.picture || null, photo: o.q.photo || null, sentences: o.keys }));
 }
 // Word options start with a capital, as in the normal question box.
-export function liveOption(opt, q) { const t = String(opt); return q.mode !== "meaning" && q.mode !== "collocation" && t.trim().split(/\s+/).length <= 4 && /^[a-z]/.test(t) ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
+export function liveOption(opt, q) { const t = String(opt); return q.mode !== "meaning" && q.mode !== "collocation" && q.mode !== "grammar" && t.trim().split(/\s+/).length <= 4 && /^[a-z]/.test(t) ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
