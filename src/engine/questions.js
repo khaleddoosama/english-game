@@ -693,7 +693,7 @@ export function semanticRelation(a, b) {
 
 export function hardDistractors(target, count = 3) { return sampleDistractors(target, count); }
 
-export function buildImpostorQuestion(wordObj, difficulty = 2) {
+export function buildImpostorQuestion(wordObj, _difficulty = 2) {
   const authored = authoredChallengesForWord(wordObj, "impostor");
   if (!authored.length) return null;
   return buildChallengeQuestion(shuffle(authored)[0]);

@@ -104,7 +104,7 @@ export function parseJsonLoose(text) {
 
 // Every AI call goes through /api/ai (Gemini, key kept on the server).
 // maxTokens is kept for call-site compatibility; the server sizes output.
-export async function callAiJson(instructions, payload, maxTokens = 800, opts = {}) {
+export async function callAiJson(instructions, payload, _maxTokens = 800, opts = {}) {
   return parseJsonLoose(await callAiText(`${instructions}\n\nINPUT JSON:\n${JSON.stringify(payload)}`, opts));
 }
 // Content-authoring tools: the server refuses these for players.
@@ -276,7 +276,7 @@ export const HEALTH_INSTRUCTIONS = {
   meaning: `For each word, write a NEW "meaning": ONE clear sentence, B1 English, precise enough that a learner could type the exact word from it. Never use the word/phrase itself or "opposite of". Keep the same sense as the current meaning and situation. If "sameMeaningAs" is given, make the definitions clearly different from those words. Return {"results":[{"word":"...","value":"the new meaning"}]}.`,
   commonMistake: `For each word, write a typical B1 learner mistake when using it: "sentence" (the wrong sentence), "correction" (the same sentence fixed), "why" (one short simple reason). The mistake must be about using THIS word (form, preposition, collocation or meaning). Return {"results":[{"word":"...","value":{"sentence":"...","correction":"...","why":"..."}}]}.`,
   partsOfSpeech: `For each word, list its part(s) of speech for the meaning given, using ONLY these values: ${PARTS_OF_SPEECH.join(", ")}. Return {"results":[{"word":"...","value":["noun"]}]}.`,
-  gaps: `Each word has "gaps": sentences with the word replaced by "______". Learners TYPE the missing word, so check each gap: could a learner fill it with a different common word, or with one of the "siblings", and still make a correct, natural sentence? (Bad: "He had surgery on his left ______." — knee, elbow, hand all fit. Bad: "The ______ on the corner is open 24 hours." — pharmacy, shop, market all fit.) A true synonym of the word is not a problem. Keep every clear gap exactly as it is. Rewrite only the ambiguous ones: same word and meaning, one natural B1 sentence of at most 25 words, exactly one "______", and enough context that only this word fits. The word (or any part of it) must not appear in the sentence. Return {"results":[{"word":"...","value":["every gap, kept or rewritten, in the same order"],"why":"one short reason for the rewrites, or \"clear\""}]}.`,
+  gaps: `Each word has "gaps": sentences with the word replaced by "______". Learners TYPE the missing word, so check each gap: could a learner fill it with a different common word, or with one of the "siblings", and still make a correct, natural sentence? (Bad: "He had surgery on his left ______." — knee, elbow, hand all fit. Bad: "The ______ on the corner is open 24 hours." — pharmacy, shop, market all fit.) A true synonym of the word is not a problem. Keep every clear gap exactly as it is. Rewrite only the ambiguous ones: same word and meaning, one natural B1 sentence of at most 25 words, exactly one "______", and enough context that only this word fits. The word (or any part of it) must not appear in the sentence. Return {"results":[{"word":"...","value":["every gap, kept or rewritten, in the same order"],"why":"one short reason for the rewrites, or "clear""}]}.`,
 };
 export async function aiFixWordBatch(kind, words, allWords) {
   const instructionKind = kind === "duplicate" ? "meaning" : kind;

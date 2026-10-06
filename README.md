@@ -15,6 +15,8 @@ npm install
 npm run dev      # http://localhost:5173
 npm test         # unit tests (Vitest): engine, saves, routing, Live, import/export,
                  # grammar editor, dashboard numbers, settings, audit, AI log
+npm run lint     # ESLint: names that aren't defined, hooks called out of order,
+                 # unused variables (CI runs it before the tests)
 ```
 
 Without Supabase settings the app runs in **local mode**: one local admin,

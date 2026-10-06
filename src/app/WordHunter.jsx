@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Award, GraduationCap, BarChart3, LogOut, Settings as SettingsIcon, Wrench, BookOpen, CheckCircle2, Download, Flag, Flame, HelpCircle, Lock, Play, Search, Target, Trash2, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
+import { ArrowLeft, Award, GraduationCap, BarChart3, LogOut, Settings as SettingsIcon, Wrench, BookOpen, CheckCircle2, Flag, Flame, HelpCircle, Lock, Play, Search, Target, Trash2, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
 import { V2 } from "../engine/v2";
 import { PronunciationModal, imageLinkOk } from "../features/media/media";
 import { unlockAudioOnFirstTouch } from "../lib/sound";
@@ -513,7 +513,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [customWords, setCustomWords] = useState([]);
   const [customGrammar, setCustomGrammar] = useState([]);
   const [customChallenges, setCustomChallenges] = useState([]);
-  const [quickBackupCopied, setQuickBackupCopied] = useState(false);
+  const [, setQuickBackupCopied] = useState(false);
   const [showFreshCopyPrompt, setShowFreshCopyPrompt] = useState(false);
   const [sessionType, setSessionType] = useState("level");
   const [levelsCleared, setLevelsCleared] = useState([]);
@@ -522,11 +522,11 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [bestStudyStreak, setBestStudyStreak] = useState(0);
   const [lastStudyDate, setLastStudyDate] = useState(null);
   const [currentLevelIndex, setCurrentLevelIndex] = useState(null);
-  const [roundQueue, setRoundQueue] = useState([]);
+  const [roundQueue] = useState([]);
   const [roundIndex, setRoundIndex] = useState(0);
-  const [roundCorrect, setRoundCorrect] = useState(0);
-  const [roundTotal, setRoundTotal] = useState(0);
-  const [justCleared, setJustCleared] = useState(false);
+  const [, setRoundCorrect] = useState(0);
+  const [, setRoundTotal] = useState(0);
+  const [, setJustCleared] = useState(false);
   const [lastRoundSummary, setLastRoundSummary] = useState(null);
   const [finalCaseWords, setFinalCaseWords] = useState([]);
   const [finalReportText, setFinalReportText] = useState("");
@@ -600,7 +600,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [pools, setPools] = useState({});
   const [confusions, setConfusions] = useState({});
 
-  const badgesOpen = screen === "badges", dashboardOpen = screen === "stats", importOpen = screen === "data";
+  const badgesOpen = screen === "badges", dashboardOpen = screen === "stats";
   const [toast, setToast] = useState(null);
   const seenBadgesRef = useRef(null);
   const pendingGenRef = useRef(new Set());
@@ -649,6 +649,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
   function isLevelUnlocked(index) {
     return true; // TEMP: all levels unlocked for testing — revert to real progression below when ready
+    // eslint-disable-next-line no-unreachable -- the real progression is switched off on purpose for now
     if (index === 0) return true;
     const level = LEVELS[index];
     const previous = LEVELS[index - 1];
@@ -988,7 +989,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   function startWeakReview() {
     const picked = weakCandidates.slice(0, settings.weakReviewSize);
     if (!picked.length) return;
-    let lastWord = null;
     let lastMode = null;
     const queue = picked.map(({ word, stats }) => {
       let mode = pickWeakMode(word, stats, confusionsRef.current, reportQuarantine);
@@ -996,7 +996,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         mode = selectAdaptiveMode(word, stats, { sessionType: "weak", confusion: getStrongConfusion(word, confusionsRef.current), lastMode, quarantine: reportQuarantine });
       }
       const entry = { kind: "word", wordObj: word, mode, difficulty: getAdaptiveDifficulty(word, stats, mode), confusionPartner: getStrongConfusion(word, confusionsRef.current)?.partner || null };
-      lastWord = word.word; lastMode = mode;
+      lastMode = mode;
       return entry;
     }).filter((entry, i, arr) => i === 0 || entry.wordObj.word !== arr[i - 1].wordObj.word);
     setCurrentLevelIndex(null);
@@ -1441,7 +1441,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   async function handleReset() {
     progressExtrasRef.current={};setActiveSession(null);setDailyProgress(null);
     try { await repo.resetProgress(); } catch (e) { console.error("Could not reset progress:", e); setStorageWarning("Progress couldn't be reset on the server. Check your connection and try again."); }
-    const empty = emptyProgressData();
     setScore(0); setStreak(0); setBestStreak(0); setAttempted(0);
     setMastery({}); masteryRef.current = {};
     setLevelsCleared([]); setLevelStats({});
@@ -1554,7 +1553,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const totalLevelsCleared = levelsCleared.length;
   const nextLevelIndex = currentLevelIndex !== null ? currentLevelIndex + 1 : null;
   const hasNextLevel = nextLevelIndex !== null && nextLevelIndex < LEVELS.length;
-  const roundAccuracy = roundTotal > 0 ? Math.round((roundCorrect / roundTotal) * 100) : 0;
   const finalEvidenceUsed = finalCaseWords.filter((word) => { const n = normalizeAnswerText(finalReportText); return n.includes(normalizeAnswerText(word.word)); }).length;
   const fileMeta = currentEntry ? entryFileMeta(currentEntry) : null;
   const FileIcon = fileMeta ? fileMeta.icon : Search;

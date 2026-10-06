@@ -1,4 +1,5 @@
-# Every push and pull request: the unit tests and the build, and every
+# Every push and pull request: lint (undefined names, hooks called out of
+# order), the unit tests and the build, and every
 # database migration plus the SQL tests on a fresh Postgres.
 name: CI
 on:
@@ -15,6 +16,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run lint
       - run: npx vitest run
       - run: npx vite build
 

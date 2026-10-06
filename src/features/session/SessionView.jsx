@@ -9,7 +9,7 @@ import { evaluateAlternativeGap, evaluateFreeForm, regenerateWordExplanation } f
 import { preloadImage } from "../../lib/images";
 // Embedded shared answer controls for all new sessions.
 export const SessionView = (() => {
-const { grade, sentence, reinforcement } = V2;
+const { grade, sentence } = V2;
 
 // One answer control for Practice, Stories and Chains. The draft lives in player state.
 function AnswerControl({q,draft={},onChange,disabled,onSubmit}){

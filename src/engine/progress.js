@@ -9,7 +9,7 @@ export function pruneConfusions(confusions) {
   return Object.fromEntries(entries.slice(0, MAX_CONFUSIONS));
 }
 
-export function getWeakWordCandidates(words, mastery, confusions = {}, now = Date.now()) {
+export function getWeakWordCandidates(words, mastery, confusions = {}, _now = Date.now()) {
   return words.map((word) => {
     const stats = normalizeMasteryRecord(mastery[word.word]);
     const accuracy = getAccuracy(stats);
@@ -45,7 +45,7 @@ export function pickWeakMode(word, stats, confusions = {}, quarantine = null) {
   return selectAdaptiveMode(word, s, { sessionType: "weak", confusion, quarantine });
 }
 
-export function deriveLearningInsights(words, mastery, confusions = {}, now = Date.now()) {
+export function deriveLearningInsights(words, mastery, confusions = {}, _now = Date.now()) {
   const modeTotals = {};
   words.forEach((word) => {
     const stats = normalizeMasteryRecord(mastery[word.word]);

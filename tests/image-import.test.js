@@ -103,7 +103,7 @@ describe("/api/image-import", () => {
 
   it("a private link is refused and logged, and nothing is stored", async () => {
     const calls = [];
-    vi.stubGlobal("fetch", vi.fn(async (url, init) => {
+    vi.stubGlobal("fetch", vi.fn(async (url, _init) => {
       calls.push(String(url));
       if (String(url).endsWith("/rpc/ai_gate")) return { ok: true, status: 200, json: async () => ({ ok: true, call: 3 }) };
       return { ok: true, status: 204, json: async () => null, text: async () => "" };
