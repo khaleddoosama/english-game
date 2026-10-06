@@ -81,7 +81,10 @@ export function usageOf(data) {
 // browser <audio> can play it.
 export async function speak(text, info = {}) {
   const { data, model } = await generateWithFallback([GEMINI_TTS_MODEL, ...GEMINI_TTS_FALLBACK_MODELS], () => ({
-    contents: [{ role: "user", parts: [{ text: `Say clearly, in a neutral American accent: ${text}` }] }],
+    // Only the words to say: a speech model reads its whole input aloud, so an
+    // instruction in front of the text ("Say clearly, in an American accent:") is
+    // spoken too. The accent comes from the voice.
+    contents: [{ role: "user", parts: [{ text }] }],
     generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: GEMINI_TTS_VOICE } } } },
   }));
   const part = (data?.candidates?.[0]?.content?.parts || []).find((p) => p.inlineData?.data);

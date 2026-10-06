@@ -15,7 +15,8 @@ export async function POST(request) {
   if (!text) return json(400, { error: "Nothing to say." });
   if (text.length > 400) return json(413, { error: "That's too long to read aloud." });
   const hash = createHash("sha256").update(`${GEMINI_TTS_MODEL}|${GEMINI_TTS_VOICE}|${text.toLowerCase()}`).digest("hex").slice(0, 40);
-  const path = `v1/${hash}.wav`;
+  // v2: the v1 files have the old instruction spoken aloud, so they're never reused.
+  const path = `v2/${hash}.wav`;
   const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/tts/${path}`;
   if (await exists(publicUrl)) return json(200, { url: publicUrl, cached: true });
   const { denied, callId } = await gate(request, { kind: "tts", task: "Pronunciation", preview: text, chars: text.length });

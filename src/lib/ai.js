@@ -26,7 +26,7 @@ export async function callAiText(prompt, { adminOnly = false, task = "" } = {}) 
 
 // Phrase -> audio URL. Remembered per device so a repeat play never
 // touches the server; the server remembers across players.
-const TTS_CACHE_KEY = "wh-tts-urls";
+const TTS_CACHE_KEY = "wh-tts-urls-v2"; // v1 links point to files with the old instruction spoken aloud
 const ttsMemory = new Map();
 function ttsStore() {
   try { return JSON.parse(localStorage.getItem(TTS_CACHE_KEY) || "{}"); } catch { return {}; }

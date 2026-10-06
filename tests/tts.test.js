@@ -25,7 +25,7 @@ function network({ heads = [reply(404)], verdict = { ok: true, call: 5 }, upload
     if (init.method === "HEAD") { calls.push({ to: "head" }); return heads.shift() || reply(404); }
     if (url.endsWith("/rpc/ai_gate")) { calls.push({ to: "gate" }); return reply(200, verdict); }
     if (url.endsWith("/rpc/ai_call_finish")) { calls.push({ to: "finish", body: JSON.parse(init.body) }); return reply(204); }
-    if (url.includes("generativelanguage")) { calls.push({ to: "gemini" }); return gemini; }
+    if (url.includes("generativelanguage")) { calls.push({ to: "gemini", body: JSON.parse(init.body) }); return gemini; }
     if (url.includes("/storage/v1/object/tts/")) {
       calls.push({ to: "upload", headers: init.headers });
       if (upload instanceof Error) throw upload;
@@ -42,17 +42,24 @@ describe("/api/tts", () => {
   it("a cached phrase plays without the gate or Gemini", async () => {
     const calls = network({ heads: [reply(200)] });
     const res = await say();
-    expect(await res.json()).toMatchObject({ cached: true, url: expect.stringContaining("/storage/v1/object/public/tts/v1/") });
+    expect(await res.json()).toMatchObject({ cached: true, url: expect.stringContaining("/storage/v1/object/public/tts/v2/") });
     expect(calls.map((c) => c.to)).toEqual(["head"]);
   });
 
   it("a new phrase is stored with the server's key, then logged as done, then linked", async () => {
     const calls = network();
     const res = await say();
-    expect(await res.json()).toMatchObject({ cached: false, url: expect.stringContaining("/public/tts/v1/") });
+    expect(await res.json()).toMatchObject({ cached: false, url: expect.stringContaining("/public/tts/v2/") });
     expect(calls.map((c) => c.to)).toEqual(["head", "gate", "gemini", "upload", "finish"]);
     expect(calls.find((c) => c.to === "upload").headers).toMatchObject({ apikey: "sb_secret_server", authorization: "Bearer sb_secret_server", "x-upsert": "false" });
     expect(calls.find((c) => c.to === "finish").body).toMatchObject({ p_id: 5, p_ok: true });
+  });
+
+  it("Gemini is given only the words to say, never an instruction it would read aloud", async () => {
+    const calls = network();
+    await say("see you later");
+    const parts = calls.find((c) => c.to === "gemini").body.contents[0].parts;
+    expect(parts).toEqual([{ text: "see you later" }]);
   });
 
   it("a storage error that isn't a duplicate returns the audio, never a link to a missing file", async () => {

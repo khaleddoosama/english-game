@@ -11,10 +11,23 @@ import { isStoredImage } from "../../lib/images";
 // YouGlish stays available only as an external link: its widget needs a
 // third-party <script>, which this sandbox blocks outright.
 export const audioCache = new Map();
+// Remembered per device too, so reopening a word after a reload doesn't search again.
+const DICT_KEY = "wh-dict-audio";
+const dictStore = () => { try { return JSON.parse(localStorage.getItem(DICT_KEY) || "{}"); } catch { return {}; } };
+const rememberDict = (key, result) => {
+  try {
+    const all = dictStore(); all[key] = result;
+    const keys = Object.keys(all);
+    if (keys.length > 300) for (const k of keys.slice(0, keys.length - 300)) delete all[k];
+    localStorage.setItem(DICT_KEY, JSON.stringify(all));
+  } catch (_) {}
+};
 export async function fetchWordAudio(term) {
   const key = String(term || "").trim().toLowerCase();
   if (!key) return null;
   if (audioCache.has(key)) return audioCache.get(key);
+  const known = dictStore()[key];
+  if (known !== undefined) { audioCache.set(key, known); return known; }
   // Only single words have dictionary entries; phrases go straight to TTS.
   if (/\s/.test(key)) { audioCache.set(key, null); return null; }
   const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(key)}`);
@@ -32,6 +45,7 @@ export async function fetchWordAudio(term) {
   const url = us || urls[0] || null;
   const result = url ? { url, isUS: !!us } : null;
   audioCache.set(key, result);
+  rememberDict(key, result);
   return result;
 }
 // Setting utterance.lang alone is only a hint — browsers often keep whatever
