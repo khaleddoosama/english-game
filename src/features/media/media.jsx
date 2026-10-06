@@ -105,31 +105,49 @@ export function WordPicture({ word, className = "wh-flashcard-img", lazy = false
   if (V2.isIllustration(drawing)) return <img src={`data:image/svg+xml;utf8,${encodeURIComponent(drawing)}`} alt="" decoding="async" className={`${className} wh-word-drawing`} />;
   return null;
 }
-// Pronunciation, best source first: a human recording (single words, from
+// Finds the best recording for a term: a human one (single words, from
 // dictionaryapi.dev), then Gemini's voice (phrases and sentences, cached on
-// the server after the first request), then the browser's own voice.
+// the server after the first request). It runs on its own, so closing the
+// dialog doesn't stop it: the result is remembered, and the next time the
+// word is opened it plays at once. A second ask for the same term shares the
+// first one's work. Rejects when neither source worked.
+const pendingPronunciation = new Map();
+export function preparePronunciation(term) {
+  const key = String(term || "").replace(/\s+/g, " ").trim().toLowerCase();
+  if (pendingPronunciation.has(key)) return pendingPronunciation.get(key);
+  const job = (async () => {
+    let found = null;
+    try { found = await fetchWordAudio(term); } catch (_) { /* no dictionary entry or no access: Gemini next */ }
+    if (found?.url) return { source: "human", url: found.url, isUS: found.isUS };
+    return { source: "ai", url: await speechUrl(term), isUS: true };
+  })().finally(() => pendingPronunciation.delete(key));
+  pendingPronunciation.set(key, job);
+  return job;
+}
+// Pronunciation, best source first (see preparePronunciation), then the
+// browser's own voice, which is always one tap away.
 export function PronunciationModal({ term, onClose }) {
   const [status, setStatus] = useState("loading"); // loading | human | ai | ttsOnly
   const [audioUrl, setAudioUrl] = useState(null);
   const [isUS, setIsUS] = useState(false);
   const [ttsIsUS, setTtsIsUS] = useState(false);
   const audioRef = useRef(null);
+  const browserVoiceUsed = useRef(false); // the player chose the browser voice: a recording that arrives later doesn't talk over it
   const speak = () => { try { setTtsIsUS(speakWithBrowser(term)); } catch (e) { /* no speech support */ } };
+  const speakNow = () => { browserVoiceUsed.current = true; speak(); };
   useEffect(() => {
     let cancelled = false;
     // Voice list loads asynchronously in most browsers; without this the
     // first call can run before any en-US voice is known.
     if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.getVoices();
-    const tryAiVoice = () => speechUrl(term)
-      .then((url) => { if (!cancelled) { setAudioUrl(url); setStatus("ai"); } })
-      .catch(() => { if (!cancelled) { setStatus("ttsOnly"); speak(); } });
-    fetchWordAudio(term)
+    browserVoiceUsed.current = false;
+    // Closing the dialog only stops listening: the lookup keeps going and is remembered.
+    preparePronunciation(term)
       .then((found) => {
         if (cancelled) return;
-        if (found?.url) { setAudioUrl(found.url); setIsUS(found.isUS); setStatus("human"); }
-        else tryAiVoice();
+        setAudioUrl(found.url); setIsUS(found.isUS); setStatus(found.source);
       })
-      .catch(() => { if (!cancelled) tryAiVoice(); });
+      .catch(() => { if (!cancelled) { setStatus("ttsOnly"); if (!browserVoiceUsed.current) speak(); } });
     return () => {
       cancelled = true;
       if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
@@ -138,7 +156,7 @@ export function PronunciationModal({ term, onClose }) {
   // Autoplay the human recording once it is available. Browsers can refuse
   // autoplay without a user gesture, so the visible Play button stays the
   // guaranteed path.
-  useEffect(() => { if ((status === "human" || status === "ai") && audioRef.current) audioRef.current.play().catch(() => {}); }, [status, audioUrl]);
+  useEffect(() => { if ((status === "human" || status === "ai") && audioRef.current && !browserVoiceUsed.current) audioRef.current.play().catch(() => {}); }, [status, audioUrl]);
   const youglishUrl = `https://youglish.com/pronounce/${encodeURIComponent(term)}/english/us`;
   const accentNote = status === "human"
     ? (isUS ? "American recording" : "Non-US accent — no American recording found")
@@ -160,11 +178,14 @@ export function PronunciationModal({ term, onClose }) {
         <Volume2 size={12}/> {accentNote}
       </div>
 
-      {status === "loading" && <div className="wh-say-body"><p className="wh-say-muted">Looking for an American recording…</p></div>}
+      {status === "loading" && <div className="wh-say-body">
+        <p className="wh-say-muted">Looking for an American recording… You can close this: it keeps loading in the background and remembers the word.</p>
+        <button className="wh-say-secondary" onClick={speakNow}><Volume2 size={12}/> Browser voice instead</button>
+      </div>}
 
       {(status === "human" || status === "ai") && <div className="wh-say-body">
-        <audio ref={audioRef} src={audioUrl} controls preload="auto" className="wh-say-audio" onError={() => { if (status === "ai") { forgetSpeechUrl(term); setStatus("ttsOnly"); speak(); } }}/>
-        <button className="wh-say-secondary" onClick={speak}><Volume2 size={12}/> Browser voice instead</button>
+        <audio ref={audioRef} src={audioUrl} controls preload="auto" className="wh-say-audio" onError={() => { if (status === "ai") { forgetSpeechUrl(term); setStatus("ttsOnly"); speakNow(); } }}/>
+        <button className="wh-say-secondary" onClick={speakNow}><Volume2 size={12}/> Browser voice instead</button>
       </div>}
 
       {status === "ttsOnly" && <div className="wh-say-body">
