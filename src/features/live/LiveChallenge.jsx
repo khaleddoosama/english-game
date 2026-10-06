@@ -1,3 +1,4 @@
+import { playCue } from "../../lib/sound";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, CheckCircle2, Clock, Copy, Crown, Link2, LogOut, Play as PlayIcon, Plus, Share2, Timer, Trophy, UserMinus, Users, X } from "lucide-react";
 import { WordPicture } from "../media/media";
@@ -37,7 +38,7 @@ const rulesText = (v) => [
   v.start_mode === "anytime" ? "start anytime" : "start together",
 ];
 
-export function LiveChallenge({ player, levels, code, onOpenCode, onExit, pools = null, getSeen = () => ({}), onSeen = () => {}, onRefresh = () => {}, limits = {} }) {
+export function LiveChallenge({ player, levels, code, onOpenCode, onExit, sound = true, pools = null, getSeen = () => ({}), onSeen = () => {}, onRefresh = () => {}, limits = {} }) {
   const api = useMemo(() => getLiveApi(() => player), [player]);
   return (
     <div className="lv">
@@ -297,7 +298,7 @@ function ChallengeRoom({ api, code, player, onHome, onSeen }) {
     onRemove={(id) => act(() => api.removePlayer(code, id), () => { send("left", { user_id: id }); refresh(); })} />;
   if (view.state === "done") return <Results {...common} onHome={onHome} />;
   if (!me?.started_at) return <Ready {...common} onBegin={() => act(() => api.begin(code))} onLeave={() => act(() => api.leave(code), onHome)} />;
-  if (!me.finished_at) return <Play {...common} api={api} code={code} onSeen={onSeen} onNext={addQuestion}
+  if (!me.finished_at) return <Play {...common} api={api} code={code} sound={sound} onSeen={onSeen} onNext={addQuestion}
     onProgress={(row, done) => { setLocalMe(row); send("progress", { user_id: player.id, answered: row.answered, correct: row.correct, total_ms: row.total_ms, finished_at: row.finished_at, started_at: row.started_at }); if (done) { send("end"); refresh(); } else if (row.finished_at) refresh(); }}
     onFailed={refresh} />;
   return <Waiting {...common} onEnd={() => act(() => api.end(code), () => { send("end"); refresh(); })} />;
@@ -418,7 +419,7 @@ function Race({ view, player, online }) {
   );
 }
 
-function Play({ view, me, player, online, api, code, onSeen, onNext, onProgress, onFailed }) {
+function Play({ view, me, player, online, api, code, sound, onSeen, onNext, onProgress, onFailed }) {
   const idx = me.answered;
   const q = view.questions?.[idx];
   const reveal = view.settings?.reveal !== false;
@@ -445,6 +446,7 @@ function Play({ view, me, player, online, api, code, onSeen, onNext, onProgress,
       if (r.sentences?.length) onSeen({ mode: q.mode, prompt: q.prompt, sentences: r.sentences });
       if (r.next) onNext(idx + 1, r.next); // its picture loads while the card shows
       setFeedback({ ...r, choice });
+      if (sound) playCue(r.correct ? "correct" : "wrong"); // time running out counts as wrong
       setTimeout(() => { setFeedback(null); setPending(null); onProgress(r.me, r.done); }, r.correct ? FEEDBACK_MS.correct : reveal ? FEEDBACK_MS.wrong : FEEDBACK_MS.correct);
     } catch (e) {
       setPending(null); setProblem(e.message); onFailed();

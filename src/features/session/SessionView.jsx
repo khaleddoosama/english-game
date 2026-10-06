@@ -1,3 +1,4 @@
+import { playCue } from "../../lib/sound";
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Flame, Sparkles, Volume2, VolumeX, Zap } from "lucide-react";
 import { V2 } from "../../engine/v2";
@@ -60,23 +61,6 @@ const REPORT_REASONS=["Wrong or missing correct answer","My answer should've bee
 // double-check (no point asking AI to judge a non-answer) and is graded
 // wrong immediately, same as leaving it blank would be if that were allowed.
 const DONT_KNOW_TOKEN="-";
-// Short synthesized cues, no audio files. Correct: a quick rising pair
-// that climbs a little with the combo; wrong: one low soft note.
-let audioCtx=null;
-function playCue(kind,combo=0){
-  try{
-    audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();
-    const ctx=audioCtx,t=ctx.currentTime;
-    const notes=kind==='correct'?[523.25*Math.pow(2,Math.min(combo,8)/12),659.25*Math.pow(2,Math.min(combo,8)/12)]:[196];
-    notes.forEach((freq,i)=>{
-      const osc=ctx.createOscillator(),gain=ctx.createGain();
-      osc.type=kind==='correct'?'triangle':'sine';osc.frequency.value=freq;
-      const start=t+i*0.09,len=kind==='correct'?0.14:0.28;
-      gain.gain.setValueAtTime(0.0001,start);gain.gain.exponentialRampToValueAtTime(0.18,start+0.02);gain.gain.exponentialRampToValueAtTime(0.0001,start+len);
-      osc.connect(gain).connect(ctx.destination);osc.start(start);osc.stop(start+len+0.02);
-    });
-  }catch{}
-}
 // Friendly names for the V2-only modes MODE_META doesn't cover.
 const MODE_LABELS_V2={reverse:"Name the Word",picture:"Picture Hunter",antonym:"Opposite Clue",collocation:"Word Partners",family:"Word Family",grammarCourt:"Grammar Court",grammarChoose:"Grammar",grammarJudge:"Right or Wrong?",grammarFix:"Fix the Sentence",multi:"Combo",transform:"Transform"};
 // Correct answers in a row ending at index i (reported/skipped ones don't break it).

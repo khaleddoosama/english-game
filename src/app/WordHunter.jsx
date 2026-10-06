@@ -2,6 +2,8 @@ import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Award, GraduationCap, BarChart3, LogOut, Settings as SettingsIcon, Wrench, BookOpen, CheckCircle2, Download, Flag, Flame, HelpCircle, Lock, Play, Search, Target, Trash2, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
 import { V2 } from "../engine/v2";
 import { PronunciationModal, imageLinkOk } from "../features/media/media";
+import { unlockAudioOnFirstTouch } from "../lib/sound";
+unlockAudioOnFirstTouch(); // the first tap lets answer sounds play on phones
 import { isEmbeddedImage, storeEmbeddedImages } from "../lib/images";
 import { SessionView } from "../features/session/SessionView";
 import { Splash } from "../features/auth/LoginPage";
@@ -2229,7 +2231,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           </div>
         )}
 
-        {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge player={livePlayer} levels={LEVELS} code={route.code} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} limits={{ maxPlayers: isAdmin ? 10 : app.liveMaxPlayers, canCreate: isAdmin || app.liveCreate !== "admin", defaultCount: settings.liveQuestions ?? app.liveDefaultQuestions, defaultSeconds: settings.liveSeconds ?? app.liveDefaultSeconds, maxHours: isAdmin ? 168 : app.liveMaxHours }} /></Suspense>}
+        {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge player={livePlayer} levels={LEVELS} code={route.code} sound={settings.sound} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} limits={{ maxPlayers: isAdmin ? 10 : app.liveMaxPlayers, canCreate: isAdmin || app.liveCreate !== "admin", defaultCount: settings.liveQuestions ?? app.liveDefaultQuestions, defaultSeconds: settings.liveSeconds ?? app.liveDefaultSeconds, maxHours: isAdmin ? 168 : app.liveMaxHours }} /></Suspense>}
         {screen === "data" && <Suspense fallback={<ScreenSkeleton />}><ImportExport variant="game" isAdmin={isAdmin} tools={dataTools} onBack={backToLevels} /></Suspense>}
         {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} /></Suspense>}
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} hiddenForPlayers={isAdmin && !app.leaderboard} /></Suspense>}
