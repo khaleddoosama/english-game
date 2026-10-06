@@ -7,7 +7,7 @@ create table public.personal_content_items (
   deleted boolean not null default false,
   updated_at timestamptz not null default now(),
   primary key (user_id,kind,key),
-  check (data->>case when kind='words' then 'word' else 'id' end = key)
+  check (data->>(case when kind='words' then 'word' else 'id' end) = key)
 );
 create unique index personal_content_spelling on public.personal_content_items(user_id,kind,lower(key));
 alter table public.personal_content_items enable row level security;
@@ -48,7 +48,7 @@ begin
   for item in select value from jsonb_array_elements(p_items) loop
     typ:=item->>'kind'; k:=btrim(item->>'key'); d:=item->'data';
     if typ not in ('words','grammar') or typ is null or k is null or length(k) not between 1 and 200 or jsonb_typeof(d) is distinct from 'object'
-      or d->>case when typ='words' then 'word' else 'id' end is distinct from k or coalesce(btrim(d->>'category'),'')='' then
+      or d->>(case when typ='words' then 'word' else 'id' end) is distinct from k or coalesce(btrim(d->>'category'),'')='' then
       raise exception 'Invalid personal item' using errcode='22023';
     end if;
     if (d ? 'units') and (jsonb_typeof(d->'units') is distinct from 'array') then raise exception 'Units must be an array' using errcode='22023'; end if;
@@ -94,7 +94,7 @@ create policy "share to accepted friend" on public.friend_shares for insert to a
   and jsonb_array_length(entries)=cardinality(word_keys)
 );
 create function public.accept_word_share(p_id uuid) returns void language plpgsql security invoker set search_path='' as $$
-declare shared public.friend_shares; w jsonb; items jsonb;
+declare shared public.friend_shares; items jsonb;
 begin
   select * into shared from public.friend_shares where id=p_id and recipient=auth.uid();
   if not found then raise exception 'Share not found' using errcode='42501'; end if;
