@@ -5,6 +5,7 @@
   display: grid; gap: 16px; color: var(--ie-text);
 }
 .ie.light {
+  color-scheme: light;
   --ie-card: #fff; --ie-raised: #f5f6f4; --ie-text: #12201d; --ie-dim: #4f5b58; --ie-muted: #7b8582;
   --ie-line: #e3e5e1; --ie-accent: #c9a227; --ie-accent-ink: #1c1a17; --ie-good: #0c7a0c; --ie-bad: #b02a2a; --ie-warn-bg: #fdf1d8;
 }

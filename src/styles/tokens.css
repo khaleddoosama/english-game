@@ -25,6 +25,13 @@
 html, body { margin: 0; background: var(--ink); color: var(--paper); font-family: var(--font-body); }
 body { min-height: 100dvh; }
 button, input, select, textarea { font: inherit; }
+/* Follow each field's own text color on both light and dark surfaces.
+   Explicit opacity avoids browser-specific fading, including on focus. */
+input::placeholder, textarea::placeholder {
+  color: currentColor;
+  color: color-mix(in srgb, currentColor 75%, transparent);
+  opacity: 1;
+}
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {
