@@ -333,6 +333,7 @@
 .wh-img-blocked { font:11px 'IBM Plex Mono',monospace; color:var(--text-dim); background:rgba(107,93,79,0.08); border:1px dashed rgba(107,93,79,0.4); border-radius:6px; padding:8px 10px; margin:0 0 12px; }
 .wh-img-blocked a { color:var(--gold-soft); }
 .wh-flashcard-nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 16px 0; }
+.wh-flashcard-listen { display: flex; justify-content: center; margin: 10px 0 0; }
 .wh-regen-area { margin-top: 12px; }
 .wh-regen-status { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--paper-dim); }
 .wh-regen-status.error { color: var(--red); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

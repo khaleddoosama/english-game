@@ -182,6 +182,8 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
         {!flipped?<div className="wh-flashcard-front"><WordPicture word={w}/><h3>{w.word}</h3><p className="wh-flashcard-hint">Tap to reveal meaning &amp; example</p></div>
         :<div className="wh-flashcard-back"><WordPicture word={w}/><h3>{w.word}{w.partsOfSpeech?.length>0&&<span className="wh-pos-tag">{w.partsOfSpeech.join(" / ")}</span>}</h3><p><b>Meaning:</b> {w.meaning}</p><p><b>Situation:</b> {w.situation}</p>{w.plainForm&&<p>Plain form: {w.plainForm}</p>}</div>}
       </div>
+      {/* Outside the card, so it doesn't flip it. Works on both sides. */}
+      <div className="wh-flashcard-listen"><button className="wh-back-btn" onClick={()=>setYouglishTerm(V2.bareWord(w.word))}><Volume2 size={12}/> Listen</button></div>
       {flipped&&<div className="wh-regen-area">
         {!regenState&&onUpdateWord&&<button className="wh-back-btn wh-nav-btn" onClick={handleRegenerate}>Regenerate meaning &amp; example</button>}
         {regenState==='loading'&&<p className="wh-regen-status">Generating a new version…</p>}
@@ -202,6 +204,7 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
         :<button className="wh-level-btn" onClick={()=>{onIntroduce(intro);save({introduced:true});}}>Continue</button>}
       </div>
       <button className="wh-back-btn wh-nav-btn" onClick={onBack}>Save and leave</button>
+      {youglishTerm&&<PronunciationModal term={youglishTerm} onClose={()=>setYouglishTerm(null)}/>}
     </section>;
   }
   if(s.index>=s.queue.length){
