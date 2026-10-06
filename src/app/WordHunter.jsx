@@ -805,7 +805,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       try {
         if (raw) hadAnyData = true;
         const data = raw ? migrateProgressData(raw) : emptyProgressData();
-        if (onlineLibrary && !sessionFitsLibrary(data.activeSession, personal?.words || [])) data.activeSession = null;
+        if (onlineLibrary && !sessionFitsLibrary(data.activeSession, personal?.words || [], personal?.grammar || [])) data.activeSession = null;
         applyProgressData(data);
         // A new player starts with the admin's defaults (Admin -> Settings).
         setSettings(normalizeSettings(raw?.settings ? data.settings : { ...getAppSettings().newPlayerDefaults }));
@@ -847,7 +847,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     if (!isAdmin) {
       setCustomWords(content.words || []); setCustomGrammar(content.grammar || []); setCustomChallenges(content.challenges || []);
     }
-    setActiveSession(current => sessionFitsLibrary(current, content.words || []) ? current : null);
+    setActiveSession(current => sessionFitsLibrary(current, content.words || [], content.grammar || []) ? current : null);
   }
   // Refresh the user's selection after changes on another device.
   useEffect(() => {
@@ -1760,7 +1760,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} today={todayProgress(dailyProgress)} dailyGoal={settings.dailyGoal}
           weakReviewCount={Math.min(weakCandidates.length, settings.weakReviewSize)} onWeakReview={startWeakReview} onPlayLevel={(i) => startLevel(i)} onBack={backToLevels} /></Suspense>}
 
-        {screen === "library" && <Suspense fallback={<ScreenSkeleton />}><LibraryPage userId={profile?.id} words={personalContent?.words || (onlineLibrary ? [] : customWords)} local={!onlineLibrary} onChanged={refreshPersonalLibrary} /></Suspense>}
+        {screen === "library" && <Suspense fallback={<ScreenSkeleton />}><LibraryPage userId={profile?.id} words={personalContent?.words || (onlineLibrary ? [] : customWords)} grammar={personalContent?.grammar || (onlineLibrary ? [] : customGrammar)} local={!onlineLibrary} onChanged={refreshPersonalLibrary} /></Suspense>}
         {screen === "friends" && <Suspense fallback={<ScreenSkeleton />}><FriendsPage userId={profile?.id} local={!onlineLibrary} onLibraryChanged={refreshPersonalLibrary} /></Suspense>}
         {screen === "levels" && <>
           {onlineLibrary && <div className="wh-fresh-copy-banner"><p><b>My words · {personalContent?.words?.length || 0}</b> — practise the words you choose.</p><button className="wh-level-btn" onClick={()=>setScreen("library")}>{personalContent?.words?.length ? "Manage my words" : "Choose your first words"}</button></div>}

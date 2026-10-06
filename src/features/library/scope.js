@@ -1,10 +1,12 @@
 // Practice content is derived from the user's explicit selection. Empty means
 // empty; it must never fall back to the entire catalogue.
-export function sessionFitsLibrary(session, words) {
+export function sessionFitsLibrary(session, words, grammar = []) {
   if (!session) return true;
   const selected = new Set(words.map(w=>w.word.toLowerCase()));
   const targets = [...[...(session.words || []),...(session.introductions || [])].map(w=>typeof w==='string'?w:w?.word), ...(session.queue || []).flatMap(q=>q.targets || [])].filter(Boolean);
-  return targets.length > 0 && targets.every(w=>selected.has(String(w).toLowerCase()));
+  const rules = new Set(grammar.map(g=>`grammar:${g.id}`));
+  const grammarKeys = (session.queue || []).map(q=>q.progressKey).filter(k=>String(k).startsWith("grammar:"));
+  return (targets.length > 0 || grammarKeys.length > 0) && targets.every(w=>selected.has(String(w).toLowerCase())) && grammarKeys.every(k=>rules.has(k));
 }
 export function selectedStories(stories, words) {
   const selected = new Set(words.map(w=>w.word.toLowerCase()));

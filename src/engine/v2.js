@@ -647,7 +647,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // session's words, one question per rule, 1–2 rules per session. Rules
   // rotate like words (missed last time first, then least recently
   // reviewed) and each rule steps through its own questions in turn.
-  const grammarTopics=new Set((category?[category]:chosen.map(w=>w.category)).map(topic));
+  const grammarTopics=new Set((category?[category]:chosen.length?chosen.map(w=>w.category):(content.grammar||[]).map(g=>g.category)).map(topic));
   const missedKey=key=>{const r=mastery[key]?.lastResult;return r&&r!=='correct'?1:0;};
   // A unit round only asks that unit's grammar rules; a course-level round
   // only the rules of that level (and session).
@@ -693,7 +693,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // At most one grammar question per 4 word questions, so a short round
   // (e.g. the very first one) stays about the words. Spread the rest
   // through the round (never first), e.g. at 1/3 and 2/3.
-  grammarQueue.splice(Math.floor(queue.length/4));
+  if(source.length)grammarQueue.splice(Math.floor(queue.length/4));
   const spots=grammarQueue.map((_,k)=>Math.max(1,Math.round(queue.length*(k+1)/(grammarQueue.length+1))));
   for(let k=grammarQueue.length-1;k>=0;k--)queue.splice(Math.min(spots[k],queue.length),0,grammarQueue[k]);
   return {kind:'practice',id:`session-${Date.now()}-${rng()}`,title:opts.title||category||'Practice',queue,introductions:fresh,index:0,answers:[],initialLength:queue.length,targetLength:questionsPerRound,reserves:candidates,extraAdded:false};

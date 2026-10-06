@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { acceptFriend, dismissInvite, dismissShare, loadFriends, removeFriend, requestFriend } from './friendsApi';
-import { chooseWords } from '../library/libraryApi';
+import { acceptWordShare } from '../library/libraryApi';
 import { navigate, pathFor } from '../../lib/router';
 import '../../styles/library.css';
 const EMPTY = {friends:[],requests:[],shares:[],invites:[]};
@@ -21,7 +21,7 @@ export default function FriendsPage({userId,onLibraryChanged,local=false}) {
     <h3>Requests · {data.requests.length}</h3>{data.requests.map(r=><article className="pl-result" key={r.id}><div><b>{r.username}</b><p>{r.incoming?'Wants to be your friend':'Waiting for their reply'}</p></div><div className="pl-row">{r.incoming&&<button className="wh-level-btn" disabled={busy} onClick={()=>act(()=>acceptFriend(r.id))}>Accept</button>}<button className="wh-back-btn" disabled={busy} onClick={()=>act(()=>removeFriend(r.id))}>{r.incoming?'Decline':'Cancel'}</button></div></article>)}
     <h3>My friends · {data.friends.length}</h3>{!loading&&!data.friends.length&&<p>Add a friend using their username.</p>}{data.friends.map(f=><article className="pl-result" key={f.id}><b>{f.username}</b><div className="pl-row"><button className="wh-level-btn" onClick={()=>navigate('/live')}>Create a challenge</button><button className="wh-back-btn" onClick={()=>navigate('/library')}>Share words</button><button className="wh-back-btn" disabled={busy} onClick={()=>act(()=>removeFriend(f.id))}>Remove friend</button></div></article>)}
     <h3>Challenge invitations · {data.invites.length}</h3>{data.invites.map(i=><article className="pl-result" key={i.id}><div><b>{i.username}</b><p>Invited you to challenge {i.code}</p></div><div className="pl-row"><button className="wh-level-btn" onClick={()=>navigate(pathFor('live',{code:i.code}))}>Open challenge</button><button className="wh-back-btn" disabled={busy} onClick={()=>act(()=>dismissInvite(i.id))}>Dismiss</button></div></article>)}
-    <h3>Words shared with me · {data.shares.length}</h3>{data.shares.map(s=><article className="pl-word" key={s.id}><b>From {s.username} · {s.word_keys.length} words</b><p>{s.word_keys.join(' · ')}</p><div className="pl-row"><button className="wh-level-btn" disabled={busy} onClick={()=>act(async()=>{await chooseWords(userId,s.word_keys);await onLibraryChanged();await dismissShare(s.id);setMessage('Shared words added to your library.');})}>Add to my words</button><button className="wh-back-btn" disabled={busy} onClick={()=>act(()=>dismissShare(s.id))}>Dismiss</button></div></article>)}
+    <h3>Words shared with me · {data.shares.length}</h3>{data.shares.map(s=><article className="pl-word" key={s.id}><b>From {s.username} · {s.word_keys.length} words</b><p>{s.word_keys.join(' · ')}</p><div className="pl-row"><button className="wh-level-btn" disabled={busy} onClick={()=>act(async()=>{await acceptWordShare(s.id);await onLibraryChanged();setMessage('Shared words added to your library.');})}>Add to my words</button><button className="wh-back-btn" disabled={busy} onClick={()=>act(()=>dismissShare(s.id))}>Dismiss</button></div></article>)}
   </section>;
 }
 export function InviteFriends({userId,code}) {

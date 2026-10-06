@@ -11,13 +11,14 @@ import { GRAMMAR_LEVELS, GRAMMAR_TYPES, blankGrammarQuestion, cleanGrammarDraft,
 
 const JUDGE_OK = "It's correct as it is";
 
-export function GrammarEditor({ rule, isNew, content, stats, onSave, onDelete, onDuplicate, onClose }) {
+export function GrammarEditor({ rule, isNew, content, stats, onSave, onDelete, onDuplicate, onClose, personal = false, generateQuestions }) {
   const rules = content.grammar || [];
   const lessons = useMemo(() => [...new Set([...(content.levels || []).map((l) => l.title), ...rules.map((g) => g.category).filter(Boolean)])], [content.levels, rules]);
   const start = useMemo(() => grammarDraftOf(rule), [rule]);
   const [draft, setDraftState] = useState(start);
   const [json, setJson] = useState(null);
   const [showErrors, setShowErrors] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [note, setNote] = useState(null);
   const [preview, setPreview] = useState(() => new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -35,16 +36,18 @@ export function GrammarEditor({ rule, isNew, content, stats, onSave, onDelete, o
   const moveQuestion = (i, by) => setDraft((d) => { const qs = [...d.questions]; const [q] = qs.splice(i, 1); qs.splice(i + by, 0, q); return { questions: qs }; });
   const addQuestion = (type) => setDraft((d) => ({ questions: [...d.questions, blankGrammarQuestion(type)] }));
 
-  function save() {
+  async function save() {
     let next = cleaned;
     if (json != null) {
       try { next = cleanGrammarDraft(grammarDraftOf(JSON.parse(json))); } catch { setShowErrors(true); setNote({ tone: "error", text: "The JSON isn't valid. Fix it or go back to the form." }); return; }
       const p = grammarDraftProblems(next, others);
       if (p.length) { setShowErrors(true); setNote({ tone: "error", text: p.map((x) => (x.at == null ? x.text : `Question ${x.at + 1}: ${x.text}`)).join(" · ") }); return; }
     } else if (problems.length) { setShowErrors(true); return; }
+    if (personal && !isNew && next.id !== rule.id) { setNote({tone:"error",text:"Keep the rule ID unchanged to preserve your progress."}); return; }
     // A new lesson name means the old lesson id no longer applies.
     if (next.categoryId && next.category !== rule.category) delete next.categoryId;
-    onSave(next);
+    setSaving(true);
+    try { await onSave(next); } catch(e) { setNote({tone:"error",text:e.message}); } finally { setSaving(false); }
   }
   const close = () => (dirty ? setConfirmClose(true) : onClose());
   const count = draft.questions.length;
@@ -70,6 +73,7 @@ export function GrammarEditor({ rule, isNew, content, stats, onSave, onDelete, o
               <label className="adm-field"><span>Level</span><select className="adm-select" value={draft.level || ""} onChange={(e) => setDraft({ level: e.target.value })}><option value="">—</option>{[...new Set([...GRAMMAR_LEVELS, ...(draft.level ? [draft.level] : [])])].map((l) => <option key={l}>{l}</option>)}</select></label>
               <label className="adm-field"><span>Id <small className="adm-muted">· {isNew ? "keeps players' progress; can't change later" : "fixed"}</small></span><input className="adm-input mono" value={draft.id} disabled={!isNew} onChange={(e) => setDraft({ id: e.target.value })} /></label>
             </div>
+            <Text label="Units" hint="comma-separated; a rule can belong to several units" value={(draft.units || []).join(", ")} onChange={v => setDraft({ units: v.split(/[,\n]/).map(s => s.trim()).filter(Boolean) })} />
             <datalist id="gr-lessons">{lessons.map((c) => <option key={c} value={c} />)}</datalist>
             <Area label="Explanation" hint="shown after every answer" rows={3} value={draft.explanation} onChange={(v) => setDraft({ explanation: v })} />
             <Area label="Examples" hint="one per line" rows={3} value={draft.examples.join("\n")} onChange={(v) => setDraft({ examples: v.split("\n") })} />
@@ -103,11 +107,11 @@ export function GrammarEditor({ rule, isNew, content, stats, onSave, onDelete, o
               <span className="adm-muted">Add a question:</span>
               {Object.entries(GRAMMAR_TYPES).map(([t, label]) => <button key={t} className="adm-btn ghost small" onClick={() => addQuestion(t)}><Plus size={14} /> {label}</button>)}
             </div>
-            <AiQuestions rule={cleaned} content={content} onAdd={(qs) => { setDraft((d) => ({ questions: [...d.questions, ...qs] })); setNote({ text: `Added ${qs.length} question${qs.length === 1 ? "" : "s"}. Check them, then save.` }); }} />
+            <AiQuestions generate={generateQuestions || generateGrammarQuestions} rule={cleaned} content={content} onAdd={(qs) => { setDraft((d) => ({ questions: [...d.questions, ...qs] })); setNote({ text: `Added ${qs.length} question${qs.length === 1 ? "" : "s"}. Check them, then save.` }); }} />
           </section>
         </>}
         <footer className="adm-editor-foot">
-          <button className="adm-btn primary" onClick={save} disabled={!dirty}>{isNew ? "Add rule" : "Save changes"}</button>
+          <button className="adm-btn primary" onClick={save} disabled={!dirty || saving}>{isNew ? "Add rule" : "Save changes"}</button>
           {json == null && <button className="adm-btn ghost" onClick={() => setJson(JSON.stringify(cleaned, null, 2))}><Code2 size={15} /> JSON</button>}
           {!isNew && <button className="adm-btn ghost" onClick={() => onDuplicate(cleaned)}><Copy size={15} /> Duplicate</button>}
           <span className="adm-toolbar-spacer" />
@@ -115,7 +119,7 @@ export function GrammarEditor({ rule, isNew, content, stats, onSave, onDelete, o
           {!isNew && <button className="adm-btn danger" onClick={() => setConfirmDelete(true)}><Trash2 size={15} /> Delete</button>}
         </footer>
       </div>
-      {confirmDelete && <ConfirmDialog danger title={`Delete “${rule.rule || rule.id}”?`} confirmLabel="Delete" body={<p>It disappears from every player's game. Their history with it stays in their progress. You can bring it back from the Activity log.</p>} onCancel={() => setConfirmDelete(false)} onConfirm={() => { setConfirmDelete(false); onDelete(rule); }} />}
+      {confirmDelete && <ConfirmDialog danger title={`Delete “${rule.rule || rule.id}”?`} confirmLabel="Delete" body={<p>{personal ? "Remove this rule from your library? Your progress stays saved." : "It disappears from every player's game. Their history with it stays in their progress. You can bring it back from the Activity log."}</p>} onCancel={() => setConfirmDelete(false)} onConfirm={() => { setConfirmDelete(false); onDelete(rule); }} />}
       {confirmClose && <ConfirmDialog danger title="Discard your changes?" confirmLabel="Discard" body={<p>The rule hasn't been saved.</p>} onCancel={() => setConfirmClose(false)} onConfirm={() => { setConfirmClose(false); onClose(); }} />}
     </Drawer>
   );
@@ -196,7 +200,7 @@ export function QuestionPreview({ q }) {
   );
 }
 
-function AiQuestions({ rule, content, onAdd }) {
+function AiQuestions({ rule, content, onAdd, generate }) {
   const [types, setTypes] = useState(["choose", "judge", "fix"]);
   const [count, setCount] = useState(3);
   const [busy, setBusy] = useState(false);
@@ -208,7 +212,7 @@ function AiQuestions({ rule, content, onAdd }) {
     setBusy(true); setError(null); setReview(null);
     try {
       const lessonWords = (content.words || []).filter((w) => w.category === rule.category).slice(0, 40).map((w) => w.word);
-      setReview(await generateGrammarQuestions(rule, types, count, lessonWords));
+      setReview(await generate(rule, types, count, lessonWords));
     } catch (e) { setError(e.message || "The AI request failed."); }
     setBusy(false);
   }
