@@ -9,8 +9,11 @@ begin
   insert into public.friendships(requester,recipient,status) values(a,b,'accepted');
   perform set_config('request.jwt.claims',json_build_object('sub',a,'role','authenticated')::text,true);
   execute 'set local role authenticated';
-  insert into public.personal_words(word_key) values('author-apple');
+  payload:=public.choose_bulk_words(array['AUTHOR-APPLE','not-in-catalogue']);
+  if jsonb_array_length(payload)<>1 then raise exception 'FAIL: bulk existing lookup not immediate/case insensitive';end if;
   perform public.save_personal_items('[{"kind":"words","key":"author-apple","data":{"word":"author-apple","type":"vocab","category":"My course","meaning":"my edited definition","units":["Unit 4","Revision"]}},{"kind":"words","key":"my-private-word","data":{"word":"my-private-word","type":"vocab","category":"My course","meaning":"private word","units":["Unit 4"]}},{"kind":"grammar","key":"my-private-rule","data":{"id":"my-private-rule","rule":"Used to","category":"My course","explanation":"Past habits.","units":["Unit 4"],"questions":[{"type":"fix","sentence":"I use to run.","answer":"I used to run."}]}}]');
+  payload:=public.choose_bulk_words(array['AUTHOR-APPLE','my-private-word']);
+  if jsonb_array_length(payload)<>2 or not exists(select 1 from jsonb_array_elements(payload) w where w->>'word'='author-apple' and w->>'meaning'='my edited definition') then raise exception 'FAIL: bulk reuse lost private edits';end if;
   payload:=public.my_library_content();
   if jsonb_array_length(payload->'words')<>2 or jsonb_array_length(payload->'grammar')<>2 then raise exception 'FAIL: private content missing %',payload;end if;
   select data->>'meaning' into before_meaning from public.content_items where kind='words' and key='author-apple';

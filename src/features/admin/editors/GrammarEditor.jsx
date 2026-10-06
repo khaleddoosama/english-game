@@ -119,7 +119,7 @@ export function GrammarEditor({ rule, isNew, content, stats, onSave, onDelete, o
           {!isNew && <button className="adm-btn danger" onClick={() => setConfirmDelete(true)}><Trash2 size={15} /> Delete</button>}
         </footer>
       </div>
-      {confirmDelete && <ConfirmDialog danger title={`Delete “${rule.rule || rule.id}”?`} confirmLabel="Delete" body={<p>{personal ? "Remove this rule from your library? Your progress stays saved." : "It disappears from every player's game. Their history with it stays in their progress. You can bring it back from the Activity log."}</p>} onCancel={() => setConfirmDelete(false)} onConfirm={() => { setConfirmDelete(false); onDelete(rule); }} />}
+      {confirmDelete && <ConfirmDialog danger title={`Delete “${rule.rule || rule.id}”?`} confirmLabel="Delete" body={<p>{personal ? "Remove this rule from your library? Your progress stays saved." : "It disappears from every player's game. Their history with it stays in their progress. You can bring it back from the Activity log."}</p>} onCancel={() => setConfirmDelete(false)} onConfirm={async () => { setConfirmDelete(false); setSaving(true); try { await onDelete(rule); } catch(e) { setNote({tone:"error",text:e.message}); } finally { setSaving(false); } }} />}
       {confirmClose && <ConfirmDialog danger title="Discard your changes?" confirmLabel="Discard" body={<p>The rule hasn't been saved.</p>} onCancel={() => setConfirmClose(false)} onConfirm={() => { setConfirmClose(false); onClose(); }} />}
     </Drawer>
   );

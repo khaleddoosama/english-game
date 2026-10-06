@@ -130,7 +130,7 @@ export function WordEditor({ word, content, stats, onSave, onDelete, onClose, pe
     setBusy("ai"); setErrors([]); setNote(null);
     try {
       const g = generateWord ? await generateWord(form.word, item) : await askAiForWord(form.word, item);
-      if (generateWord) { const incoming = toForm(g); setForm(f => Object.fromEntries(Object.entries(f).map(([k,v]) => [k, String(v || "").trim() ? v : incoming[k]]))); setNote("AI filled the empty fields. Review them before saving."); setBusy(null); return; }
+      if (generateWord) { const incoming = toForm(g); setForm(f => Object.fromEntries(Object.entries(f).map(([k,v]) => [k, (isNew && k === "type" && v === "vocab") ? incoming[k] : String(v || "").trim() ? v : incoming[k]]))); setNote("AI filled the empty fields. Review them before saving."); setBusy(null); return; }
       const filled = [];
       const fill = (k, v) => { if (!String(form[k] || "").trim() && v) { filled.push(k); return v; } return form[k]; };
       setForm((f) => ({
@@ -236,7 +236,7 @@ export function WordEditor({ word, content, stats, onSave, onDelete, onClose, pe
           {!isNew && <button className="adm-btn danger" onClick={() => setConfirmDelete(true)}><Trash2 size={15} /> Delete</button>}
         </footer>
       </div>
-      {confirmDelete && <ConfirmDialog title={`Delete “${word.word}”?`} danger confirmLabel="Delete" body={<p>{personal ? "Remove it from your library? Your progress stays saved." : "It disappears from every player's game. Their learning history stays in their progress but stops counting. You can bring it back from the Activity log."}</p>} onCancel={() => setConfirmDelete(false)} onConfirm={() => { setConfirmDelete(false); onDelete(word); }} />}
+      {confirmDelete && <ConfirmDialog title={`Delete “${word.word}”?`} danger confirmLabel="Delete" body={<p>{personal ? "Remove it from your library? Your progress stays saved." : "It disappears from every player's game. Their learning history stays in their progress but stops counting. You can bring it back from the Activity log."}</p>} onCancel={() => setConfirmDelete(false)} onConfirm={async () => { setConfirmDelete(false); setBusy("save"); try { await onDelete(word); } catch(e) { setErrors([e.message]); } finally { setBusy(null); } }} />}
       {confirmClose && <ConfirmDialog title="Discard your changes?" confirmLabel="Discard" danger body={<p>The word hasn't been saved.</p>} onCancel={() => setConfirmClose(false)} onConfirm={() => { setConfirmClose(false); onClose(); }} />}
     </Drawer>
   );
