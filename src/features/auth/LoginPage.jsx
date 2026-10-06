@@ -41,7 +41,7 @@ export function LoginPage() {
         </div>
         <label className="auth-field">
           <span>Username</span>
-          <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={20} required placeholder="e.g. sara_22" />
+          <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={20} required placeholder="khaled_1" />
         </label>
         <label className="auth-field">
           <span>Password</span>
