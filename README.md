@@ -79,11 +79,14 @@ Migrations live in `supabase/migrations` (apply in order). They create:
   0023, once a challenge is over every member sees every player's answers
   (never before), and "Retry challenge" leaves the new challenge's code on
   the old one (`live_set_next`) so the other players are offered it
-- `friendships` and `live_invites` (0024) — friends and invitations to Live
+- `friendships` and `live_invites` (0024, 0025) — friends and invitations to Live
   challenges. A friend request goes by exact username and needs an answer
   (`friend_request` / `friend_respond` / `friend_remove`); asking someone who
   already asked you means yes, a declined asker waits a week, and the
-  limits are 100 friends and 20 waiting requests. Both tables can be read
+  limits are 100 friends and 20 waiting requests. Ending a friendship or
+  taking back a request keeps the row (0025: `removed` / `cancelled`, with
+  `ended_by`): the player who was removed waits a week before asking again,
+  the one who removed doesn't, a cancelled request has no wait. Both tables can be read
   only by the people they name and are written only by these functions.
   A member of a challenge that hasn't started (or is open to join anytime)
   invites friends with `live_invite_friends`; `live_my_invites` lists the

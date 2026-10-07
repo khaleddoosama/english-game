@@ -100,7 +100,10 @@ export function createLocalFriendsApi({ storage, me, live, now = () => Date.now(
           save(old, { status: "accepted" });
           return { status: "accepted", id: tid, username: tname };
         }
-        if (old.by === who.id && Date.parse(old.updated_at) > now() - DECLINE_WAIT_MS) fail(`${tname} did not accept your request. You can ask again after a week.`, "55000");
+        const recent = Date.parse(old.updated_at) > now() - DECLINE_WAIT_MS;
+        if (old.status === "declined" && old.by === who.id && recent) fail(`${tname} did not accept your request. You can ask again after a week.`, "55000");
+        // Whoever ended a friendship may ask again at once; the other one waits a week.
+        if (old.status === "removed" && old.ended_by !== who.id && recent) fail(`${tname} is not accepting requests from you right now. You can try again after a week.`, "55000");
       }
       if (friendCount(who.id) >= MAX_FRIENDS) fail(`You have ${MAX_FRIENDS} friends, the most there can be.`, "55000");
       checkRoom(tid, tname);
@@ -120,9 +123,11 @@ export function createLocalFriendsApi({ storage, me, live, now = () => Date.now(
       } else save(r, { status: "declined" });
     },
 
+    // Ending a friendship (or taking back my request) keeps the pair, marked "removed" / "cancelled".
     async remove(userId) {
-      const who = touch(), k = pairKey(who.id, userId), r = read(k);
-      if (r && (r.status === "accepted" || (r.status === "pending" && r.by === who.id))) storage.removeItem(k);
+      const who = touch(), r = read(pairKey(who.id, userId));
+      if (r && r.status === "accepted") save(r, { status: "removed", ended_by: who.id });
+      else if (r && r.status === "pending" && r.by === who.id) save(r, { status: "cancelled", ended_by: who.id });
     },
 
     async list() {

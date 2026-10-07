@@ -1,5 +1,5 @@
--- Friends and invitations to Live challenges (migration 0024):
--- asking by username, accepting, declining with a one-week wait, removing,
+-- Friends and invitations to Live challenges (migrations 0024, 0025):
+-- asking by username, accepting, declining with a one-week wait, removing (kept as a row),
 -- limits, who can see what, and invitations that only friends can send
 -- (begin; <this>; rollback;).
 create function pg_temp.act(u uuid) returns void language sql as $$
@@ -99,16 +99,35 @@ begin
   perform pg_temp.must(public.friend_count(a) = 2, 'fr_a now has two friends');
   report := report || 'decline and a week; ';
 
-  -- Removing, taking back a request, removing twice.
+  -- Removing keeps the row. The one who was removed waits a week; the one who removed doesn't.
   perform pg_temp.act(a);
   perform public.friend_remove(e);
-  perform public.friend_remove(e);
+  perform public.friend_remove(e);                             -- twice is fine
+  perform public.friend_remove(gen_random_uuid());             -- a stranger is fine too
   perform pg_temp.must(public.friend_count(a) = 1 and public.friend_count(e) = 0, 'removed on both sides');
-  perform public.friend_request('fr_e');
+  perform pg_temp.must((select status || '/' || (ended_by = a)::text from public.friendships where user_a = least(a, e) and user_b = greatest(a, e)) = 'removed/true', 'the row stays, marked removed by fr_a');
+  perform pg_temp.act(e);
+  perform pg_temp.must(jsonb_array_length(public.friends_list() -> 'friends') = 0, 'a removed friend is gone from the list');
+  begin perform public.friend_request('fr_a'); raise exception 'FAIL: the removed player asked again at once';
+  exception when sqlstate '55000' then null; end;
+  update public.friendships set updated_at = now() - interval '8 days' where user_a = least(a, e) and user_b = greatest(a, e);
+  v := public.friend_request('fr_a');
+  perform pg_temp.must(v ->> 'status' = 'pending', 'the removed player may ask again after a week');
+  perform pg_temp.must((select ended_by from public.friendships where user_a = least(a, e) and user_b = greatest(a, e)) is null, 'a new request clears who ended it');
+  -- Taking a request back leaves "cancelled" and no wait; only the sender can take it back.
+  perform pg_temp.act(a);
+  perform public.friend_remove(e);                             -- not mine to take back: nothing happens
+  perform pg_temp.must(jsonb_array_length(public.friends_list() -> 'incoming') = 1, 'the receiver cannot cancel the sender''s request');
+  perform pg_temp.act(e);
+  perform public.friend_remove(a);
+  perform pg_temp.must((select status || '/' || (ended_by = e)::text from public.friendships where user_a = least(a, e) and user_b = greatest(a, e)) = 'cancelled/true', 'a taken-back request is kept as cancelled');
+  perform pg_temp.act(a);
+  perform pg_temp.must(jsonb_array_length(public.friends_list() -> 'incoming') = 0, 'a request taken back disappears');
+  perform public.friend_request('fr_e');                       -- cancelled: nobody waits
   perform public.friend_remove(e);
   perform pg_temp.act(e);
-  perform pg_temp.must(jsonb_array_length(public.friends_list() -> 'incoming') = 0, 'a request taken back disappears');
-  report := report || 'remove; ';
+  perform pg_temp.must(jsonb_array_length(public.friends_list() -> 'incoming') = 0, 'the second request taken back disappears too');
+  report := report || 'remove (soft); ';
 
   -- Invitations: friends of a challenge's members, to a challenge that can still be joined.
   perform pg_temp.act(a);
@@ -177,8 +196,8 @@ begin
   -- Rows: a player reads only their own, and can't write any directly.
   perform pg_temp.act(e);
   set local role authenticated;
-  select count(*) into n from public.friendships;
-  perform pg_temp.must(n = 0, 'a stranger reads friendships: ' || n);
+  select count(*) into n from public.friendships where e not in (user_a, user_b);
+  perform pg_temp.must(n = 0, 'a player reads rows that are not theirs: ' || n);
   select count(*) into n from public.live_invites;
   perform pg_temp.must(n = 0, 'a stranger reads invitations: ' || n);
   reset role;

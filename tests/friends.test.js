@@ -91,11 +91,36 @@ describe("asking and answering", () => {
     await befriend(w, "amr", "bassem");
     await w.as("amr").friends.remove("id-bassem");
     await w.as("amr").friends.remove("id-bassem");
+    await w.as("amr").friends.remove("id-nobody");             // nothing to end is fine
     expect((await w.as("bassem").friends.list()).friends).toHaveLength(0);
     await w.as("amr").friends.request("carol");
     await w.as("amr").friends.remove("id-carol");
     expect((await w.as("carol").friends.list()).incoming).toHaveLength(0);
-    await w.as("amr").friends.request("bassem");              // can ask again after a removal
+    await w.as("amr").friends.request("bassem");              // the one who removed can ask again at once
+  });
+
+  it("removing keeps the pair: the removed one waits a week, the remover and a cancelled request don't", async () => {
+    const w = world(); await meet(w, "amr", "bassem", "carol");
+    const stored = (x, y) => JSON.parse(w.storage.getItem(`friends1:p:${[x, y].sort().join("|")}`));
+    await befriend(w, "amr", "bassem");
+    await w.as("amr").friends.remove("id-bassem");
+    expect(stored("id-amr", "id-bassem")).toMatchObject({ status: "removed", ended_by: "id-amr" });
+    expect(await w.as("amr").friends.counts()).toEqual({ requests: 0, invites: 0 });
+    await fails(w.as("bassem").friends.request("amr"), "55000");
+    w.tick(DECLINE_WAIT_MS + 1000);
+    expect((await w.as("bassem").friends.request("amr")).status).toBe("pending");
+    expect(stored("id-amr", "id-bassem")).toMatchObject({ status: "pending", by: "id-bassem" });
+    expect(stored("id-amr", "id-bassem").ended_by).toBeUndefined();
+    // Only the sender can take a request back; the receiver answers it instead.
+    await w.as("amr").friends.remove("id-bassem");
+    expect((await w.as("amr").friends.list()).incoming).toHaveLength(1);
+    await w.as("bassem").friends.remove("id-amr");
+    expect(stored("id-amr", "id-bassem")).toMatchObject({ status: "cancelled", ended_by: "id-bassem" });
+    expect((await w.as("bassem").friends.request("amr")).status).toBe("pending");   // cancelled: no wait
+    // The same goes for the one who removed, right away.
+    await w.as("amr").friends.respond("id-bassem", true);
+    await w.as("bassem").friends.remove("id-amr");
+    expect((await w.as("bassem").friends.request("amr")).status).toBe("pending");
   });
 });
 
