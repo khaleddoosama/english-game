@@ -30,6 +30,31 @@ function stubFetch(responses) {
 const body = (model, plain) => ({ plain, model });
 
 describe("gemini fallback", () => {
+  it("aborts a disconnected request without starting fallback models", async () => {
+    const controller = new AbortController();
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));
+    const pending = gemini.generateWithFallback(["main-model", "backup-a"], body, { ...quiet, signal: controller.signal });
+    const checked = expect(pending).rejects.toMatchObject({ name: "AbortError", status: 499 });
+    await Promise.resolve(); controller.abort(); await checked;
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+  it.each(["connection", "body"])("bounds a stalled %s across the fallback chain", async (stage) => {
+    vi.useFakeTimers();
+    const signals = [];
+    vi.stubGlobal("fetch", vi.fn(async (_url, init) => {
+      signals.push(init.signal);
+      if (stage === "connection") return new Promise(() => {});
+      return { ok: true, json: () => new Promise(() => {}) };
+    }));
+    const pending = gemini.generateWithFallback(["main-model", "backup-a", "backup-b"], body, quiet);
+    const checked = expect(pending).rejects.toMatchObject({ status: 503 });
+    await vi.advanceTimersByTimeAsync(41000);
+    await checked;
+    expect(signals.length).toBeGreaterThan(1);
+    expect(signals.every(s => s.aborted)).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("retries a busy model once, then answers", async () => {
     const calls = stubFetch([fail(503, BUSY), ok('{"a":1}')]);
     const { model } = await gemini.generateWithFallback(["main-model", "backup-a"], body, quiet);

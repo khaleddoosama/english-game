@@ -35,7 +35,7 @@ export async function POST(request) {
   const started = Date.now();
   let generation;
   try {
-    generation = await generateJsonText(vocabularyPrompt(term));
+    generation = await generateJsonText(vocabularyPrompt(term), { signal: request.signal });
     const entry = validateVocabulary(JSON.parse(generation.text),term);
     const saved = await fetch(`${SUPABASE_URL}/rest/v1/rpc/store_generated_word`,{
       method:'POST',headers:{...auth,'content-type':'application/json'},body:JSON.stringify({p_user:user.id,p_word:entry}),signal:AbortSignal.timeout(5000),

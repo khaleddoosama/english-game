@@ -19,7 +19,7 @@ export async function POST(request) {
   if (denied) return denied;
   const started = Date.now();
   try {
-    const { text, model, usage } = await generateJsonText(prompt);
+    const { text, model, usage } = await generateJsonText(prompt, { signal: request.signal });
     await finishCall(callId, { ok: true, model, ms: Date.now() - started, status: 200, outputChars: text.length, usage });
     return json(200, { text, model });
   } catch (e) {

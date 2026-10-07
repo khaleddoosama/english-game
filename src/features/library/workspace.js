@@ -1,3 +1,4 @@
+import { isAiCancelled } from '../../lib/aiOperations.js';
 import { normalizeTerm } from '../../../api/_lib/vocabulary.js';
 
 export function parseBulkWords(input) {
@@ -24,22 +25,25 @@ export function groupContent(item, category, units) {
 
 // Successful rows are never regenerated on retry. An assignment failure keeps
 // the obtained entry, so the next attempt only retries saving its grouping.
-export async function runBulkWords(items, { add, save, category = '', units = '', existing = [], onUpdate }) {
+export async function runBulkWords(items, { add, save, category = '', units = '', existing = [], onUpdate, signal, onProgress = () => {} }) {
   const rows = items.map(item => ({ ...item }));
   const own = new Map(existing.map(w => [w.word.toLowerCase(), w]));
   const order = rows.map((_,i)=>i).sort((a,b)=>Number(!!(rows[b].entry || own.has(rows[b].term.toLowerCase())))-Number(!!(rows[a].entry || own.has(rows[a].term.toLowerCase()))));
   for (const i of order) {
+    if (signal?.aborted) break;
     if (rows[i].status === 'done') continue;
     try { normalizeTerm(rows[i].term); } catch (e) { rows[i] = { ...rows[i], status: 'failed', error: e.message }; onUpdate([...rows]); continue; }
     rows[i] = { ...rows[i], status: 'working', error: null }; onUpdate([...rows]);
     try {
-      const entry = rows[i].entry || own.get(rows[i].term.toLowerCase()) || (await add(rows[i].term)).word;
+      const entry = rows[i].entry || own.get(rows[i].term.toLowerCase()) || (await add(rows[i].term, { signal })).word;
       rows[i].entry = entry;
+      signal?.throwIfAborted();
       if (category.trim() || units.trim()) await save(groupContent(entry, category, units));
       own.set(entry.word.toLowerCase(), entry);
       rows[i] = { ...rows[i], status: 'done', error: null };
-    } catch (e) { rows[i] = { ...rows[i], status: 'failed', error: e.message }; }
+    } catch (e) { rows[i] = { ...rows[i], status: isAiCancelled(e) ? 'pending' : 'failed', error: e.message }; }
     onUpdate([...rows]);
+    onProgress(rows.filter(r => r.status === "done" || r.status === "failed").length, rows.length);
   }
   return rows;
 }

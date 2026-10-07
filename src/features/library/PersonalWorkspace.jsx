@@ -1,3 +1,5 @@
+import { runAiOperation, updateAiOperation } from '../../lib/aiOperations.js';
+import { useCancelAiOnLeave } from '../../lib/aiLifecycle.js';
 import { lazy, Suspense, useState } from 'react';
 import { V2 } from '../../engine/v2';
 import { addOrGenerateWord, prepareBulkWords, generatePersonalGrammar, removeGrammar, removeWord, savePersonalItem, savePersonalItems, searchGrammar } from './libraryApi';
@@ -9,6 +11,7 @@ const GrammarEditor=lazy(()=>import('../admin/editors/GrammarEditor').then(m=>({
 const freshId=()=>`my-grammar-${crypto.randomUUID()}`;
 
 export default function PersonalWorkspace({words,grammar,selected,busy,act,onChanged,editor,setEditor}) {
+  useCancelAiOnLeave(["Add a word batch", "Write my grammar practice"]);
   const [bulk,setBulk]=useState(''),[rows,setRows]=useState([]),[category,setCategory]=useState(''),[units,setUnits]=useState('');
   const [topic,setTopic]=useState(''),[matches,setMatches]=useState([]),[json,setJson]=useState(''),[note,setNote]=useState('');
   const categories=[...new Set([...words,...grammar].map(x=>x.category).filter(Boolean))];
@@ -17,10 +20,15 @@ export default function PersonalWorkspace({words,grammar,selected,busy,act,onCha
   async function batch(retry=false) {
     setNote('');
     const input=retry?rows:parseBulkWords(bulk);setRows(input);
-    const available=await prepareBulkWords(input.filter(r=>r.status!=='done').flatMap(r=>{try{return parseBulkWords(r.term).filter(x=>!x.error).map(x=>x.term);}catch{return [];}}));
-    const result=await runBulkWords(input,{add:addOrGenerateWord,save:w=>savePersonalItem('words',w),category,units,existing:[...available,...words],onUpdate:setRows});
-    await refresh();setNote(`${result.filter(r=>r.status==='done').length} ready; ${result.filter(r=>r.status==='failed').length} need attention.`);
+    const result = await runAiOperation("Add a word batch", async signal => {
+      updateAiOperation(signal, { done: input.filter(r => r.status === 'done').length, total: input.length, phase: "Preparing your words" });
+      const available = await prepareBulkWords(input.filter(r=>r.status!=='done').flatMap(r=>{try{return parseBulkWords(r.term).filter(x=>!x.error).map(x=>x.term);}catch{return [];}}));
+      signal.throwIfAborted();
+      return runBulkWords(input, { add:addOrGenerateWord, save:w=>savePersonalItem('words',w), category, units, existing:[...available,...words], onUpdate:setRows, signal, onProgress:(done,total)=>updateAiOperation(signal,{done,total}) });
+    }, { timeoutMs: 240000 });
+    await refresh();setNote(`${result.filter(r=>r.status==='done').length} ready; ${result.filter(r=>r.status!=='done').length} can be retried.`);
   }
+
   async function save(kind,item) { await savePersonalItem(kind,item);await refresh();setEditor(null); }
   async function remove(kind,item) { await (kind==='words'?removeWord(null,item.word):removeGrammar(item.id));await refresh();setEditor(null); }
   async function questionAi(rule,types,count) { const result=await generatePersonalGrammar({rule,types,count});return result.questions.map(q=>checkAiQuestion(q,types)); }
@@ -45,7 +53,7 @@ export default function PersonalWorkspace({words,grammar,selected,busy,act,onCha
       <div className="pl-row"><label>Category<input value={category} onChange={e=>setCategory(e.target.value)} list="my-categories" placeholder="e.g. Gateway B1" maxLength={120}/></label><label>Units (comma-separated)<input value={units} onChange={e=>setUnits(e.target.value)} placeholder="e.g. Unit 4, Exam revision" maxLength={500}/></label></div><datalist id="my-categories">{categories.map(c=><option key={c} value={c}/>)}</datalist>
       <p>Type a new category or unit name to create it. A word or rule can belong to several units. Grouping changes only your library.</p>
       <button className="wh-level-btn" disabled={busy||!selected.length||(!category.trim()&&!units.trim())} onClick={()=>act(async()=>{await savePersonalItems(words.filter(w=>selected.includes(w.word)).map(w=>({kind:'words',key:w.word,data:groupContent(w,category,units)})));await refresh();setNote('Selected words organised.');})}>Apply groups to {selected.length} selected words</button>
-      <label htmlFor="bulk-words">Bulk words · commas or one per line</label><textarea id="bulk-words" value={bulk} onChange={e=>setBulk(e.target.value)} placeholder="apple, put off, meticulous" rows={4} disabled={busy}/><div className="pl-row"><button className="wh-level-btn" disabled={busy||!bulk.trim()} onClick={()=>act(()=>batch())}>Add batch</button>{rows.some(r=>r.status==='failed')&&<button className="wh-back-btn" disabled={busy} onClick={()=>act(()=>batch(true))}>Retry failed words</button>}</div><small>Up to 100 words. Existing entries are reused. AI requests run one at a time and use your account allowance. Category and units above apply to this batch.</small>
+      <label htmlFor="bulk-words">Bulk words · commas or one per line</label><textarea id="bulk-words" value={bulk} onChange={e=>setBulk(e.target.value)} placeholder="apple, put off, meticulous" rows={4} disabled={busy}/><div className="pl-row"><button className="wh-level-btn" disabled={busy||!bulk.trim()} onClick={()=>act(()=>batch())}>Add batch</button>{rows.some(r=>r.status==='failed'||r.status==='pending')&&<button className="wh-back-btn" disabled={busy} onClick={()=>act(()=>batch(true))}>Retry unfinished words</button>}</div><small>Up to 100 words. Existing entries are reused. AI requests run one at a time and use your account allowance. Category and units above apply to this batch.</small>
       {!!rows.length&&<ul className="pl-bulk-results" aria-live="polite">{rows.map(r=><li key={r.term}><b>{r.term}</b> · {r.status==='done'?'Ready':r.status==='working'?'Preparing…':r.status==='pending'?'Waiting':r.error}</li>)}</ul>}
     </section>
     <section className="pl-form"><h3>My grammar · {grammar.length}</h3><label htmlFor="grammar-topic">Find or prepare a grammar topic</label><div className="pl-row"><input id="grammar-topic" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="e.g. present perfect" maxLength={160}/><button className="wh-back-btn" disabled={busy||!topic.trim()} onClick={()=>act(async()=>setMatches(await searchGrammar(topic)))}>Search library</button><button className="wh-level-btn" disabled={busy||!topic.trim()} onClick={()=>act(async()=>{const rule=await generatePersonalGrammar({topic});setEditor({kind:'grammar',item:groupContent({...rule,id:freshId()},category,units),isNew:true});})}>Prepare with AI</button></div><small>Review AI explanations and questions in the editor before saving.</small>
