@@ -2,25 +2,38 @@
 // server; requests carry the player's Supabase token.
 import { accessToken } from "./auth";
 import { isLocalMode } from "./supabase";
+import { withRequestTimeout } from "./requestTimeout.js";
+import { managedAiFunction, updateAiOperation } from "./aiOperations.js";
 
-async function post(path, body) {
+export const AI_REQUEST_TIMEOUT_MS = 45000;
+
+export async function postAiRequest(path, body, { signal: parentSignal, timeoutMs = AI_REQUEST_TIMEOUT_MS } = {}) {
   if (isLocalMode) throw new Error("AI features need the online version. Sign in on the deployed site.");
   if (typeof navigator !== "undefined" && navigator.onLine === false) throw new Error("You're offline. AI features need a connection.");
-  const token = await accessToken();
-  const res = await fetch(path, {
-    method: "POST",
-    headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify(body),
-  });
-  const type = res.headers.get("content-type") || "";
-  if (type.startsWith("audio/")) return { audio: await res.blob() };
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
-  return data;
+  return withRequestTimeout(async (signal) => {
+    signal.throwIfAborted();
+    updateAiOperation(parentSignal, { phase: "Checking your connection" });
+    const token = await accessToken();
+    if (signal.aborted) throw new Error("AI request timed out. Please try again.");
+    updateAiOperation(parentSignal, { phase: "Waiting for AI" });
+    const res = await fetch(path, {
+      method: "POST",
+      headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify(body),
+      signal,
+    });
+    const type = res.headers.get("content-type") || "";
+    if (type.startsWith("audio/")) return { audio: await res.blob() };
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(data.error || `Request failed (${res.status})`), { status: res.status });
+    updateAiOperation(parentSignal, { phase: "Checking the response" });
+    return data;
+  }, timeoutMs, "AI took too long to respond. Please try again.", parentSignal);
 }
 
-export async function callAiText(prompt, { adminOnly = false, task = "" } = {}) {
-  const { text } = await post("/api/ai", { prompt, adminOnly, task });
+export async function callAiText(prompt, { adminOnly = false, task = "", signal } = {}) {
+  const { text } = await postAiRequest("/api/ai", { prompt, adminOnly, task }, { signal });
+  if (typeof text !== "string" || !text.trim()) throw new Error("AI returned no usable response. Please try again.");
   return text;
 }
 
@@ -32,13 +45,13 @@ function ttsStore() {
   try { return JSON.parse(localStorage.getItem(TTS_CACHE_KEY) || "{}"); } catch { return {}; }
 }
 const speechKey = (text) => String(text || "").replace(/\s+/g, " ").trim().toLowerCase();
-export async function speechUrl(text) {
+async function speechUrlImpl(text, options = {}) {
   const key = speechKey(text);
   if (!key) throw new Error("Nothing to say.");
   if (ttsMemory.has(key)) return ttsMemory.get(key);
   const stored = ttsStore()[key];
   if (stored) { ttsMemory.set(key, stored); return stored; }
-  const out = await post("/api/tts", { text });
+  const out = await postAiRequest("/api/tts", { text }, options);
   const url = out.url || (out.audio ? URL.createObjectURL(out.audio) : null);
   if (!url) throw new Error("No audio came back.");
   ttsMemory.set(key, url);
@@ -52,6 +65,7 @@ export async function speechUrl(text) {
   }
   return url;
 }
+export const speechUrl = managedAiFunction("Pronunciation", speechUrlImpl, 1);
 // A remembered link that doesn't play (an older server could hand out a
 // link to a file it never stored): forget it, so the next try asks again.
 export function forgetSpeechUrl(text) {

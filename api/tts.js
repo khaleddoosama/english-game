@@ -23,7 +23,7 @@ export async function POST(request) {
   if (denied) return denied;
   let audio;
   const info = {}, started = Date.now();
-  try { audio = await speak(text, info); } catch (e) {
+  try { audio = await speak(text, info, { signal: request.signal }); } catch (e) {
     console.error("tts:", e.message);
     await finishCall(callId, { ok: false, ms: Date.now() - started, status: e.status || 502, error: e.message });
     return json(e.status || 502, { error: e.message || "Speech failed." });

@@ -1,3 +1,4 @@
+import { useCancelAiOnLeave } from "../../../lib/aiLifecycle.js";
 // Grammar rule editor (Admin -> Grammar -> a rule, or New rule): the rule
 // and its explanation, examples and common mistakes, then its questions as
 // cards: choose (options with the right one marked), right-or-wrong, and
@@ -199,6 +200,7 @@ export function QuestionPreview({ q }) {
 function AiQuestions({ rule, content, onAdd }) {
   const [types, setTypes] = useState(["choose", "judge", "fix"]);
   const [count, setCount] = useState(3);
+  useCancelAiOnLeave(["Write grammar questions"]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [review, setReview] = useState(null);
