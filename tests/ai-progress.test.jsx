@@ -16,6 +16,9 @@ it("shows real completed counts, hides without cancellation, and cancels from th
     pending = runAiOperation("Batch", s => { signal = s; updateAiOperation(s, { done: 2, total: 20, phase: "Reviewing" }); return new Promise(() => {}); });
     checked = expect(pending).rejects.toMatchObject({ name: "AbortError" });
   });
+  expect(host.querySelector("progress")).toBeNull();
+  expect(host.querySelector("button").getAttribute("aria-expanded")).toBe("false");
+  await act(async () => host.querySelector("button").click());
   expect(host.textContent).toContain("2/20");
   expect(host.querySelector("progress").value).toBe(2);
   await act(async () => host.querySelector("button").click());

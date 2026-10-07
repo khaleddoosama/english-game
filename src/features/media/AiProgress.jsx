@@ -4,7 +4,7 @@ import "../../styles/ai.css";
 
 export function AiProgress() {
   const jobs = useSyncExternalStore(subscribeAiOperations, getAiOperations, getAiOperations);
-  const [open, setOpen] = useState(true), [now, setNow] = useState(Date.now());
+  const [open, setOpen] = useState(false), [now, setNow] = useState(Date.now());
   const running = jobs.filter(job => job.status === "running").length;
   useEffect(() => { if (!running) return; const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, [running]);
   if (!jobs.length) return null;

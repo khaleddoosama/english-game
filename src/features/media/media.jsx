@@ -123,13 +123,20 @@ export function preparePronunciation(term, options = {}) {
     signal.throwIfAborted();
     if (found?.url) return { source: "human", url: found.url, isUS: found.isUS };
     return { source: "ai", url: await speechUrl(term, { signal }), isUS: true };
-  }, { ...options, timeoutMs: 60000 }).finally(() => { if (!options.signal) pendingPronunciation.delete(key); });
+  }, { background: true, ...options, timeoutMs: 60000 }).finally(() => { if (!options.signal) pendingPronunciation.delete(key); });
   if (!options.signal) pendingPronunciation.set(key, job);
   return job;
 }
 // Pronunciation, best source first (see preparePronunciation), then the
 // browser's own voice, which is always one tap away.
 export function PronunciationModal({ term, onClose }) {
+  const [lastTerm, setLastTerm] = useState(term);
+  useEffect(() => { if (term) setLastTerm(term); }, [term]);
+  // Keep the audio element mounted when the dialog closes, including while
+  // its recording is being prepared. Opening another term replaces it.
+  return lastTerm ? <PronunciationPlayer term={lastTerm} onClose={onClose} hidden={!term}/> : null;
+}
+function PronunciationPlayer({ term, onClose, hidden }) {
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState("loading"); // loading | human | ai | ttsOnly
   const [audioUrl, setAudioUrl] = useState(null);
@@ -141,23 +148,23 @@ export function PronunciationModal({ term, onClose }) {
   const speakNow = () => { browserVoiceUsed.current = true; speak(); };
   useEffect(() => {
     let cancelled = false;
-    const controller = new AbortController();
+
     setStatus("loading");
     // Voice list loads asynchronously in most browsers; without this the
     // first call can run before any en-US voice is known.
     if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.getVoices();
     browserVoiceUsed.current = false;
-    // Closing the dialog only stops listening: the lookup keeps going and is remembered.
-    preparePronunciation(term, { signal: controller.signal })
+    // A new term replaces playback; closing the dialog leaves it running.
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    preparePronunciation(term)
       .then((found) => {
         if (cancelled) return;
         setAudioUrl(found.url); setIsUS(found.isUS); setStatus(found.source);
       })
-      .catch(() => { if (!cancelled) { setStatus("ttsOnly"); if (!browserVoiceUsed.current) speak(); } });
+      .catch(error => { if (!cancelled) { setStatus("ttsOnly"); if (!isAiCancelled(error) && !browserVoiceUsed.current) speak(); } });
     return () => {
       cancelled = true;
-      controller.abort();
-      if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
+
     };
   }, [term, attempt]);
   // Autoplay the human recording once it is available. Browsers can refuse
@@ -171,7 +178,7 @@ export function PronunciationModal({ term, onClose }) {
     : status === "ttsOnly"
       ? (ttsIsUS ? "Browser voice · American" : "Browser voice · no US voice on this device")
       : "Searching…";
-  return <div className="wh-modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+  return <div className="wh-modal-overlay" style={hidden ? { display: "none" } : undefined} aria-hidden={hidden || undefined} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
     <div className="wh-panel wh-say-panel" role="dialog" aria-label={`Pronunciation of ${term}`}>
       <div className="wh-say-head">
         <div>
