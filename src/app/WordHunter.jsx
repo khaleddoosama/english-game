@@ -1696,7 +1696,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
             <button className="wh-icon-btn" onClick={()=>{const term=askAiTerm.trim();if(term)setListenTerm(term);}} title="Hear it pronounced" aria-label="Listen"><Volume2 size={15}/></button>
           </div>
         </header>
-        {listenTerm&&<PronunciationModal term={listenTerm} onClose={()=>setListenTerm(null)}/>}
+        <PronunciationModal term={listenTerm} onClose={()=>setListenTerm(null)}/>
         {askAiOpen&&<div className="wh-ai-drawer" role="dialog" aria-modal="true" aria-label="Ask AI about a word" onMouseDown={event=>{if(event.target===event.currentTarget)setAskAiOpen(false);}}>
           <aside className="wh-ai-drawer-card">
             <div className="wh-ai-drawer-head"><div><div className="wh-ai-meta">WORD HUNTER FIELD GUIDE</div><h2>Ask AI</h2></div><button className="wh-icon-btn" onClick={()=>setAskAiOpen(false)} aria-label="Close"><X size={18}/></button></div>

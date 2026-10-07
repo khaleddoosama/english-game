@@ -1,0 +1,36 @@
+// @vitest-environment jsdom
+import { act } from "react";
+import { createRoot } from "react-dom/client";
+import { afterEach, expect, it, vi } from "vitest";
+const { speechUrl } = vi.hoisted(() => ({ speechUrl: vi.fn() }));
+vi.mock("../src/lib/ai", () => ({ speechUrl, forgetSpeechUrl: vi.fn() }));
+import { PronunciationModal } from "../src/features/media/media.jsx";
+import { cancelAiTasks, getAiOperations } from "../src/lib/aiOperations.js";
+let root, host;
+afterEach(async () => { await act(async () => root?.unmount()); host?.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+it("keeps loading and playing with the dialog closed, and reuses the audio when reopened", async () => {
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  let finish, requestSignal;
+  speechUrl.mockImplementation((term, options) => { requestSignal = options.signal; return new Promise(resolve => { finish = resolve; }); });
+  const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+  const pause = vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+  const cancel = vi.fn();
+  vi.stubGlobal("speechSynthesis", { cancel, getVoices: () => [] });
+  host = document.createElement("div"); document.body.append(host); root = createRoot(host);
+  await act(async () => root.render(<PronunciationModal term="keep listening" onClose={() => {}}/>));
+  expect(getAiOperations().find(job => job.label === "Pronunciation" && job.status === "running").background).toBe(true);
+  await act(async () => root.render(<PronunciationModal term={null} onClose={() => {}}/>));
+  const cancelCount = cancel.mock.calls.length;
+  await act(async () => cancelAiTasks());
+  expect(requestSignal.aborted).toBe(false);
+  await act(async () => finish("https://audio.test/listening.wav"));
+  const audio = host.querySelector("audio");
+  expect(audio.src).toBe("https://audio.test/listening.wav");
+  expect(host.firstChild.style.display).toBe("none");
+  expect(play).toHaveBeenCalledTimes(1);
+  await act(async () => root.render(<PronunciationModal term="keep listening" onClose={() => {}}/>));
+  expect(host.querySelector("audio")).toBe(audio);
+  expect(speechUrl).toHaveBeenCalledTimes(1);
+  expect(pause).not.toHaveBeenCalled();
+  expect(cancel).toHaveBeenCalledTimes(cancelCount);
+});
