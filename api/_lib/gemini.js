@@ -1,4 +1,5 @@
 import { GEMINI_API_KEY, GEMINI_FALLBACK_MODELS, GEMINI_MODEL, GEMINI_TTS_FALLBACK_MODELS, GEMINI_TTS_MODEL, GEMINI_TTS_VOICE } from "./env.js";
+import { withRequestTimeout } from "../../src/lib/requestTimeout.js";
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 // Gemini answers 503 "high demand / overloaded" (and sometimes 500/504)
@@ -6,23 +7,27 @@ const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const TRANSIENT = new Set([500, 502, 503, 504]);
 const ATTEMPTS_PER_MODEL = 2;
 const BUDGET_MS = 40000; // stay well inside the function's 60 s limit
+const ATTEMPT_TIMEOUT_MS = 15000;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function generate(model, body) {
+async function generate(model, body, timeoutMs) {
   if (!GEMINI_API_KEY) throw Object.assign(new Error("GEMINI_API_KEY is not set on the server."), { status: 500, final: true });
-  let res;
   try {
-    res = await fetch(`${BASE}/${model}:generateContent`, {
-      method: "POST",
-      headers: { "x-goog-api-key": GEMINI_API_KEY, "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    return await withRequestTimeout(async (signal) => {
+      const res = await fetch(`${BASE}/${model}:generateContent`, {
+        method: "POST",
+        headers: { "x-goog-api-key": GEMINI_API_KEY, "content-type": "application/json" },
+        body: JSON.stringify(body),
+        signal,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw Object.assign(new Error(data?.error?.message || `Gemini request failed (${res.status})`), { upstream: res.status });
+      return data;
+    }, timeoutMs, "The AI took too long to respond. Please try again.");
   } catch (e) {
+    if (e.upstream) throw e;
     throw Object.assign(new Error(`Couldn't reach Gemini (${e.message}).`), { upstream: 503 });
   }
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(data?.error?.message || `Gemini request failed (${res.status})`), { upstream: res.status });
-  return data;
 }
 
 // Try the main model, then the fallbacks. A busy model gets one quick
@@ -36,9 +41,10 @@ export async function generateWithFallback(models, buildBody, { log = console } 
   for (const model of chain) {
     let plain = false;
     for (let attempt = 0; attempt < ATTEMPTS_PER_MODEL; attempt++) {
-      if (Date.now() - started > BUDGET_MS) break;
+      const remaining = BUDGET_MS - (Date.now() - started);
+      if (remaining <= 0) break;
       try {
-        const data = await generate(model, buildBody(model, plain));
+        const data = await generate(model, buildBody(model, plain), Math.min(ATTEMPT_TIMEOUT_MS, remaining));
         if (model !== chain[0]) log.warn?.(`gemini: answered by fallback ${model}`);
         return { data, model };
       } catch (e) {
@@ -46,7 +52,7 @@ export async function generateWithFallback(models, buildBody, { log = console } 
         lastError = e;
         const s = e.upstream;
         if (s === 400 && !plain && /thinking/i.test(e.message)) { plain = true; attempt--; continue; }
-        if (TRANSIENT.has(s)) { sawBusy = true; log.warn?.(`gemini: ${model} busy (${s}), attempt ${attempt + 1}`); if (attempt + 1 < ATTEMPTS_PER_MODEL) await sleep(600 * 2 ** attempt + Math.random() * 400); continue; }
+        if (TRANSIENT.has(s)) { sawBusy = true; log.warn?.(`gemini: ${model} busy (${s}), attempt ${attempt + 1}`); if (attempt + 1 < ATTEMPTS_PER_MODEL) await sleep(Math.min(600 * 2 ** attempt + Math.random() * 400, Math.max(0, BUDGET_MS - (Date.now() - started)))); continue; }
         if (s === 429) { sawBusy = true; log.warn?.(`gemini: ${model} rate-limited`); break; }
         if (s === 404) { log.warn?.(`gemini: model ${model} not found, skipping`); break; }
         throw Object.assign(e, { status: 502 }); // a real request problem: don't hide it

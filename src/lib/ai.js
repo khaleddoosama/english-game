@@ -2,25 +2,33 @@
 // server; requests carry the player's Supabase token.
 import { accessToken } from "./auth";
 import { isLocalMode } from "./supabase";
+import { withRequestTimeout } from "./requestTimeout.js";
+
+export const AI_REQUEST_TIMEOUT_MS = 45000;
 
 async function post(path, body) {
   if (isLocalMode) throw new Error("AI features need the online version. Sign in on the deployed site.");
   if (typeof navigator !== "undefined" && navigator.onLine === false) throw new Error("You're offline. AI features need a connection.");
-  const token = await accessToken();
-  const res = await fetch(path, {
-    method: "POST",
-    headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify(body),
-  });
-  const type = res.headers.get("content-type") || "";
-  if (type.startsWith("audio/")) return { audio: await res.blob() };
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
-  return data;
+  return withRequestTimeout(async (signal) => {
+    const token = await accessToken();
+    if (signal.aborted) throw new Error("AI request timed out. Please try again.");
+    const res = await fetch(path, {
+      method: "POST",
+      headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify(body),
+      signal,
+    });
+    const type = res.headers.get("content-type") || "";
+    if (type.startsWith("audio/")) return { audio: await res.blob() };
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+    return data;
+  }, AI_REQUEST_TIMEOUT_MS, "AI took too long to respond. Please try again.");
 }
 
 export async function callAiText(prompt, { adminOnly = false, task = "" } = {}) {
   const { text } = await post("/api/ai", { prompt, adminOnly, task });
+  if (typeof text !== "string" || !text.trim()) throw new Error("AI returned no usable response. Please try again.");
   return text;
 }
 
