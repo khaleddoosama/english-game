@@ -31,6 +31,9 @@ export async function fetchWordAudio(term) {
   // Only single words have dictionary entries; phrases go straight to TTS.
   if (/\s/.test(key)) { audioCache.set(key, null); return null; }
   const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(key)}`);
+  // "No definitions found" is an answer, not a failure: remember it, so this word isn't searched again
+  // on every press. Any other status (rate limit, server error) may pass, so it isn't remembered.
+  if (res.status === 404) { audioCache.set(key, null); rememberDict(key, null); return null; }
   if (!res.ok) throw new Error(`Dictionary lookup failed (${res.status})`);
   const data = await res.json();
   // dictionaryapi.dev names its files by accent: word-us.mp3, word-uk.mp3,
@@ -112,14 +115,23 @@ export function WordPicture({ word, className = "wh-flashcard-img", lazy = false
 // word is opened it plays at once. A second ask for the same term shares the
 // first one's work. Rejects when neither source worked.
 const pendingPronunciation = new Map();
+// Finished lookups, kept for the session: opening the same word again plays at once, with no search.
+export const readyPronunciation = new Map();
+const pronunciationKey = (term) => String(term || "").replace(/\s+/g, " ").trim().toLowerCase();
+// A recording that doesn't play is forgotten, so the next try looks again.
+export function forgetPronunciation(term) { readyPronunciation.delete(pronunciationKey(term)); }
 export function preparePronunciation(term) {
-  const key = String(term || "").replace(/\s+/g, " ").trim().toLowerCase();
+  const key = pronunciationKey(term);
   if (pendingPronunciation.has(key)) return pendingPronunciation.get(key);
+  if (readyPronunciation.has(key)) return Promise.resolve(readyPronunciation.get(key));
   const job = (async () => {
     let found = null;
     try { found = await fetchWordAudio(term); } catch (_) { /* no dictionary entry or no access: Gemini next */ }
-    if (found?.url) return { source: "human", url: found.url, isUS: found.isUS };
-    return { source: "ai", url: await speechUrl(term), isUS: true };
+    const result = found?.url
+      ? { source: "human", url: found.url, isUS: found.isUS }
+      : { source: "ai", url: await speechUrl(term), isUS: true };
+    readyPronunciation.set(key, result);
+    return result;
   })().finally(() => pendingPronunciation.delete(key));
   pendingPronunciation.set(key, job);
   return job;
@@ -184,7 +196,7 @@ export function PronunciationModal({ term, onClose }) {
       </div>}
 
       {(status === "human" || status === "ai") && <div className="wh-say-body">
-        <audio ref={audioRef} src={audioUrl} controls preload="auto" className="wh-say-audio" onError={() => { if (status === "ai") { forgetSpeechUrl(term); setStatus("ttsOnly"); speakNow(); } }}/>
+        <audio ref={audioRef} src={audioUrl} controls preload="auto" className="wh-say-audio" onError={() => { forgetPronunciation(term); if (status === "ai") { forgetSpeechUrl(term); setStatus("ttsOnly"); speakNow(); } }}/>
         <button className="wh-say-secondary" onClick={speakNow}><Volume2 size={12}/> Browser voice instead</button>
       </div>}
 
