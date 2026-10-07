@@ -3,6 +3,7 @@
 // always a question set (questions[] of choose / judge / fix); an older
 // single-question rule becomes the first question of its set.
 import { V2 } from "../../../engine/v2";
+import { managedAiFunction } from "../../../lib/aiOperations.js";
 import { callAiJsonAdmin } from "../../../engine/ai";
 
 export const GRAMMAR_TYPES = { choose: "Choose", judge: "Right or wrong?", fix: "Fix the sentence" };
@@ -69,13 +70,13 @@ export function grammarPreview(g) {
   return q ? (q.type === "choose" ? q.prompt : q.sentence) || "" : "";
 }
 
-export async function generateGrammarQuestions(rule, types, count, lessonWords) {
+async function generateGrammarQuestionsImpl(rule, types, count, lessonWords, options = {}) {
   const raw = await callAiJsonAdmin(`You write grammar practice for Word Hunter, an English game for Arabic-speaking learners (A2–B1). Use simple English only. Write ${count} NEW questions for the grammar rule in the input, using only these types: ${types.join(", ")}. Spread them across the types. Do not repeat or lightly reword existingQuestions. Where it fits naturally, use words or situations from lessonWords.
 Types:
 - choose: {"type":"choose","prompt":"sentence with ______ or a short question","options":["3 or 4 short options"],"answer":"exactly one of the options","explanation":"one short sentence"}. Exactly one option may be correct.
 - judge: {"type":"judge","sentence":"...","correct":false,"fix":"the corrected sentence","explanation":"..."} for a sentence that breaks the rule, or {"type":"judge","sentence":"...","correct":true,"alternative":"a tempting WRONG rewrite of the same sentence","explanation":"..."} for a correct one. Mix correct and wrong sentences.
 - fix: {"type":"fix","sentence":"a sentence with exactly one mistake about this rule","answer":"the corrected sentence","explanation":"..."}. Change as little as possible.
-Every mistake must be about this rule, and every "correct" sentence must be fully correct English. Return ONLY JSON: {"questions":[...]}`, { rule: rule.rule, explanation: rule.explanation, level: rule.level || null, examples: rule.examples || [], existingQuestions: rule.questions || [], lessonWords }, 2500, "Write grammar questions");
+Every mistake must be about this rule, and every "correct" sentence must be fully correct English. Return ONLY JSON: {"questions":[...]}`, { rule: rule.rule, explanation: rule.explanation, level: rule.level || null, examples: rule.examples || [], existingQuestions: rule.questions || [], lessonWords }, 2500, "Write grammar questions", options);
   const list = Array.isArray(raw?.questions) ? raw.questions : [];
   if (!list.length) throw new Error("AI didn't return any questions. Try again.");
   return list.map((q) => checkAiQuestion(q, types));
@@ -87,3 +88,5 @@ export function checkAiQuestion(q, types) {
   const errors = types.includes(clean.type) ? V2.validateContent({ kind: "content", grammar: [{ id: "x", rule: "x", category: "x", explanation: "x", questions: [clean] }] }) : ["type not requested"];
   return { question: clean, ok: !errors.length, reason: errors.map((e) => e.replace(/^grammar\[0\]\.questions\[0\]\.?/, "")).join("; "), selected: !errors.length };
 }
+
+export const generateGrammarQuestions = managedAiFunction("Write grammar questions", generateGrammarQuestionsImpl, 4);

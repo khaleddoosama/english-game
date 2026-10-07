@@ -5,6 +5,8 @@ import { createLocalRepo, createSupabaseRepo } from "../lib/repo";
 import { LoginPage, Splash } from "../features/auth/LoginPage";
 import WordHunter from "./WordHunter";
 import { loadAppSettings } from "../lib/appSettings";
+import { AiProgress } from "../features/media/AiProgress";
+import { cancelAiTasks } from "../lib/aiOperations.js";
 
 // App-wide settings (sign-ups, maintenance, announcement…) load once at
 // start; the cached copy is used meanwhile and offline.
@@ -18,7 +20,8 @@ function Game({ user, profile }) {
     [user.id, isAdmin],
   );
   useEffect(() => () => repo.dispose(), [repo]);
-  return <WordHunter repo={repo} profile={profile} isAdmin={isAdmin} onSignOut={isLocalMode ? null : signOut} />;
+  useEffect(() => () => cancelAiTasks(null, { includeBackground: true }), []);
+  return <><WordHunter repo={repo} profile={profile} isAdmin={isAdmin} onSignOut={isLocalMode ? null : signOut} /><AiProgress /></>;
 }
 
 function Gate() {

@@ -23,5 +23,5 @@ export default [
     rules: { "react/jsx-no-undef": "error", "react/jsx-uses-vars": "error", "react-hooks/rules-of-hooks": "error" },
   },
   { files: ["api/**/*.js", "vite.config.js"], languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: globals.node } },
-  { files: ["tests/**/*.js"], languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: { ...globals.node, ...globals.browser } } },
+  { files: ["tests/**/*.{js,jsx}"], languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: { ...globals.node, ...globals.browser }, parserOptions: { ecmaFeatures: { jsx: true } } }, plugins: { react }, rules: { "react/jsx-uses-vars": "error" } },
 ];

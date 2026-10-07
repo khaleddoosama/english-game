@@ -1,3 +1,5 @@
+import { runAiOperation, isAiCancelled } from "../../lib/aiOperations.js";
+import { withRequestTimeout } from "../../lib/requestTimeout.js";
 import { useEffect, useRef, useState } from "react";
 import { Volume2, X } from "lucide-react";
 import { V2 } from "../../engine/v2";
@@ -22,7 +24,7 @@ const rememberDict = (key, result) => {
     localStorage.setItem(DICT_KEY, JSON.stringify(all));
   } catch (_) {}
 };
-export async function fetchWordAudio(term) {
+export async function fetchWordAudio(term, options = {}) {
   const key = String(term || "").trim().toLowerCase();
   if (!key) return null;
   if (audioCache.has(key)) return audioCache.get(key);
@@ -30,7 +32,7 @@ export async function fetchWordAudio(term) {
   if (known !== undefined) { audioCache.set(key, known); return known; }
   // Only single words have dictionary entries; phrases go straight to TTS.
   if (/\s/.test(key)) { audioCache.set(key, null); return null; }
-  const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(key)}`);
+  const res = await withRequestTimeout(signal => fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(key)}`, { signal }), 8000, "Dictionary audio took too long.", options.signal);
   // "No definitions found" is an answer, not a failure: remember it, so this word isn't searched again
   // on every press. Any other status (rate limit, server error) may pass, so it isn't remembered.
   if (res.status === 404) { audioCache.set(key, null); rememberDict(key, null); return null; }
@@ -120,25 +122,34 @@ export const readyPronunciation = new Map();
 const pronunciationKey = (term) => String(term || "").replace(/\s+/g, " ").trim().toLowerCase();
 // A recording that doesn't play is forgotten, so the next try looks again.
 export function forgetPronunciation(term) { readyPronunciation.delete(pronunciationKey(term)); }
-export function preparePronunciation(term) {
+export function preparePronunciation(term, options = {}) {
   const key = pronunciationKey(term);
-  if (pendingPronunciation.has(key)) return pendingPronunciation.get(key);
+  if (!options.signal && pendingPronunciation.has(key)) return pendingPronunciation.get(key);
   if (readyPronunciation.has(key)) return Promise.resolve(readyPronunciation.get(key));
-  const job = (async () => {
+  const job = runAiOperation("Pronunciation", async signal => {
     let found = null;
-    try { found = await fetchWordAudio(term); } catch (_) { /* no dictionary entry or no access: Gemini next */ }
+    try { found = await fetchWordAudio(term, { signal }); } catch (e) { if (isAiCancelled(e)) throw e; }
+    signal.throwIfAborted();
     const result = found?.url
       ? { source: "human", url: found.url, isUS: found.isUS }
-      : { source: "ai", url: await speechUrl(term), isUS: true };
+      : { source: "ai", url: await speechUrl(term, { signal }), isUS: true };
     readyPronunciation.set(key, result);
     return result;
-  })().finally(() => pendingPronunciation.delete(key));
-  pendingPronunciation.set(key, job);
+  }, { background: true, ...options, timeoutMs: 60000 }).finally(() => { if (!options.signal) pendingPronunciation.delete(key); });
+  if (!options.signal) pendingPronunciation.set(key, job);
   return job;
 }
 // Pronunciation, best source first (see preparePronunciation), then the
 // browser's own voice, which is always one tap away.
 export function PronunciationModal({ term, onClose }) {
+  const [lastTerm, setLastTerm] = useState(term);
+  useEffect(() => { if (term) setLastTerm(term); }, [term]);
+  // Keep the audio element mounted when the dialog closes, including while
+  // its recording is being prepared. Opening another term replaces it.
+  return lastTerm ? <PronunciationPlayer term={lastTerm} onClose={onClose} hidden={!term}/> : null;
+}
+function PronunciationPlayer({ term, onClose, hidden }) {
+  const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState("loading"); // loading | human | ai | ttsOnly
   const [audioUrl, setAudioUrl] = useState(null);
   const [isUS, setIsUS] = useState(false);
@@ -149,22 +160,25 @@ export function PronunciationModal({ term, onClose }) {
   const speakNow = () => { browserVoiceUsed.current = true; speak(); };
   useEffect(() => {
     let cancelled = false;
+
+    setStatus("loading");
     // Voice list loads asynchronously in most browsers; without this the
     // first call can run before any en-US voice is known.
     if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.getVoices();
     browserVoiceUsed.current = false;
-    // Closing the dialog only stops listening: the lookup keeps going and is remembered.
+    // A new term replaces playback; closing the dialog leaves it running.
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
     preparePronunciation(term)
       .then((found) => {
         if (cancelled) return;
         setAudioUrl(found.url); setIsUS(found.isUS); setStatus(found.source);
       })
-      .catch(() => { if (!cancelled) { setStatus("ttsOnly"); if (!browserVoiceUsed.current) speak(); } });
+      .catch(error => { if (!cancelled) { setStatus("ttsOnly"); if (!isAiCancelled(error) && !browserVoiceUsed.current) speak(); } });
     return () => {
       cancelled = true;
-      if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
+
     };
-  }, [term]);
+  }, [term, attempt]);
   // Autoplay the human recording once it is available. Browsers can refuse
   // autoplay without a user gesture, so the visible Play button stays the
   // guaranteed path.
@@ -176,13 +190,14 @@ export function PronunciationModal({ term, onClose }) {
     : status === "ttsOnly"
       ? (ttsIsUS ? "Browser voice · American" : "Browser voice · no US voice on this device")
       : "Searching…";
-  return <div className="wh-modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+  return <div className="wh-modal-overlay" style={hidden ? { display: "none" } : undefined} aria-hidden={hidden || undefined} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
     <div className="wh-panel wh-say-panel" role="dialog" aria-label={`Pronunciation of ${term}`}>
       <div className="wh-say-head">
         <div>
           <div className="wh-say-label">PRONUNCIATION</div>
           <h2 className="wh-say-term">{term}</h2>
         </div>
+        {status === "ttsOnly" && <button className="wh-back-btn" onClick={() => setAttempt(value => value + 1)}>Retry audio</button>}
         <button className="wh-icon-btn" onClick={onClose} aria-label="Close"><X size={18}/></button>
       </div>
 

@@ -1,3 +1,5 @@
+import { runAiOperation, updateAiOperation, isAiCancelled } from "../../lib/aiOperations.js";
+import { useCancelAiOnLeave } from "../../lib/aiLifecycle.js";
 import { useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { HEALTH_CHECKS, aiFixWordBatch, findCategoryDuplicates, gapsKey, gapsOf, scanContentHealth } from "../../engine/ai";
@@ -9,6 +11,7 @@ export function formatHealthValue(value) {
 }
 export const HEALTH_BATCH = 5, HEALTH_RUN = 20;
 export function ContentHealthPanel({ content, onUpdate, onMergeCategories, onRemoveEmptyLevels }) {
+  useCancelAiOnLeave(["Fix word content"]);
   const words = content.words || [];
   const issues = useMemo(() => scanContentHealth(words), [words]);
   const [run, setRun] = useState(null); // {kind, done, total}
@@ -26,11 +29,22 @@ export function ContentHealthPanel({ content, onUpdate, onMergeCategories, onRem
     if (!targets.length || run) return;
     setError(null); setNotice(null); setReview(null); setRun({ kind, done: 0, total: targets.length });
     const items = [];
-    for (let i = 0; i < targets.length; i += HEALTH_BATCH) {
-      const batch = targets.slice(i, i + HEALTH_BATCH);
-      try { items.push(...(await aiFixWordBatch(kind, batch, words))); }
-      catch (e) { items.push(...batch.map((w) => ({ word: w.word, ok: false, reason: e.message || "AI request failed." }))); }
-      setRun({ kind, done: Math.min(targets.length, i + HEALTH_BATCH), total: targets.length });
+    try {
+      await runAiOperation("Fix word content", async signal => {
+        updateAiOperation(signal, { done: 0, total: targets.length, phase: "Reviewing word content" });
+        for (let i = 0; i < targets.length; i += HEALTH_BATCH) {
+          signal.throwIfAborted();
+          const batch = targets.slice(i, i + HEALTH_BATCH);
+          try { items.push(...(await aiFixWordBatch(kind, batch, words, { signal }))); }
+          catch (e) { if (isAiCancelled(e)) throw e; items.push(...batch.map(w => ({ word: w.word, ok: false, reason: e.message || "AI request failed." }))); }
+          const done = Math.min(targets.length, i + HEALTH_BATCH);
+          setRun({ kind, done, total: targets.length });
+          updateAiOperation(signal, { done, total: targets.length });
+        }
+      }, { timeoutMs: 240000 });
+    } catch (e) {
+      if (isAiCancelled(e)) setNotice("Stopped. Completed suggestions are available below; no changes were applied.");
+      else setError(e.message || "AI couldn't finish the batch.");
     }
     setRun(null);
     setReview({ kind, items: items.filter((it) => !it.fine).map((it) => ({ ...it, selected: it.ok })), fine: items.filter((it) => it.fine).map((it) => it.word) });

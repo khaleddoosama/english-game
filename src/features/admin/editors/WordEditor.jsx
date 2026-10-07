@@ -1,3 +1,4 @@
+import { useCancelAiOnLeave } from "../../../lib/aiLifecycle.js";
 // Word editor (Admin -> Words -> a word, or New word): every field as a
 // form, the picture (upload, copy from a link, remove), AI to fill empty
 // fields, and an "as JSON" view for anything unusual. Saving validates the
@@ -99,6 +100,7 @@ export function WordEditor({ word, content, stats, onSave, onDelete, onClose }) 
   const [json, setJson] = useState(null); // string while editing as JSON
   const [errors, setErrors] = useState([]);
   const [note, setNote] = useState(null);
+  useCancelAiOnLeave(['Ask AI about a word'], word?.word);
   const [busy, setBusy] = useState(null);
   const [link, setLink] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
