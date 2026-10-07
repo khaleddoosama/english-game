@@ -8,7 +8,7 @@ export function AiProgress() {
   const running = jobs.filter(job => job.status === "running").length;
   useEffect(() => { if (!running) return; const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, [running]);
   if (!jobs.length) return null;
-  return <aside className="wh-ai-progress" aria-label="AI progress">
+  return <aside className="wh-ai-progress" data-open={open} aria-label="AI progress">
     <button className="wh-ai-progress-toggle" onClick={() => setOpen(value => !value)} aria-expanded={open}>AI progress{running ? ` · ${running} running` : ""} · {open ? "Hide" : "Show"}</button>
     {open && <div className="wh-ai-progress-list">{jobs.map(job => <div key={job.id} className="wh-ai-progress-job" aria-busy={job.status === "running"}>
       <b>{job.label}</b>
