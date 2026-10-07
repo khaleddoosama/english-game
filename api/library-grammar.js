@@ -9,7 +9,7 @@ export async function POST(request) {
   if(denied) return denied;
   const started=Date.now(); let generation;
   try {
-    generation=await generateJsonText(grammarPrompt(input));
+    generation=await generateJsonText(grammarPrompt(input), { signal: request.signal });
     const rule=validateGrammar(JSON.parse(generation.text),input);
     await finishCall(callId,{ok:true,model:generation.model,ms:Date.now()-started,status:200,outputChars:generation.text.length,usage:generation.usage});
     return json(200,{rule});

@@ -1,3 +1,5 @@
+import { runAiOperation, isAiCancelled } from "../../lib/aiOperations.js";
+import { withRequestTimeout } from "../../lib/requestTimeout.js";
 import { useEffect, useRef, useState } from "react";
 import { Volume2, X } from "lucide-react";
 import { V2 } from "../../engine/v2";
@@ -22,7 +24,7 @@ const rememberDict = (key, result) => {
     localStorage.setItem(DICT_KEY, JSON.stringify(all));
   } catch (_) {}
 };
-export async function fetchWordAudio(term) {
+export async function fetchWordAudio(term, options = {}) {
   const key = String(term || "").trim().toLowerCase();
   if (!key) return null;
   if (audioCache.has(key)) return audioCache.get(key);
@@ -30,7 +32,7 @@ export async function fetchWordAudio(term) {
   if (known !== undefined) { audioCache.set(key, known); return known; }
   // Only single words have dictionary entries; phrases go straight to TTS.
   if (/\s/.test(key)) { audioCache.set(key, null); return null; }
-  const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(key)}`);
+  const res = await withRequestTimeout(signal => fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(key)}`, { signal }), 8000, "Dictionary audio took too long.", options.signal);
   if (!res.ok) throw new Error(`Dictionary lookup failed (${res.status})`);
   const data = await res.json();
   // dictionaryapi.dev names its files by accent: word-us.mp3, word-uk.mp3,
@@ -112,21 +114,23 @@ export function WordPicture({ word, className = "wh-flashcard-img", lazy = false
 // word is opened it plays at once. A second ask for the same term shares the
 // first one's work. Rejects when neither source worked.
 const pendingPronunciation = new Map();
-export function preparePronunciation(term) {
+export function preparePronunciation(term, options = {}) {
   const key = String(term || "").replace(/\s+/g, " ").trim().toLowerCase();
-  if (pendingPronunciation.has(key)) return pendingPronunciation.get(key);
-  const job = (async () => {
+  if (!options.signal && pendingPronunciation.has(key)) return pendingPronunciation.get(key);
+  const job = runAiOperation("Pronunciation", async signal => {
     let found = null;
-    try { found = await fetchWordAudio(term); } catch (_) { /* no dictionary entry or no access: Gemini next */ }
+    try { found = await fetchWordAudio(term, { signal }); } catch (e) { if (isAiCancelled(e)) throw e; }
+    signal.throwIfAborted();
     if (found?.url) return { source: "human", url: found.url, isUS: found.isUS };
-    return { source: "ai", url: await speechUrl(term), isUS: true };
-  })().finally(() => pendingPronunciation.delete(key));
-  pendingPronunciation.set(key, job);
+    return { source: "ai", url: await speechUrl(term, { signal }), isUS: true };
+  }, { ...options, timeoutMs: 60000 }).finally(() => { if (!options.signal) pendingPronunciation.delete(key); });
+  if (!options.signal) pendingPronunciation.set(key, job);
   return job;
 }
 // Pronunciation, best source first (see preparePronunciation), then the
 // browser's own voice, which is always one tap away.
 export function PronunciationModal({ term, onClose }) {
+  const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState("loading"); // loading | human | ai | ttsOnly
   const [audioUrl, setAudioUrl] = useState(null);
   const [isUS, setIsUS] = useState(false);
@@ -137,12 +141,14 @@ export function PronunciationModal({ term, onClose }) {
   const speakNow = () => { browserVoiceUsed.current = true; speak(); };
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
+    setStatus("loading");
     // Voice list loads asynchronously in most browsers; without this the
     // first call can run before any en-US voice is known.
     if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.getVoices();
     browserVoiceUsed.current = false;
     // Closing the dialog only stops listening: the lookup keeps going and is remembered.
-    preparePronunciation(term)
+    preparePronunciation(term, { signal: controller.signal })
       .then((found) => {
         if (cancelled) return;
         setAudioUrl(found.url); setIsUS(found.isUS); setStatus(found.source);
@@ -150,9 +156,10 @@ export function PronunciationModal({ term, onClose }) {
       .catch(() => { if (!cancelled) { setStatus("ttsOnly"); if (!browserVoiceUsed.current) speak(); } });
     return () => {
       cancelled = true;
+      controller.abort();
       if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
     };
-  }, [term]);
+  }, [term, attempt]);
   // Autoplay the human recording once it is available. Browsers can refuse
   // autoplay without a user gesture, so the visible Play button stays the
   // guaranteed path.
@@ -171,6 +178,7 @@ export function PronunciationModal({ term, onClose }) {
           <div className="wh-say-label">PRONUNCIATION</div>
           <h2 className="wh-say-term">{term}</h2>
         </div>
+        {status === "ttsOnly" && <button className="wh-back-btn" onClick={() => setAttempt(value => value + 1)}>Retry audio</button>}
         <button className="wh-icon-btn" onClick={onClose} aria-label="Close"><X size={18}/></button>
       </div>
 

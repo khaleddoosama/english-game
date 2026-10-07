@@ -1,3 +1,4 @@
+import { cancelAiTasks } from "../lib/aiOperations.js";
 import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Award, GraduationCap, BarChart3, LogOut, Settings as SettingsIcon, Wrench, BookOpen, CheckCircle2, Download, Flag, Flame, HelpCircle, Lock, Play, Search, Target, Trash2, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
 import { V2 } from "../engine/v2";
@@ -68,11 +69,14 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [askAiResult,setAskAiResult]=useState(null);
   const [askAiBusy,setAskAiBusy]=useState(false);
   const [askAiError,setAskAiError]=useState(null);
+  const aiViewEpoch=useRef(0), askAiEpoch=useRef(0), storyAiEpoch=useRef(0);
   const [selectedStoryCategories,setSelectedStoryCategories]=useState([]);
   const [storyGenError,setStoryGenError]=useState("");
   const [storyGenState, setStoryGenState] = useState(null); // null | 'loading' | 'error' | {title,text,targetWords,questions}
   async function handleGenerateStory() {
     if(!selectedStoryCategories.length){setStoryGenError("Choose at least one category first.");return;}
+    const epoch=++storyAiEpoch.current;
+    cancelAiTasks(["Write a story"]);
     setStoryGenState("loading");
     setStoryGenError("");
     try {
@@ -118,14 +122,16 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       const seenRules=new Set(),grammarRules=[];
       for(const g of grammarRulePool){const key=V2.norm(g.rule);if(seenRules.has(key))continue;seenRules.add(key);grammarRules.push({rule:g.rule,category:g.category});if(grammarRules.length>=2)break;}
       const story = await generateStory(V2.shuffleCopy(targets,Math.random),selectedStoryCategories,grammarRules);
+      if(epoch!==storyAiEpoch.current)return;
       setStoryGenState(story);
     } catch (e) {
+      if(epoch!==storyAiEpoch.current)return;
       console.error("Word Hunter: story generation failed", e);
       setStoryGenError(e.message||"Story generation failed.");
       setStoryGenState("error");
     }
   }
-  function toggleStoryCategory(category){setStoryGenState(null);setStoryGenError("");setSelectedStoryCategories(current=>current.includes(category)?current.filter(item=>item!==category):[...current,category]);}
+  function toggleStoryCategory(category){storyAiEpoch.current++;cancelAiTasks(["Write a story"]);setStoryGenState(null);setStoryGenError("");setSelectedStoryCategories(current=>current.includes(category)?current.filter(item=>item!==category):[...current,category]);}
 
   const [activeSession, setActiveSession] = useState(null);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
@@ -154,6 +160,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [playScreen, setPlayScreen] = useState("session");
   const lastSectionRef = useRef("practice");
   const screen = route.screen === "play" ? playScreen : route.screen === "notFound" ? "levels" : route.screen;
+  useEffect(() => () => { aiViewEpoch.current++; storyAiEpoch.current++; cancelAiTasks(); setAiBusy(false); setStoryGenState(current=>current==="loading"?null:current); }, [screen, location.path]);
+  useEffect(() => { if (!askAiOpen) { askAiEpoch.current++; cancelAiTasks(["Ask AI about a word"]); setAskAiBusy(false); } }, [askAiOpen]);
   const section = route.screen === "levels" ? route.section : lastSectionRef.current;
   if (route.screen === "levels") lastSectionRef.current = route.section;
   function setScreen(next) {
@@ -393,8 +401,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   function sameReport(a,b){return a===b||(!!a?.id&&a.id===b?.id);}
   // AI triage for one report. Stores the review on the report (so Admin sees
   // the verdict and any drafted fix) and returns it for the learner's view.
-  async function reviewQuestionReport(report){
-    const review=await reviewReportedQuestion(report,locateReportSource(liveContent(),report));
+  async function reviewQuestionReport(report, options = {}){
+    const review=await reviewReportedQuestion(report,locateReportSource(liveContent(),report), options);
     const reports=(progressExtrasRef.current.reports||[]).map(item=>sameReport(item,report)?{...item,aiReview:review}:item);
     progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);
     return review;
@@ -550,13 +558,16 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
   async function runAskAi(term=askAiTerm) {
     const clean=String(term||"").trim();if(!clean)return;
+    const epoch=++askAiEpoch.current;
+    cancelAiTasks(["Ask AI about a word"]);
     setAskAiBusy(true);setAskAiError(null);setAskAiResult(null);
     try{
       const existing=V2.findWord(WORDS,clean);
       const result=await askAiForWord(clean,existing);
+      if(epoch!==askAiEpoch.current)return;
       setAskAiResult({...result,alreadyInCollection:!!(existing||V2.findWord(WORDS,result.word))});
-    }catch(error){console.error("Ask AI failed",error);setAskAiError(error.message||"AI explanation is unavailable. Try again.");}
-    finally{setAskAiBusy(false);}
+    }catch(error){if(epoch!==askAiEpoch.current)return;console.error("Ask AI failed",error);setAskAiError(error.message||"AI explanation is unavailable. Try again.");}
+    finally{if(epoch===askAiEpoch.current)setAskAiBusy(false);}
   }
 
   function addAiWord() {
@@ -638,6 +649,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     () => (currentEntry ? buildEntryQuestion(currentEntry, poolsRef.current) : null),
     [currentEntry]
   );
+  useEffect(() => () => { aiViewEpoch.current++; cancelAiTasks(["Check a written answer", "Check another word in a gap", "Grammar court", "Check a final case report"]); setAiBusy(false); }, [question]);
 
   useEffect(() => {
     setAvailableTokens(
@@ -1310,6 +1322,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   }
 
   async function submitTyped() {
+    const epoch=aiViewEpoch.current;
     if (status || aiBusy || !typed.trim()) return;
     const guess = typed.trim();
     const accepted = question.acceptedAnswers?.length ? question.acceptedAnswers : [question.answer];
@@ -1318,6 +1331,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       setAiBusy(true); setAiError(null);
       try {
         const evaluation = await evaluateFreeForm(question, guess);
+      if(epoch!==aiViewEpoch.current)return;
         setAiEvaluation(evaluation);
         const genuine = evaluation.correct && evaluation.targetWordUsed && evaluation.semanticUse === "correct";
         if (genuine) {
@@ -1330,11 +1344,11 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           setStatus("wrong");
           registerResult(false, { aiEvaluated: true });
         }
-      } catch (e) {
+      } catch (e) { if(epoch!==aiViewEpoch.current)return;
         setAiError("AI evaluation is unavailable. Retry, or continue without recording this answer.");
         setStatus("aiError");
       } finally {
-        setAiBusy(false);
+        if(epoch===aiViewEpoch.current)setAiBusy(false);
       }
       return;
     }
@@ -1344,35 +1358,40 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       setAiBusy(true); setAiError(null);
       try {
         const evaluation = await evaluateAlternativeGap(question, guess);
+      if(epoch!==aiViewEpoch.current)return;
         setAiEvaluation(evaluation);
         if (evaluation.correct) {
           setStatus("correctAlternative");
           registerResult(false, { roundCorrect: true, masteryCorrect: false, productionSuccess: false, aiEvaluated: true });
         } else { setStatus("wrong"); registerResult(false, { aiEvaluated: true }); }
-      } catch (e) { setAiError("AI evaluation is unavailable. Retry, or continue without recording this answer."); setStatus("aiError"); }
-      finally { setAiBusy(false); }
+      } catch (e) { if(epoch!==aiViewEpoch.current)return; setAiError("AI evaluation is unavailable. Retry, or continue without recording this answer."); setStatus("aiError"); }
+      finally { if(epoch===aiViewEpoch.current)setAiBusy(false); }
       return;
     }
     setStatus("wrong"); registerResult(false);
   }
 
   async function submitGrammarCorrection() {
+    const epoch=aiViewEpoch.current;
     if (!question?.court || aiBusy || !typed.trim()) return;
     setAiBusy(true); setAiError(null);
     try {
       const result = await evaluateGrammarCorrection(question, typed.trim());
+      if(epoch!==aiViewEpoch.current)return;
       setGrammarCorrectionResult(result);
-    } catch (e) {
+    } catch (e) { if(epoch!==aiViewEpoch.current)return;
       console.error("Grammar correction evaluation failed:", e);
       setGrammarCorrectionResult({ correct: false, confidence: "low", feedback: "The judge is unavailable right now. Your original answer record was not changed.", suggestedCorrection: "" });
-    } finally { setAiBusy(false); }
+    } finally { if(epoch===aiViewEpoch.current)setAiBusy(false); }
   }
 
   async function submitFreeForm() {
+    const epoch=aiViewEpoch.current;
     if (status || aiBusy || !typed.trim()) return;
     setAiBusy(true); setAiError(null);
     try {
       const evaluation = await evaluateFreeForm(question, typed.trim());
+      if(epoch!==aiViewEpoch.current)return;
       setAiEvaluation(evaluation);
       const genuine = evaluation.correct && (question.freeformKind === "idiomMeaning" || evaluation.targetWordUsed) && evaluation.semanticUse === "correct";
       if (evaluation.correct) {
@@ -1381,8 +1400,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       } else if (evaluation.semanticUse === "partly_correct" && evaluation.naturalness !== "nonsense") {
         setStatus("close"); registerResult(false, { productionSuccess: false, aiEvaluated: true });
       } else { setStatus("wrong"); registerResult(false, { productionSuccess: false, aiEvaluated: true }); }
-    } catch (e) { console.error("AI evaluation failed:", e); setAiError("AI evaluation is unavailable. Retry, or continue without recording this answer."); setStatus("aiError"); }
-    finally { setAiBusy(false); }
+    } catch (e) { if(epoch!==aiViewEpoch.current)return; console.error("AI evaluation failed:", e); setAiError("AI evaluation is unavailable. Retry, or continue without recording this answer."); setStatus("aiError"); }
+    finally { if(epoch===aiViewEpoch.current)setAiBusy(false); }
   }
 
   function continueAfterAiFailure() { setStatus("skipped"); setAiError(null); }
@@ -1414,10 +1433,12 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   }
 
   async function finishFinalCaseReport() {
+    const epoch=aiViewEpoch.current;
     if (!finalCaseWords.length || !finalReportText.trim() || aiBusy) return;
     setAiBusy(true); setAiError(null);
     try {
       const evaluation = await evaluateFinalReport(finalCaseWords, finalReportText.trim());
+      if(epoch!==aiViewEpoch.current)return;
       setFinalCaseResult(evaluation);
       if (evaluation.confidence !== "low") {
         let nextMastery = masteryRef.current;
@@ -1434,8 +1455,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         masteryRef.current = nextMastery; setMastery(nextMastery);
       }
       recordStudyDay(); setScreen("finalResults");
-    } catch (e) { console.error("Final Case AI failed:", e); setAiError("AI evaluation is unavailable. Retry the report, or return without changing mastery."); }
-    finally { setAiBusy(false); }
+    } catch (e) { if(epoch!==aiViewEpoch.current)return; console.error("Final Case AI failed:", e); setAiError("AI evaluation is unavailable. Retry the report, or return without changing mastery."); }
+    finally { if(epoch===aiViewEpoch.current)setAiBusy(false); }
   }
 
   // Reports the current variant as bad: retires it permanently, queues a

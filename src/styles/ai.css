@@ -1,0 +1,9 @@
+.wh-ai-progress { position: fixed; z-index: 10000; bottom: calc(76px + env(safe-area-inset-bottom)); right: 12px; width: min(340px, calc(100vw - 24px)); font: 14px/1.4 system-ui, sans-serif; color: #fff6e5; }
+.wh-ai-progress button { cursor: pointer; border: 1px solid #a6a092; border-radius: 7px; background: #29271f; color: #fff6e5; padding: 9px 12px; min-height: 40px; font: inherit; }
+.wh-ai-progress button:focus-visible { outline: 3px solid #e7ba53; outline-offset: 2px; }
+.wh-ai-progress-toggle { display: block; margin-left: auto; }
+.wh-ai-progress-list { margin-top: 6px; max-height: min(45vh, 360px); overflow-y: auto; background: #1c1a17; border: 1px solid #a6a092; border-radius: 10px; box-shadow: 0 4px 20px #0006; }
+.wh-ai-progress-job { padding: 12px; border-bottom: 1px solid #595344; }
+.wh-ai-progress-job:last-child { border-bottom: 0; }
+.wh-ai-progress-job p { margin: 6px 0; overflow-wrap: anywhere; }
+.wh-ai-progress progress { display: block; width: 100%; height: 8px; margin: 8px 0; accent-color: #e7ba53; }

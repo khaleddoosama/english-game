@@ -1,5 +1,6 @@
 import { supabase, isLocalMode } from '../../lib/supabase';
-import { accessToken } from '../../lib/auth';
+import { postAiRequest } from '../../lib/ai';
+import { managedAiFunction } from '../../lib/aiOperations.js';
 import { preparePersonalContent } from './scope';
 import { idb } from '../../lib/idb';
 import { normalizeTerm } from '../../../api/_lib/vocabulary.js';
@@ -43,20 +44,18 @@ export async function searchGrammar(term) {
   return check(await supabase.from('content_items').select('key,data').eq('kind','grammar').eq('deleted',false).ilike('data->>rule',`%${clean}%`).order('key').limit(40));
 }
 export async function acceptWordShare(id) { check(await supabase.rpc('accept_word_share',{p_id:id})); }
-export async function addOrGenerateWord(term) {
-  const token = await accessToken();
-  const res = await fetch('/api/library-word',{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${token}`},body:JSON.stringify({term:normalizeTerm(term)})});
-  const data = await res.json().catch(()=>({}));
-  if(!res.ok) throw new Error(data.error || 'Could not add this word.');
+async function addOrGenerateWordImpl(term, options = {}) {
+  const data = await postAiRequest('/api/library-word', { term: normalizeTerm(term) }, { ...options, timeoutMs: 65000 });
+  if (!data?.word || typeof data.word.word !== 'string') throw new Error('AI did not return a usable word. Please try again.');
   return data;
 }
-export async function generatePersonalGrammar(body) {
-  const token=await accessToken();
-  const res=await fetch('/api/library-grammar',{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${token}`},body:JSON.stringify(body)});
-  const data=await res.json().catch(()=>({}));
-  if(!res.ok) throw new Error(data.error || 'Could not prepare this grammar rule.');
+export const addOrGenerateWord = managedAiFunction('Add a word to my library', addOrGenerateWordImpl, 1, { timeoutMs: 70000 });
+async function generatePersonalGrammarImpl(body, options = {}) {
+  const data = await postAiRequest('/api/library-grammar', body, { ...options, timeoutMs: 55000 });
+  if (!data?.rule || !Array.isArray(data.rule.questions) || !data.rule.questions.length) throw new Error('AI did not return usable grammar practice. Please try again.');
   return data.rule;
 }
+export const generatePersonalGrammar = managedAiFunction('Write my grammar practice', generatePersonalGrammarImpl, 1, { timeoutMs: 60000 });
 
 export async function prepareBulkWords(terms) {
   return check(await supabase.rpc('choose_bulk_words',{p_terms:terms}));

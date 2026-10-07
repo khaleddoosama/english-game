@@ -1,3 +1,4 @@
+import { useCancelAiOnLeave } from '../../lib/aiLifecycle.js';
 import { useEffect, useRef, useState } from 'react';
 import { addOrGenerateWord, chooseWords, removeWord, searchCatalogue } from './libraryApi';
 import { loadFriends, shareWords } from '../social/friendsApi';
@@ -6,6 +7,7 @@ import PersonalWorkspace from './PersonalWorkspace';
 
 export default function LibraryPage({ userId, words, grammar = [], onChanged, local = false }) {
   const [term,setTerm] = useState(''), [results,setResults] = useState([]);
+  useCancelAiOnLeave(["Add a word to my library", "Write my grammar practice", "Add a word batch"]);
   const [busy,setBusy] = useState(false), [searching,setSearching] = useState(false);
   const [error,setError] = useState(''), [message,setMessage] = useState('');
   const [selected,setSelected] = useState([]), [friends,setFriends] = useState([]), [recipient,setRecipient] = useState('');
