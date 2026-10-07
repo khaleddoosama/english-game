@@ -4,12 +4,23 @@ import { withRequestTimeout } from "../src/lib/requestTimeout.js";
 vi.mock("../src/lib/auth", () => ({ accessToken: vi.fn(async () => "token") }));
 vi.mock("../src/lib/supabase", () => ({ isLocalMode: false }));
 import { accessToken } from "../src/lib/auth";
-import { AI_REQUEST_TIMEOUT_MS, callAiText } from "../src/lib/ai.js";
+import { AI_REQUEST_TIMEOUT_MS, callAiText, speechUrl } from "../src/lib/ai.js";
+import { cancelAiTasks } from "../src/lib/aiOperations.js";
 
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); vi.clearAllMocks(); accessToken.mockResolvedValue("token"); });
 const never = () => new Promise(() => {});
 
 describe("AI deadlines", () => {
+  it("cancels speech generation without saving a broken cache entry", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));
+    const pending = speechUrl("new uncached cancellation test phrase");
+    const checked = expect(pending).rejects.toMatchObject({ name: "AbortError" });
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    cancelAiTasks(["Pronunciation"]); await checked;
+    fetch.mockResolvedValueOnce(new Response(JSON.stringify({ url: "https://example.test/ok.wav" })));
+    await expect(speechUrl("new uncached cancellation test phrase")).resolves.toBe("https://example.test/ok.wav");
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
   it("settles and aborts even when the operation ignores the signal", async () => {
     vi.useFakeTimers();
     let signal;

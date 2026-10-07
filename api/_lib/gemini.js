@@ -10,7 +10,7 @@ const BUDGET_MS = 40000; // stay well inside the function's 60 s limit
 const ATTEMPT_TIMEOUT_MS = 15000;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function generate(model, body, timeoutMs) {
+async function generate(model, body, timeoutMs, signal) {
   if (!GEMINI_API_KEY) throw Object.assign(new Error("GEMINI_API_KEY is not set on the server."), { status: 500, final: true });
   try {
     return await withRequestTimeout(async (signal) => {
@@ -23,8 +23,9 @@ async function generate(model, body, timeoutMs) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw Object.assign(new Error(data?.error?.message || `Gemini request failed (${res.status})`), { upstream: res.status });
       return data;
-    }, timeoutMs, "The AI took too long to respond. Please try again.");
+    }, timeoutMs, "The AI took too long to respond. Please try again.", signal);
   } catch (e) {
+    if (e.name === "AbortError") throw Object.assign(e, { status: 499, final: true });
     if (e.upstream) throw e;
     throw Object.assign(new Error(`Couldn't reach Gemini (${e.message}).`), { upstream: 503 });
   }
@@ -34,17 +35,18 @@ async function generate(model, body, timeoutMs) {
 // retry; a rate-limited or missing model is skipped straight away.
 // buildBody(model, plain) lets text calls drop thinkingConfig for models
 // that don't support it.
-export async function generateWithFallback(models, buildBody, { log = console } = {}) {
+export async function generateWithFallback(models, buildBody, { log = console, signal } = {}) {
   const started = Date.now();
   const chain = [...new Set(models.filter(Boolean))];
   let lastError = null, sawBusy = false;
   for (const model of chain) {
     let plain = false;
     for (let attempt = 0; attempt < ATTEMPTS_PER_MODEL; attempt++) {
+      signal?.throwIfAborted();
       const remaining = BUDGET_MS - (Date.now() - started);
       if (remaining <= 0) break;
       try {
-        const data = await generate(model, buildBody(model, plain), Math.min(ATTEMPT_TIMEOUT_MS, remaining));
+        const data = await generate(model, buildBody(model, plain), Math.min(ATTEMPT_TIMEOUT_MS, remaining), signal);
         if (model !== chain[0]) log.warn?.(`gemini: answered by fallback ${model}`);
         return { data, model };
       } catch (e) {
@@ -66,11 +68,11 @@ export async function generateWithFallback(models, buildBody, { log = console } 
 // Text in, JSON text out. Low thinking keeps these short grading and
 // writing tasks fast; the output limit is left to the model because
 // thinking tokens count toward it.
-export async function generateJsonText(prompt) {
+export async function generateJsonText(prompt, options = {}) {
   const { data, model } = await generateWithFallback([GEMINI_MODEL, ...GEMINI_FALLBACK_MODELS], (_model, plain) => ({
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     generationConfig: { responseMimeType: "application/json", temperature: 0.7, ...(plain ? {} : { thinkingConfig: { thinkingLevel: "low" } }) },
-  }));
+  }), options);
   const parts = data?.candidates?.[0]?.content?.parts || [];
   const text = parts.filter((p) => typeof p.text === "string" && !p.thought).map((p) => p.text).join("");
   if (!text) throw Object.assign(new Error(`Gemini returned no text (${data?.candidates?.[0]?.finishReason || "no candidate"}).`), { status: 502, model });
@@ -85,14 +87,14 @@ export function usageOf(data) {
 
 // Speech: Gemini returns raw 16-bit PCM; wrap it in a WAV header so any
 // browser <audio> can play it.
-export async function speak(text, info = {}) {
+export async function speak(text, info = {}, options = {}) {
   const { data, model } = await generateWithFallback([GEMINI_TTS_MODEL, ...GEMINI_TTS_FALLBACK_MODELS], () => ({
     // Only the words to say: a speech model reads its whole input aloud, so an
     // instruction in front of the text ("Say clearly, in an American accent:") is
     // spoken too. The accent comes from the voice.
     contents: [{ role: "user", parts: [{ text }] }],
     generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: GEMINI_TTS_VOICE } } } },
-  }));
+  }), options);
   const part = (data?.candidates?.[0]?.content?.parts || []).find((p) => p.inlineData?.data);
   if (!part) throw Object.assign(new Error("Gemini returned no audio."), { status: 502 });
   const pcm = Buffer.from(part.inlineData.data, "base64");

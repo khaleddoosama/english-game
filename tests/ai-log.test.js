@@ -144,7 +144,7 @@ describe("the server's list of AI features", () => {
     const code = readdirSync("src", { recursive: true }).filter((f) => /\.(js|jsx)$/.test(f)).map((f) => readFileSync(`src/${f}`, "utf8")).join("\n");
     const player = new Set([...code.matchAll(/task: "([^"]+)"/g)].map((m) => m[1]));
     // callAiJsonAdmin(instructions, payload, maxTokens, "Task name")
-    const admin = new Set([...code.matchAll(/\d+,\s*"([A-Z][^"]+)"\s*\)/g)].map((m) => m[1]));
+    const admin = new Set([...code.matchAll(/\d+,\s*"([A-Z][^"]+)"(?:,\s*\w+)?\s*\)/g)].map((m) => m[1]));
     expect(admin.size).toBe(7);
     for (const name of player) expect(AI_TASKS[name], name).toMatchObject({ maxChars: expect.any(Number) });
     for (const name of player) expect(AI_TASKS[name].adminOnly, name).toBeFalsy();

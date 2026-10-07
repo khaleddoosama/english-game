@@ -28,6 +28,16 @@ async function report() {
   expect(host.textContent).toContain("AI is checking");
 }
 describe("reported question waiting screen", () => {
+  it("retries AI without filing the report again", async () => {
+    let fail;
+    props.onReviewReport = vi.fn().mockImplementationOnce(() => new Promise((_resolve, reject) => { fail = reject; })).mockImplementation(() => new Promise(() => {}));
+    await report();
+    await act(async () => fail(new Error("Unavailable")));
+    await click("Retry AI review");
+    expect(props.onReviewReport).toHaveBeenCalledTimes(2);
+    expect(props.onReport).toHaveBeenCalledTimes(1);
+    await click("Close and continue");
+  });
   it("can close immediately while the review hangs, retaining the report", async () => {
     await report();
     await click("Close and continue");

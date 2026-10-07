@@ -1,3 +1,5 @@
+import { runAiOperation, updateAiOperation, isAiCancelled } from "../../../lib/aiOperations.js";
+import { useCancelAiOnLeave } from "../../../lib/aiLifecycle.js";
 import { useMemo, useState } from "react";
 import { BookOpen, CheckCheck, FileJson, RotateCcw, Sparkles, Trash2, User, Wrench } from "lucide-react";
 import { useQuery } from "../../../lib/router";
@@ -52,6 +54,7 @@ export function Reports({ reports, content, onResolve, onReopen, onDelete, onRet
   const [f, setF] = useQuery({ status: "open", from: "", verdict: "", reason: "" });
   const { status, from, verdict, reason } = f;
   const [confirm, setConfirm] = useState(null);
+  useCancelAiOnLeave(["Review open reports"]);
   const [bulk, setBulk] = useState(null); // AI review progress
   const views = useMemo(() => reports.map(reportView), [reports]);
   const players = useMemo(() => [...new Set(views.map((r) => r.reporter))].sort(), [views]);
@@ -73,15 +76,25 @@ export function Reports({ reports, content, onResolve, onReopen, onDelete, onRet
 
   async function reviewAll() {
     const pending = open.filter((r) => !r.aiReview).map((r) => r.raw);
-    setBulk({ done: 0, total: pending.length, failed: 0 });
-    let failed = 0;
-    for (let i = 0; i < pending.length; i++) {
-      try { await onReviewReport(pending[i]); } catch { failed++; }
-      setBulk({ done: i + 1, total: pending.length, failed });
-    }
+    let failed = 0, done = 0;
+    setBulk({ done, total: pending.length, failed, running: true });
+    try {
+      await runAiOperation("Review open reports", async signal => {
+        updateAiOperation(signal, { done, total: pending.length, phase: "Reviewing reports" });
+        for (const report of pending) {
+          signal.throwIfAborted();
+          try { await onReviewReport(report, { signal }); } catch (e) { if (isAiCancelled(e)) throw e; failed++; }
+          done++;
+          setBulk({ done, total: pending.length, failed, running: true });
+          updateAiOperation(signal, { done, total: pending.length });
+        }
+      }, { timeoutMs: Math.min(240000, Math.max(50000, pending.length * 50000)) });
+    } catch (e) { if (!isAiCancelled(e)) failed++; }
+    finally { setBulk({ done, total: pending.length, failed, running: false }); }
   }
+
   const unreviewed = open.filter((r) => !r.aiReview).length;
-  const reviewing = bulk && bulk.done < bulk.total;
+  const reviewing = !!bulk?.running;
 
   return (
     <div className="adm-section">
@@ -92,7 +105,7 @@ export function Reports({ reports, content, onResolve, onReopen, onDelete, onRet
         <Kpi label="Resolved" value={views.length - open.length} />
       </div>
       <Notice>An open report keeps that word and question type out of every player's rounds. Resolving or retiring it lifts the block.</Notice>
-      {bulk && !reviewing && <Notice tone={bulk.failed ? "error" : "info"}>AI reviewed {bulk.total - bulk.failed} of {bulk.total} reports{bulk.failed ? `; ${bulk.failed} failed, try again later` : ""}.</Notice>}
+      {bulk && !reviewing && <Notice tone={bulk.failed ? "error" : "info"}>AI reviewed {Math.max(0, bulk.done - bulk.failed)} of {bulk.total} reports{bulk.failed ? `; ${bulk.failed} failed, try again later` : ""}.</Notice>}
       <DataTable
         id="reports" columns={columns} rows={rows} rowKey={(r) => r.key} csvName="word-hunter-reports"
         searchText={(r) => `${r.prompt} ${r.targets.join(" ")} ${r.reason || ""} ${r.note || ""} ${r.playerAnswer || ""} ${r.reporter}`} searchPlaceholder="Search question, word, answer, reason…"
@@ -122,6 +135,7 @@ export function Reports({ reports, content, onResolve, onReopen, onDelete, onRet
 }
 
 function ReportDrawer({ report: r, content, onClose, onResolve, onReopen, onDelete, onRetire, onReviewReport, onUpdate, onOpenWord, onOpenPlayer }) {
+  useCancelAiOnLeave(["Suggest a fix for a report"], r.key);
   const [fix, setFix] = useState(null); // { entity, before, after, changes }
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);

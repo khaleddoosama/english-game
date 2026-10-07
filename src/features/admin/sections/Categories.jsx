@@ -1,3 +1,4 @@
+import { useCancelAiOnLeave } from "../../../lib/aiLifecycle.js";
 // Categories (= the game's lessons): order, rename, merge, add, delete,
 // AI clean-up suggestions, and everything inside one category across all
 // content types. /admin/categories/<name> opens one category.
@@ -25,6 +26,7 @@ export function Categories({ content, onUpdate, onMerge, onRemoveEmpty, openName
   const levels = content.levels || [];
   const [dialog, setDialog] = useState(null); // { kind, row }
   const [input, setInput] = useState("");
+  useCancelAiOnLeave(["Suggest category merges"]);
   const [ai, setAi] = useState(null); // { busy, error, merges, applied }
   const [note, setNote] = useState(null);
   const empty = rows.filter((r) => r.listed && !r.total);

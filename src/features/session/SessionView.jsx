@@ -8,6 +8,7 @@ import { SPEED_SECONDS, speedStats } from "../../engine/questions";
 import { evaluateAlternativeGap, evaluateFreeForm, regenerateWordExplanation } from "../../engine/ai";
 import { preloadImage } from "../../lib/images";
 import { withRequestTimeout } from "../../lib/requestTimeout.js";
+import { useCancelAiOnLeave } from "../../lib/aiLifecycle.js";
 // Embedded shared answer controls for all new sessions.
 export const SessionView = (() => {
 const { grade, sentence } = V2;
@@ -68,10 +69,14 @@ const MODE_LABELS_V2={reverse:"Name the Word",picture:"Picture Hunter",antonym:"
 // Correct answers in a row ending at index i (reported/skipped ones don't break it).
 function comboAt(answers,i){let n=0;for(let j=i;j>=0;j--){const a=answers[j];if(!a||a.reported)continue;if(!a.correct)break;n++;}return n;}
 function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onReport,onReviewReport,onWithdrawReport,onUpdateWord,onResult,onAskWord,sound=true,onToggleSound,prefs={}}){
+  useCancelAiOnLeave(["Check a written answer", "Check another word in a gap", "Rewrite a word"], `${s?.id}:${s?.index}`);
   const [reviewOpen,setReviewOpen]=useState(false);
   const [aiChecking,setAiChecking]=useState(false);
   const [cardIndex,setCardIndex]=useState(0);
   const [flipped,setFlipped]=useState(false);
+  const currentCard=useRef(cardIndex);currentCard.current=cardIndex;
+  useCancelAiOnLeave(["Rewrite a word"], `${s?.id}:${cardIndex}`);
+  useEffect(()=>{setAiChecking(false);},[s?.id,s?.index]);
   const [regenState,setRegenState]=useState(null);
   const [reportOpen,setReportOpen]=useState(false);
   const [youglishTerm,setYouglishTerm]=useState(null);
@@ -91,7 +96,11 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
   // top of the page), so the prompt is right there to read.
   const cardRef=useRef(null);
   useEffect(()=>{if(s?.index)cardRef.current?.scrollIntoView({behavior:'smooth',block:'start'});},[s?.index]);
-  const save=patch=>s&&onChange({...s,...patch});
+  const currentSession=useRef(s), mounted=useRef(true);
+  currentSession.current=s;
+  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
+  const stillCurrent=()=>mounted.current&&currentSession.current?.id===s?.id&&currentSession.current?.index===s?.index;
+  const save=patch=>s&&stillCurrent()&&onChange({...s,...patch});
   const q=s?.queue?.[s.index];const draft=s?.draft||{};
   // Fetch the next question's picture (and this word's reward picture) while
   // the learner is still answering, so it appears instantly.
@@ -165,8 +174,10 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
       setRegenState('loading');
       try{
         const result=await regenerateWordExplanation(w);
+        if(currentCard.current!==cardIndex)return;
         setRegenState(result);
       }catch(e){
+        if(currentCard.current!==cardIndex)return;
         console.error('Word Hunter: regenerate failed',e);
         setRegenState('error');
       }
@@ -257,6 +268,7 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
         const targetWord=V2.findWord(words,q.targets?.[0]);
         const target=q.freeformKind==='grammarFix'?{label:q.rule,situation:q.sentence}:{word:q.targets?.[0],meaning:targetWord?.meaning,situation:targetWord?.situation};
         const evaluation=await evaluateFreeForm({freeformKind:q.freeformKind||'sentence',target,answer:q.answers[0]},value);
+        if(!stillCurrent())return;
         const targetRequired=!['idiomMeaning','grammarFix'].includes(q.freeformKind);
         const genuine=evaluation.correct&&(!targetRequired||evaluation.targetWordUsed)&&evaluation.semanticUse==='correct';
         const aiClose=!genuine&&evaluation.semanticUse==='partly_correct'&&evaluation.naturalness!=='nonsense';
@@ -269,12 +281,13 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
         // AI check failed (network/parsing) — surface this distinctly from a
         // plain unverified result so it's clear a retry might help, and log
         // the real error for debugging instead of failing silently.
+        if(!stillCurrent())return;
         console.error('Word Hunter: transform AI check failed', e);
         const answers=[...s.answers];
         answers[s.index]={...base,aiFailed:true};
         save({answers});
       }finally{
-        setAiChecking(false);
+        if(stillCurrent())setAiChecking(false);
       }
       return;
     }
@@ -287,6 +300,7 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
       try{
         const targetWord=V2.findWord(words,q.targets?.[0]);
         const evaluation=await evaluateAlternativeGap({prompt:q.prompt,answer:q.answers[0],target:{meaning:targetWord?.meaning||q.explanation}},value);
+        if(!stillCurrent())return;
         const genuine=!!evaluation.correct&&evaluation.semanticUse==='correct';
         const aiClose=!genuine&&evaluation.semanticUse==='partly_correct'&&evaluation.naturalness!=='nonsense';
         const answers=[...s.answers];
@@ -295,12 +309,13 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
         onResult?.(q,finalResult,s);
         save({answers});
       }catch(e){
+        if(!stillCurrent())return;
         console.error('Word Hunter: alternative-answer AI check failed', e);
         const answers=[...s.answers];
         answers[s.index]={...base,aiFailed:true};
         save({answers});
       }finally{
-        setAiChecking(false);
+        if(stillCurrent())setAiChecking(false);
       }
       return;
     }
@@ -318,6 +333,11 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
     withRequestTimeout(()=>onReviewReport(report),REPORT_REVIEW_TIMEOUT_MS,"AI review timed out.").then(review=>setReportReview(current=>current?.report===report?{...current,status:'done',review}:current),()=>setReportReview(current=>current?.report===report?{...current,status:'failed'}:current));
   }
   function closeReport(){setReportOpen(false);setReportReview(null);}
+  function retryReportReview(){
+    const report=reportReview.report;
+    setReportReview(current=>({...current,status:'reviewing'}));
+    withRequestTimeout(()=>onReviewReport(report),REPORT_REVIEW_TIMEOUT_MS,"AI review timed out.").then(review=>setReportReview(current=>current?.report===report?{...current,status:'done',review}:current),()=>setReportReview(current=>current?.report===report?{...current,status:'failed'}:current));
+  }
   // The learner agrees with the AI: drop the report and put the question
   // back exactly as it was (unanswered, or their original graded answer).
   function withdrawReport(){
@@ -332,7 +352,7 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
   const sameAsExplanation=result&&q.explanation&&answerText.trim().toLowerCase()===q.explanation.trim().toLowerCase();
   const answeredCount=s.answers.slice(0,s.queue.length).filter(Boolean).length;
   const speedNow=speed?speedStats(s.answers):null;
-  return <section><div className="wh-round-top"><button className="wh-back-btn wh-nav-btn" onClick={speed?endSpeed:onBack}>{speed?'End round':'Save and leave'}</button><span className="wh-round-meta">{combo>=2&&<span key={combo} className="wh-combo"><Flame size={13}/> {combo} in a row</span>}{speed?<><span className={`wh-speed-timer ${timeLeft<=10?'urgent':''}`}><Zap size={13}/> {timeLeft}s</span><span>{speedNow.points} pts</span></>:<span>{s.title} · {s.index+1}/{s.queue.length}</span>}{onToggleSound&&<button className="wh-icon-btn" onClick={onToggleSound} title={sound?"Mute sounds":"Turn sounds on"} aria-label={sound?"Mute sounds":"Turn sounds on"}>{sound?<Volume2 size={13}/>:<VolumeX size={13}/>}</button>}</span></div>{speed?<div className="wh-session-progress" role="progressbar" aria-label="Time left" aria-valuemin={0} aria-valuemax={s.seconds||SPEED_SECONDS} aria-valuenow={timeLeft}><span style={{width:`${timeLeft/(s.seconds||SPEED_SECONDS)*100}%`}}/></div>:<div className="wh-session-progress" role="progressbar" aria-valuemin={0} aria-valuemax={s.queue.length} aria-valuenow={answeredCount}><span style={{width:`${s.queue.length?answeredCount/s.queue.length*100:0}%`}}/></div>}{s.kind==='practice'&&s.initialLength<(s.targetLength||12)&&<p className="wh-v2-notice">Short session: {s.initialLength} valid questions (usual goal: {s.targetLength||12}).</p>}{s.text&&<details className="wh-v2-story" open={s.index===0}><summary>Read the story</summary><p><AskableText text={s.text} onAskWord={onAskWord} onListen={setYouglishTerm} /></p></details>}<div className="wh-card" ref={cardRef}>{result&&statusClass==='correct'&&<div className="wh-stamp correct">SUCCESS</div>}<div className="wh-file-row"><span>{MODE_META[q.mode]?.label||MODE_LABELS_V2[q.mode]||q.mode}</span>{!speed&&<div><button className="wh-back-btn" onClick={()=>onAskWord?.(q.targets?.[0]||'')}>Ask AI</button> <button className="wh-back-btn" disabled={!result} title={result?undefined:"Available after you answer (it would give the answer away)"} onClick={()=>setYouglishTerm(q.targets?.[0]||'')}><Volume2 size={12}/> Listen</button> <button className="wh-back-btn" disabled={!!result&&(result.reported||s.kind==='story')} onClick={()=>{setReportReason("");setReportDetails("");setReportReview(null);setReportOpen(true);}}>Report question</button></div>}</div>{(q.picture||q.photo)&&<div className="wh-picture-q"><WordPicture word={q} className="wh-picture-img"/></div>}<p className="wh-sentence"><AskableText text={q.prompt} onAskWord={onAskWord} onListen={setYouglishTerm} /></p>{q.type==='multi'&&<p>Choose {q.answers.length} words.</p>}<AnswerControl key={q.id} q={q} draft={draft} onChange={draft=>save({draft})} disabled={!!result} onSubmit={submit}/>{!result&&!speed&&prefs.hints!==false&&q.hints?.length>0&&<><button className="wh-back-btn" disabled={(draft.hints||0)>=q.hints.length} onClick={()=>save({draft:{...draft,hints:(draft.hints||0)+1}})}>Hint ({draft.hints||0}/{q.hints.length})</button>{q.hints.slice(0,draft.hints||0).map((h,i)=><p key={i}>{h}</p>)}</>}{speed?(result&&<div role="status" className={`wh-feedback ${statusClass}`}>{result.correct?'Correct!':`It was: ${answerText}`}</div>):!result?<button className="wh-level-btn wh-submit-btn" disabled={!ready||aiChecking} onClick={submit}>{aiChecking?'Checking with AI…':'Submit'}</button>:<><div role="status" className={`wh-feedback ${statusClass}`}>{s.kind==='story'?'Answer saved. Feedback follows at the end.':result.reported?'Reported; excluded from mastery.':result.aiFailed?'AI check failed. Tap Retry to try again, or Continue without grading this one.':result.dontKnow?"No worries — here's the answer:":result.unverified?'Different from the model. Not graded: a text match cannot check all valid sentences.':result.aiClose?'Almost — close, but not quite right yet.':result.spelling?'Close spelling; this is not a full recall success.':result.correct?'Correct'+(result.assisted?' with help.':'.'):'Try this answer:'}</div>{s.kind!=='story'&&!result.reported&&!result.aiFailed&&<div className="wh-result-details"><WordPicture word={correctWord}/><p>{answerText}</p>{!sameAsExplanation&&<p>{q.explanation}</p>}{result.aiFeedback&&<p className="wh-ai-feedback">{result.aiFeedback}</p>}</div>}{result.aiFailed&&<button className="wh-level-btn wh-result-continue" onClick={retry}>Retry</button>}<button ref={continueRef} className="wh-level-btn wh-result-continue" onClick={next}>Continue</button></>}</div>{reportOpen&&<div className="wh-modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)closeReport();}}><div className="wh-panel wh-confirm-panel" role="alertdialog" aria-modal="true" aria-label="Question report">{!reportReview?<><p><b>Report this question?</b></p><p>Pick what's wrong (optional), or add your own note below. AI will check it right away.{result?.correct?' Your correct answer won\'t count for this word while the report is open.':''}</p><div className="wh-options wh-report-reasons">{REPORT_REASONS.map(reason=><button type="button" key={reason} className={`wh-option ${reportReason===reason?'picked':''}`} onClick={()=>setReportReason(current=>current===reason?"":reason)}>{reason}</button>)}</div><textarea className="wh-freeform" style={{width:"100%",minHeight:60,boxSizing:"border-box",marginTop:8}} value={reportDetails} onChange={e=>setReportDetails(e.target.value)} placeholder="What's wrong? Write it in your own words (Arabic is fine)"/><div className="wh-ai-actions"><button onClick={()=>setReportOpen(false)}>Cancel</button><button className="primary" disabled={!reportReason&&!reportDetails.trim()} onClick={submitReport}>Submit report</button></div></>:reportReview.status==='reviewing'?<><p><b>Report saved.</b></p><p className="wh-ai-feedback"><Sparkles size={13}/> AI is checking this question…</p><p>You can close this window and keep playing. Your report stays saved.</p><div className="wh-ai-actions"><button className="primary" onClick={closeReport}>Close and continue</button></div></>:reportReview.status==='failed'?<><p><b>Report saved.</b></p><p>AI couldn't check it right now. It's still in the admin's report list, and this question won't count against you.</p><div className="wh-ai-actions"><button className="primary" onClick={closeReport}>Continue</button></div></>:<><p><b>{reportReview.review.verdict==='flawed'?'AI agrees — this question has a problem.':reportReview.review.verdict==='repeated'?'Got it — this one keeps coming back.':reportReview.review.verdict==='fine'?'AI thinks this question is OK.':"AI isn't sure about this one."}</b></p>{reportReview.review.explanation&&<p className="wh-ai-feedback">{reportReview.review.explanation}</p>}{reportReview.review.learnerAnswerAcceptable===true&&<p>Your answer looks acceptable too.</p>}{reportReview.review.verdict==='flawed'&&<p><small>{reportReview.review.fixed?'A fix is drafted and waiting for admin review.':'Saved for admin review.'} The question won't count against you.</small></p>}{reportReview.review.verdict!=='flawed'&&<p><small>Your report is still saved for the admin, and this question won't count against you. You can withdraw it if you agree with the AI.</small></p>}<div className="wh-ai-actions">{reportReview.review.verdict!=='flawed'&&<button onClick={withdrawReport}>{reportReview.prior?'Withdraw report':'Withdraw & answer it'}</button>}<button className="primary" onClick={closeReport}>{reportReview.review.verdict!=='flawed'?'Keep report':'Continue'}</button></div></>}</div></div>}{youglishTerm&&<PronunciationModal term={youglishTerm} onClose={()=>setYouglishTerm(null)}/>}</section>;
+  return <section><div className="wh-round-top"><button className="wh-back-btn wh-nav-btn" onClick={speed?endSpeed:onBack}>{speed?'End round':'Save and leave'}</button><span className="wh-round-meta">{combo>=2&&<span key={combo} className="wh-combo"><Flame size={13}/> {combo} in a row</span>}{speed?<><span className={`wh-speed-timer ${timeLeft<=10?'urgent':''}`}><Zap size={13}/> {timeLeft}s</span><span>{speedNow.points} pts</span></>:<span>{s.title} · {s.index+1}/{s.queue.length}</span>}{onToggleSound&&<button className="wh-icon-btn" onClick={onToggleSound} title={sound?"Mute sounds":"Turn sounds on"} aria-label={sound?"Mute sounds":"Turn sounds on"}>{sound?<Volume2 size={13}/>:<VolumeX size={13}/>}</button>}</span></div>{speed?<div className="wh-session-progress" role="progressbar" aria-label="Time left" aria-valuemin={0} aria-valuemax={s.seconds||SPEED_SECONDS} aria-valuenow={timeLeft}><span style={{width:`${timeLeft/(s.seconds||SPEED_SECONDS)*100}%`}}/></div>:<div className="wh-session-progress" role="progressbar" aria-valuemin={0} aria-valuemax={s.queue.length} aria-valuenow={answeredCount}><span style={{width:`${s.queue.length?answeredCount/s.queue.length*100:0}%`}}/></div>}{s.kind==='practice'&&s.initialLength<(s.targetLength||12)&&<p className="wh-v2-notice">Short session: {s.initialLength} valid questions (usual goal: {s.targetLength||12}).</p>}{s.text&&<details className="wh-v2-story" open={s.index===0}><summary>Read the story</summary><p><AskableText text={s.text} onAskWord={onAskWord} onListen={setYouglishTerm} /></p></details>}<div className="wh-card" ref={cardRef}>{result&&statusClass==='correct'&&<div className="wh-stamp correct">SUCCESS</div>}<div className="wh-file-row"><span>{MODE_META[q.mode]?.label||MODE_LABELS_V2[q.mode]||q.mode}</span>{!speed&&<div><button className="wh-back-btn" onClick={()=>onAskWord?.(q.targets?.[0]||'')}>Ask AI</button> <button className="wh-back-btn" disabled={!result} title={result?undefined:"Available after you answer (it would give the answer away)"} onClick={()=>setYouglishTerm(q.targets?.[0]||'')}><Volume2 size={12}/> Listen</button> <button className="wh-back-btn" disabled={!!result&&(result.reported||s.kind==='story')} onClick={()=>{setReportReason("");setReportDetails("");setReportReview(null);setReportOpen(true);}}>Report question</button></div>}</div>{(q.picture||q.photo)&&<div className="wh-picture-q"><WordPicture word={q} className="wh-picture-img"/></div>}<p className="wh-sentence"><AskableText text={q.prompt} onAskWord={onAskWord} onListen={setYouglishTerm} /></p>{q.type==='multi'&&<p>Choose {q.answers.length} words.</p>}<AnswerControl key={q.id} q={q} draft={draft} onChange={draft=>save({draft})} disabled={!!result} onSubmit={submit}/>{!result&&!speed&&prefs.hints!==false&&q.hints?.length>0&&<><button className="wh-back-btn" disabled={(draft.hints||0)>=q.hints.length} onClick={()=>save({draft:{...draft,hints:(draft.hints||0)+1}})}>Hint ({draft.hints||0}/{q.hints.length})</button>{q.hints.slice(0,draft.hints||0).map((h,i)=><p key={i}>{h}</p>)}</>}{speed?(result&&<div role="status" className={`wh-feedback ${statusClass}`}>{result.correct?'Correct!':`It was: ${answerText}`}</div>):!result?<button className="wh-level-btn wh-submit-btn" disabled={!ready||aiChecking} onClick={submit}>{aiChecking?'Checking with AI…':'Submit'}</button>:<><div role="status" className={`wh-feedback ${statusClass}`}>{s.kind==='story'?'Answer saved. Feedback follows at the end.':result.reported?'Reported; excluded from mastery.':result.aiFailed?'AI check failed. Tap Retry to try again, or Continue without grading this one.':result.dontKnow?"No worries — here's the answer:":result.unverified?'Different from the model. Not graded: a text match cannot check all valid sentences.':result.aiClose?'Almost — close, but not quite right yet.':result.spelling?'Close spelling; this is not a full recall success.':result.correct?'Correct'+(result.assisted?' with help.':'.'):'Try this answer:'}</div>{s.kind!=='story'&&!result.reported&&!result.aiFailed&&<div className="wh-result-details"><WordPicture word={correctWord}/><p>{answerText}</p>{!sameAsExplanation&&<p>{q.explanation}</p>}{result.aiFeedback&&<p className="wh-ai-feedback">{result.aiFeedback}</p>}</div>}{result.aiFailed&&<button className="wh-level-btn wh-result-continue" onClick={retry}>Retry</button>}<button ref={continueRef} className="wh-level-btn wh-result-continue" onClick={next}>Continue</button></>}</div>{reportOpen&&<div className="wh-modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)closeReport();}}><div className="wh-panel wh-confirm-panel" role="alertdialog" aria-modal="true" aria-label="Question report">{!reportReview?<><p><b>Report this question?</b></p><p>Pick what's wrong (optional), or add your own note below. AI will check it right away.{result?.correct?' Your correct answer won\'t count for this word while the report is open.':''}</p><div className="wh-options wh-report-reasons">{REPORT_REASONS.map(reason=><button type="button" key={reason} className={`wh-option ${reportReason===reason?'picked':''}`} onClick={()=>setReportReason(current=>current===reason?"":reason)}>{reason}</button>)}</div><textarea className="wh-freeform" style={{width:"100%",minHeight:60,boxSizing:"border-box",marginTop:8}} value={reportDetails} onChange={e=>setReportDetails(e.target.value)} placeholder="What's wrong? Write it in your own words (Arabic is fine)"/><div className="wh-ai-actions"><button onClick={()=>setReportOpen(false)}>Cancel</button><button className="primary" disabled={!reportReason&&!reportDetails.trim()} onClick={submitReport}>Submit report</button></div></>:reportReview.status==='reviewing'?<><p><b>Report saved.</b></p><p className="wh-ai-feedback"><Sparkles size={13}/> AI is checking this question…</p><p>You can close this window and keep playing. Your report stays saved.</p><div className="wh-ai-actions"><button className="primary" onClick={closeReport}>Close and continue</button></div></>:reportReview.status==='failed'?<><p><b>Report saved.</b></p><p>AI couldn't check it right now. It's still in the admin's report list, and this question won't count against you.</p><div className="wh-ai-actions"><button onClick={retryReportReview}>Retry AI review</button><button className="primary" onClick={closeReport}>Continue</button></div></>:<><p><b>{reportReview.review.verdict==='flawed'?'AI agrees — this question has a problem.':reportReview.review.verdict==='repeated'?'Got it — this one keeps coming back.':reportReview.review.verdict==='fine'?'AI thinks this question is OK.':"AI isn't sure about this one."}</b></p>{reportReview.review.explanation&&<p className="wh-ai-feedback">{reportReview.review.explanation}</p>}{reportReview.review.learnerAnswerAcceptable===true&&<p>Your answer looks acceptable too.</p>}{reportReview.review.verdict==='flawed'&&<p><small>{reportReview.review.fixed?'A fix is drafted and waiting for admin review.':'Saved for admin review.'} The question won't count against you.</small></p>}{reportReview.review.verdict!=='flawed'&&<p><small>Your report is still saved for the admin, and this question won't count against you. You can withdraw it if you agree with the AI.</small></p>}<div className="wh-ai-actions">{reportReview.review.verdict!=='flawed'&&<button onClick={withdrawReport}>{reportReview.prior?'Withdraw report':'Withdraw & answer it'}</button>}<button className="primary" onClick={closeReport}>{reportReview.review.verdict!=='flawed'?'Keep report':'Continue'}</button></div></>}</div></div>}{youglishTerm&&<PronunciationModal term={youglishTerm} onClose={()=>setYouglishTerm(null)}/>}</section>;
 }
 
 return SessionView;
