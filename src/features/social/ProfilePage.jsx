@@ -6,7 +6,7 @@ import { useAuth } from "../../lib/auth";
 import { isLocalMode } from "../../lib/supabase";
 import { fetchLiveHistory } from "./socialApi";
 
-export default function ProfilePage({ stats, onCopyBackup, onDownloadBackup, onOpenStats, onSignOut }) {
+export default function ProfilePage({ stats, social = { requests: 0, invites: 0 }, onCopyBackup, onDownloadBackup, onOpenStats, onSignOut }) {
   const auth = useAuth();
   const [history, setHistory] = useState(null);
   const [pw, setPw] = useState("");
@@ -43,6 +43,7 @@ export default function ProfilePage({ stats, onCopyBackup, onDownloadBackup, onO
       <div className="ui-tiles">{tiles.map(([label, value]) => <div key={label} className="ui-tile"><b>{value}</b><span>{label}</span></div>)}</div>
       <div className="ui-row-actions">
         <button className="ui-row-btn" onClick={onOpenStats}><Award size={16} /> Full stats &amp; weak words</button>
+        <button className="ui-row-btn" onClick={() => navigate("/friends")}><Users size={16} /> Friends{social.requests > 0 && <b className="ui-badge inline" aria-label={`${social.requests} requests waiting`}>{social.requests}</b>}</button>
         <button className="ui-row-btn" onClick={() => navigate("/settings")}><SlidersHorizontal size={16} /> Settings</button>
       </div>
 

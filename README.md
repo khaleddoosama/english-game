@@ -79,6 +79,17 @@ Migrations live in `supabase/migrations` (apply in order). They create:
   0023, once a challenge is over every member sees every player's answers
   (never before), and "Retry challenge" leaves the new challenge's code on
   the old one (`live_set_next`) so the other players are offered it
+- `friendships` and `live_invites` (0024) — friends and invitations to Live
+  challenges. A friend request goes by exact username and needs an answer
+  (`friend_request` / `friend_respond` / `friend_remove`); asking someone who
+  already asked you means yes, a declined asker waits a week, and the
+  limits are 100 friends and 20 waiting requests. Both tables can be read
+  only by the people they name and are written only by these functions.
+  A member of a challenge that hasn't started (or is open to join anytime)
+  invites friends with `live_invite_friends`; `live_my_invites` lists the
+  ones still joinable, `live_invite_dismiss` hides one, and `social_counts`
+  gives the numbers for the badges. The game checks for new requests and
+  invitations on open, every 45 seconds and when the tab comes back
 - `admin_audit` — every change with field-by-field before/after (0009);
   entries can be deleted only through `admin_audit_delete` / `admin_audit_clear`,
   which leave a note (0014)
@@ -119,7 +130,7 @@ loads all content for every player and the admin's own progress.
 Every page has its own address, and filters live in the query string, so a
 refresh or a shared link opens the same view:
 `/`, `/stories`, `/play`, `/stats?show=started`, `/badges`, `/live`,
-`/live/<code>`, `/leaderboard`, `/profile`, `/settings`, `/data`, and
+`/live/<code>`, `/live?invite=<friend id>`, `/leaderboard`, `/friends`, `/profile`, `/settings`, `/data`, and
 `/admin/<section>/<item>?filters`, e.g. `/admin/words?hasPicture=false`,
 `/admin/grammar/g5`, `/admin/ai?status=error`.
 
@@ -180,10 +191,10 @@ refuses anyone who isn't an admin.
 api/                 Vercel Functions: ai, tts, image-import, keepalive
 src/engine/          game logic (moved verbatim from the original single file)
 src/features/        session, live, admin, data (import/export), stats (dashboard),
-                     settings, media, social (leaderboard/profile), auth, shell
+                     settings, media, social (leaderboard, profile, friends), auth, shell
 src/lib/             supabase client, auth, repo (diff-based saves + caches), router,
                      app settings, ai, images
-src/styles/          tokens, app, auth, ui, admin, live, data, stats, settings
+src/styles/          tokens, app, auth, ui, admin, live, friends, data, stats, settings
 supabase/migrations/ database schema and policies
 supabase/tests/      SQL tests (run inside a rolled-back transaction)
 tests/               Vitest unit tests

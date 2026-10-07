@@ -12,6 +12,8 @@ describe("routes", () => {
     expect(parseRoute("/admin/words")).toEqual({ screen: "admin", section: "words", item: null });
     expect(parseRoute("/admin/words/Ice%20cream")).toEqual({ screen: "admin", section: "words", item: "Ice cream" });
     expect(parseRoute("/stats").screen).toBe("stats");
+    expect(parseRoute("/friends")).toEqual({ screen: "friends" });
+    expect(pathFor("friends")).toBe("/friends");
     expect(parseRoute("/nope").screen).toBe("notFound");
   });
 

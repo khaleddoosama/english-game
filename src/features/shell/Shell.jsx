@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Cloud, CloudOff, Home, ListChecks, Loader2, Trophy, TriangleAlert, User, Users } from "lucide-react";
 
 // Fixed bottom navigation: the game's main places, one tap away on a phone.
-export function BottomNav({ screen, onNavigate, isAdmin, showRanks = true }) {
+// badges: { live: 2, profile: 1 } shows a small number on a tab (waiting invitations, friend requests).
+export function BottomNav({ screen, onNavigate, isAdmin, showRanks = true, badges = {} }) {
   const items = [
     { id: "levels", label: "Home", icon: Home },
     { id: "live", label: "Live", icon: Users },
@@ -14,7 +15,10 @@ export function BottomNav({ screen, onNavigate, isAdmin, showRanks = true }) {
     <nav className="ui-bottom-nav" aria-label="Main">
       {items.map(({ id, label, icon: Icon }) => (
         <button key={id} className={screen === id ? "active" : ""} aria-current={screen === id ? "page" : undefined} onClick={() => onNavigate(id)}>
-          <Icon size={20} strokeWidth={screen === id ? 2.4 : 1.8} />
+          <span className="ui-nav-icon">
+            <Icon size={20} strokeWidth={screen === id ? 2.4 : 1.8} />
+            {badges[id] > 0 && <b className="ui-badge" aria-label={`${badges[id]} waiting`}>{badges[id] > 9 ? "9+" : badges[id]}</b>}
+          </span>
           <span>{label}</span>
         </button>
       ))}

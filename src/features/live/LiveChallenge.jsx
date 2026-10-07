@@ -1,12 +1,15 @@
 import { playCue } from "../../lib/sound";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, CheckCircle2, Clock, Copy, Crown, Eye, EyeOff, Link2, LogOut, Play as PlayIcon, Plus, RotateCcw, Share2, Timer, Trophy, UserMinus, Users, X } from "lucide-react";
+import { Check, CheckCircle2, Clock, Copy, Crown, Eye, EyeOff, Link2, LogOut, Play as PlayIcon, Plus, RotateCcw, Share2, Timer, Trophy, UserMinus, UserPlus, Users, X } from "lucide-react";
 import { WordPicture } from "../media/media";
 import { levelGroups } from "../../engine/data";
 import { LIVE_KINDS, liveAutoTitle, liveOption, liveQuestions, retryDefaults } from "./liveEngine";
 import { FEEDBACK_MS, MAX_PLAYERS, MIN_PLAYERS, challengeLink, codeFromInput, formatMs, standings } from "./liveRules";
 import { getLiveApi, withRetry } from "./liveApi";
 import { openLiveChannel } from "./transport";
+import { navigate, useQueryParam } from "../../lib/router";
+import { AddFriendButton, useFriendStatus } from "../social/AddFriendButton";
+import { FriendPicker, InviteFriends, Invitations } from "./LiveFriends";
 import "../../styles/live.css";
 
 // Live Challenge: the creator picks the words and the rules, gets a link
@@ -39,7 +42,7 @@ const rulesText = (v) => [
   v.start_mode === "anytime" ? "start anytime" : "start together",
 ];
 
-export function LiveChallenge({ player, levels, code, onOpenCode, onExit, sound = true, pools = null, getSeen = () => ({}), onSeen = () => {}, onRefresh = () => {}, limits = {} }) {
+export function LiveChallenge({ player, levels, code, onOpenCode, onExit, sound = true, pools = null, getSeen = () => ({}), onSeen = () => {}, onRefresh = () => {}, limits = {}, friendsApi = null, onSocialChanged = () => {} }) {
   const api = useMemo(() => getLiveApi(() => player), [player]);
   // "Retry challenge": the settings of a finished challenge, carried to the new-challenge form.
   const [retry, setRetry] = useState(null);
@@ -47,17 +50,19 @@ export function LiveChallenge({ player, levels, code, onOpenCode, onExit, sound 
   return (
     <div className="lv">
       {code
-        ? <ChallengeRoom key={code} api={api} code={code} player={player} sound={sound} onHome={() => onOpenCode(null)} onOpen={onOpenCode} canRetry={canRetry}
+        ? <ChallengeRoom key={code} api={api} friendsApi={friendsApi} code={code} player={player} sound={sound} onHome={() => onOpenCode(null)} onOpen={onOpenCode} canRetry={canRetry}
             onRetry={(view) => { setRetry(retryDefaults(view, levels)); onOpenCode(null); }} onSeen={onSeen} />
-        : <LiveHome api={api} player={player} levels={levels} pools={pools} getSeen={getSeen} onRefresh={onRefresh} onOpenCode={onOpenCode} onExit={onExit} limits={limits} retry={retry} onRetryDone={() => setRetry(null)} />}
+        : <LiveHome api={api} friendsApi={friendsApi} onSocialChanged={onSocialChanged} player={player} levels={levels} pools={pools} getSeen={getSeen} onRefresh={onRefresh} onOpenCode={onOpenCode} onExit={onExit} limits={limits} retry={retry} onRetryDone={() => setRetry(null)} />}
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ home */
 
-function LiveHome({ api, player, levels, pools, getSeen, onRefresh, onOpenCode, onExit, limits, retry, onRetryDone }) {
-  const [creating, setCreating] = useState(!!retry);
+function LiveHome({ api, friendsApi, onSocialChanged, player, levels, pools, getSeen, onRefresh, onOpenCode, onExit, limits, retry, onRetryDone }) {
+  // /live?invite=<friend id>: "Challenge" on the Friends page opens the new-challenge form with that friend picked.
+  const [inviteId, setInviteId] = useQueryParam("invite");
+  const [creating, setCreating] = useState(!!retry || (!!inviteId && limits.canCreate !== false && levels.length > 0));
   const [joinText, setJoinText] = useState("");
   const [joinError, setJoinError] = useState(null);
   const [mine, setMine] = useState(null);
@@ -67,8 +72,8 @@ function LiveHome({ api, player, levels, pools, getSeen, onRefresh, onOpenCode, 
     if (!c) { setJoinError("Paste the challenge link, or type its 6-character code."); return; }
     onOpenCode(c);
   };
-  if (creating) return <CreateForm api={api} levels={levels} pools={pools} getSeen={getSeen} onRefresh={onRefresh} limits={limits} initial={retry}
-    onCancel={() => { setCreating(false); onRetryDone(); }}
+  if (creating) return <CreateForm api={api} friendsApi={friendsApi} presetInvite={inviteId ? [inviteId] : []} levels={levels} pools={pools} getSeen={getSeen} onRefresh={onRefresh} limits={limits} initial={retry}
+    onCancel={() => { setCreating(false); setInviteId(""); onRetryDone(); }}
     onCreated={(code) => {
       // Leave the new code on the finished challenge so the others can join from its results.
       if (retry?.from) api.setNext(retry.from, code).catch(() => {});
@@ -85,6 +90,7 @@ function LiveHome({ api, player, levels, pools, getSeen, onRefresh, onOpenCode, 
         </div>
         <button className="wh-back-btn" onClick={onExit}>Back</button>
       </header>
+      <Invitations friendsApi={friendsApi} api={api} onOpenCode={onOpenCode} onSocialChanged={onSocialChanged} />
       <div className="lv-actions">
         <section className="lv-tile primary">
           <h3><Plus size={16} /> New challenge</h3>
@@ -103,6 +109,11 @@ function LiveHome({ api, player, levels, pools, getSeen, onRefresh, onOpenCode, 
           </div>
           {joinError && <p className="lv-error">{joinError}</p>}
         </section>
+        {friendsApi && <section className="lv-tile">
+          <h3><UserPlus size={16} /> Friends</h3>
+          <p>Add friends by username, then invite them to a challenge in one tap, or send a friend a challenge from the Friends page.</p>
+          <button className="lv-btn" onClick={() => navigate("/friends")}>Open Friends</button>
+        </section>}
       </div>
       <section className="lv-list">
         <h3>Your challenges</h3>
@@ -135,7 +146,7 @@ function Segmented({ label, value, options, onChange }) {
   );
 }
 
-function CreateForm({ api, levels, pools, getSeen, onRefresh, onCancel, onCreated, limits, initial = null }) {
+function CreateForm({ api, friendsApi, presetInvite = [], levels, pools, getSeen, onRefresh, onCancel, onCreated, limits, initial = null }) {
   const cap = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, limits.maxPlayers || MAX_PLAYERS));
   // From "Retry challenge": the old settings, each kept only if this form still offers it.
   const init = initial || {};
@@ -150,6 +161,7 @@ function CreateForm({ api, levels, pools, getSeen, onRefresh, onCancel, onCreate
   const [kinds, setKinds] = useState(init.kinds || LIVE_KINDS.map((k) => k.id));
   const [reveal, setReveal] = useState(init.reveal ?? true);
   const [title, setTitle] = useState(init.title || "");
+  const [invited, setInvited] = useState(presetInvite);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const level = lesson === "all" ? null : levels[Number(lesson)];
@@ -179,6 +191,8 @@ function CreateForm({ api, levels, pools, getSeen, onRefresh, onCancel, onCreate
         settings: { lesson: level?.title || null, unit: unit || null, kinds, reveal, requested: count },
       });
       onRefresh(words);
+      // Invitations are a courtesy: if they fail, the link in the waiting room still works.
+      if (invited.length && friendsApi) await friendsApi.invite(code, invited).catch(() => {});
       onCreated(code);
     } catch (e) { setError(`Couldn't create the challenge: ${e.message}`); setBusy(false); }
   }
@@ -216,6 +230,7 @@ function CreateForm({ api, levels, pools, getSeen, onRefresh, onCancel, onCreate
           })}
         </div>
       </div>
+      <FriendPicker friendsApi={friendsApi} value={invited} onChange={setInvited} max={maxPlayers} />
       <label className="lv-toggle"><input type="checkbox" checked={reveal} onChange={(e) => setReveal(e.target.checked)} /><span>Show the right answer after each question</span></label>
       <label className="lv-field"><span>Name (optional)</span><input value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder={autoTitle} /></label>
       <p className="lv-summary">{words.length} words to pick from · {count} questions · {seconds ? `${seconds}s each` : "no time limit"} · up to {maxPlayers} players</p>
@@ -230,7 +245,7 @@ function CreateForm({ api, levels, pools, getSeen, onRefresh, onCancel, onCreate
 
 /* ------------------------------------------------------------ challenge */
 
-function ChallengeRoom({ api, code, player, onHome, onOpen, canRetry, onRetry, onSeen, sound }) {
+function ChallengeRoom({ api, friendsApi, code, player, onHome, onOpen, canRetry, onRetry, onSeen, sound }) {
   const [view, setView] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [error, setError] = useState(null);
@@ -323,7 +338,7 @@ function ChallengeRoom({ api, code, player, onHome, onOpen, canRetry, onRetry, o
   const isHost = view.host_id === player.id;
   const serverMe = view.players.find((p) => p.user_id === player.id) || null;
   const me = serverMe && localMe && localMe.answered > serverMe.answered ? { ...serverMe, ...localMe } : serverMe;
-  const common = { view, me, player, online, busy, error, isHost };
+  const common = { view, me, player, online, busy, error, isHost, friendsApi };
 
   if (!view.member) return <Invite {...common} onJoin={() => act(() => api.join(code), () => send("joined", { user_id: player.id }))} onHome={onHome} />;
   if (view.state === "lobby") return <Lobby {...common}
@@ -397,7 +412,7 @@ function PlayerList({ view, player, online, isHost, onRemove }) {
   );
 }
 
-function Lobby({ view, player, online, busy, error, isHost, onStart, onLeave, onRemove }) {
+function Lobby({ view, player, online, busy, error, isHost, friendsApi, onStart, onLeave, onRemove }) {
   const enough = view.players.length >= MIN_PLAYERS;
   return (
     <section className="wh-card lv-lobby">
@@ -405,6 +420,7 @@ function Lobby({ view, player, online, busy, error, isHost, onStart, onLeave, on
       <Rules view={view} />
       <ShareBox view={view} />
       <PlayerList view={view} player={player} online={online} isHost={isHost} onRemove={onRemove} />
+      {view.players.length < view.max_players && <InviteFriends friendsApi={friendsApi} view={view} />}
       {isHost && <p className="lv-note">You made these questions, so you can play along, but your result won't count toward Live wins.</p>}
       {isHost
         ? <div className="lv-row"><button className="lv-btn gold big" disabled={busy || !enough} onClick={onStart}><PlayIcon size={16} /> {enough ? `Start for ${view.players.length} players` : "Waiting for someone to join…"}</button><button className="lv-btn ghost" disabled={busy} onClick={onLeave}>Cancel challenge</button></div>
@@ -534,7 +550,7 @@ function Play({ view, me, player, online, api, code, sound, onSeen, onNext, onPr
   );
 }
 
-function Waiting({ view, me, player, online, busy, error, isHost, onEnd }) {
+function Waiting({ view, me, player, online, busy, error, isHost, friendsApi, onEnd }) {
   const left = view.players.filter((p) => !p.finished_at).length;
   return (
     <section className="wh-card lv-center">
@@ -545,14 +561,15 @@ function Waiting({ view, me, player, online, busy, error, isHost, onEnd }) {
         ? `The challenge stays open for others (${timeLeft(view.expires_at)}). Results are final when it's full or time runs out.`
         : `Waiting for ${left} player${left === 1 ? "" : "s"} to finish…`}</p>
       <Race view={view} player={player} online={online} />
-      {view.start_mode === "anytime" && view.players.length < view.max_players && <ShareBox view={view} />}
+      {view.start_mode === "anytime" && view.players.length < view.max_players && <><ShareBox view={view} /><InviteFriends friendsApi={friendsApi} view={view} /></>}
       {isHost && <button className="lv-btn ghost" disabled={busy} onClick={onEnd}>End the challenge now</button>}
       {error && <p className="lv-error">{error}</p>}
     </section>
   );
 }
 
-function Results({ view, player, busy, canRetry, onRetry, onOpenNext, onHome }) {
+function Results({ view, player, busy, canRetry, friendsApi, onRetry, onOpenNext, onHome }) {
+  const friends = useFriendStatus(friendsApi, !!friendsApi);
   const ranked = [...view.players].filter((p) => p.rank != null).sort((a, b) => a.rank - b.rank || a.total_ms - b.total_ms);
   const winners = ranked.filter((p) => p.rank === 1);
   // Every player's answers (once it's over). A server without them gives only mine.
@@ -581,7 +598,7 @@ function Results({ view, player, busy, canRetry, onRetry, onOpenNext, onHome }) 
         <tbody>{ranked.map((p) => (
           <tr key={p.user_id} className={p.user_id === player.id ? "me" : ""}>
             <td>{p.rank === 1 ? "🏆" : p.rank}</td>
-            <td>{p.username}{p.user_id === view.host_id && <small> (made the questions)</small>}{!p.finished_at && <small> (didn't finish)</small>}</td>
+            <td>{p.username}{p.user_id === view.host_id && <small> (made the questions)</small>}{!p.finished_at && <small> (didn't finish)</small>}{p.user_id !== player.id && friendsApi && <AddFriendButton api={friendsApi} person={{ id: p.user_id, username: p.username }} status={friends.statusOf(p.user_id)} onChange={friends.reload} tone="paper" />}</td>
             <td className="num">{p.correct}/{view.question_count}</td>
             <td className="num">{formatMs(p.total_ms)}</td>
           </tr>

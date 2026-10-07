@@ -66,6 +66,16 @@
 }
 .lv-seg button.on, .lv-chips button.on { border-color: var(--ink); background: var(--ink); color: var(--paper); }
 .lv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.lv-chips button:disabled { cursor: default; opacity: 0.85; }
+.lv-link-btn { background: none; border: none; padding: 0; color: #7a5a00; text-decoration: underline; cursor: pointer; font: inherit; }
+.lv-invite-friends { display: grid; gap: 8px; }
+.lv-invites li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 10px 2px; }
+.lv-invites .lv-list-main { flex: 1 1 200px; min-width: 0; }
+.lv-inv-actions { display: flex; gap: 6px; }
+.lv-list li .lv-inv-actions button { width: auto; padding: 8px 14px; border: 1px solid var(--line); color: var(--ink); }
+.lv-list li .lv-inv-actions button.ghost { color: var(--paper); }
+.lv-list li .lv-inv-actions button.gold { border-color: var(--gold); }
+.lv-invites .lv-error { flex-basis: 100%; }
 .lv-toggle { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
 .lv-toggle input { width: 18px; height: 18px; accent-color: var(--gold-soft); }
 .lv-summary { margin: 0; font-family: var(--font-mono); font-size: 12px; color: #6b6252; }

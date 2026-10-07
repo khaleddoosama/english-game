@@ -44,6 +44,9 @@
 }
 .ui-bottom-nav button:hover { color: var(--paper-dim); }
 .ui-bottom-nav button.active { color: var(--gold); background: rgba(201,162,39,0.1); }
+.ui-nav-icon { position: relative; display: inline-flex; }
+.ui-badge { position: absolute; top: -6px; right: -10px; min-width: 16px; height: 16px; padding: 0 4px; display: grid; place-items: center; border-radius: 999px; background: #c94a3a; color: #fff; font: 700 10px var(--font-mono); line-height: 1; box-shadow: 0 0 0 2px rgba(24, 22, 19, 0.97); }
+.ui-badge.inline { position: static; display: inline-grid; margin-left: 6px; box-shadow: none; }
 
 /* ------------------------------------------------------------ pages */
 .ui-page { display: grid; gap: 14px; animation: ui-fade-in 0.2s ease-out; }

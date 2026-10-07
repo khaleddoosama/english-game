@@ -16,6 +16,16 @@ export async function fetchLeaderboard(kind) {
   return data;
 }
 
+// You and your friends, by this week's practice points.
+export async function fetchFriendsBoard(ids) {
+  if (isLocalMode || !ids.length) return [];
+  const { data, error } = await supabase.from("profiles").select(COLS).in("id", ids);
+  if (error) throw new Error(error.message);
+  const week = weekStart();
+  const points = (p) => (p.week_start === week ? p.week_score : 0);
+  return data.slice().sort((a, b) => points(b) - points(a) || b.score - a.score);
+}
+
 export async function fetchLiveHistory(userId, limit = 10) {
   if (isLocalMode) return [];
   const { data, error } = await supabase.from("live_results").select("room_code, title, points, correct, total, rank, players, played_at, total_ms, finished").eq("user_id", userId).order("played_at", { ascending: false }).limit(limit);

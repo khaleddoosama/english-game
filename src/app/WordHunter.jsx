@@ -13,6 +13,8 @@ import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequir
 import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
+import { getFriendsApi } from "../features/social/friendsApi";
+import { useSocialCounts } from "../features/social/useSocialCounts";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
 import { importModeError, inspectImport, wordsCsv } from "../features/data/transfer";
 // Screens most players open rarely load on demand, keeping the first
@@ -36,6 +38,7 @@ const AdminPanel = lazy(() => import("../features/admin/AdminPanel").then((m) =>
 const LiveChallenge = lazy(() => import("../features/live/LiveChallenge").then((m) => ({ default: m.LiveChallenge })));
 const Leaderboard = lazy(() => import("../features/social/Leaderboard"));
 const ProfilePage = lazy(() => import("../features/social/ProfilePage"));
+const FriendsPage = lazy(() => import("../features/social/FriendsPage"));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage"));
 const ImportExport = lazy(() => import("../features/data/ImportExport"));
 const StudyDashboard = lazy(() => import("../features/stats/StudyDashboard"));
@@ -53,6 +56,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const livePlayer = useMemo(() => (profile && profile.id !== "local"
     ? { id: profile.id, name: profile.username }
     : localTabPlayer()), [profile?.id, profile?.username]);
+  // Friends: the badges on the navigation (requests waiting, invitations waiting).
+  const friendsApi = useMemo(() => getFriendsApi(() => livePlayer), [livePlayer]);
+  const { counts: social, refresh: refreshSocial } = useSocialCounts(friendsApi, loaded);
   const [customCombos, setCustomCombos] = useState([]);
   const [customStories, setCustomStories] = useState([]);
   const [askAiOpen,setAskAiOpen]=useState(false);
@@ -2246,11 +2252,12 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           </div>
         )}
 
-        {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge player={livePlayer} levels={LEVELS} code={route.code} sound={settings.sound} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} limits={{ maxPlayers: isAdmin ? 10 : app.liveMaxPlayers, canCreate: isAdmin || app.liveCreate !== "admin", defaultCount: settings.liveQuestions ?? app.liveDefaultQuestions, defaultSeconds: settings.liveSeconds ?? app.liveDefaultSeconds, maxHours: isAdmin ? 168 : app.liveMaxHours }} /></Suspense>}
+        {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge player={livePlayer} friendsApi={friendsApi} onSocialChanged={refreshSocial} levels={LEVELS} code={route.code} sound={settings.sound} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} limits={{ maxPlayers: isAdmin ? 10 : app.liveMaxPlayers, canCreate: isAdmin || app.liveCreate !== "admin", defaultCount: settings.liveQuestions ?? app.liveDefaultQuestions, defaultSeconds: settings.liveSeconds ?? app.liveDefaultSeconds, maxHours: isAdmin ? 168 : app.liveMaxHours }} /></Suspense>}
         {screen === "data" && <Suspense fallback={<ScreenSkeleton />}><ImportExport variant="game" isAdmin={isAdmin} tools={dataTools} onBack={backToLevels} /></Suspense>}
         {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} /></Suspense>}
-        {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} hiddenForPlayers={isAdmin && !app.leaderboard} /></Suspense>}
-        {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage onSignOut={onSignOut ? logOut : null} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
+        {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} friendsApi={friendsApi} hiddenForPlayers={isAdmin && !app.leaderboard} /></Suspense>}
+        {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage social={social} onSignOut={onSignOut ? logOut : null} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
+        {screen === "friends" && <Suspense fallback={<ScreenSkeleton />}><FriendsPage api={friendsApi} onChanged={refreshSocial} local={friendsApi.mode === "local"} /></Suspense>}
 
         {screen === "speedResults" && (
           <div className="wh-results-card">
@@ -2269,7 +2276,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           </div>
         )}
       </div>
-      {showNav && <BottomNav screen={screen} isAdmin={isAdmin} showRanks={isAdmin || app.leaderboard} onNavigate={(id) => setScreen(id)} />}
+      {showNav && <BottomNav screen={screen === "friends" ? "profile" : screen} badges={{ live: social.invites, profile: social.requests }} isAdmin={isAdmin} showRanks={isAdmin || app.leaderboard} onNavigate={(id) => setScreen(id)} />}
     </div>
   );
 }

@@ -1,0 +1,27 @@
+/* Friends page and the small friend controls used elsewhere. */
+.fr .ui-page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fr-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.fr-row {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  padding: 10px 12px; background: var(--ink-soft); border: 1px solid var(--line); border-radius: var(--radius);
+}
+.fr-avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--gold); color: var(--ink); font: 700 17px var(--font-display); }
+.fr-name { display: grid; gap: 2px; min-width: 0; }
+.fr-name b { color: var(--paper); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fr-name small { color: var(--text-dim); font: 11px var(--font-mono); overflow-wrap: anywhere; }
+.fr-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.fr-actions .ui-row-btn { margin: 0; padding: 8px 10px; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; }
+.fr-primary { border-color: var(--gold); color: var(--gold); }
+.fr-sure { min-width: 64px; }
+@media (max-width: 480px) {
+  .fr-row { grid-template-columns: 36px minmax(0, 1fr); }
+  .fr-avatar { width: 36px; height: 36px; font-size: 15px; }
+  .fr-actions { grid-column: 1 / -1; justify-content: flex-start; }
+}
+
+/* A small "add friend" button next to a name (leaderboard, Live results). */
+.fr-add { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--gold); font: 11px var(--font-mono); cursor: pointer; vertical-align: middle; }
+.fr-add:hover:not(:disabled) { border-color: var(--gold); }
+.fr-add:disabled { color: var(--text-dim); cursor: default; }
+.fr-add.on-paper { color: #7a5a00; border-color: rgba(28, 26, 23, 0.25); }
+.fr-add.on-paper:disabled { color: #6b6252; }
