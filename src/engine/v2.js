@@ -225,12 +225,17 @@ function healMissingWordRefs(merged) {
 // question. An older stored `opposite` counts as an antonym.
 const antonymsOf = w => (Array.isArray(w?.antonyms) ? w.antonyms : []).filter(a => typeof a === 'string' && a.trim()).map(a => a.trim());
 function linkAntonyms(words) {
-  const byName = new Map(words.map(w => [norm(bareWord(w.word)), w]));
+  // An antonym names a word exactly ("Unrestrained (media)") or by headword ("Unrestrained"). The exact
+  // entry wins; a headword alone goes to the entry named just that, not to whichever meaning came last.
+  const byKey = new Map(words.map(w => [norm(w.word), w]));
+  const byHeadword = new Map();
+  for (const w of words) { const k = norm(bareWord(w.word)); if (!byHeadword.has(k) || norm(w.word) === k) byHeadword.set(k, w); }
+  const byName = { get: a => byKey.get(norm(a)) || byHeadword.get(norm(bareWord(a))) };
   const all = words.map(w => [...new Set([...antonymsOf(w), ...(typeof w.opposite === 'string' && w.opposite.trim() && norm(w.opposite) !== 'none' ? [w.opposite.trim()] : [])])]);
   const pair = new Map();
   words.forEach((w, i) => {
     for (const a of all[i]) {
-      const hit = byName.get(norm(bareWord(a)));
+      const hit = byName.get(a);
       if (!hit || hit === w) continue;
       if (!pair.has(w.word)) pair.set(w.word, hit.word);
       if (!pair.has(hit.word)) pair.set(hit.word, w.word);
@@ -350,12 +355,19 @@ function contentOnly(data) {
   return {schemaVersion:2, kind:'content', note:data.note || 'Content only. word and existing ids remain progress keys.', ...Object.fromEntries(fields.map(f=>[f, JSON.parse(JSON.stringify(data[f] || []))]))};
 }
 const findWord = (words, name) => words.find(w=>norm(w.word)===norm(name));
+// A word with several meanings is one entry per meaning: "Cast" and
+// "Cast (to throw)". They share a headword (the text without the trailing
+// qualifier); the entry's own text stays its key, so progress and links keep
+// working and one meaning never overrides another.
+const headword = w => norm(bareWord(typeof w === 'string' ? w : w?.word));
+const sensesOf = (words, w) => (words || []).filter(x => x && x !== w && headword(x) === headword(w) && norm(x.word) !== norm(w?.word));
 // A synonym that is itself a word in the game would be a second right
 // answer, so it counts like an exclusion.
 const synonymsOf = w => (Array.isArray(w.synonyms) ? w.synonyms : Array.isArray(w.relations?.synonyms) ? w.relations.synonyms : []);
 function compatible(a,b) {
   if (!a || !b) return false;
-  if (norm(a.word)===norm(b.word)) return false;
+  // Two meanings of one word can't sit in the same question: the option would read the same.
+  if (headword(a)===headword(b)) return false;
   const syn=(x,y)=>synonymsOf(x).some(s=>norm(bareWord(s))===norm(bareWord(y.word)));
   return !(Array.isArray(a.excludeFromSameOptionsWith)?a.excludeFromSameOptionsWith:[]).some(x=>norm(x)===norm(b.word)) && !(Array.isArray(b.excludeFromSameOptionsWith)?b.excludeFromSameOptionsWith:[]).some(x=>norm(x)===norm(a.word)) && !syn(a,b) && !syn(b,a);
 }
@@ -799,5 +811,5 @@ function sessionEvidence(mastery,session,now=Date.now()){
 }
 function reinforcement(s){if(s.extraAdded||s.kind!=='practice')return s;const wrong=s.queue.filter((q,i)=>s.answers[i]&&!s.answers[i].correct&&!s.answers[i].reported).flatMap(q=>q.targets);const added=[];for(const q of s.reserves||[]){if(added.length>=2)break;if(!q.targets.some(t=>wrong.includes(t)))continue;if([...s.queue,...added].slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))))continue;const shown=new Set([...s.queue,...added].flatMap(questionSentences));if(questionSentences(q).some(t=>shown.has(t)))continue;added.push(q);}return {...s,queue:[...s.queue,...added],extraAdded:true};}
 
-return { COURSE_LEVELS, courseLevelOf, courseLevelRank, gatewayLevel, courseLevelFromGateway, normalizeLevel, difficultyRank, norm, sentence, makeQuestion, pictureQuestion, isIllustration, linkAntonyms, outsideAntonyms, antonymsOf, collocationQuestion, familyQuestion, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, questionSentences, seenRecently, SEEN_FRESH_HOURS, grammarQuestions, grammarQuestion, grammarReady, grammarNeedsVariant, grammarVariantBase, writtenGrammarVariants, GRAMMAR_VARIANT_MAX, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
+return { COURSE_LEVELS, courseLevelOf, courseLevelRank, gatewayLevel, courseLevelFromGateway, normalizeLevel, difficultyRank, norm, sentence, makeQuestion, pictureQuestion, isIllustration, linkAntonyms, outsideAntonyms, antonymsOf, collocationQuestion, familyQuestion, shuffleCopy, topic, fields, withoutRemovedFields, normalizeV3, applyRenames, prepareImport, bareWord, headword, sensesOf, poolItems, mergeContent, contentOnly, findWord, compatible, optionWords, validateContent, known, stage, activityQuestion, questionSentences, seenRecently, SEEN_FRESH_HOURS, grammarQuestions, grammarQuestion, grammarReady, grammarNeedsVariant, grammarVariantBase, writtenGrammarVariants, GRAMMAR_VARIANT_MAX, practice, storySession, chainSession, grade, sessionEvidence, reinforcement };
 })();

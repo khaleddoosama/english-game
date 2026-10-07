@@ -160,6 +160,19 @@ difficulty, not a course level, so those words appear under "No course
 level yet". A level the game can't read is listed as a warning when the
 file is checked.
 
+## Words with several meanings
+
+A word is keyed by its text, so two meanings in one entry would override
+each other on every import. Give each meaning its own entry, named `Cast`
+and `Cast (to throw)`: the text before the trailing bracket is the
+*headword*, and the whole text stays the key (progress, links and
+renames are unchanged). Two meanings of one headword never appear in the
+same question's options (`V2.compatible`), a flashcard lists the other
+meanings of its word, an `antonyms` entry may name a meaning exactly
+(`"Unrestrained (media)"`) or just the headword (which goes to the plain
+entry), and the Import Center warns about a `meaning` that holds
+"1) … 2) …".
+
 ## Admin panel
 
 Signed in as an admin, the **Admin** tab opens (Back to game and Log out

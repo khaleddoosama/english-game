@@ -37,6 +37,14 @@ export function courseLevelWarnings(items) {
   return [...bad].map(([v, k]) => `level "${v}" (${k} item${k === 1 ? "" : "s"}) isn't a course level like A1.2 or Level-4 (Gateway level 4 = A1.2, 5 = A1.3, 6 = A2.1 …): not shown in "By course level"`);
 }
 
+// "1) … 2) …" inside one meaning is several meanings in one entry. They would
+// override each other on the next import, so ask for one entry per meaning.
+const NUMBERED_MEANINGS = /(^|\s)1[).]\s.+?\s2[).]\s/s;
+export function senseWarnings(words = []) {
+  return words.filter((w) => typeof w?.meaning === "string" && NUMBERED_MEANINGS.test(w.meaning))
+    .map((w) => `"${w.word}" has several numbered meanings in one entry. Give each meaning its own entry ("${V2.bareWord(w.word)}" and "${V2.bareWord(w.word)} (to …)") so one doesn't override the other.`);
+}
+
 export function inspectImport(text, current) {
   if (typeof text !== "string" || !text.trim()) throw importError("The file is empty.");
   let raw;
@@ -66,7 +74,7 @@ export function inspectImport(text, current) {
     raw, isBackup, v3: raw.schemaVersion === 3, exportedAt: raw.exportedAt || null, exportedBy: raw.exportedBy || null,
     words: diff("words", "word"), grammar: diff("grammar", "id"), challenges: diff("challenges", "id"),
     stories: (data.stories || []).length, combos: (data.combos || []).length,
-    renames: prep.renames, warnings: [...(prep.warnings || []), ...courseLevelWarnings([...(data.words || []), ...(data.grammar || [])])], progress,
+    renames: prep.renames, warnings: [...(prep.warnings || []), ...senseWarnings(data.words || []), ...courseLevelWarnings([...(data.words || []), ...(data.grammar || [])])], progress,
   };
 }
 

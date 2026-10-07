@@ -335,6 +335,10 @@
 .wh-flashcard-nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 16px 0; }
 .wh-flashcard-listen { display: flex; justify-content: center; margin: 10px 0 0; }
 .wh-regen-area { margin-top: 12px; }
+.wh-senses { margin-top: 12px; padding: 10px 14px; border: 1px dashed var(--line); border-radius: var(--radius); }
+.wh-senses-title { margin: 0 0 6px; font: 12px var(--font-mono); letter-spacing: 0.5px; text-transform: uppercase; color: var(--gold); }
+.wh-senses ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; color: var(--paper-dim); }
+.wh-senses b { color: var(--paper); }
 .wh-regen-status { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--paper-dim); }
 .wh-regen-status.error { color: var(--red); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .wh-regen-preview {
