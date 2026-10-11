@@ -40,3 +40,24 @@ describe("grammar repetition", () => {
     expect(g[0].prompt).toBe("Pick two: C or D?");
   });
 });
+
+describe("a lesson with grammar and no words", () => {
+  const rules = Array.from({ length: 20 }, (_, i) => ({ id: `g-gen-${i}`, category: "General Grammar", level: "A1.1", rule: "Pronouns", prompt: `Pick ${i}: ______`, options: ["a", "b"], answer: "a", explanation: "x" }));
+  const only = (opts = {}, seen = {}) => V2.practice({ ...base, words: [], grammar: rules }, {}, "General Grammar", seeded(5), null, { questionsPerRound: 12, newWordsPerRound: 3, seen, ...opts });
+
+  it("is a round of grammar questions, not an empty one", () => {
+    const s = only();
+    expect(s.queue).toHaveLength(12);
+    expect(s.queue.every((q) => q.mode === "grammarChoose")).toBe(true);
+  });
+
+  it("works for a course-level round too", () => {
+    const s = V2.practice({ ...base, words: [], grammar: rules }, {}, null, seeded(5), null, { questionsPerRound: 12, courseLevel: "A1.1" });
+    expect(s.queue).toHaveLength(12);
+  });
+
+  it("skips questions read recently", () => {
+    const seen = Object.fromEntries(rules.slice(0, 15).map((r) => [V2.sentence(r.prompt), Date.now()]));
+    expect(only({}, seen).queue).toHaveLength(5);
+  });
+});

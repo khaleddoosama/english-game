@@ -712,7 +712,10 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // A unit round only asks that unit's grammar rules; a course-level round
   // only the rules of that level (and session).
   const grammarPool=(content.grammar||[]).filter(g=>g&&g.id&&(courseRound?(opts.courseLevel?courseLevelOf(g)===opts.courseLevel:!courseLevelOf(g)&&grammarTopics.has(topic(g.category))):grammarTopics.has(topic(g.category)))&&(!opts.unit||unitsOf(g).includes(opts.unit))&&grammarQuestions(g).length);
-  const grammarQueue=shuffleCopy(grammarPool,rng).sort((a,b)=>missedKey(`grammar:${b.id}`)-missedKey(`grammar:${a.id}`)||lastSeenKey(`grammar:${a.id}`)-lastSeenKey(`grammar:${b.id}`)).slice(0,questionsPerRound>=10?2:1).map(g=>{
+  // A lesson or level with rules but no words (e.g. General Grammar) is a
+  // grammar-only round: one question per rule, up to a full round.
+  const grammarOnly=!chosen.length&&grammarPool.length>0;
+  const grammarQueue=shuffleCopy(grammarPool,rng).sort((a,b)=>missedKey(`grammar:${b.id}`)-missedKey(`grammar:${a.id}`)||lastSeenKey(`grammar:${a.id}`)-lastSeenKey(`grammar:${b.id}`)).slice(0,grammarOnly?questionsPerRound:questionsPerRound>=10?2:1).map(g=>{
     const grammarKey=`grammar:${g.id}`;
     // Old single-question rules keep their AI variant pool.
     // The rule's own question and the ones the game wrote for it (see
@@ -771,9 +774,12 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // At most one grammar question per 4 word questions, so a short round
   // (e.g. the very first one) stays about the words. Spread the rest
   // through the round (never first), e.g. at 1/3 and 2/3.
-  grammarQueue.splice(Math.floor(queue.length/4));
-  const spots=grammarQueue.map((_,k)=>Math.max(1,Math.round(queue.length*(k+1)/(grammarQueue.length+1))));
-  for(let k=grammarQueue.length-1;k>=0;k--)queue.splice(Math.min(spots[k],queue.length),0,grammarQueue[k]);
+  if(grammarOnly)queue.push(...grammarQueue);
+  else{
+    grammarQueue.splice(Math.floor(queue.length/4));
+    const spots=grammarQueue.map((_,k)=>Math.max(1,Math.round(queue.length*(k+1)/(grammarQueue.length+1))));
+    for(let k=grammarQueue.length-1;k>=0;k--)queue.splice(Math.min(spots[k],queue.length),0,grammarQueue[k]);
+  }
   return {kind:'practice',id:`session-${Date.now()}-${rng()}`,title:opts.title||category||'Practice',queue,introductions:fresh,index:0,answers:[],initialLength:queue.length,targetLength:questionsPerRound,reserves:candidates,extraAdded:false};
 }
 function storySession(story,words,mastery={},rng=Math.random){const introductions=story.targetWords.map(w=>findWord(words,w)).filter(w=>!known(mastery[w.word]));const scoped=story.sourceCategories?.length?words.filter(w=>story.sourceCategories.includes(w.category)):words;const optionSource=scoped.length>=4?scoped:words;const queue=story.questions.map((q,i)=>activityQuestion(q,optionSource,`${story.id}:${i}`,rng));for(const g of story.grammarQuestions||[])queue.push({...g,options:shuffleCopy(g.options,rng)});return {id:`story-${story.id}-${Date.now()}`,sourceStoryId:story.id,kind:'story',title:story.title,text:story.text,queue,introductions,unfairTargets:introductions.map(w=>w.word),index:0,answers:[]};}
