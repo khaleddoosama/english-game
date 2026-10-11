@@ -233,10 +233,10 @@ function CreateForm({ api, friendsApi, presetInvite = [], levels, pools, getSeen
       <FriendPicker friendsApi={friendsApi} value={invited} onChange={setInvited} max={maxPlayers} />
       <label className="lv-toggle"><input type="checkbox" checked={reveal} onChange={(e) => setReveal(e.target.checked)} /><span>Show the right answer after each question</span></label>
       <label className="lv-field"><span>Name (optional)</span><input value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder={autoTitle} /></label>
-      <p className="lv-summary">{words.length} words to pick from · {count} questions · {seconds ? `${seconds}s each` : "no time limit"} · up to {maxPlayers} players</p>
+      <p className="lv-summary">{words.length} words{grammar.length ? ` and ${grammar.length} grammar rules` : ""} to pick from · {count} questions · {seconds ? `${seconds}s each` : "no time limit"} · up to {maxPlayers} players</p>
       {error && <p className="lv-error">{error}</p>}
       <div className="lv-row">
-        <button className="lv-btn gold" disabled={busy || !words.length} onClick={create}>{busy ? "Creating…" : "Create and get the link"}</button>
+        <button className="lv-btn gold" disabled={busy || !(words.length || (grammar.length && kinds.includes("grammar")))} onClick={create}>{busy ? "Creating…" : "Create and get the link"}</button>
         <button className="lv-btn ghost" onClick={onCancel}>Cancel</button>
       </div>
     </section>

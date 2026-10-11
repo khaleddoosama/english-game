@@ -93,6 +93,13 @@ describe("grammar", () => {
     for (const q of g) { expect(serverOk(q)).toBe(true); expect(rules.map((r) => r.rule)).toContain(q.word); }
   });
 
+  it("a lesson with only grammar rules (no words) still makes a full match", () => {
+    const many = Array.from({ length: 20 }, (_, i) => ({ id: `g${i}`, rule: "Pronouns", prompt: `Pick ${i}: ______`, options: ["a", "b", "c", "d"], answer: "a", explanation: "x" }));
+    const qs = liveQuestions([], 10, { rng: seeded(2), grammar: many });
+    expect(qs).toHaveLength(10);
+    expect(qs.every((q) => q.mode === "grammar" && serverOk(q))).toBe(true);
+  });
+
   it("only multiple-choice questions: a fix-the-sentence question is never used", () => {
     for (let seed = 1; seed < 15; seed++) for (const q of liveQuestions([], 5, { rng: seeded(seed), grammar: rules }).filter((x) => x.mode === "grammar")) expect(q.prompt).not.toMatch(/Fix the mistake/);
   });
