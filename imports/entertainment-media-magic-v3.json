@@ -1,0 +1,902 @@
+{
+  "schemaVersion": 3,
+  "kind": "content",
+  "note": "Entertainment & Media lesson, content v3 (14 words). Course level B1.1 (Gateway level 9); units Media (Criticize) and Magic (the rest).",
+  "categories": [
+    {
+      "id": "entertainment-media",
+      "title": "Entertainment & Media",
+      "subCategories": [
+        {
+          "id": "astrology",
+          "title": "Astrology"
+        },
+        {
+          "id": "dark-magic",
+          "title": "Dark magic"
+        },
+        {
+          "id": "dreams",
+          "title": "Dreams"
+        },
+        {
+          "id": "fortune-telling",
+          "title": "Fortune telling"
+        },
+        {
+          "id": "opinion-and-criticism",
+          "title": "Opinion and criticism"
+        },
+        {
+          "id": "spells",
+          "title": "Spells"
+        },
+        {
+          "id": "supernatural",
+          "title": "Supernatural"
+        },
+        {
+          "id": "supernatural-beings",
+          "title": "Supernatural beings"
+        }
+      ]
+    }
+  ],
+  "words": [
+    {
+      "id": "criticize",
+      "word": "Criticize",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "entertainment-media",
+      "subCategory": "opinion-and-criticism",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "To say what you think is bad or wrong about someone or something.",
+      "situations": [
+        "Many newspapers criticized the government for raising taxes again."
+      ],
+      "gaps": [
+        "The film was ______d by critics for its weak ending.",
+        "Please don't ______ my cooking if you won't help in the kitchen."
+      ],
+      "hints": [
+        "The opposite of praising someone.",
+        "Starts with 'crit-' and ends with '-ize'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He criticized to the minister.",
+          "correction": "He criticized the minister.",
+          "why": "'Criticize' takes a direct object — no 'to'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "criticism",
+          "pos": "noun"
+        },
+        {
+          "word": "critic",
+          "pos": "noun"
+        },
+        {
+          "word": "critical",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "criticize someone for something",
+        "harshly criticize",
+        "widely criticized"
+      ],
+      "synonyms": [
+        "condemn",
+        "find fault with"
+      ],
+      "antonyms": [
+        "praise",
+        "compliment"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Media"
+      ]
+    },
+    {
+      "id": "supernatural-powers",
+      "word": "Supernatural powers",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "entertainment-media",
+      "subCategory": "supernatural",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "Special abilities that cannot be explained by science or the laws of nature.",
+      "situations": [
+        "In the story, the old woman uses her supernatural powers to see the future."
+      ],
+      "gaps": [
+        "She claims she has ______ and can move objects with her mind.",
+        "Superheroes in comics often have ______, like flying or reading minds."
+      ],
+      "hints": [
+        "Abilities beyond what is natural or scientific.",
+        "Two words: 'super-' + 'natural' + another word for strengths."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He has supernature powers.",
+          "correction": "He has supernatural powers.",
+          "why": "The adjective is 'supernatural', not 'supernature'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "supernatural",
+          "pos": "adjective"
+        },
+        {
+          "word": "power",
+          "pos": "noun"
+        },
+        {
+          "word": "powerful",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "have supernatural powers",
+        "use supernatural powers"
+      ],
+      "synonyms": [
+        "magical powers",
+        "psychic abilities"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Magic"
+      ]
+    },
+    {
+      "id": "suck-peoples-blood",
+      "word": "Suck people's blood",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "entertainment-media",
+      "subCategory": "supernatural-beings",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "To drink blood from people's bodies, as vampires do in stories.",
+      "situations": [
+        "In the legend, the vampire comes out at night to suck people's blood."
+      ],
+      "gaps": [
+        "Vampires sleep in coffins by day and ______ at night.",
+        "Mosquitoes, like vampires, ______ — but only a little!"
+      ],
+      "hints": [
+        "What vampires do to their victims.",
+        "Starts with 'suck' and ends with 'blood'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Vampires sock people's blood.",
+          "correction": "Vampires suck people's blood.",
+          "why": "The verb is 'suck' (pull in with the mouth), not 'sock'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "bloodsucker",
+          "pos": "noun"
+        },
+        {
+          "word": "bloodsucking",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "suck someone's blood",
+        "bloodsucking vampire"
+      ],
+      "synonyms": [
+        "drink people's blood"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Magic"
+      ]
+    },
+    {
+      "id": "necromancy",
+      "word": "Necromancy",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "entertainment-media",
+      "subCategory": "dark-magic",
+      "level": "B1.1",
+      "register": "formal",
+      "meaning": "Magic that claims to talk to or control the dead.",
+      "situations": [
+        "The villain in the novel practises necromancy to bring dead soldiers back to life."
+      ],
+      "gaps": [
+        "The dark wizard was punished for practising ______ — raising the dead.",
+        "In fantasy games, ______ lets a character control skeletons and ghosts."
+      ],
+      "hints": [
+        "The practice (not the person) of using magic with the dead.",
+        "Ends in '-mancy'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He is a famous necromancy.",
+          "correction": "He is a famous necromancer.",
+          "why": "'Necromancy' is the practice; the person is a 'necromancer'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "necromancer",
+          "pos": "noun"
+        },
+        {
+          "word": "necromantic",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "practise necromancy",
+        "dark necromancy"
+      ],
+      "synonyms": [
+        "black magic",
+        "dark arts"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "necromancer"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Magic"
+      ]
+    },
+    {
+      "id": "palm-reader",
+      "word": "Palm reader",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "entertainment-media",
+      "subCategory": "fortune-telling",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "A person who claims to tell your future by looking at the lines on your hand.",
+      "situations": [
+        "At the fair, a palm reader looked at my hand and said I would travel a lot."
+      ],
+      "gaps": [
+        "The ______ studied the lines on my hand and said I'd live a long life.",
+        "She paid a ______ to look at her hand and tell her about her love life."
+      ],
+      "hints": [
+        "Reads the lines on the inside of your hand.",
+        "Two words: a part of the hand + someone who reads."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The palm reader read my coffee cup.",
+          "correction": "The coffee cup reader read my coffee cup.",
+          "why": "A palm reader reads hands, not cups."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "palm reading",
+          "pos": "noun"
+        },
+        {
+          "word": "palmistry",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "visit a palm reader",
+        "palm reading"
+      ],
+      "synonyms": [
+        "palmist",
+        "fortune teller"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "coffee-cup-reader"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Magic"
+      ]
+    },
+    {
+      "id": "coffee-cup-reader",
+      "word": "Coffee cup reader",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "entertainment-media",
+      "subCategory": "fortune-telling",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "A person who claims to tell your future from the shapes left by coffee at the bottom of a cup.",
+      "situations": [
+        "After we drank our Turkish coffee, the coffee cup reader turned my cup over and told me my future."
+      ],
+      "gaps": [
+        "My grandmother was a ______ — she looked at the coffee left in your cup and predicted your future.",
+        "After you finish your Turkish coffee, the ______ turns the cup upside down and reads the shapes."
+      ],
+      "hints": [
+        "Reads the marks left after drinking a hot drink.",
+        "Three words: a drink + a container + someone who reads."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She is a coffee cup reader of hands.",
+          "correction": "She is a palm reader.",
+          "why": "A coffee cup reader reads cups; someone who reads hands is a palm reader."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "coffee cup reading",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "coffee cup reading",
+        "visit a coffee cup reader"
+      ],
+      "synonyms": [
+        "fortune teller"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "palm-reader"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Magic"
+      ]
+    },
+    {
+      "id": "reverse",
+      "word": "Reverse",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "entertainment-media",
+      "subCategory": "spells",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "To break a spell or undo its effects so things go back to how they were.",
+      "situations": [
+        "Only a kiss from a prince could reverse the spell and turn the frog back into a man."
+      ],
+      "gaps": [
+        "The witch is the only one who can ______ the curse she put on him.",
+        "They searched for a magic potion to ______ the spell."
+      ],
+      "hints": [
+        "To undo a spell — also used for turning a car backwards.",
+        "Starts with 're-', means 'go back'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The wizard reversed back the spell.",
+          "correction": "The wizard reversed the spell.",
+          "why": "'Reverse' already means 'undo', so don't add 'back'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "reversal",
+          "pos": "noun"
+        },
+        {
+          "word": "reversible",
+          "pos": "adjective"
+        },
+        {
+          "word": "irreversible",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "reverse a spell",
+        "reverse a curse",
+        "reverse the effects"
+      ],
+      "synonyms": [
+        "break a spell",
+        "undo",
+        "lift a spell"
+      ],
+      "antonyms": [
+        "cast a spell",
+        "put a spell on"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Magic"
+      ]
+    },
+    {
+      "id": "necromancer",
+      "word": "Necromancer",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "entertainment-media",
+      "subCategory": "dark-magic",
+      "level": "B1.1",
+      "register": "formal",
+      "meaning": "A person who uses magic to talk to or control the dead.",
+      "situations": [
+        "The necromancer raised an army of skeletons from the old graveyard."
+      ],
+      "gaps": [
+        "The ______ called the spirits of the dead to answer his questions.",
+        "In the game, the ______ can bring dead enemies back to fight for him."
+      ],
+      "hints": [
+        "The person (not the practice) who works magic with the dead.",
+        "Ends in '-er'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She studied necromancer for years.",
+          "correction": "She studied necromancy for years.",
+          "why": "The practice is 'necromancy'; 'necromancer' is the person."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "necromancy",
+          "pos": "noun"
+        },
+        {
+          "word": "necromantic",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "powerful necromancer",
+        "evil necromancer"
+      ],
+      "synonyms": [
+        "sorcerer",
+        "dark wizard"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "necromancy"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Magic"
+      ]
+    },
+    {
+      "id": "witch",
+      "word": "Witch",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "entertainment-media",
+      "subCategory": "supernatural-beings",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "A woman who is believed to have magic powers, often shown with a black hat and a broom.",
+      "situations": [
+        "The witch flew over the village on her broomstick and cast a spell on the king."
+      ],
+      "gaps": [
+        "The old ______ mixed a potion in her big black pot.",
+        "For Halloween, she dressed up as a ______ with a pointed hat and a broom."
+      ],
+      "hints": [
+        "A woman with magic powers who flies on a broomstick.",
+        "Sounds like 'which'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Which witch? The which with the black hat.",
+          "correction": "The witch with the black hat.",
+          "why": "'Which' is a question word; a woman with magic is a 'witch'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "witchcraft",
+          "pos": "noun"
+        },
+        {
+          "word": "bewitch",
+          "pos": "verb"
+        },
+        {
+          "word": "witchy",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "wicked witch",
+        "witch hunt",
+        "witch's broom"
+      ],
+      "synonyms": [
+        "sorceress",
+        "enchantress"
+      ],
+      "antonyms": [
+        "wizard (male)"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Magic"
+      ]
+    },
+    {
+      "id": "zodiac-signs",
+      "word": "Zodiac signs",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "entertainment-media",
+      "subCategory": "astrology",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "The twelve star signs, such as Leo or Pisces, that people link to the month they were born in.",
+      "situations": [
+        "She was born in August, so her zodiac sign is Leo."
+      ],
+      "gaps": [
+        "There are twelve ______, from Aries to Pisces.",
+        "Some people believe your ______ shows what kind of personality you have."
+      ],
+      "hints": [
+        "Leo, Virgo, Scorpio and nine more.",
+        "Two words: starts with 'Z'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "What is your zodiac?",
+          "correction": "What is your zodiac sign?",
+          "why": "Ask about someone's 'zodiac sign' or 'star sign', not just 'zodiac'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "zodiac",
+          "pos": "noun"
+        },
+        {
+          "word": "zodiacal",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "star sign",
+        "your zodiac sign"
+      ],
+      "synonyms": [
+        "star signs",
+        "astrological signs"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "horoscope"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Magic"
+      ]
+    },
+    {
+      "id": "horoscope",
+      "word": "Horoscope",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "entertainment-media",
+      "subCategory": "astrology",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "A short prediction about your future, based on your star sign and the position of the stars.",
+      "situations": [
+        "My mum reads her horoscope in the newspaper every morning."
+      ],
+      "gaps": [
+        "According to my ______, I'm going to meet someone special this week.",
+        "She checks her ______ online every day to see what the stars say."
+      ],
+      "hints": [
+        "A daily or weekly prediction in magazines based on your star sign.",
+        "Starts with 'horo-'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I read my zodiac sign in the newspaper today.",
+          "correction": "I read my horoscope in the newspaper today.",
+          "why": "Your zodiac sign is Leo, Aries…; the prediction you read is your 'horoscope'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "astrology",
+          "pos": "noun"
+        },
+        {
+          "word": "astrologer",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "read your horoscope",
+        "daily horoscope",
+        "weekly horoscope"
+      ],
+      "synonyms": [
+        "astrological forecast"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "zodiac-signs"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Magic"
+      ]
+    },
+    {
+      "id": "cemetery",
+      "word": "Cemetery",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "entertainment-media",
+      "subCategory": "supernatural",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "A place where dead people are buried.",
+      "situations": [
+        "Nobody wanted to walk through the cemetery at midnight because of the ghost stories."
+      ],
+      "gaps": [
+        "My grandfather is buried in the ______ near the church.",
+        "The ghost story takes place in an old ______ full of broken gravestones."
+      ],
+      "hints": [
+        "A large area with graves and tombstones.",
+        "Ends in '-tery', not '-tary'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "We visited the cemetary.",
+          "correction": "We visited the cemetery.",
+          "why": "The spelling is 'cemetery' — three e's, no 'a'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "grave",
+          "pos": "noun"
+        },
+        {
+          "word": "tombstone",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "bury someone in a cemetery",
+        "old cemetery",
+        "cemetery gates"
+      ],
+      "synonyms": [
+        "graveyard",
+        "burial ground"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Magic"
+      ]
+    },
+    {
+      "id": "lucid-dream",
+      "word": "Lucid dream",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "entertainment-media",
+      "subCategory": "dreams",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "A dream in which you know that you are dreaming and can sometimes control what happens.",
+      "situations": [
+        "In my lucid dream I knew I was asleep, so I decided to fly over the city."
+      ],
+      "gaps": [
+        "I had a ______ last night — I knew I was dreaming, so I chose to fly.",
+        "In a ______, you realise you are dreaming and can change the story."
+      ],
+      "hints": [
+        "A dream where you are aware it isn't real.",
+        "The first word means 'clear'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I had a lucky dream where I knew I was dreaming.",
+          "correction": "I had a lucid dream where I knew I was dreaming.",
+          "why": "'Lucid' means clear and aware; 'lucky' means fortunate."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "lucid",
+          "pos": "adjective"
+        },
+        {
+          "word": "lucidity",
+          "pos": "noun"
+        },
+        {
+          "word": "dreamer",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "have a lucid dream",
+        "lucid dreaming"
+      ],
+      "synonyms": [
+        "conscious dream"
+      ],
+      "antonyms": [
+        "nightmare"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Magic"
+      ]
+    },
+    {
+      "id": "beard",
+      "word": "Beard",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "entertainment-media",
+      "subCategory": "supernatural-beings",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "The hair that grows on a man's chin and cheeks.",
+      "situations": [
+        "The old wizard had a long white beard that reached down to his belt."
+      ],
+      "gaps": [
+        "The wizard stroked his long grey ______ while he thought.",
+        "He stopped shaving and grew a thick ______."
+      ],
+      "hints": [
+        "Hair on a man's face, like a wizard's long white one.",
+        "Sounds like 'beer' + 'd'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The wizard had a long white bread.",
+          "correction": "The wizard had a long white beard.",
+          "why": "'Bread' is food; facial hair is a 'beard'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "bearded",
+          "pos": "adjective"
+        },
+        {
+          "word": "beardless",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "grow a beard",
+        "long white beard",
+        "shave off your beard"
+      ],
+      "synonyms": [
+        "facial hair"
+      ],
+      "antonyms": [
+        "clean-shaven"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Magic"
+      ]
+    }
+  ],
+  "grammar": []
+}
