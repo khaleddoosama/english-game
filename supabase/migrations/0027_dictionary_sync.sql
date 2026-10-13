@@ -81,9 +81,6 @@ begin
   select count(*) into v_words from public.senses where legacy_key is not null and deleted_at is null;
 
   -- ------------------------------------------------------------ links
-  drop table if exists pg_temp.sync_links;
-  create temporary table sync_links on commit drop as
-  select * from (
   with w as (
     select s.id as sid, c.data from public.senses s
     join public.content_items c on c.kind = 'words' and not c.deleted and c.data ->> 'word' = s.legacy_key
@@ -93,22 +90,25 @@ begin
     union all select sid, 'synonym', t from w, unnest(public.json_texts(data -> 'relations' -> 'synonyms') || public.json_texts(data -> 'synonyms')) t
     union all select sid, 'confusable', t from w, unnest(public.json_texts(data -> 'relations' -> 'confusableWords')) t
     union all select sid, 'never_together', t from w, unnest(public.json_texts(data -> 'excludeFromSameOptionsWith')) t
+  ), wanted as materialized (
+    select * from (
+      select distinct r.sid as from_sense, r.kind,
+             coalesce(
+               (select s2.id from public.senses s2 where s2.deleted_at is null and s2.legacy_key is not null and lower(s2.legacy_key) = lower(r.ref) limit 1),
+               (select s3.id from public.senses s3 where s3.deleted_at is null and s3.legacy_key is not null
+                  and lower(s3.legacy_key) = lower(btrim(regexp_replace(r.ref, '\s*\([^)]*\)\s*$', ''))) limit 1)
+             ) as to_sense
+      from refs r) l
+    where to_sense is not null and to_sense <> from_sense
+  ), added as (
+    insert into public.sense_links (from_sense, to_sense, kind, origin)
+    select from_sense, to_sense, kind, 'sync' from wanted
+    on conflict (from_sense, to_sense, kind) do update set removed_at = null where public.sense_links.removed_at is not null
+    returning 1
   )
-  select distinct r.sid as from_sense, r.kind,
-         coalesce(
-           (select s2.id from public.senses s2 where s2.deleted_at is null and s2.legacy_key is not null and lower(s2.legacy_key) = lower(r.ref) limit 1),
-           (select s3.id from public.senses s3 where s3.deleted_at is null and s3.legacy_key is not null
-              and lower(s3.legacy_key) = lower(btrim(regexp_replace(r.ref, '\s*\([^)]*\)\s*$', ''))) limit 1)
-         ) as to_sense
-  from refs r) l
-  where to_sense is not null and to_sense <> from_sense;
-
-  insert into public.sense_links (from_sense, to_sense, kind, origin)
-  select from_sense, to_sense, kind, 'sync' from pg_temp.sync_links
-  on conflict (from_sense, to_sense, kind) do update set removed_at = null where public.sense_links.removed_at is not null;
   update public.sense_links l set removed_at = now()
   where l.origin = 'sync' and l.removed_at is null
-    and not exists (select 1 from pg_temp.sync_links d where d.from_sense = l.from_sense and d.to_sense = l.to_sense and d.kind = l.kind);
+    and not exists (select 1 from wanted d where d.from_sense = l.from_sense and d.to_sense = l.to_sense and d.kind = l.kind);
   select count(*) into v_links from public.sense_links where removed_at is null;
 
   -- ------------------------------------------------------------ grammar
@@ -136,31 +136,32 @@ begin
     and not exists (select 1 from public.content_items c where c.kind = 'grammar' and not c.deleted and c.data ->> 'id' = g.legacy_key);
   select count(*) into v_rules from public.grammar_rules where legacy_key is not null and deleted_at is null;
 
-  drop table if exists pg_temp.sync_questions;
-  create temporary table sync_questions on commit drop as
-  select g.id as rule_id, 0 as pos,
-         case when jsonb_typeof(c.data -> 'questions') = 'array' then null
-              else jsonb_strip_nulls(jsonb_build_object('prompt', c.data -> 'prompt', 'options', c.data -> 'options', 'answer', c.data -> 'answer', 'explanation', c.data -> 'explanation')) end as data,
-         'choose'::text as type
-  from public.grammar_rules g join public.content_items c on c.kind = 'grammar' and not c.deleted and c.data ->> 'id' = g.legacy_key
-  where g.deleted_at is null and jsonb_typeof(c.data -> 'questions') is distinct from 'array'
-    and c.data ? 'prompt' and jsonb_typeof(c.data -> 'options') = 'array' and c.data ? 'answer'
-  union all
-  select g.id, (q.ord - 1)::int, q.item,
-         case when q.item ->> 'type' in ('choose', 'judge', 'fix') then q.item ->> 'type' else 'choose' end
-  from public.grammar_rules g
-  join public.content_items c on c.kind = 'grammar' and not c.deleted and c.data ->> 'id' = g.legacy_key
-  cross join lateral jsonb_array_elements(case when jsonb_typeof(c.data -> 'questions') = 'array' then c.data -> 'questions' else '[]'::jsonb end) with ordinality as q(item, ord)
-  where g.deleted_at is null and jsonb_typeof(q.item) = 'object';
-
-  insert into public.grammar_questions (rule_id, position, type, data, legacy_pos)
-  select rule_id, pos, type, data, pos from pg_temp.sync_questions
-  on conflict (rule_id, legacy_pos) where legacy_pos is not null do update set
-    type = excluded.type, data = excluded.data, position = excluded.position, deleted_at = null
-  where (public.grammar_questions.type, public.grammar_questions.data, public.grammar_questions.deleted_at is null) is distinct from (excluded.type, excluded.data, true);
+  with wanted as materialized (
+    select g.id as rule_id, 0 as pos,
+           case when jsonb_typeof(c.data -> 'questions') = 'array' then null
+                else jsonb_strip_nulls(jsonb_build_object('prompt', c.data -> 'prompt', 'options', c.data -> 'options', 'answer', c.data -> 'answer', 'explanation', c.data -> 'explanation')) end as data,
+           'choose'::text as type
+    from public.grammar_rules g join public.content_items c on c.kind = 'grammar' and not c.deleted and c.data ->> 'id' = g.legacy_key
+    where g.deleted_at is null and jsonb_typeof(c.data -> 'questions') is distinct from 'array'
+      and c.data ? 'prompt' and jsonb_typeof(c.data -> 'options') = 'array' and c.data ? 'answer'
+    union all
+    select g.id, (q.ord - 1)::int, q.item,
+           case when q.item ->> 'type' in ('choose', 'judge', 'fix') then q.item ->> 'type' else 'choose' end
+    from public.grammar_rules g
+    join public.content_items c on c.kind = 'grammar' and not c.deleted and c.data ->> 'id' = g.legacy_key
+    cross join lateral jsonb_array_elements(case when jsonb_typeof(c.data -> 'questions') = 'array' then c.data -> 'questions' else '[]'::jsonb end) with ordinality as q(item, ord)
+    where g.deleted_at is null and jsonb_typeof(q.item) = 'object'
+  ), added as (
+    insert into public.grammar_questions (rule_id, position, type, data, legacy_pos)
+    select rule_id, pos, type, data, pos from wanted
+    on conflict (rule_id, legacy_pos) where legacy_pos is not null do update set
+      type = excluded.type, data = excluded.data, position = excluded.position, deleted_at = null
+    where (public.grammar_questions.type, public.grammar_questions.data, public.grammar_questions.deleted_at is null) is distinct from (excluded.type, excluded.data, true)
+    returning 1
+  )
   update public.grammar_questions q set deleted_at = now()
   where q.legacy_pos is not null and q.deleted_at is null
-    and not exists (select 1 from pg_temp.sync_questions d where d.rule_id = q.rule_id and d.pos = q.legacy_pos);
+    and not exists (select 1 from wanted d where d.rule_id = q.rule_id and d.pos = q.legacy_pos);
 
   -- ------------------------------------------------------------ the official collections
   -- course levels, then their sessions, then lessons (categories)
@@ -192,40 +193,45 @@ begin
   on conflict (coalesce(owner_id, '00000000-0000-0000-0000-000000000000'::uuid), coalesce(parent_id, '00000000-0000-0000-0000-000000000000'::uuid), lower(name)) where deleted_at is null do nothing;
 
   -- who is in which
-  drop table if exists pg_temp.sync_members;
-  create temporary table sync_members on commit drop as
-  select col.id as collection_id, s.id as sense_id, null::uuid as rule_id
-  from public.senses s
-  join public.collections col on col.owner_id is null and col.deleted_at is null and (
-       (col.kind = 'course' and col.name = s.course_level)
-    or (col.kind = 'category' and lower(col.name) = lower(replace(btrim(s.category), '::', ':')))
-    or (col.kind = 'session' and s.course_level is not null and col.course_level = s.course_level
-        and exists (select 1 from unnest(public.json_texts(s.content -> 'units')) x where lower(replace(btrim(x), '::', ':')) = lower(col.name))))
-  where s.legacy_key is not null and s.deleted_at is null
-  union all
-  select col.id, null, g.id
-  from public.grammar_rules g
-  join public.collections col on col.owner_id is null and col.deleted_at is null and (
-       (col.kind = 'course' and col.name = g.course_level)
-    or (col.kind = 'category' and lower(col.name) = lower(replace(btrim(g.category), '::', ':')))
-    or (col.kind = 'session' and g.course_level is not null and col.course_level = g.course_level
-        and exists (select 1 from unnest(g.units) x where lower(replace(btrim(x), '::', ':')) = lower(col.name))))
-  where g.legacy_key is not null and g.deleted_at is null;
-
-  insert into public.collection_senses (collection_id, sense_id)
-  select collection_id, sense_id from pg_temp.sync_members where sense_id is not null
-  on conflict (collection_id, sense_id) do update set removed_at = null where public.collection_senses.removed_at is not null;
-  update public.collection_senses cs set removed_at = now()
-  where cs.removed_at is null
-    and exists (select 1 from public.collections c where c.id = cs.collection_id and c.owner_id is null)
-    and not exists (select 1 from pg_temp.sync_members m where m.collection_id = cs.collection_id and m.sense_id = cs.sense_id);
-  insert into public.collection_rules (collection_id, rule_id)
-  select collection_id, rule_id from pg_temp.sync_members where rule_id is not null
-  on conflict (collection_id, rule_id) do update set removed_at = null where public.collection_rules.removed_at is not null;
+  with wanted as materialized (
+    select col.id as collection_id, s.id as sense_id, null::uuid as rule_id
+    from public.senses s
+    join public.collections col on col.owner_id is null and col.deleted_at is null and (
+         (col.kind = 'course' and col.name = s.course_level)
+      or (col.kind = 'category' and lower(col.name) = lower(replace(btrim(s.category), '::', ':')))
+      or (col.kind = 'session' and s.course_level is not null and col.course_level = s.course_level
+          and exists (select 1 from unnest(public.json_texts(s.content -> 'units')) x where lower(replace(btrim(x), '::', ':')) = lower(col.name))))
+    where s.legacy_key is not null and s.deleted_at is null
+    union all
+    select col.id, null, g.id
+    from public.grammar_rules g
+    join public.collections col on col.owner_id is null and col.deleted_at is null and (
+         (col.kind = 'course' and col.name = g.course_level)
+      or (col.kind = 'category' and lower(col.name) = lower(replace(btrim(g.category), '::', ':')))
+      or (col.kind = 'session' and g.course_level is not null and col.course_level = g.course_level
+          and exists (select 1 from unnest(g.units) x where lower(replace(btrim(x), '::', ':')) = lower(col.name))))
+    where g.legacy_key is not null and g.deleted_at is null
+  ), word_rows as (
+    insert into public.collection_senses (collection_id, sense_id)
+    select collection_id, sense_id from wanted where sense_id is not null
+    on conflict (collection_id, sense_id) do update set removed_at = null where public.collection_senses.removed_at is not null
+    returning 1
+  ), rule_rows as (
+    insert into public.collection_rules (collection_id, rule_id)
+    select collection_id, rule_id from wanted where rule_id is not null
+    on conflict (collection_id, rule_id) do update set removed_at = null where public.collection_rules.removed_at is not null
+    returning 1
+  ), word_stale as (
+    update public.collection_senses cs set removed_at = now()
+    where cs.removed_at is null
+      and exists (select 1 from public.collections c where c.id = cs.collection_id and c.owner_id is null)
+      and not exists (select 1 from wanted m where m.collection_id = cs.collection_id and m.sense_id = cs.sense_id)
+    returning 1
+  )
   update public.collection_rules cr set removed_at = now()
   where cr.removed_at is null
     and exists (select 1 from public.collections c where c.id = cr.collection_id and c.owner_id is null)
-    and not exists (select 1 from pg_temp.sync_members m where m.collection_id = cr.collection_id and m.rule_id = cr.rule_id);
+    and not exists (select 1 from wanted m where m.collection_id = cr.collection_id and m.rule_id = cr.rule_id);
   select count(*) into v_cols from public.collections where owner_id is null and deleted_at is null;
 
   return jsonb_build_object('words', v_words, 'rules', v_rules, 'links', v_links, 'collections', v_cols);
