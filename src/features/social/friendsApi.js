@@ -19,6 +19,15 @@ export const MAX_FRIENDS = 100;
 export const MAX_WAITING = 20;
 export const MAX_INVITES = 20;
 export const DECLINE_WAIT_MS = 7 * 86400000;
+// Local mode: is this pair friends, and what is someone called. Read straight
+// from the same storage the local friends API writes, so other features
+// (sharing a view) can ask without owning a second copy of the rules.
+export function localAreFriends(storage, x, y) {
+  try { return JSON.parse(storage.getItem(`friends1:p:${[x, y].sort().join("|")}`) || "null")?.status === "accepted"; } catch { return false; }
+}
+export function localNameOf(storage, id) {
+  try { return JSON.parse(storage.getItem("friends1:users") || "null")?.[id] || "player"; } catch { return "player"; }
+}
 export const normalizeUsername = (s) => String(s ?? "").trim().toLowerCase();
 
 /* ------------------------------------------------------------ online */

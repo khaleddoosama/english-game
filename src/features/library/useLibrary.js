@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { isLocalMode, supabase } from "../../lib/supabase";
 import { getLibraryApi } from "./libraryApi";
+import { localAreFriends, localNameOf } from "../social/friendsApi";
 
 const identity = { senseOf: (k) => k, keyOfSense: (id) => id, ruleOf: (k) => k, keyOfRule: (id) => id };
 
@@ -28,7 +29,8 @@ export function useLibrary({ enabled, me, knownWord = () => true }) {
     (async () => {
       try {
         if (isLocalMode) {
-          const api = getLibraryApi({ storage: window.localStorage, me: () => me, canSee: knownWord });
+          const storage = window.localStorage;
+          const api = getLibraryApi({ storage, me: () => me, canSee: knownWord, areFriends: (a, b) => localAreFriends(storage, a, b), nameOf: (id) => localNameOf(storage, id) });
           if (alive) setState({ status: "ready", api, ids: identity });
           return;
         }

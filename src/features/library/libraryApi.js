@@ -17,6 +17,8 @@ const friendly = (error) => {
 export const MAX_VIEWS = 200;
 export const MAX_DEPTH = 4;
 export const MAX_PER_CALL = 200;
+export const MAX_SHARE_USERS = 20;
+export const MAX_SHARES_WAITING = 50;
 export const MAX_LIBRARY = 5000;
 export const NAME_ERROR = 'A view name is 1 to 60 characters and has no "::" in it.';
 export const cleanViewName = (s) => String(s ?? "").trim();
@@ -45,6 +47,10 @@ function supabaseApi(client) {
     libraryAdd: (senseIds) => rpc("library_add", { p_senses: senseIds }),
     libraryRemove: (senseId) => rpc("library_remove", { p_sense: senseId }),
     patch: (senseId, patch, note = null) => rpc("library_patch", { p_sense: senseId, p_patch: patch, p_note: note }),
+    share: (view, userIds) => rpc("view_share", { p_view: view, p_users: userIds }),
+    inbox: () => rpc("view_shares_inbox"),
+    accept: (shareId) => rpc("view_share_accept", { p_share: shareId }),
+    dismiss: (shareId) => rpc("view_share_dismiss", { p_share: shareId }),
   };
 }
 
@@ -53,10 +59,12 @@ function supabaseApi(client) {
 // storage: anything with getItem/setItem (tests pass a Map-backed fake).
 // me(): the current player's id. canSee(senseId): whether that word exists
 // and may be added (the dictionary lives elsewhere in local mode).
-export function createLocalLibraryApi({ storage, me, canSee = () => true, now = () => Date.now() }) {
-  const key = () => `library1:${me()}`;
-  const load = () => { try { return JSON.parse(storage.getItem(key()) || "null") || { views: [], entries: {}, seq: 0 }; } catch { return { views: [], entries: {}, seq: 0 }; } };
-  const save = (db) => storage.setItem(key(), JSON.stringify(db));
+export function createLocalLibraryApi({ storage, me, canSee = () => true, areFriends = () => false, nameOf = () => "player", now = () => Date.now() }) {
+  const empty = () => ({ views: [], entries: {}, seq: 0 });
+  const load = (user = me()) => { try { return JSON.parse(storage.getItem(`library1:${user}`) || "null") || empty(); } catch { return empty(); } };
+  const save = (db, user = me()) => storage.setItem(`library1:${user}`, JSON.stringify(db));
+  const sharesKey = "library1:shares";
+  const loadShares = () => { try { return JSON.parse(storage.getItem(sharesKey) || "null") || []; } catch { return []; } };
   const fail = (message, code) => { throw new LibraryError(message, code); };
   const live = (db) => db.views.filter((v) => !v.removed);
   const byId = (db, id) => live(db).find((v) => v.id === id);
@@ -164,6 +172,65 @@ export function createLocalLibraryApi({ storage, me, canSee = () => true, now = 
       for (const r of ruleIds) if (!v.rules[r] || v.rules[r].removed) { v.rules[r] = { at: now() }; n++; }
       save(db);
       return n;
+    },
+    // ---- sharing: the offer lives apart from both libraries; accepting copies
+    async share(view, userIds) {
+      const db = load();
+      if (!byId(db, view)) fail("That view does not exist.", "P0002");
+      const to = [...new Set(userIds || [])];
+      if (to.length > MAX_SHARE_USERS) fail(`Share with up to ${MAX_SHARE_USERS} friends at a time.`, "22023");
+      const shares = loadShares();
+      let sent = 0;
+      for (const u of to) {
+        if (u === me()) continue;
+        if (!areFriends(me(), u)) fail("You can share only with your friends.", "42501");
+        if (shares.filter((x) => x.to === u && x.status === "pending").length >= MAX_SHARES_WAITING) fail("A friend has too many shares waiting. Try again later.", "55000");
+        if (shares.some((x) => x.view === view && x.from === me() && x.to === u && x.status === "pending")) continue;
+        shares.push({ id: `s${shares.length + 1}-${now()}`, view, from: me(), to: u, status: "pending", at: now() });
+        sent++;
+      }
+      storage.setItem(sharesKey, JSON.stringify(shares));
+      return sent;
+    },
+    async inbox() {
+      return loadShares().filter((x) => x.to === me() && x.status === "pending").flatMap((x) => {
+        const theirs = load(x.from), v = byId(theirs, x.view);
+        if (!v || !areFriends(me(), x.from)) return [];
+        const below = live(theirs).filter((d) => d.path.startsWith(`${v.path}::`));
+        return [{ id: x.id, name: v.name, from: nameOf(x.from), from_id: x.from, at: new Date(x.at).toISOString(), words: active(v.senses).length, rules: active(v.rules).length, views: below.length + 1 }];
+      }).sort((a, b) => (a.at < b.at ? 1 : -1));
+    },
+    async accept(shareId) {
+      const shares = loadShares(), sh = shares.find((x) => x.id === shareId && x.to === me());
+      if (!sh || sh.status !== "pending") fail("That share is no longer waiting.", "P0002");
+      const theirs = load(sh.from), src = byId(theirs, sh.view);
+      if (!src) fail("The sender removed that view.", "P0002");
+      if (!areFriends(me(), sh.from)) fail("You are no longer friends.", "42501");
+      const mine = load();
+      const tree = [src, ...live(theirs).filter((d) => d.path.startsWith(`${src.path}::`))];
+      if (live(mine).length + tree.length > MAX_VIEWS) fail(`You do not have room for ${tree.length} more views (the most is ${MAX_VIEWS}).`, "55000");
+      const base = `${src.name.slice(0, 30)} (from ${nameOf(sh.from).slice(0, 15)})`;
+      let name = base, n = 1;
+      while (sameName(mine, null, name)) name = `${base} ${++n}`;
+      const ids = new Map(tree.map((v) => [v.id, `v${++mine.seq}-${now()}`]));
+      let words = 0, rules = 0;
+      for (const v of tree) {
+        const copy = { id: ids.get(v.id), parent: v.id === src.id ? null : ids.get(v.parent) || null, source: null, name: v.id === src.id ? name : v.name, path: v.id === src.id ? name : null, position: v.position, senses: {}, rules: {} };
+        for (const k of active(v.senses)) { if (!canSee(k)) continue; copy.senses[k] = { at: now() }; mine.entries[k] = { patch: mine.entries[k]?.patch || {}, note: mine.entries[k]?.note || null }; words++; }
+        for (const k of active(v.rules)) { copy.rules[k] = { at: now() }; rules++; }
+        mine.views.push(copy);
+      }
+      // paths follow the parents, top down
+      const fix = (v) => { for (const c of mine.views.filter((x) => x.parent === v.id)) { c.path = `${v.path}::${c.name}`; fix(c); } };
+      fix(mine.views.find((v) => v.id === ids.get(src.id)));
+      save(mine);
+      sh.status = "accepted"; sh.copy = ids.get(src.id);
+      storage.setItem(sharesKey, JSON.stringify(shares));
+      return { view: ids.get(src.id), name, views: tree.length, words, rules, skipped: 0 };
+    },
+    async dismiss(shareId) {
+      const shares = loadShares(), sh = shares.find((x) => x.id === shareId && x.to === me() && x.status === "pending");
+      if (sh) { sh.status = "dismissed"; storage.setItem(sharesKey, JSON.stringify(shares)); }
     },
     async contents(view, deep = true) {
       const db = load();

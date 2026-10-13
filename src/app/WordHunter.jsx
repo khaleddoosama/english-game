@@ -1,5 +1,5 @@
 import { cancelAiTasks } from "../lib/aiOperations.js";
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Award, GraduationCap, BarChart3, LogOut, Settings as SettingsIcon, Wrench, BookOpen, CheckCircle2, Flag, Flame, HelpCircle, Lock, Play, Search, Target, Trash2, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
 import { V2 } from "../engine/v2";
 import { PronunciationModal, imageLinkOk } from "../features/media/media";
@@ -181,6 +181,12 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const progressExtrasRef = useRef({});
   const contentNoteRef = useRef("");
   function liveContent() { return { words: WORDS, grammar: GRAMMAR, challenges: CHALLENGES, combos: customCombos, stories: customStories, note: contentNoteRef.current }; }
+  const [libraryInbox, setLibraryInbox] = useState(0);
+  const refreshLibraryInbox = useCallback(() => {
+    if (library.status !== "ready") return;
+    library.api.inbox().then((list) => setLibraryInbox(list.length), () => {});
+  }, [library]);
+  useEffect(() => { refreshLibraryInbox(); }, [refreshLibraryInbox, screen]);
   function launchSession(session) { setActiveSession(session); setScreen("session"); }
   // One extra question style per word for Level Practice, built with the
   // adaptive-engine builders and converted to the V2 question shape.
@@ -2293,8 +2299,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         {screen === "data" && <Suspense fallback={<ScreenSkeleton />}><ImportExport variant="game" isAdmin={isAdmin} tools={dataTools} onBack={backToLevels} /></Suspense>}
         {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} /></Suspense>}
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} friendsApi={friendsApi} hiddenForPlayers={isAdmin && !app.leaderboard} /></Suspense>}
-        {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage social={social} libraryOn={library.status === "ready"} onSignOut={onSignOut ? logOut : null} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
-        {screen === "library" && library.status === "ready" && <Suspense fallback={<ScreenSkeleton />}><LibraryPage api={library.api} ids={library.ids} words={WORDS} grammar={GRAMMAR} levels={courseLevelGroups().levels} onPractice={startViewPractice} /></Suspense>}
+        {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage social={social} libraryOn={library.status === "ready"} libraryInbox={libraryInbox} onSignOut={onSignOut ? logOut : null} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
+        {screen === "library" && library.status === "ready" && <Suspense fallback={<ScreenSkeleton />}><LibraryPage api={library.api} ids={library.ids} words={WORDS} grammar={GRAMMAR} levels={courseLevelGroups().levels} friendsApi={friendsApi} onPractice={startViewPractice} onInboxChanged={refreshLibraryInbox} /></Suspense>}
         {screen === "friends" && <Suspense fallback={<ScreenSkeleton />}><FriendsPage api={friendsApi} onChanged={refreshSocial} local={friendsApi.mode === "local"} /></Suspense>}
 
         {screen === "speedResults" && (

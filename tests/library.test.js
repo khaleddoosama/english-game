@@ -127,3 +127,86 @@ describe("each player has their own", () => {
     await bad(other.add("whatever", ["s1"]), /does not exist/);
   });
 });
+
+describe("sharing a view (local mirror of migration 0029)", () => {
+  const befriend = (x, y) => storage.setItem(`friends1:p:${[x, y].sort().join("|")}`, JSON.stringify({ status: "accepted" }));
+  const names = () => storage.setItem("friends1:users", JSON.stringify({ a: "ann", b: "bob", c: "cat" }));
+  const as = (user, canSee) => createLocalLibraryApi({ storage, me: () => user, canSee, areFriends: (x, y) => JSON.parse(storage.getItem(`friends1:p:${[x, y].sort().join("|")}`) || "null")?.status === "accepted", nameOf: (id) => ({ a: "ann", b: "bob", c: "cat" })[id] });
+  let ann, bob, top, sub;
+  beforeEach(async () => {
+    names(); befriend("a", "b");
+    ann = as("a"); bob = as("b");
+    top = await ann.create("A1.1"); sub = await ann.create("movies", top);
+    await ann.add(top, ["w1"]); await ann.add(sub, ["w2", "w3"]); await ann.addRules(sub, ["r1"]);
+  });
+
+  it("only to friends, only by the owner; an offer waits once", async () => {
+    await bad(ann.share(top, ["c"]), /only with your friends/);
+    await bad(bob.share(top, ["a"]), /does not exist/);
+    expect(await ann.share(top, ["a"])).toBe(0);
+    expect(await ann.share(top, ["b", "b"])).toBe(1);
+    expect(await ann.share(top, ["b"])).toBe(0);
+    await bad(ann.share(top, Array.from({ length: 21 }, (_, i) => `u${i}`)), /up to 20 friends/);
+  });
+
+  it("the inbox shows who sent what, and only to the friend", async () => {
+    await ann.share(top, ["b"]);
+    expect(await ann.inbox()).toEqual([]);
+    expect(await as("c").inbox()).toEqual([]);
+    const [item] = await bob.inbox();
+    expect(item).toMatchObject({ name: "A1.1", from: "ann", words: 1, rules: 0, views: 2 });
+  });
+
+  it("accepting makes b's own copy, with the views inside, words and rules", async () => {
+    await ann.share(top, ["b"]);
+    const [{ id }] = await bob.inbox();
+    await bad(as("c").accept(id), /no longer waiting/);
+    const res = await bob.accept(id);
+    expect(res).toMatchObject({ name: "A1.1 (from ann)", views: 2, words: 3, rules: 1, skipped: 0 });
+    const tree = await bob.tree();
+    expect(tree.map((v) => v.path)).toEqual(["A1.1 (from ann)", "A1.1 (from ann)::movies"]);
+    expect((await bob.contents(res.view, true)).map((x) => x.id).sort()).toEqual(["r1", "w1", "w2", "w3"]);
+    expect(await bob.inbox()).toEqual([]);
+    await bad(bob.accept(id), /no longer waiting/);
+  });
+
+  it("the copy is independent of the original", async () => {
+    await ann.share(top, ["b"]);
+    const { view } = await bob.accept((await bob.inbox())[0].id);
+    await ann.add(top, ["w9"]);
+    await bob.rename(view, "Mine");
+    expect((await bob.contents(view, true)).length).toBe(4);
+    expect((await ann.tree())[0].name).toBe("A1.1");
+  });
+
+  it("a second copy gets a number; a dismissed offer can't be accepted but can be sent again", async () => {
+    await ann.share(top, ["b"]); await bob.accept((await bob.inbox())[0].id);
+    await ann.share(top, ["b"]);
+    const second = await bob.accept((await bob.inbox())[0].id);
+    expect(second.name).toBe("A1.1 (from ann) 2");
+    await ann.share(top, ["b"]);
+    const [{ id }] = await bob.inbox();
+    await bob.dismiss(id);
+    expect(await bob.inbox()).toEqual([]);
+    await bad(bob.accept(id), /no longer waiting/);
+    expect(await ann.share(top, ["b"])).toBe(1);
+  });
+
+  it("an offer of a view that was removed, or from someone no longer a friend, is not listed or accepted", async () => {
+    await ann.share(top, ["b"]);
+    const [{ id }] = await bob.inbox();
+    storage.setItem("friends1:p:a|b", JSON.stringify({ status: "removed" }));
+    expect(await bob.inbox()).toEqual([]);
+    await bad(bob.accept(id), /no longer friends/);
+    befriend("a", "b");
+    await ann.remove(top);
+    expect(await bob.inbox()).toEqual([]);
+    await bad(bob.accept(id), /removed that view/);
+  });
+
+  it("no room for the copy: refused", async () => {
+    await ann.share(top, ["b"]);
+    for (let i = 0; i < MAX_VIEWS - 1; i++) await bob.create(`v${i}`);
+    await bad(bob.accept((await bob.inbox())[0].id), /room for 2 more views/);
+  });
+});
