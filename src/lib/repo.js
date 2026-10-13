@@ -226,6 +226,10 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
     }
     const version = result?.version ?? null;
     contentVersion = version;
+    // Keep the library's copy of the dictionary (migration 0027) in step. Best
+    // effort: the game doesn't read it yet, and before that migration there is
+    // nothing to call.
+    Promise.resolve(sb.rpc("dictionary_sync")).then((out) => { if (out?.error && !["42883", "PGRST202"].includes(out.error.code)) console.warn("dictionary_sync:", out.error.message); }, () => {});
     for (const row of upserts) contentRows.set(`${row.kind}\u0000${row.key}`, { kind: row.kind, key: row.key, json: row.json, position: row.position });
     for (const r of removes) contentRows.delete(`${r.kind}\u0000${r.key}`);
     contentMeta = { levelOrder: stableJson(levelOrder), note };

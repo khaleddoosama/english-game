@@ -31,12 +31,13 @@ describe("content", () => {
     const admin = createSupabaseRepo({ userId: "u1", isAdmin: true, client: fake });
     await admin.loadContent();
     await admin.saveContent(content);
-    const before = fake.calls.length;
+    const before = rpcCalls(fake, "content_save_v2").length;
     const words = content.words.map((w, i) => (i === 10 ? { ...w, meaning: "edited" } : w)).filter((_, i) => i !== 20);
     words.splice(5, 0, { word: "brand-new", category: content.words[5].category, meaning: "x", situation: "y", gap: "a ______ b" });
     await admin.saveContent({ ...content, words });
     const [call] = rpcCalls(fake, "content_save_v2").slice(-1);
-    expect(fake.calls.length - before).toBe(1);
+    expect(rpcCalls(fake, "content_save_v2").length - before).toBe(1);
+    expect(rpcCalls(fake, "dictionary_sync").length).toBeGreaterThanOrEqual(1);   // the library's copy follows
     expect(call.args.p_upserts.map((u) => u.key).sort()).toEqual(["brand-new", content.words[10].word].sort());
     expect(call.args.p_removes).toEqual([{ kind: "words", key: content.words[20].word }]);
     const player = createSupabaseRepo({ userId: "u2", isAdmin: false, client: fake });
