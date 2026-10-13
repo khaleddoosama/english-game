@@ -81,7 +81,7 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
       onInboxChanged?.();
       if (accept) {
         setSelected(out.view);
-        setNotice({ kind: "ok", text: `Added “${out.name}”: ${out.words} words${out.rules ? `, ${out.rules} rules` : ""}${out.skipped ? ` (${out.skipped} private ${out.skipped === 1 ? "word was" : "words were"} not shared)` : ""}.` });
+        setNotice({ kind: "ok", text: `Added “${out.name}”: ${count(out.words, "word")}${out.rules ? `, ${count(out.rules, "rule")}` : ""}${out.skipped ? ` (${out.skipped} private ${out.skipped === 1 ? "word was" : "words were"} not shared)` : ""}.` });
       }
     } catch (e) { setNotice({ kind: "error", text: e.message }); await loadInbox(); onInboxChanged?.(); }
     finally { setBusy(false); }
@@ -181,7 +181,7 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
 
       {view && (
         <div className="lib-panel">
-          <h3 className="lib-path">{view.path.split("::").join("  ›  ")}</h3>
+          <h3 className="lib-path">{view.path.split("::").join(" › ")}</h3>
           <div className="lib-actions">
             <button className="ui-row-btn" disabled={!total(view)} onClick={() => onPractice(view.id, false, view.name)}><Play size={14} /> Only this view</button>
             {rename === null
