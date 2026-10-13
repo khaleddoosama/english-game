@@ -8,7 +8,7 @@ import { FEEDBACK_MS, MAX_PLAYERS, MIN_PLAYERS, challengeLink, codeFromInput, fo
 import { getLiveApi, withRetry } from "./liveApi";
 import { openLiveChannel } from "./transport";
 import { navigate, useQueryParam } from "../../lib/router";
-import { scopeFromContents } from "../library/scope";
+import { useMyViews, useViewScope } from "../library/useViewScope";
 import { AddFriendButton, useFriendStatus } from "../social/AddFriendButton";
 import { FriendPicker, InviteFriends, Invitations } from "./LiveFriends";
 import "../../styles/live.css";
@@ -166,24 +166,10 @@ function CreateForm({ library = null, api, friendsApi, presetInvite = [], levels
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   // My views (the library) are another place to take the words from.
-  const [myViews, setMyViews] = useState([]);
-  useEffect(() => {
-    if (!library) return undefined;
-    let alive = true;
-    library.api.tree().then((t) => alive && setMyViews(t), () => {});
-    return () => { alive = false; };
-  }, [library]);
+  const myViews = useMyViews(library);
   const viewId = String(lesson).startsWith("view:") ? String(lesson).slice(5) : null;
   const myView = viewId ? myViews.find((v) => v.id === viewId) || null : null;
-  const [viewScope, setViewScope] = useState(null);
-  useEffect(() => {
-    if (!viewId || !library) { setViewScope(null); return undefined; }
-    let alive = true;
-    library.api.contents(viewId, true).then(
-      (rows) => alive && setViewScope(scopeFromContents(rows, { resolveKey: library.ids.keyOfSense, resolveRule: library.ids.keyOfRule })),
-      () => alive && setViewScope({ words: new Set(), rules: new Set() }));
-    return () => { alive = false; };
-  }, [viewId, library]);
+  const viewScope = useViewScope(library, viewId);
   const level = viewId || lesson === "all" ? null : levels[Number(lesson)];
   const groups = level ? levelGroups(level).filter((g) => g.id) : [];
   const words = useMemo(() => {
