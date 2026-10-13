@@ -8,6 +8,7 @@ import { FEEDBACK_MS, MAX_PLAYERS, MIN_PLAYERS, challengeLink, codeFromInput, fo
 import { getLiveApi, withRetry } from "./liveApi";
 import { openLiveChannel } from "./transport";
 import { navigate, useQueryParam } from "../../lib/router";
+import { scopeFromContents } from "../library/scope";
 import { AddFriendButton, useFriendStatus } from "../social/AddFriendButton";
 import { FriendPicker, InviteFriends, Invitations } from "./LiveFriends";
 import "../../styles/live.css";
@@ -42,7 +43,7 @@ const rulesText = (v) => [
   v.start_mode === "anytime" ? "start anytime" : "start together",
 ];
 
-export function LiveChallenge({ player, levels, code, onOpenCode, onExit, sound = true, pools = null, getSeen = () => ({}), onSeen = () => {}, onRefresh = () => {}, limits = {}, friendsApi = null, onSocialChanged = () => {} }) {
+export function LiveChallenge({ player, levels, code, onOpenCode, onExit, sound = true, pools = null, getSeen = () => ({}), onSeen = () => {}, onRefresh = () => {}, limits = {}, friendsApi = null, onSocialChanged = () => {}, library = null }) {
   const api = useMemo(() => getLiveApi(() => player), [player]);
   // "Retry challenge": the settings of a finished challenge, carried to the new-challenge form.
   const [retry, setRetry] = useState(null);
@@ -52,14 +53,14 @@ export function LiveChallenge({ player, levels, code, onOpenCode, onExit, sound 
       {code
         ? <ChallengeRoom key={code} api={api} friendsApi={friendsApi} code={code} player={player} sound={sound} onHome={() => onOpenCode(null)} onOpen={onOpenCode} canRetry={canRetry}
             onRetry={(view) => { setRetry(retryDefaults(view, levels)); onOpenCode(null); }} onSeen={onSeen} />
-        : <LiveHome api={api} friendsApi={friendsApi} onSocialChanged={onSocialChanged} player={player} levels={levels} pools={pools} getSeen={getSeen} onRefresh={onRefresh} onOpenCode={onOpenCode} onExit={onExit} limits={limits} retry={retry} onRetryDone={() => setRetry(null)} />}
+        : <LiveHome library={library} api={api} friendsApi={friendsApi} onSocialChanged={onSocialChanged} player={player} levels={levels} pools={pools} getSeen={getSeen} onRefresh={onRefresh} onOpenCode={onOpenCode} onExit={onExit} limits={limits} retry={retry} onRetryDone={() => setRetry(null)} />}
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ home */
 
-function LiveHome({ api, friendsApi, onSocialChanged, player, levels, pools, getSeen, onRefresh, onOpenCode, onExit, limits, retry, onRetryDone }) {
+function LiveHome({ library, api, friendsApi, onSocialChanged, player, levels, pools, getSeen, onRefresh, onOpenCode, onExit, limits, retry, onRetryDone }) {
   // /live?invite=<friend id>: "Challenge" on the Friends page opens the new-challenge form with that friend picked.
   const [inviteId, setInviteId] = useQueryParam("invite");
   const [creating, setCreating] = useState(!!retry || (!!inviteId && limits.canCreate !== false && levels.length > 0));
@@ -72,7 +73,7 @@ function LiveHome({ api, friendsApi, onSocialChanged, player, levels, pools, get
     if (!c) { setJoinError("Paste the challenge link, or type its 6-character code."); return; }
     onOpenCode(c);
   };
-  if (creating) return <CreateForm api={api} friendsApi={friendsApi} presetInvite={inviteId ? [inviteId] : []} levels={levels} pools={pools} getSeen={getSeen} onRefresh={onRefresh} limits={limits} initial={retry}
+  if (creating) return <CreateForm library={library} api={api} friendsApi={friendsApi} presetInvite={inviteId ? [inviteId] : []} levels={levels} pools={pools} getSeen={getSeen} onRefresh={onRefresh} limits={limits} initial={retry}
     onCancel={() => { setCreating(false); setInviteId(""); onRetryDone(); }}
     onCreated={(code) => {
       // Leave the new code on the finished challenge so the others can join from its results.
@@ -146,7 +147,7 @@ function Segmented({ label, value, options, onChange }) {
   );
 }
 
-function CreateForm({ api, friendsApi, presetInvite = [], levels, pools, getSeen, onRefresh, onCancel, onCreated, limits, initial = null }) {
+function CreateForm({ library = null, api, friendsApi, presetInvite = [], levels, pools, getSeen, onRefresh, onCancel, onCreated, limits, initial = null }) {
   const cap = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, limits.maxPlayers || MAX_PLAYERS));
   // From "Retry challenge": the old settings, each kept only if this form still offers it.
   const init = initial || {};
@@ -164,20 +165,41 @@ function CreateForm({ api, friendsApi, presetInvite = [], levels, pools, getSeen
   const [invited, setInvited] = useState(presetInvite);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  const level = lesson === "all" ? null : levels[Number(lesson)];
+  // My views (the library) are another place to take the words from.
+  const [myViews, setMyViews] = useState([]);
+  useEffect(() => {
+    if (!library) return undefined;
+    let alive = true;
+    library.api.tree().then((t) => alive && setMyViews(t), () => {});
+    return () => { alive = false; };
+  }, [library]);
+  const viewId = String(lesson).startsWith("view:") ? String(lesson).slice(5) : null;
+  const myView = viewId ? myViews.find((v) => v.id === viewId) || null : null;
+  const [viewScope, setViewScope] = useState(null);
+  useEffect(() => {
+    if (!viewId || !library) { setViewScope(null); return undefined; }
+    let alive = true;
+    library.api.contents(viewId, true).then(
+      (rows) => alive && setViewScope(scopeFromContents(rows, { resolveKey: library.ids.keyOfSense, resolveRule: library.ids.keyOfRule })),
+      () => alive && setViewScope({ words: new Set(), rules: new Set() }));
+    return () => { alive = false; };
+  }, [viewId, library]);
+  const level = viewId || lesson === "all" ? null : levels[Number(lesson)];
   const groups = level ? levelGroups(level).filter((g) => g.id) : [];
   const words = useMemo(() => {
+    if (viewId) return viewScope ? levels.flatMap((l) => l.items.filter((it) => it.kind === "word" && viewScope.words.has(it.obj.word)).map((it) => it.obj)) : [];
     const src = level ? [level] : levels;
     return src.flatMap((l) => l.items.filter((it) => it.kind === "word").map((it) => it.obj))
       .filter((w) => !unit || (groups[0]?.field === "unit" ? (w.units || []).includes(unit) : w.subCategory === unit));
-  }, [levels, level, unit]);
+  }, [levels, level, unit, viewId, viewScope]);
   // The grammar rules of the same lessons (and unit), for the Grammar question type.
   const grammar = useMemo(() => {
+    if (viewId) return viewScope ? levels.flatMap((l) => l.items.filter((it) => it.kind === "grammar" && viewScope.rules.has(it.obj.id)).map((it) => it.obj)) : [];
     const src = level ? [level] : levels;
     return src.flatMap((l) => l.items.filter((it) => it.kind === "grammar").map((it) => it.obj))
       .filter((g) => !unit || (groups[0]?.field === "unit" ? (g.units || []).includes(unit) : g.subCategory === unit));
-  }, [levels, level, unit]);
-  const autoTitle = liveAutoTitle(level, groups, unit);
+  }, [levels, level, unit, viewId, viewScope]);
+  const autoTitle = viewId ? (myView?.name || "My view") : liveAutoTitle(level, groups, unit);
 
   async function create() {
     setError(null);
@@ -188,7 +210,7 @@ function CreateForm({ api, friendsApi, presetInvite = [], levels, pools, getSeen
     try {
       const code = await api.create({
         title: title.trim() || autoTitle, seconds, maxPlayers, startMode, hours, questions,
-        settings: { lesson: level?.title || null, unit: unit || null, kinds, reveal, requested: count },
+        settings: { lesson: level?.title || myView?.name || null, unit: unit || null, kinds, reveal, requested: count },
       });
       onRefresh(words);
       // Invitations are a courtesy: if they fail, the link in the waiting room still works.
@@ -206,6 +228,7 @@ function CreateForm({ api, friendsApi, presetInvite = [], levels, pools, getSeen
           <select value={lesson} onChange={(e) => { setLesson(e.target.value); setUnit(""); }}>
             <option value="all">All lessons (mixed)</option>
             {levels.map((l, i) => <option key={l.title} value={i}>{l.title}</option>)}
+            {myViews.length > 0 && <optgroup label="My views">{myViews.map((v) => <option key={v.id} value={`view:${v.id}`}>{v.path.split("::").join(" › ")}</option>)}</optgroup>}
           </select>
         </label>
         {groups.length > 1 && <label className="lv-field"><span>{groups[0].field === "unit" ? "Unit" : "Group"}</span>
