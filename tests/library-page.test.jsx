@@ -139,3 +139,46 @@ describe("LibraryPage", () => {
     expect($(".lib-notice").textContent).toContain("Sent to 1 friend");
   });
 });
+
+describe("words the dictionary doesn't have yet", () => {
+  it("offers Ask AI for a missing word in a pasted list and for a search with no result", async () => {
+    const onAskWord = vi.fn();
+    await render({ onAskWord });
+    await type($('input[aria-label="New view name"]'), "V"); await click(buttonWith("Create"));
+    await type($('input[aria-label="Search words"]'), "zebra");
+    await click($$("button").find((b) => b.textContent.includes("Ask AI about it")));
+    expect(onAskWord).toHaveBeenLastCalledWith("zebra");
+    await act(async () => { $(".lib-paste summary").dispatchEvent(new MouseEvent("click", { bubbles: true })); });
+    await type($('textarea[aria-label="Words to add"]'), "reluctant\nquokka");
+    await click(buttonWith("Check the list"));
+    await click($('button[aria-label="Ask AI about quokka"]'));
+    expect(onAskWord).toHaveBeenLastCalledWith("quokka");
+  });
+
+  it("a word added after the app started: the id map is reloaded once, then it is added", async () => {
+    let map = idsFromMaps(new Map(WORDS.map((w, i) => [w.word, `sense-${i}`])), new Map());
+    const words = [...WORDS, { word: "Quokka", meaning: "A small marsupial" }];
+    const onRefreshIds = vi.fn(async () => { map = idsFromMaps(new Map([...WORDS.map((w, i) => [w.word, `sense-${i}`]), ["Quokka", "sense-9"]]), new Map()); return map; });
+    await render({ words, ids: map, onRefreshIds });
+    await type($('input[aria-label="New view name"]'), "V"); await click(buttonWith("Create"));
+    await type($('input[aria-label="Search words"]'), "quokka");
+    await click($$('.lib-results input[type="checkbox"]')[0]);
+    await click(buttonWith("selected"));
+    expect(onRefreshIds).toHaveBeenCalledTimes(1);
+    const view = (await api.tree())[0];
+    expect((await api.contents(view.id, false)).map((x) => x.id)).toEqual(["sense-9"]);
+  });
+
+  it("still unknown after the reload: nothing is added and the notice says why", async () => {
+    const words = [...WORDS, { word: "Quokka", meaning: "A small marsupial" }];
+    const onRefreshIds = vi.fn(async () => ids);
+    await render({ words, onRefreshIds });
+    await type($('input[aria-label="New view name"]'), "V"); await click(buttonWith("Create"));
+    await type($('input[aria-label="Search words"]'), "quokka");
+    await click($$('.lib-results input[type="checkbox"]')[0]);
+    await click(buttonWith("selected"));
+    expect($(".lib-notice.error").textContent).toMatch(/not in the library yet \(Quokka\)/);
+    const view = (await api.tree())[0];
+    expect(await api.contents(view.id, false)).toEqual([]);
+  });
+});

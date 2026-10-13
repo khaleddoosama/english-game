@@ -24,6 +24,15 @@ export const NAME_ERROR = 'A view name is 1 to 60 characters and has no "::" in 
 export const cleanViewName = (s) => String(s ?? "").trim();
 export const validViewName = (s) => { const n = cleanViewName(s); return n.length >= 1 && n.length <= 60 && !n.includes("::"); };
 
+// A card in the game's shape ({ word, type, partsOfSpeech, category, meaning,
+// situation, gap, hints … }) as the arguments of sense_create: the columns the
+// database keeps apart, and everything else as the card's content.
+export function senseFromCard(card, source = "user") {
+  const { word, type, partsOfSpeech, category, meaning, level, ...content } = card || {};
+  const clean = Object.fromEntries(Object.entries(content).filter(([k, v]) => !k.startsWith("_") && v !== undefined && v !== null && v !== ""));
+  return { word: String(word || "").trim(), type: type || "vocab", pos: Array.isArray(partsOfSpeech) ? partsOfSpeech : [], category: category || null, meaning: String(meaning || "").trim(), content: clean, source: card?._aiAdded ? "ai" : source };
+}
+
 /* ------------------------------------------------------------ online */
 
 function supabaseApi(client) {
@@ -47,6 +56,7 @@ function supabaseApi(client) {
     libraryAdd: (senseIds) => rpc("library_add", { p_senses: senseIds }),
     libraryRemove: (senseId) => rpc("library_remove", { p_sense: senseId }),
     patch: (senseId, patch, note = null) => rpc("library_patch", { p_sense: senseId, p_patch: patch, p_note: note }),
+    createWord: (card) => { const w = senseFromCard(card); return rpc("sense_create", { p_word: w.word, p_type: w.type, p_pos: w.pos, p_category: w.category, p_meaning: w.meaning, p_content: w.content, p_source: w.source }); },
     share: (view, userIds) => rpc("view_share", { p_view: view, p_users: userIds }),
     inbox: () => rpc("view_shares_inbox"),
     accept: (shareId) => rpc("view_share_accept", { p_share: shareId }),
@@ -129,6 +139,14 @@ export function createLocalLibraryApi({ storage, me, canSee = () => true, areFri
       for (const s of ok) db.entries[s] = { patch: db.entries[s]?.patch || {}, note: db.entries[s]?.note || null };
       save(db);
       return ok;
+    },
+    // The word itself lives in the game's own content in local mode; here it only joins the library.
+    async createWord(card) {
+      const word = senseFromCard(card).word;
+      if (!word) fail("A word is 1 to 120 characters.", "22023");
+      const known = Boolean(load().entries[word] && !load().entries[word].removed);
+      await this.libraryAdd([word]);
+      return { id: word, existing: known };
     },
     async libraryRemove(senseId) {
       const db = load();

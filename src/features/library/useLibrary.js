@@ -3,7 +3,7 @@
 // Online, the library is "off" until the dictionary has been moved into the
 // new tables (the rows carry the old key), so the screen never shows up
 // half-working.
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { isLocalMode, supabase } from "../../lib/supabase";
 import { getLibraryApi } from "./libraryApi";
 import { localAreFriends, localNameOf } from "../social/friendsApi";
@@ -11,6 +11,14 @@ import { identityIds, loadIds } from "./libraryIds";
 
 export function useLibrary({ enabled, me, knownWord = () => true }) {
   const [state, setState] = useState({ status: "loading" });
+  // Words added after the app started aren't in the id map yet; this reloads it.
+  // Local mode has nothing to reload (a key is its own id).
+  const refreshIds = useCallback(async () => {
+    if (isLocalMode) return identityIds;
+    const { ids } = await loadIds(supabase);
+    setState((cur) => (cur.status === "ready" ? { ...cur, ids } : cur));
+    return ids;
+  }, []);
   useEffect(() => {
     if (!enabled) return undefined;
     let alive = true;
@@ -31,5 +39,5 @@ export function useLibrary({ enabled, me, knownWord = () => true }) {
     })();
     return () => { alive = false; };
   }, [enabled, me]); // eslint-disable-line react-hooks/exhaustive-deps
-  return state;
+  return useMemo(() => ({ ...state, refreshIds }), [state, refreshIds]);
 }

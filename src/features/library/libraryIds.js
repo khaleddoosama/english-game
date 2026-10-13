@@ -24,7 +24,21 @@ export async function loadKeyMap(client, table) {
   return out;
 }
 
+// The player's own words have no legacy key: the game calls them by their
+// text, "Cast" or "Cast (to throw)", so that is the key.
+export async function loadOwnMap(client) {
+  const out = new Map();
+  for (let from = 0; from < 20 * PAGE; from += PAGE) {
+    const { data, error } = await client.from("senses").select("id, label, headwords(text)").not("owner_id", "is", null).range(from, from + PAGE - 1);
+    if (error) throw error;
+    for (const r of data || []) { const head = r.headwords?.text; if (head) out.set(r.label ? `${head} (${r.label})` : head, r.id); }
+    if (!data || data.length < PAGE) break;
+  }
+  return out;
+}
+
 export async function loadIds(client) {
-  const [senses, rules] = await Promise.all([loadKeyMap(client, "senses"), loadKeyMap(client, "grammar_rules")]);
+  const [senses, own, rules] = await Promise.all([loadKeyMap(client, "senses"), loadOwnMap(client), loadKeyMap(client, "grammar_rules")]);
+  for (const [k, id] of own) if (!senses.has(k)) senses.set(k, id);       // the dictionary's word wins a clash
   return { ids: idsFromMaps(senses, rules), words: senses.size, rules: rules.size };
 }

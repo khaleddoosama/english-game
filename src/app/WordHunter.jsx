@@ -593,6 +593,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     setCustomWords(next);setDataVersion(value=>value+1);
     setAskAiResult(previous=>({...previous,alreadyInCollection:true}));
     setToast({kind:"import",text:`${entry.word} added to your collection`});
+    // Keep it in my library too (best effort), so it can go in views and be shared.
+    if(library.status==="ready")library.api.createWord(entry).then(()=>library.refreshIds(),()=>{});
   }
 
   // Speed Round — a timed review of mastered words. It plays in the normal
@@ -2300,7 +2302,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} /></Suspense>}
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} friendsApi={friendsApi} hiddenForPlayers={isAdmin && !app.leaderboard} /></Suspense>}
         {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage social={social} libraryOn={library.status === "ready"} libraryInbox={libraryInbox} onSignOut={onSignOut ? logOut : null} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
-        {screen === "library" && library.status === "ready" && <Suspense fallback={<ScreenSkeleton />}><LibraryPage api={library.api} ids={library.ids} words={WORDS} grammar={GRAMMAR} levels={courseLevelGroups().levels} friendsApi={friendsApi} onPractice={startViewPractice} onInboxChanged={refreshLibraryInbox} /></Suspense>}
+        {screen === "library" && library.status === "ready" && <Suspense fallback={<ScreenSkeleton />}><LibraryPage api={library.api} ids={library.ids} words={WORDS} grammar={GRAMMAR} levels={courseLevelGroups().levels} friendsApi={friendsApi} onPractice={startViewPractice} onInboxChanged={refreshLibraryInbox} onAskWord={openAskAi} onRefreshIds={library.refreshIds} /></Suspense>}
         {screen === "friends" && <Suspense fallback={<ScreenSkeleton />}><FriendsPage api={friendsApi} onChanged={refreshSocial} local={friendsApi.mode === "local"} /></Suspense>}
 
         {screen === "speedResults" && (

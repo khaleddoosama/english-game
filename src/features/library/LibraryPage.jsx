@@ -12,7 +12,9 @@ const count = (n, noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
 //   words / grammar - the dictionary         levels - course levels, to start a view from one
 //   onPractice(viewId, deep, name) - starts a round    friendsApi - to pick who a view is shared with
 //   onInboxChanged() - the number of offers waiting changed
-export default function LibraryPage({ api, ids, words, grammar, levels = [], friendsApi = null, onPractice, onInboxChanged }) {
+//   onAskWord(term) - opens the AI helper for a word that isn't in the dictionary yet
+//   onRefreshIds() - reloads the key <-> id map (words added since the app started)
+export default function LibraryPage({ api, ids, words, grammar, levels = [], friendsApi = null, onPractice, onInboxChanged, onAskWord = null, onRefreshIds = null }) {
   const [flat, setFlat] = useState(null);
   const [selected, setSelected] = useState(null);
   const [inside, setInside] = useState({ words: [], rules: [] });
@@ -111,7 +113,17 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
     }, `Made a view from ${lv.id}.`);
     if (id) { setSelected(id); setLevel(""); }
   }
-  const addWords = (keys) => act(() => api.add(selected, keys.map(ids.senseOf).filter(Boolean)), (n) => (n ? `Added ${n}.` : "Those are already here."));
+  // A word the id map doesn't know yet was added after the app started: reload
+  // the map once and try again. Still unknown means it hasn't reached the
+  // library's copy of the dictionary yet.
+  async function addWords(keys) {
+    let map = ids, unknown = keys.filter((k) => map.senseOf(k) === undefined);
+    if (unknown.length && onRefreshIds) { map = await onRefreshIds().catch(() => map); unknown = keys.filter((k) => map.senseOf(k) === undefined); }
+    const known = keys.filter((k) => !unknown.includes(k));
+    const out = await act(() => (known.length ? api.add(selected, known.map(map.senseOf)) : 0), (n) => (n ? `Added ${n}.` : "Those are already here."));
+    if (unknown.length) setNotice({ kind: "error", text: `${count(unknown.length, "word")} not in the library yet (${unknown.slice(0, 3).join(", ")}${unknown.length > 3 ? "…" : ""}). New words reach it after the next content save.` });
+    return out;
+  }
   const total = (v) => (v.words || 0) + (v.rules || 0);
 
   const results = useMemo(() => searchWords(words, query, 30), [words, query]);
@@ -229,6 +241,9 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
 
           <h4 className="lib-sub">Add words</h4>
           <input className="lib-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by word or meaning" aria-label="Search words" />
+          {!results.length && query.trim().length > 1 && onAskWord && (
+            <p className="ui-muted">Nothing called “{query.trim()}”. <button className="lib-link" onClick={() => onAskWord(query.trim())}>Ask AI about it</button></p>
+          )}
           {results.length > 0 && (
             <>
               <ul className="lib-results">
@@ -253,7 +268,11 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
                     {a.options.map((k) => <label key={k}><input type="checkbox" checked={picked.has(k)} onChange={() => toggle(k)} /> {k} <small>{wordByKey.get(k)?.meaning}</small></label>)}
                   </fieldset>
                 ))}
-                {pasted.missing.length > 0 && <p className="ui-muted">Not found: {pasted.missing.join(", ")}</p>}
+                {pasted.missing.length > 0 && (
+                  <div className="lib-missing"><p className="ui-muted">Not in the dictionary:</p>
+                    <ul className="lib-chips">{pasted.missing.map((t) => <li key={t}><span>{t}</span>{onAskWord && <button aria-label={`Ask AI about ${t}`} onClick={() => onAskWord(t)}>Ask AI</button>}</li>)}</ul>
+                  </div>
+                )}
                 <button className="ui-row-btn" disabled={busy || (!pasted.matched.length && !picked.size)} onClick={async () => { await addWords([...new Set([...pasted.matched, ...picked])].slice(0, 200)); setPasted(null); setPaste(""); setPicked(new Set()); }}>Add them</button>
               </div>
             )}

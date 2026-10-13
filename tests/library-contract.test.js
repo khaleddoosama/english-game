@@ -10,8 +10,10 @@ import { createSupabaseLibraryApi } from "../src/features/library/libraryApi.js"
 
 const PGURL = process.env.PGURL;
 const psql = (sql) => execFileSync("psql", [PGURL, "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=verbose", "-At", "-q"], { input: sql, encoding: "utf8" }).trim();
-const lit = (v) => v === null || v === undefined ? "null"
-  : Array.isArray(v) ? `array[${v.map(lit).join(",")}]::${v.length && typeof v[0] !== "string" ? "text" : "uuid"}[]`
+// PostgREST types each argument from the function's signature; here the uuid arrays are told apart by name.
+const UUID_ARRAYS = new Set(["p_senses", "p_rules", "p_users"]);
+const lit = (v, key) => v === null || v === undefined ? "null"
+  : Array.isArray(v) ? `array[${v.map((x) => lit(x)).join(",")}]::${UUID_ARRAYS.has(key) ? "uuid" : "text"}[]`
   : typeof v === "object" ? `'${JSON.stringify(v).replace(/'/g, "''")}'::jsonb`
   : typeof v === "boolean" ? String(v)
   : typeof v === "number" ? String(v)
@@ -21,7 +23,7 @@ const SETOF = new Set(["view_contents", "library_add"]);
 // supabase-js style: rpc(name, namedArgs) -> { data, error }, signed in as `user`.
 const clientAs = (user) => ({
   rpc: async (fn, args = {}) => {
-    const named = Object.entries(args).map(([k, v]) => `${k} => ${lit(v)}`).join(", ");
+    const named = Object.entries(args).map(([k, v]) => `${k} => ${lit(v, k)}`).join(", ");
     const call = `public.${fn}(${named})`;
     const q = SETOF.has(fn) ? `select coalesce(jsonb_agg(to_jsonb(t)), '[]'::jsonb) from ${call} t` : `select to_jsonb(${call})`;
     try {
@@ -92,6 +94,12 @@ describe.skipIf(!PGURL)("library API <-> SQL functions", () => {
     await A.share(top, [b]);
     await B.dismiss((await B.inbox())[0].id);
     expect(await B.inbox()).toEqual([]);
+    // a word of my own: private, in my library, the same card twice gives the same row
+    const mine = await A.createWord({ word: "Quokka", type: "vocab", partsOfSpeech: ["noun"], category: "Animals", meaning: "A small marsupial", situation: "We saw one.", _aiAdded: true });
+    expect(mine).toMatchObject({ existing: false });
+    expect((await A.createWord({ word: "quokka", meaning: "again" })).id).toBe(mine.id);
+    expect(await A.add(sub, [mine.id])).toBe(1);
+    await expect(B.add(top, [mine.id])).rejects.toThrow();
     // remove a view: gone from the tree, words stay in the library
     await A.remove(top);
     expect((await A.tree()).map((v) => v.id)).toEqual([sub]);

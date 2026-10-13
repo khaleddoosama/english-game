@@ -1,7 +1,7 @@
 // The library API in local mode mirrors the server (migration 0026): views
 // inside views, a word in several views, limits, and who owns what.
 import { beforeEach, describe, expect, it } from "vitest";
-import { createLocalLibraryApi, MAX_VIEWS, validViewName } from "../src/features/library/libraryApi.js";
+import { createLocalLibraryApi, MAX_VIEWS, senseFromCard, validViewName } from "../src/features/library/libraryApi.js";
 
 const memory = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)) }; };
 let storage, api;
@@ -208,5 +208,23 @@ describe("sharing a view (local mirror of migration 0029)", () => {
     await ann.share(top, ["b"]);
     for (let i = 0; i < MAX_VIEWS - 1; i++) await bob.create(`v${i}`);
     await bad(bob.accept((await bob.inbox())[0].id), /room for 2 more views/);
+  });
+});
+
+describe("a word of my own", () => {
+  it("a game card becomes the arguments of sense_create: columns apart, the rest as content", () => {
+    const card = { word: " Quokka ", type: "vocab", partsOfSpeech: ["noun"], category: "Animals", meaning: "A small marsupial", situation: "We saw one.", gap: "We saw a ______.", hints: ["Australia"], _aiAdded: true, _autoStub: false, level: "A1.1", extra: "", other: null };
+    expect(senseFromCard(card)).toEqual({ word: "Quokka", type: "vocab", pos: ["noun"], category: "Animals", meaning: "A small marsupial",
+      content: { situation: "We saw one.", gap: "We saw a ______.", hints: ["Australia"] }, source: "ai" });
+  });
+  it("defaults: a typed-in card is a user word, no parts of speech, vocab", () => {
+    expect(senseFromCard({ word: "x", meaning: "m" })).toMatchObject({ type: "vocab", pos: [], category: null, source: "user", content: {} });
+    expect(senseFromCard(null).word).toBe("");
+  });
+  it("local mode: it joins the library and says if it was already there", async () => {
+    const api = createLocalLibraryApi({ storage: memory(), me: () => "a" });
+    expect(await api.createWord({ word: "Quokka", meaning: "m" })).toEqual({ id: "Quokka", existing: false });
+    expect(await api.createWord({ word: "Quokka", meaning: "m" })).toEqual({ id: "Quokka", existing: true });
+    await expect(api.createWord({ word: "", meaning: "m" })).rejects.toThrow(/1 to 120/);
   });
 });
