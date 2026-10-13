@@ -182,3 +182,20 @@ describe("words the dictionary doesn't have yet", () => {
     expect(await api.contents(view.id, false)).toEqual([]);
   });
 });
+
+describe("a view with many items", () => {
+  it("shows rules that share a title as one chip with a count, and caps the word list", async () => {
+    const many = Array.from({ length: 70 }, (_, i) => ({ word: `Word${i}`, meaning: "m" }));
+    const rules = Array.from({ length: 5 }, (_, i) => ({ id: `g${i}`, rule: "Subject pronouns" })).concat([{ id: "g9", rule: "Articles" }]);
+    const mapIds = idsFromMaps(new Map(many.map((w) => [w.word, `s-${w.word}`])), new Map(rules.map((r) => [r.id, `r-${r.id}`])));
+    const view = await api.create("Big");
+    await api.add(view, many.map((w) => `s-${w.word}`));
+    await api.addRules(view, rules.map((r) => `r-${r.id}`));
+    await render({ words: many, grammar: rules, ids: mapIds });
+    await click($(".lib-tree .lib-name"));
+    expect($$(".lib-chips li:not(.rule)").length).toBe(60);
+    expect($$(".lib-chips li.rule").map((l) => l.textContent.trim()).sort()).toEqual(["Articles", "Subject pronouns ×5"]);
+    await click($(".lib-panel .lib-link"));
+    expect($$(".lib-chips li:not(.rule)").length).toBe(70);
+  });
+});

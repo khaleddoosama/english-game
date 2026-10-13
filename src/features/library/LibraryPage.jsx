@@ -4,6 +4,7 @@ import { navigate } from "../../lib/router";
 import { buildTree, flattenTree, matchPasted, moveTargets, searchWords } from "./libraryTree";
 import "../../styles/library.css";
 
+const SHOWN = 60;
 const count = (n, noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
 
 // My library: views (folders) that can sit inside each other, the words and
@@ -29,6 +30,7 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
   const [sure, setSure] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
+  const [showAll, setShowAll] = useState(false);
   const [inbox, setInbox] = useState([]);
   const [friends, setFriends] = useState(null);
   const [shareTo, setShareTo] = useState(() => new Set());
@@ -38,6 +40,12 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
   const roots = useMemo(() => buildTree(flat || []), [flat]);
   const rows = useMemo(() => flattenTree(roots), [roots]);
   const view = rows.find((v) => v.id === selected) || null;
+  // Rules that share a title (a set of questions on one topic) show as one chip with a count.
+  const ruleGroups = useMemo(() => {
+    const by = new Map();
+    for (const k of inside.rules) { const label = ruleByKey.get(k)?.rule || k; by.set(label, (by.get(label) || 0) + 1); }
+    return [...by];
+  }, [inside.rules, ruleByKey]);
 
   const loadTree = useCallback(async () => {
     try { setFlat(await api.tree()); } catch (e) { setNotice({ kind: "error", text: e.message }); setFlat([]); }
@@ -62,7 +70,7 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
       });
     } catch (e) { setNotice({ kind: "error", text: e.message }); }
   }, [api, ids, selected]);
-  useEffect(() => { loadInside(); setSure(false); setRename(null); setPicked(new Set()); setPasted(null); }, [loadInside]);
+  useEffect(() => { loadInside(); setSure(false); setRename(null); setPicked(new Set()); setPasted(null); setShowAll(false); }, [loadInside]);
 
   async function act(fn, okText) {
     setBusy(true); setNotice(null);
@@ -235,9 +243,10 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
           <h4 className="lib-sub">In this view</h4>
           {!inside.words.length && !inside.rules.length && <p className="ui-muted">Nothing yet. Add words below.</p>}
           <ul className="lib-chips">
-            {inside.words.map((k) => <li key={k}><span>{k}</span><button aria-label={`Take ${k} out`} onClick={() => act(() => api.drop(view.id, ids.senseOf(k)))}><X size={12} /></button></li>)}
-            {inside.rules.map((k) => <li key={k} className="rule"><span>{ruleByKey.get(k)?.rule || k}</span></li>)}
+            {(showAll ? inside.words : inside.words.slice(0, SHOWN)).map((k) => <li key={k}><span>{k}</span><button aria-label={`Take ${k} out`} onClick={() => act(() => api.drop(view.id, ids.senseOf(k)))}><X size={12} /></button></li>)}
+            {ruleGroups.map(([label, n]) => <li key={label} className="rule"><span>{label}{n > 1 ? ` ×${n}` : ""}</span></li>)}
           </ul>
+          {inside.words.length > SHOWN && <button className="lib-link" onClick={() => setShowAll((v) => !v)}>{showAll ? "Show fewer" : `Show all ${inside.words.length} words`}</button>}
 
           <h4 className="lib-sub">Add words</h4>
           <input className="lib-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by word or meaning" aria-label="Search words" />
