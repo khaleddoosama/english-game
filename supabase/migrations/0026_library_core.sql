@@ -44,12 +44,13 @@ create table public.senses (
   updated_at timestamptz not null default now(),
   check (visibility = 'public' or owner_id is not null),
   check (length(meaning) between 1 and 2000),
-  check (pg_column_size(content) < 60000)
+  check (pg_column_size(content) < 200000)
 );
 create index senses_headword_idx on public.senses (headword_id) where deleted_at is null;
 create index senses_owner_idx on public.senses (owner_id) where owner_id is not null;
 create index senses_level_idx on public.senses (course_level, category) where deleted_at is null;
 create unique index senses_legacy_idx on public.senses (legacy_key) where legacy_key is not null;
+create index senses_legacy_lower_idx on public.senses (lower(legacy_key)) where legacy_key is not null;
 -- Two meanings of one word never share a label.
 create unique index senses_label_idx on public.senses (headword_id, lower(coalesce(label, '')), coalesce(owner_id, '00000000-0000-0000-0000-000000000000'::uuid)) where deleted_at is null;
 
@@ -57,6 +58,8 @@ create table public.sense_links (
   from_sense uuid not null references public.senses (id),
   to_sense uuid not null references public.senses (id),
   kind text not null check (kind in ('antonym', 'synonym', 'confusable', 'never_together')),
+  origin text not null default 'sync',          -- 'sync' = derived from the old content; links made by hand never are
+  removed_at timestamptz,
   primary key (from_sense, to_sense, kind),
   check (from_sense <> to_sense)
 );
@@ -84,8 +87,10 @@ create table public.grammar_questions (
   position integer not null default 0,
   type text not null default 'choose' check (type in ('choose', 'judge', 'fix')),
   data jsonb not null,                          -- prompt, options, answer, explanation…
+  legacy_pos integer,                           -- the question's place in the old rule, while moving over
   deleted_at timestamptz
 );
+create unique index grammar_questions_legacy_idx on public.grammar_questions (rule_id, legacy_pos) where legacy_pos is not null;
 create index grammar_questions_rule_idx on public.grammar_questions (rule_id, position) where deleted_at is null;
 
 -- ---------------------------------------------------------------- views
@@ -197,7 +202,7 @@ create policy "everyone reads headwords" on public.headwords for select to authe
 create policy "players read public and their own senses" on public.senses for select to authenticated
   using (deleted_at is null and ((visibility = 'public' and review_status <> 'rejected') or owner_id = (select auth.uid())));
 create policy "players read links between senses they can see" on public.sense_links for select to authenticated
-  using (exists (select 1 from public.senses s where s.id = from_sense) and exists (select 1 from public.senses s where s.id = to_sense));
+  using (removed_at is null and exists (select 1 from public.senses s where s.id = from_sense) and exists (select 1 from public.senses s where s.id = to_sense));
 create policy "everyone reads grammar rules" on public.grammar_rules for select to authenticated using (deleted_at is null);
 create policy "everyone reads grammar questions" on public.grammar_questions for select to authenticated using (deleted_at is null);
 create policy "players read the course and their own views" on public.collections for select to authenticated
