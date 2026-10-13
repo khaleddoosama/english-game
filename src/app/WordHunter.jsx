@@ -15,6 +15,8 @@ import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsi
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
 import { getFriendsApi } from "../features/social/friendsApi";
+import { useLibrary } from "../features/library/useLibrary";
+import { scopeFromContents, scopeIsEmpty } from "../features/library/scope";
 import { useSocialCounts } from "../features/social/useSocialCounts";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
 import { importModeError, inspectImport, wordsCsv } from "../features/data/transfer";
@@ -40,6 +42,7 @@ const LiveChallenge = lazy(() => import("../features/live/LiveChallenge").then((
 const Leaderboard = lazy(() => import("../features/social/Leaderboard"));
 const ProfilePage = lazy(() => import("../features/social/ProfilePage"));
 const FriendsPage = lazy(() => import("../features/social/FriendsPage"));
+const LibraryPage = lazy(() => import("../features/library/LibraryPage"));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage"));
 const ImportExport = lazy(() => import("../features/data/ImportExport"));
 const StudyDashboard = lazy(() => import("../features/stats/StudyDashboard"));
@@ -60,6 +63,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   // Friends: the badges on the navigation (requests waiting, invitations waiting).
   const friendsApi = useMemo(() => getFriendsApi(() => livePlayer), [livePlayer]);
   const { counts: social, refresh: refreshSocial } = useSocialCounts(friendsApi, loaded);
+  // My library (views inside views); off until the dictionary has been moved to the new tables.
+  const library = useLibrary({ enabled: loaded, me: livePlayer.id, knownWord: (k) => WORDS.some((w) => w.word === k) });
   const [customCombos, setCustomCombos] = useState([]);
   const [customStories, setCustomStories] = useState([]);
   const [askAiOpen,setAskAiOpen]=useState(false);
@@ -1003,6 +1008,17 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     if (exhausted.length) triggerGeneration(exhausted.map((w) => ({ word: w.word, poolType: "gap" })), poolsRef.current);
     if (newWordsPerRound > baseNew && session.introductions.length > baseNew) setToast({ text: `Strong last round here — ${session.introductions.length} new words this time.` });
     launchSession(session);
+  }
+  // A round from one of my views (and, with deep, the views inside it).
+  async function startViewPractice(viewId, deep = true, name = "My view") {
+    if (library.status !== "ready") return;
+    try {
+      const rows = await library.api.contents(viewId, deep);
+      const scope = scopeFromContents(rows, { resolveKey: library.ids.keyOfSense, resolveRule: library.ids.keyOfRule });
+      if (scopeIsEmpty(scope)) { setToast({ text: "This view is empty. Add some words first." }); return; }
+      setCurrentLevelIndex(null);
+      startPractice(name, null, { title: name, scope }, (w) => scope.words.has(w.word));
+    } catch (e) { setToast({ text: e.message }); }
   }
   function startWeakReview() {
     const picked = weakCandidates.slice(0, settings.weakReviewSize);
@@ -2277,7 +2293,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         {screen === "data" && <Suspense fallback={<ScreenSkeleton />}><ImportExport variant="game" isAdmin={isAdmin} tools={dataTools} onBack={backToLevels} /></Suspense>}
         {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} /></Suspense>}
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} friendsApi={friendsApi} hiddenForPlayers={isAdmin && !app.leaderboard} /></Suspense>}
-        {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage social={social} onSignOut={onSignOut ? logOut : null} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
+        {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage social={social} libraryOn={library.status === "ready"} onSignOut={onSignOut ? logOut : null} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
+        {screen === "library" && library.status === "ready" && <Suspense fallback={<ScreenSkeleton />}><LibraryPage api={library.api} ids={library.ids} words={WORDS} grammar={GRAMMAR} levels={courseLevelGroups().levels} onPractice={startViewPractice} /></Suspense>}
         {screen === "friends" && <Suspense fallback={<ScreenSkeleton />}><FriendsPage api={friendsApi} onChanged={refreshSocial} local={friendsApi.mode === "local"} /></Suspense>}
 
         {screen === "speedResults" && (
@@ -2297,7 +2314,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           </div>
         )}
       </div>
-      {showNav && <BottomNav screen={screen === "friends" ? "profile" : screen} badges={{ live: social.invites, profile: social.requests }} isAdmin={isAdmin} showRanks={isAdmin || app.leaderboard} onNavigate={(id) => setScreen(id)} />}
+      {showNav && <BottomNav screen={screen === "friends" || screen === "library" ? "profile" : screen} badges={{ live: social.invites, profile: social.requests }} isAdmin={isAdmin} showRanks={isAdmin || app.leaderboard} onNavigate={(id) => setScreen(id)} />}
     </div>
   );
 }

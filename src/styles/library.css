@@ -1,0 +1,36 @@
+/* My library: views inside views. */
+.lib-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lib-notice { margin: 8px 0; padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--line); font-size: 14px; }
+.lib-notice.ok { color: var(--gold); }
+.lib-notice.error { color: #ff8a80; border-color: #ff8a80; }
+.lib-empty { padding: 12px 14px; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--text-dim); margin-bottom: 12px; }
+.lib-make { display: grid; gap: 8px; margin: 12px 0; }
+.lib-inline { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.lib input, .lib select, .lib textarea { background: var(--ink-soft); color: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; font: inherit; min-width: 0; }
+.lib-inline input { flex: 1 1 160px; }
+.lib .ui-row-btn { margin: 0; padding: 8px 10px; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; }
+.lib-tree { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 6px; }
+.lib-tree li { display: flex; align-items: center; gap: 8px; padding-left: calc(var(--depth) * 18px); }
+.lib-tree li.on .lib-name { border-color: var(--gold); }
+.lib-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; text-align: left; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 9px 10px; cursor: pointer; font: inherit; }
+.lib-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-name small { margin-left: auto; color: var(--text-dim); font: 11px var(--font-mono); white-space: nowrap; }
+.lib-chev { flex: none; transition: transform .15s; }
+.lib-tree li.on .lib-chev { transform: rotate(90deg); }
+.lib-panel { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: 10px; }
+.lib-path { margin: 0; font-size: 15px; color: var(--gold); overflow-wrap: anywhere; }
+.lib-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.lib-danger { border-color: #ff8a80; color: #ff8a80; }
+.lib-sub { margin: 4px 0 0; font-size: 13px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; }
+.lib-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.lib-chips li { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; }
+.lib-chips li.rule { border-style: dashed; }
+.lib-chips button { background: none; border: 0; color: var(--text-dim); cursor: pointer; padding: 2px; display: inline-flex; }
+.lib-search { width: 100%; box-sizing: border-box; }
+.lib-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 260px; overflow: auto; }
+.lib-results label, .lib-checked label { display: flex; gap: 8px; align-items: baseline; padding: 4px 2px; cursor: pointer; }
+.lib-results small, .lib-checked small { color: var(--text-dim); overflow-wrap: anywhere; }
+.lib-paste summary { cursor: pointer; color: var(--gold); }
+.lib-paste textarea { width: 100%; box-sizing: border-box; margin: 8px 0; }
+.lib-checked fieldset { border: 1px solid var(--line); border-radius: var(--radius); margin: 8px 0; padding: 6px 10px; }
+@media (max-width: 480px) { .lib-tree li { flex-wrap: wrap; } .lib-go { margin-left: calc(var(--depth) * 0px); } }
