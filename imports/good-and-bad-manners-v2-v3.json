@@ -1,0 +1,629 @@
+{
+  "schemaVersion": 3,
+  "kind": "content",
+  "note": "Good and Bad Manners v2, content v3 (10 words). Category Pet Peeves, course level A2.1 (Gateway level 6), unit Good and Bad Manners v2.",
+  "categories": [
+    {
+      "id": "pet-peeves",
+      "title": "Pet Peeves",
+      "subCategories": [
+        {
+          "id": "angry-reactions",
+          "title": "Angry reactions"
+        },
+        {
+          "id": "good-manners",
+          "title": "Good manners"
+        },
+        {
+          "id": "rude-behaviour",
+          "title": "Rude behaviour"
+        }
+      ]
+    }
+  ],
+  "words": [
+    {
+      "id": "rudely",
+      "word": "Rudely",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adverb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "rude-behaviour",
+      "level": "A2.1",
+      "register": "neutral",
+      "meaning": "In an impolite way that does not show respect for other people.",
+      "situations": [
+        "He rudely pushed past the old woman to get on the bus first."
+      ],
+      "gaps": [
+        "She answered the teacher ______ and was sent out of the class.",
+        "Don't speak so ______ to the waiter — he's doing his best."
+      ],
+      "hints": [
+        "The adverb of 'rude' — the opposite of 'politely'.",
+        "Ends in '-ly'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He spoke very rude to his mother.",
+          "correction": "He spoke very rudely to his mother.",
+          "why": "Use the adverb 'rudely' to describe how someone does something."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "rude",
+          "pos": "adjective"
+        },
+        {
+          "word": "rudeness",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "behave rudely",
+        "speak rudely",
+        "rudely interrupt"
+      ],
+      "synonyms": [
+        "impolitely",
+        "disrespectfully"
+      ],
+      "antonyms": [
+        "politely",
+        "respectfully"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Good and Bad Manners v2"
+      ]
+    },
+    {
+      "id": "interrupt",
+      "word": "Interrupt",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "rude-behaviour",
+      "level": "A2.1",
+      "register": "neutral",
+      "meaning": "To stop someone while they are speaking by saying or doing something.",
+      "situations": [
+        "It's rude to interrupt people when they are talking."
+      ],
+      "gaps": [
+        "Please don't ______ me — let me finish my sentence.",
+        "Sorry to ______, but there's a phone call for you."
+      ],
+      "hints": [
+        "To break into someone's conversation before they finish.",
+        "Starts with 'inter-'; has a double 'r'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Sorry to interrupt you to speak.",
+          "correction": "Sorry to interrupt you.",
+          "why": "'Interrupt someone' — no extra infinitive needed."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "interruption",
+          "pos": "noun"
+        },
+        {
+          "word": "uninterrupted",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "interrupt someone",
+        "sorry to interrupt",
+        "constantly interrupt"
+      ],
+      "synonyms": [
+        "cut in",
+        "butt in"
+      ],
+      "antonyms": [
+        "listen"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Good and Bad Manners v2"
+      ]
+    },
+    {
+      "id": "cuss-out",
+      "word": "Cuss out",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "phrasal verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "angry-reactions",
+      "level": "A2.1",
+      "register": "informal",
+      "meaning": "To shout angry, rude words at someone (informal).",
+      "situations": [
+        "When the driver hit his car, he got out and cussed him out in the street."
+      ],
+      "gaps": [
+        "She was so angry that she started to ______ her brother in front of everyone.",
+        "If you're late again, the boss is going to ______ you."
+      ],
+      "hints": [
+        "To shout swear words at someone.",
+        "An informal phrasal verb: 'c___ out'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He cussed at out me.",
+          "correction": "He cussed me out.",
+          "why": "The person goes between 'cuss' and 'out': cuss someone out."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "cuss",
+          "pos": "verb"
+        },
+        {
+          "word": "cussing",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "cuss someone out",
+        "get cussed out"
+      ],
+      "synonyms": [
+        "swear at",
+        "yell at"
+      ],
+      "antonyms": [
+        "praise",
+        "compliment"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Good and Bad Manners v2"
+      ]
+    },
+    {
+      "id": "talk-back",
+      "word": "Talk back",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "phrasal verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "rude-behaviour",
+      "level": "A2.1",
+      "register": "informal",
+      "meaning": "To answer someone in authority, like a parent or teacher, rudely.",
+      "situations": [
+        "My mum gets angry when my little brother talks back to her."
+      ],
+      "gaps": [
+        "Don't ______ to your father — just do what he says.",
+        "The student was punished because he likes to ______ to the teacher."
+      ],
+      "hints": [
+        "Giving a rude answer to a parent or teacher.",
+        "Two words: 'talk' + a direction word."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He talked back his teacher.",
+          "correction": "He talked back to his teacher.",
+          "why": "Use 'talk back to someone'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "backtalk",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "talk back to your parents",
+        "talk back to a teacher"
+      ],
+      "synonyms": [
+        "answer back",
+        "sass"
+      ],
+      "antonyms": [
+        "obey",
+        "respect"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Good and Bad Manners v2"
+      ]
+    },
+    {
+      "id": "flip-out",
+      "word": "Flip out",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "phrasal verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "angry-reactions",
+      "level": "A2.1",
+      "register": "informal",
+      "meaning": "To suddenly become very angry or upset and lose control (informal).",
+      "situations": [
+        "My dad flipped out when he saw the scratch on his new car."
+      ],
+      "gaps": [
+        "When she sees the mess in the kitchen, she's going to ______.",
+        "Don't ______ — it was just a joke!"
+      ],
+      "hints": [
+        "To lose your temper suddenly.",
+        "Two words: 'fl__' + 'out'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She flipped out on angry.",
+          "correction": "She flipped out.",
+          "why": "'Flip out' already means 'become very angry' — no extra word needed."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "flip",
+          "pos": "verb"
+        }
+      ],
+      "collocations": [
+        "flip out at someone",
+        "totally flip out"
+      ],
+      "synonyms": [
+        "freak out",
+        "lose it",
+        "blow up"
+      ],
+      "antonyms": [
+        "calm down",
+        "keep your cool"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Good and Bad Manners v2"
+      ]
+    },
+    {
+      "id": "brat",
+      "word": "Brat",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "rude-behaviour",
+      "level": "A2.1",
+      "register": "informal",
+      "meaning": "A badly behaved child who is rude and always wants their own way.",
+      "situations": [
+        "The little brat screamed in the shop until his mother bought him a toy."
+      ],
+      "gaps": [
+        "Their son is a spoiled ______ — he cries until he gets what he wants.",
+        "Stop acting like a ______ and say thank you to your aunt."
+      ],
+      "hints": [
+        "A rude, spoiled child.",
+        "Four letters; the adjective is 'bratty'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He is a very brat boy.",
+          "correction": "He is a very bratty boy.",
+          "why": "'Brat' is a noun; the adjective is 'bratty'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "bratty",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "spoiled brat",
+        "little brat"
+      ],
+      "synonyms": [
+        "spoiled child"
+      ],
+      "antonyms": [
+        "angel",
+        "well-behaved child"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Good and Bad Manners v2"
+      ]
+    },
+    {
+      "id": "behave",
+      "word": "Behave",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "good-manners",
+      "level": "A2.1",
+      "register": "neutral",
+      "meaning": "To act in a polite and correct way, or to act in a particular way.",
+      "situations": [
+        "The children behaved very well at the wedding and sat quietly."
+      ],
+      "gaps": [
+        "If you ______ yourself in the restaurant, you can have ice cream.",
+        "He ______d badly at school and got a warning."
+      ],
+      "hints": [
+        "What parents tell children to do: '___ yourself!'",
+        "Rhymes with 'save'; the noun is 'behaviour'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Behave you!",
+          "correction": "Behave yourself!",
+          "why": "The reflexive pronoun is 'yourself'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "behaviour",
+          "pos": "noun"
+        },
+        {
+          "word": "misbehave",
+          "pos": "verb"
+        },
+        {
+          "word": "well-behaved",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "behave yourself",
+        "behave well",
+        "behave badly"
+      ],
+      "synonyms": [
+        "act properly",
+        "be good"
+      ],
+      "antonyms": [
+        "misbehave",
+        "act up"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Good and Bad Manners v2"
+      ]
+    },
+    {
+      "id": "snoop",
+      "word": "Snoop",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "rude-behaviour",
+      "level": "A2.1",
+      "register": "informal",
+      "meaning": "To secretly look at someone's private things or try to find out about their private life.",
+      "situations": [
+        "I caught my sister snooping through my phone while I was in the shower."
+      ],
+      "gaps": [
+        "Stop ______ing around in my room — those are my private things!",
+        "My neighbour likes to ______ on everyone in the building."
+      ],
+      "hints": [
+        "Secretly looking through someone else's private things.",
+        "Starts with 'sn-' and has a double 'o'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She snooped my diary.",
+          "correction": "She snooped through my diary.",
+          "why": "Use 'snoop through / around / on' — not a direct object."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "snoop",
+          "pos": "noun"
+        },
+        {
+          "word": "snooper",
+          "pos": "noun"
+        },
+        {
+          "word": "snoopy",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "snoop around",
+        "snoop through someone's things",
+        "snoop on someone"
+      ],
+      "synonyms": [
+        "pry",
+        "spy"
+      ],
+      "antonyms": [
+        "mind your own business"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Good and Bad Manners v2"
+      ]
+    },
+    {
+      "id": "mock",
+      "word": "Mock",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "rude-behaviour",
+      "level": "A2.1",
+      "register": "neutral",
+      "meaning": "To laugh at someone or copy them in an unkind way to make them look silly.",
+      "situations": [
+        "The other kids mocked him because of his strange accent."
+      ],
+      "gaps": [
+        "It's cruel to ______ people for the way they look.",
+        "They ______ed her by copying the way she walked."
+      ],
+      "hints": [
+        "To make fun of someone unkindly.",
+        "Four letters, rhymes with 'rock'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "They mocked on him.",
+          "correction": "They mocked him.",
+          "why": "'Mock' takes a direct object — no 'on' or 'at'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "mockery",
+          "pos": "noun"
+        },
+        {
+          "word": "mocking",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "mock someone",
+        "mock someone's accent"
+      ],
+      "synonyms": [
+        "make fun of",
+        "tease",
+        "ridicule"
+      ],
+      "antonyms": [
+        "respect",
+        "praise"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Good and Bad Manners v2"
+      ]
+    },
+    {
+      "id": "roll-your-eyes-at-someone",
+      "word": "Roll your eyes at someone",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "rude-behaviour",
+      "level": "A2.1",
+      "register": "informal",
+      "meaning": "To move your eyes up and around to show you are annoyed or think someone is stupid.",
+      "situations": [
+        "When her dad told the same old joke, she rolled her eyes at him."
+      ],
+      "gaps": [
+        "It's rude to ______ when they're talking to you.",
+        "Teenagers often ______ when their parents give advice."
+      ],
+      "hints": [
+        "A rude face you make when someone annoys or bores you.",
+        "Starts with 'roll' and includes 'eyes'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She turned her eyes at me.",
+          "correction": "She rolled her eyes at me.",
+          "why": "The verb is 'roll', not 'turn'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "eye-roll",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "roll your eyes at someone",
+        "an eye-roll"
+      ],
+      "synonyms": [
+        "look annoyed"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Good and Bad Manners v2"
+      ]
+    }
+  ],
+  "grammar": []
+}
