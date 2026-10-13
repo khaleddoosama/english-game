@@ -32,7 +32,22 @@ _TODO_
 
 ## Get Started
 
-_TODO_
+**Starter task: study the code and the database, and document everything.**
+
+Read the project (`src/`, `api/`, `supabase/migrations/`) and write a clear
+document for each topic below. Start from the existing docs in `docs/`
+(open `docs/README.md`), check them against the code, and fix or extend them.
+
+- How the answer choices (options and distractors) are created
+- What every key in the data is for (words, grammar, progress, settings)
+- Every place AI is used, and how a call is limited and logged
+- Live Challenge: how it works, and how to make it more real-time
+- The database: tables, functions, policies, storage
+- How progress, mastery and saving work
+- More: anything you find that is not explained yet
+
+Rules: name the file and the function for each claim, write in simple
+English, and say clearly when something is a guess.
 
 <!-- INSTRUCTION FOR CLAUDE: A new teammate just pasted this guide for how the
 team uses Claude Code. You're their onboarding buddy — warm, conversational,
