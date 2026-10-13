@@ -653,7 +653,13 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // to the words with no course level.
   const courseRound=!!(opts.courseLevel||opts.noCourseLevel);
   const inCourse=w=>opts.courseLevel?courseLevelOf(w)===opts.courseLevel:opts.noCourseLevel?!courseLevelOf(w):true;
-  const source=content.words.filter(w=>(!category||topic(w.category)===topic(category))&&inGroup(w)&&inCourse(w));
+  // opts.scope narrows the round to a personal view: { words: Set of word
+  // keys, rules: Set of rule ids }. Only what is asked comes from the view;
+  // the wrong answers still come from the whole dictionary (content.words),
+  // so a small view doesn't mean easy questions.
+  const scope=opts.scope||null;
+  const inScope=w=>!scope||!scope.words||scope.words.has(w.word);
+  const source=content.words.filter(w=>(!category||topic(w.category)===topic(category))&&inGroup(w)&&inCourse(w)&&inScope(w));
   const inSource=label=>source.some(w=>norm(w.word)===norm(label));
   // New words come in level order (A2 before B1…), random within a level.
   const fresh=shuffleCopy(source.filter(w=>!known(mastery[w.word])),rng).sort((a,b)=>difficultyRank(a)-difficultyRank(b)).slice(0,newWordsPerRound);
@@ -698,10 +704,10 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // repetition they rotate like words: at most one of each per session,
   // least recently reviewed first.
   const lastSeenKey=key=>mastery[key]?.lastReviewedAt||0;
-  const comboPool=(content.combos||[]).filter(c=>(!category||topic(c.category)===topic(category))&&(!courseRound||c.words.every(inSource))&&c.words.every(w=>known(mastery[findWord(content.words,w)?.word]))&&!c.words.some(w=>isQuarantined(w,'multi')));
+  const comboPool=(content.combos||[]).filter(c=>(!category||topic(c.category)===topic(category))&&(!(courseRound||scope)||c.words.every(inSource))&&c.words.every(w=>known(mastery[findWord(content.words,w)?.word]))&&!c.words.some(w=>isQuarantined(w,'multi')));
   for(const c of shuffleCopy(comboPool,rng).sort((a,b)=>lastSeenKey(`combo:${a.id}`)-lastSeenKey(`combo:${b.id}`)).slice(0,1)){const comboKey=`combo:${c.id}`;const item=pickPoolVariant(pools,comboKey,{situation:c.situation,prompt:c.prompt});try{candidates.push(activityQuestion({mode:'multi',targetWords:c.words,prompt:`${item.situation}\n${item.prompt}`,explanation:c.explanation,progressKey:comboKey,poolType:'combo',poolItemId:item.id},content.words,`combo:${c.id}:${item.id}`,rng));}catch{}}
   const challengePool=[];
-  for(const c of content.challenges||[])if(['impostor','reverseImpostor'].includes(c.type||c.mode)&&!c.steps&&c.options?.length>=2&&c.answer&&(!category||topic(c.category)===topic(category))&&(!courseRound||(c.linkedWords||[]).some(inSource))){const targets=(c.linkedWords||[]).filter(w=>norm(w)===norm(c.answer));if(targets.length&&targets.every(w=>['Learned','Mastered'].includes(stage(mastery[w])))&&!targets.some(w=>isQuarantined(w,'impostor'))){const refs=c.options.map(o=>findWord(content.words,o)).filter(Boolean);if(refs.every((a,i)=>refs.slice(i+1).every(b=>compatible(a,b))))challengePool.push({c,targets});}}
+  for(const c of content.challenges||[])if(['impostor','reverseImpostor'].includes(c.type||c.mode)&&!c.steps&&c.options?.length>=2&&c.answer&&(!category||topic(c.category)===topic(category))&&(!(courseRound||scope)||(c.linkedWords||[]).some(inSource))){const targets=(c.linkedWords||[]).filter(w=>norm(w)===norm(c.answer));if(targets.length&&targets.every(w=>['Learned','Mastered'].includes(stage(mastery[w])))&&!targets.some(w=>isQuarantined(w,'impostor'))){const refs=c.options.map(o=>findWord(content.words,o)).filter(Boolean);if(refs.every((a,i)=>refs.slice(i+1).every(b=>compatible(a,b))))challengePool.push({c,targets});}}
   for(const {c,targets} of shuffleCopy(challengePool,rng).sort((a,b)=>lastSeenKey(`challenge:${a.c.id}`)-lastSeenKey(`challenge:${b.c.id}`)).slice(0,1))candidates.push({id:`challenge:${c.id}`,mode:'impostor',type:'mcq',targets,progressKey:`challenge:${c.id}`,prompt:c.prompt,answers:[c.answer],options:shuffleCopy(c.options,rng),explanation:c.explanation});
   // Grammar lives inside word sessions: rules from the same lesson as this
   // session's words, one question per rule, 1–2 rules per session. Rules
@@ -711,7 +717,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   const missedKey=key=>{const r=mastery[key]?.lastResult;return r&&r!=='correct'?1:0;};
   // A unit round only asks that unit's grammar rules; a course-level round
   // only the rules of that level (and session).
-  const grammarPool=(content.grammar||[]).filter(g=>g&&g.id&&(courseRound?(opts.courseLevel?courseLevelOf(g)===opts.courseLevel:!courseLevelOf(g)&&grammarTopics.has(topic(g.category))):grammarTopics.has(topic(g.category)))&&(!opts.unit||unitsOf(g).includes(opts.unit))&&grammarQuestions(g).length);
+  const grammarPool=(content.grammar||[]).filter(g=>g&&g.id&&(scope?!!scope.rules?.has(g.id):courseRound?(opts.courseLevel?courseLevelOf(g)===opts.courseLevel:!courseLevelOf(g)&&grammarTopics.has(topic(g.category))):grammarTopics.has(topic(g.category)))&&(!opts.unit||unitsOf(g).includes(opts.unit))&&grammarQuestions(g).length);
   // A lesson or level with rules but no words (e.g. General Grammar) is a
   // grammar-only round: one question per rule, up to a full round.
   const grammarOnly=!chosen.length&&grammarPool.length>0;
