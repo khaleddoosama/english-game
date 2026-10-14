@@ -188,9 +188,10 @@ Two things, on purpose:
   view. Adding to a view starts from the library (or the whole dictionary, which
   also adds to the library).
 
-Home shows three views: **Gateway** (the course levels and their sessions, the
-default for a new player), **By lesson** (each lesson, with its units), and
-**My views**. Gateway and By lesson are built from the content for everyone;
+Home shows three views: **By lesson** (each lesson, with its units; the default for a new
+player), **My views** (each view as the same kind of card, with its progress), and
+**Gateway** (the course levels and their sessions; the owner's own view, shown to
+the admin only). Gateway and By lesson are built from the content for everyone;
 nothing is copied per player. My views on Home is read only (browse and practise);
 the pencil on a view and the **+** open the library page to edit, delete or make
 one. There, words are picked from lists with search, lesson and level filters,

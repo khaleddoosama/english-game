@@ -30,7 +30,8 @@ describe("MyViewsHome", () => {
     const top = await api.create("A1.1"); await api.create("sports", top);
     await api.add(top, ["w1"]);
     await render();
-    expect($$(".lib-readonly li").map((li) => li.textContent.replace(/\s+/g, " ").trim())).toEqual(expect.arrayContaining([expect.stringContaining("A1.1"), expect.stringContaining("sports")]));
+    expect($$(".lib-readonly .wh-level-card").map((li) => li.textContent.replace(/\s+/g, " ").trim())).toEqual(expect.arrayContaining([expect.stringContaining("A1.1"), expect.stringContaining("sports")]));
+    expect($(".lib-readonly").textContent).toContain("0 mastered · 0 learned · 0 familiar · 0 new");   // the same card as the lessons
     expect($$("input, textarea, select").length).toBe(0);
     expect($$("button").map((b) => b.textContent.trim()).filter((t) => /Remove|Rename|Move|Create|Add|Share/.test(t))).toEqual([]);
   });

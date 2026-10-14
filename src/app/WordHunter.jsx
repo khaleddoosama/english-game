@@ -190,7 +190,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   }, [library]);
   useEffect(() => { refreshLibraryInbox(); }, [refreshLibraryInbox, screen]);
   // Home shows one view at a time; My views needs the library, so without it Gateway shows.
-  const homeView = settings.levelView === "mine" && library.status !== "ready" ? "course" : settings.levelView;
+  // Gateway is the owner's own view (the admin's); everyone else starts on By lesson.
+  const homeView = (settings.levelView === "mine" && library.status !== "ready") || (settings.levelView === "course" && !isAdmin) ? "lesson" : settings.levelView;
   function launchSession(session) { setActiveSession(session); setScreen("session"); }
   // One extra question style per word for Level Practice, built with the
   // adaptive-engine builders and converted to the V2 question shape.
@@ -1840,7 +1841,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
         {screen === "levels" && section === "practice" && (LEVELS.length > 0 || library.status === "ready") && (
           <div className="wh-level-view-toggle" role="group" aria-label="Show views">
-            {[["course", "Gateway"], ["lesson", "By lesson"], ...(library.status === "ready" ? [["mine", "My views"]] : [])].map(([id, label]) => (
+            {[...(isAdmin ? [["course", "Gateway"]] : []), ["lesson", "By lesson"], ...(library.status === "ready" ? [["mine", "My views"]] : [])].map(([id, label]) => (
               <button key={id} className={homeView === id ? "active" : ""} aria-pressed={homeView === id} onClick={() => setSettings((prev) => ({ ...prev, levelView: id }))}>{label}</button>
             ))}
           </div>
@@ -1895,7 +1896,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         {/* My views: read only. Editing happens in the library page (Profile › My library). */}
         {screen === "levels" && section === "practice" && homeView === "mine" && library.status === "ready" && (
           <Suspense fallback={<ScreenSkeleton />}>
-            <MyViewsHome api={library.api} offers={libraryInbox} onPractice={startViewPractice} />
+            <MyViewsHome api={library.api} offers={libraryInbox} onPractice={startViewPractice} ids={library.ids} mastery={mastery} words={WORDS} grammar={GRAMMAR} />
           </Suspense>
         )}
 
@@ -2288,7 +2289,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
         {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge player={livePlayer} friendsApi={friendsApi} onSocialChanged={refreshSocial} library={library.status === "ready" ? library : null} levels={LEVELS} code={route.code} sound={settings.sound} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} limits={{ maxPlayers: isAdmin ? 10 : app.liveMaxPlayers, canCreate: isAdmin || app.liveCreate !== "admin", defaultCount: settings.liveQuestions ?? app.liveDefaultQuestions, defaultSeconds: settings.liveSeconds ?? app.liveDefaultSeconds, maxHours: isAdmin ? 168 : app.liveMaxHours }} /></Suspense>}
         {screen === "data" && <Suspense fallback={<ScreenSkeleton />}><ImportExport variant="game" isAdmin={isAdmin} tools={dataTools} onBack={backToLevels} /></Suspense>}
-        {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} /></Suspense>}
+        {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} isAdmin={isAdmin} /></Suspense>}
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} friendsApi={friendsApi} hiddenForPlayers={isAdmin && !app.leaderboard} /></Suspense>}
         {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage social={social} libraryOn={library.status === "ready"} libraryInbox={libraryInbox} onSignOut={onSignOut ? logOut : null} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
         {screen === "join" && (library.status === "ready"

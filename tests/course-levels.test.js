@@ -120,8 +120,8 @@ describe("editing and importing", () => {
   });
 
   it("home opens on Gateway (the course levels) unless the player chose another view", () => {
-    expect(normalizeSettings({}).levelView).toBe("course");
-    expect(normalizeSettings({ levelView: "nonsense" }).levelView).toBe("course");
+    expect(normalizeSettings({}).levelView).toBe("lesson");
+    expect(normalizeSettings({ levelView: "nonsense" }).levelView).toBe("lesson");
     expect(normalizeSettings({ levelView: "lesson" }).levelView).toBe("lesson");
     expect(normalizeSettings({ levelView: "mine" }).levelView).toBe("mine");
   });

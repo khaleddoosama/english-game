@@ -115,7 +115,7 @@ export const SCHEMA_VERSION = 6;
 // Kept small and additive so old saves without a `settings` block just
 // fall back to these defaults.
 export const DEFAULT_SETTINGS = {
-  questionsPerRound: 12, newWordsPerRound: 3, weakReviewSize: 8, enablePairModes: true, sound: true, dailyGoal: 20, levelView: "course",
+  questionsPerRound: 12, newWordsPerRound: 3, weakReviewSize: 8, enablePairModes: true, sound: true, dailyGoal: 20, levelView: "lesson",
   // Play: auto-advance after a right answer (ms, 0 = off), hints, the word
   // read aloud after answering, Speed Round length.
   autoAdvanceMs: 0, hints: true, speakWord: false, speedSeconds: 60,
@@ -139,7 +139,7 @@ export function normalizeSettings(raw) {
     enablePairModes: s.enablePairModes !== false,
     sound: s.sound !== false,
     dailyGoal: Math.max(5, Math.min(100, Number(s.dailyGoal) || DEFAULT_SETTINGS.dailyGoal)),
-    // Home shows one of three views: Gateway (the course levels, the default), By lesson, or My views.
+    // Home shows one of three views: By lesson (the default), My views, or Gateway (the owner's own course view).
     // The old "By unit" view lives inside By lesson now.
     levelView: ["course", "lesson", "mine"].includes(s.levelView) ? s.levelView : s.levelView === "group" ? "lesson" : DEFAULT_SETTINGS.levelView,
     autoAdvanceMs: AUTO_ADVANCE_OPTIONS.includes(Number(s.autoAdvanceMs)) ? Number(s.autoAdvanceMs) : DEFAULT_SETTINGS.autoAdvanceMs,
