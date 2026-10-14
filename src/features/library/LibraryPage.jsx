@@ -89,12 +89,12 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
             </div>
           )}
           <CreateViews api={api} ids={ids} levels={levels} busy={lib.busy} act={lib.act} onCreated={lib.select} autoFocus={start.new === "1"} parent={newParent} />
-          <ViewTree rows={lib.rows} selected={lib.view?.id} onSelect={lib.select} onPractice={onPractice} />
-          {lib.view && (
-            <ViewPanel key={lib.view.id} view={lib.view} roots={lib.roots} inside={lib.inside} libraryKeys={libraryKeys} api={api} ids={ids} words={words} wordByKey={wordByKey} ruleByKey={ruleByKey}
-              friendsApi={friendsApi} busy={lib.busy} act={lib.act} setNotice={lib.setNotice} onPractice={onPractice} onCreated={lib.select} onRemoved={() => lib.select(null)}
-              onRefreshIds={onRefreshIds} onAskWord={onAskWord} />
-          )}
+          <ViewTree rows={lib.rows} selected={lib.view?.id} onSelect={lib.select} onPractice={onPractice}
+            panel={lib.view && (
+              <ViewPanel key={lib.view.id} view={lib.view} roots={lib.roots} inside={lib.inside} libraryKeys={libraryKeys} api={api} ids={ids} words={words} wordByKey={wordByKey} ruleByKey={ruleByKey}
+                friendsApi={friendsApi} busy={lib.busy} act={lib.act} setNotice={lib.setNotice} onPractice={onPractice} onCreated={lib.select} onRemoved={() => lib.select(null)}
+                onRefreshIds={onRefreshIds} onAskWord={onAskWord} />
+            )} />
         </>
       )}
     </section>

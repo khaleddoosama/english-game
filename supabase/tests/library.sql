@@ -132,6 +132,10 @@ begin
   j := public.view_tree();
   perform pg_temp.must(jsonb_array_length(j) = 6, 'six views in the tree (' || jsonb_array_length(j) || ')');
   perform pg_temp.must((select (e->>'words')::int from jsonb_array_elements(j) e where e->>'path' = 'A1.1::movies::horror') = 1, 'the tree counts the words in each view');
+  -- …and, for each view, everything in it and the views inside it (each word once)
+  perform pg_temp.must((select (e->>'deep_words')::int from jsonb_array_elements(j) e where e->>'path' = 'A1.1') = (select count(distinct id) from public.view_contents(v_top, true) where kind = 'sense'), 'deep word count of a view with views inside');
+  perform pg_temp.must((select (e->>'deep_rules')::int from jsonb_array_elements(j) e where e->>'path' = 'A1.1') = (select count(distinct id) from public.view_contents(v_top, true) where kind = 'rule'), 'deep rule count of a view with views inside');
+  perform pg_temp.must((select (e->>'deep_words')::int from jsonb_array_elements(j) e where e->>'path' = 'A1.1') >= (select (e->>'words')::int from jsonb_array_elements(j) e where e->>'path' = 'A1.1'), 'deep is never less than direct');
   reset role;
 
   -- ----------------------------------------------------- b cannot touch a's views

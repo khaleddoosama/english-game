@@ -16,7 +16,11 @@
 .lib-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lib-name small { margin-left: auto; color: var(--text-dim); font: 11px var(--font-mono); white-space: nowrap; }
 .lib-chev { flex: none; transition: transform .15s; }
-.lib-tree li.on .lib-chev { transform: rotate(90deg); }
+.lib-chev.down { transform: rotate(90deg); }
+.lib-tree li { flex-wrap: wrap; }
+.lib-fold { flex: none; width: 28px; height: 34px; display: grid; place-items: center; background: none; border: 0; color: var(--paper); cursor: pointer; }
+.lib-fold-gap { flex: none; width: 28px; }
+.lib-inline-panel { flex: 1 1 100%; margin-top: 2px; }
 .lib-panel { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: 10px; }
 .lib-path { margin: 0; font-size: 15px; color: var(--gold); overflow-wrap: anywhere; }
 .lib-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }

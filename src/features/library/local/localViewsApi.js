@@ -1,6 +1,6 @@
 // Making, renaming, moving and removing views, and what is inside them.
 import { MAX_DEPTH, MAX_PER_CALL, MAX_VIEWS, MSG, cleanViewName, validViewName } from "../libraryRules";
-import { activeKeys, depthOf, descendantIds, findView, heightBelow, liveViews, nameTaken, pathFor, summaryOf } from "./localViews";
+import { activeKeys, depthOf, descendantIds, findView, heightBelow, liveViews, nameTaken, pathFor, summaryOf, deepSummary } from "./localViews";
 
 export function createLocalViewsApi(ctx) {
   const { load, save, fail, now } = ctx;
@@ -23,8 +23,9 @@ export function createLocalViewsApi(ctx) {
   };
   return {
     async tree() {
-      return liveViews(load())
-        .map((v) => ({ id: v.id, parent: v.parent || null, name: v.name, path: v.path, position: v.position, source: v.source || null, ...summaryOf(v) }))
+      const db = load();
+      return liveViews(db)
+        .map((v) => ({ id: v.id, parent: v.parent || null, name: v.name, path: v.path, position: v.position, source: v.source || null, ...summaryOf(v), deep_words: deepSummary(db, v).words, deep_rules: deepSummary(db, v).rules }))
         .sort((a, b) => (a.path < b.path ? -1 : 1));
     },
     async create(name, parent = null, source = null) {

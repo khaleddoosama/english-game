@@ -43,11 +43,11 @@ describe("LibraryPage", () => {
     expect($(".lib-empty")).toBeTruthy();
     await type($('input[aria-label="New view name"]'), "A1.1");
     await click(buttonWith("Create"));
-    expect($$(".lib-tree li").length).toBe(1);
+    expect($$(".lib-tree > li").length).toBe(1);
     expect($(".lib-empty")).toBeNull();
     await type($('input[aria-label="New view inside"]'), "movies");
     await click(buttonWith("Add"));
-    expect($$(".lib-tree li").length).toBe(2);
+    expect($$(".lib-tree > li").length).toBe(2);
     expect($(".lib-path").textContent).toContain("A1.1 › movies");
   });
 
@@ -61,6 +61,22 @@ describe("LibraryPage", () => {
     const tree = await api.tree();
     expect(tree.find((v) => v.name === "Articles").parent).toBe(top);
     window.history.replaceState({}, "", "/");
+  });
+
+  it("the tree shows each view's whole size, the arrow folds what is inside, and the panel opens under its row", async () => {
+    const top = await api.create("Gateway"); const lvl = await api.create("A1.1", top); const s1 = await api.create("Articles", lvl); const s2 = await api.create("Pronouns", lvl);
+    await api.add(s1, ["sense-0", "sense-1"]); await api.add(s2, ["sense-1", "sense-3"]);
+    await render(); await flush();
+    const row = (name) => $$(".lib-tree > li").find((li) => li.querySelector("b").textContent === name);
+    expect(row("Gateway").querySelector("small").textContent).toBe("3 words · 0 rules");        // 3 different words, not 4
+    expect(row("Articles").querySelector("small").textContent).toBe("2 words · 0 rules");
+    expect($$(".lib-tree > li").length).toBe(4);
+    await click(row("A1.1").querySelector(".lib-fold"));
+    expect($$(".lib-tree > li").map((li) => li.querySelector("b").textContent)).toEqual(["Gateway", "A1.1"]);   // Articles and Pronouns are folded away
+    await click(row("A1.1").querySelector(".lib-fold"));
+    expect($$(".lib-tree > li").length).toBe(4);
+    await click(row("Articles").querySelector(".lib-name"));
+    expect(row("Articles").querySelector(".lib-panel")).toBeTruthy();                           // the panel is inside its row
   });
 
   it("puts words in by search and shows them by their text, while the API holds server ids", async () => {
@@ -107,9 +123,9 @@ describe("LibraryPage", () => {
     await render();
     await type($('input[aria-label="New view name"]'), "V"); await click(buttonWith("Create"));
     await click(buttonWith("Remove"));
-    expect($$(".lib-tree li").length).toBe(1);                     // first tap only asks
+    expect($$(".lib-tree > li").length).toBe(1);                     // first tap only asks
     await click(buttonWith("Tap again"));
-    expect($$(".lib-tree li").length).toBe(0);
+    expect($$(".lib-tree > li").length).toBe(0);
   });
 
   it("an error from the API is shown, not swallowed", async () => {
