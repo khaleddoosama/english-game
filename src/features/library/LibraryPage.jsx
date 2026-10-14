@@ -23,6 +23,7 @@ import "../../styles/library.css";
 export default function LibraryPage({ api, ids, words, grammar, levels = [], friendsApi = null, onPractice, onInboxChanged, onAskWord = null, onRefreshIds = null }) {
   const lib = useViews({ api, ids });
   const start = useMemo(() => readQuery(window.location.search), []);
+  const newParent = start.parent ? lib.rows.find((v) => v.id === start.parent) || null : null;   // /library?new=1&parent=<id>
   const [offers, setOffers] = useState([]);
   const [tab, setTab] = useState("views");                 // "views" | "library"
   const libraryKeys = useMemo(() => new Set(lib.mine.words.map((w) => w.key)), [lib.mine.words]);
@@ -87,7 +88,7 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
               <p><b>You have no views yet.</b> A view is a way to pick some of your library’s words, like “A1.1 › sports”. Make one, add words to it, practise just that, and send it to a friend or share a link.</p>
             </div>
           )}
-          <CreateViews api={api} ids={ids} levels={levels} busy={lib.busy} act={lib.act} onCreated={lib.select} autoFocus={start.new === "1"} />
+          <CreateViews api={api} ids={ids} levels={levels} busy={lib.busy} act={lib.act} onCreated={lib.select} autoFocus={start.new === "1"} parent={newParent} />
           <ViewTree rows={lib.rows} selected={lib.view?.id} onSelect={lib.select} onPractice={onPractice} />
           {lib.view && (
             <ViewPanel key={lib.view.id} view={lib.view} roots={lib.roots} inside={lib.inside} libraryKeys={libraryKeys} api={api} ids={ids} words={words} wordByKey={wordByKey} ruleByKey={ruleByKey}

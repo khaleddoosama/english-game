@@ -93,3 +93,9 @@
 .lib-offers { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: var(--ink-soft); border: 1px solid var(--gold); color: var(--gold); border-radius: var(--radius); padding: 9px 12px; cursor: pointer; font: inherit; }
 .lib-name.static { cursor: default; }
 .lib-readonly li { align-items: center; }
+.wh-level-group-heading .lib-icon, .wh-level-group-heading .lib-plus { vertical-align: middle; margin-left: 4px; }
+.lib-plus-sm { width: 28px; height: 28px; }
+.lib-depth-0 > .wh-level-group-heading { font-size: 1.3rem; }
+.lib-depth-1 { margin-left: 12px; } .lib-depth-2 { margin-left: 24px; } .lib-depth-3 { margin-left: 36px; }
+.wh-level-view-toggle { flex-wrap: wrap; align-items: center; }
+.lib-tab-plus { width: 32px; height: 32px; font-size: 18px; line-height: 1; }

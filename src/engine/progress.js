@@ -141,7 +141,7 @@ export function normalizeSettings(raw) {
     dailyGoal: Math.max(5, Math.min(100, Number(s.dailyGoal) || DEFAULT_SETTINGS.dailyGoal)),
     // Home shows one of three views: By lesson (the default), My views, or Gateway (the owner's own course view).
     // The old "By unit" view lives inside By lesson now.
-    levelView: ["course", "lesson", "mine"].includes(s.levelView) ? s.levelView : s.levelView === "group" ? "lesson" : DEFAULT_SETTINGS.levelView,
+    levelView: ["course", "lesson", "mine"].includes(s.levelView) || /^view:[\w-]{1,80}$/.test(String(s.levelView)) ? s.levelView : s.levelView === "group" ? "lesson" : DEFAULT_SETTINGS.levelView,
     autoAdvanceMs: AUTO_ADVANCE_OPTIONS.includes(Number(s.autoAdvanceMs)) ? Number(s.autoAdvanceMs) : DEFAULT_SETTINGS.autoAdvanceMs,
     hints: s.hints !== false,
     speakWord: s.speakWord === true,

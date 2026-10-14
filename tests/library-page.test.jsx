@@ -51,6 +51,18 @@ describe("LibraryPage", () => {
     expect($(".lib-path").textContent).toContain("A1.1 › movies");
   });
 
+  it("/library?new=1&parent=<id> makes the new view inside that one", async () => {
+    const top = await api.create("A1.1");
+    window.history.replaceState({}, "", `/library?new=1&parent=${encodeURIComponent(top)}`);
+    await render(); await flush();
+    expect($(".lib-make").textContent).toContain("New view inside A1.1");
+    await type($('input[aria-label="New view name"]'), "Articles");
+    await click($$(".lib-make button").find((b) => b.textContent.includes("Create")));
+    const tree = await api.tree();
+    expect(tree.find((v) => v.name === "Articles").parent).toBe(top);
+    window.history.replaceState({}, "", "/");
+  });
+
   it("puts words in by search and shows them by their text, while the API holds server ids", async () => {
     await render();
     await type($('input[aria-label="New view name"]'), "V"); await click(buttonWith("Create"));

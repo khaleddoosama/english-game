@@ -10,7 +10,7 @@ import "../../../styles/library.css";
 // My views on the home screen: read only. Browse, and practise. Anything that
 // changes a view (rename, move, remove, add words, share) lives in the library
 // page, a tap away from the pencil on each view; the + makes a new one there.
-export default function MyViewsHome({ api, offers = 0, onPractice, ids, mastery = {}, words = [], grammar = [] }) {
+export default function MyViewsHome({ api, rootId = null, offers = 0, onPractice, ids, mastery = {}, words = [], grammar = [] }) {
   const [flat, setFlat] = useState(null);
   const load = useCallback(() => api.tree().then(setFlat, () => setFlat([])), [api]);
   useEffect(() => { load(); }, [load]);
@@ -30,6 +30,7 @@ export default function MyViewsHome({ api, offers = 0, onPractice, ids, mastery 
   const describe = (items) => { const w = items.filter((i) => i.kind === "word").length, g = items.length - w; return [w && count(w, "word"), g && count(g, "grammar rule")].filter(Boolean).join(" · ") || "Empty"; };
 
   const tree = useMemo(() => buildTree(flat || []), [flat]);
+  const root = rootId ? tree.find((v) => v.id === rootId) || null : null;
   const edit = (v) => <button className="lib-icon" aria-label={`Edit ${v.name}`} title="Edit in my library" onClick={() => navigate(`/library?view=${encodeURIComponent(v.id)}`)}><Pencil size={14} /></button>;
   // A view as a lesson-style card: its own progress and a Practice button.
   const card = (v, title, key) => {
@@ -49,18 +50,20 @@ export default function MyViewsHome({ api, offers = 0, onPractice, ids, mastery 
           </div>
           <div className="wh-level-meta wh-level-stage-detail">{c.Mastered} mastered · {c.Learned} learned · {c.Familiar} familiar · {c.New} new</div>
         </div>
-        {!v.children.length && edit(v)}
+        {!v.children.length && <>{edit(v)}{add(v)}</>}
         <button className="wh-level-btn lib-go" disabled={!v.words && !v.rules && !v.children.length} onClick={() => onPractice(v.id, true, v.name)}><Play size={13} /> Practice</button>
       </div>
     );
   };
-  // Like Gateway > A1.1 > Articles: a view with views inside is a heading, with
-  // "All of …" and one card for each view inside it; a view with none is a card.
+  const add = (v) => <button className="lib-plus lib-plus-sm" aria-label={`New view inside ${v.name}`} title={`New view inside ${v.name}`} onClick={() => navigate(`/library?new=1&parent=${encodeURIComponent(v.id)}`)}><Plus size={14} /></button>;
+  // Like Gateway > A1.1 > Articles, at any depth: a view with views inside is a
+  // heading (its name, a + to add a view inside it, a pencil), with "All of …"
+  // and one block for each view inside it; a view with none is a card.
   function Group({ v, depth }) {
     if (!v.children.length) return card(v, v.name);
     return (
-      <div className="wh-level-group-block">
-        <h3 className="wh-level-group-heading">{v.name} <small>{describe(itemsOf(v.id))}</small> {edit(v)}</h3>
+      <div className={`wh-level-group-block lib-depth-${Math.min(depth, 3)}`}>
+        <h3 className="wh-level-group-heading">{v.name} <small>{describe(itemsOf(v.id))}</small> {edit(v)} {add(v)}</h3>
         {card(v, `All of ${v.name}`, `${v.id}-all`)}
         {v.children.map((c) => <Group key={c.id} v={c} depth={depth + 1} />)}
       </div>
@@ -70,11 +73,10 @@ export default function MyViewsHome({ api, offers = 0, onPractice, ids, mastery 
   return (
     <div className="lib-home">
       <div className="lib-home-head">
-        <span />
+        <span>{root && root.children.length > 0 && <>{edit(root)}{add(root)}</>}</span>
         <span>
           <button className="ui-row-btn" onClick={() => navigate("/catalog")}>Catalog</button>
           <button className="ui-row-btn" onClick={() => navigate("/library")}>My library</button>
-          <button className="lib-plus" aria-label="New view" title="New view" onClick={() => navigate("/library?new=1")}><Plus size={16} /></button>
         </span>
       </div>
       {offers > 0 && (
@@ -85,7 +87,11 @@ export default function MyViewsHome({ api, offers = 0, onPractice, ids, mastery 
         <div className="lib-empty"><p><b>You have no views yet.</b> A view is a way to pick some of your library’s words, like “A1.1 › sports”. Tap <b>+</b> to make one.</p></div>
       )}
       <div className="wh-levels-list lib-readonly" aria-label="Your views">
-        {tree.map((v) => <Group key={v.id} v={v} depth={0} />)}
+        {root
+          ? (root.children.length
+            ? <>{card(root, `All of ${root.name}`, `${root.id}-all`)}{root.children.map((c) => <Group key={c.id} v={c} depth={1} />)}</>
+            : card(root, root.name))
+          : tree.map((v) => <Group key={v.id} v={v} depth={0} />)}
       </div>
     </div>
   );
