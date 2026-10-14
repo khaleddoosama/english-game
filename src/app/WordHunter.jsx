@@ -8,7 +8,7 @@ unlockAudioOnFirstTouch(); // the first tap lets answer sounds play on phones
 import { isEmbeddedImage, storeEmbeddedImages } from "../lib/images";
 import { SessionView } from "../features/session/SessionView";
 import { Splash } from "../features/auth/LoginPage";
-import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTERY_STAGE_RANK, PRODUCTION_MODES, RECENT_RESULT_LIMIT, WORDS, confusionCount, formatAccuracy, formatStars, getMasteryStage, getStarsForAccuracy, isWordKey, courseLevelGroups, levelItemKey, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setLastChallengeId, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
+import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTERY_STAGE_RANK, PRODUCTION_MODES, RECENT_RESULT_LIMIT, WORDS, confusionCount, getMasteryStage, getStarsForAccuracy, isWordKey, courseLevelGroups, levelItemKey, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setLastChallengeId, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildEntryQuestion, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, entryFileMeta, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, uniqueStrings, v2SessionFromEntries } from "../engine/questions";
 import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, locateReportSource, normalizeAnswerText, reviewReportedQuestion, spellingDistanceInfo } from "../engine/ai";
 import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
@@ -24,6 +24,8 @@ import CourseLevelsView from "../features/home/CourseLevelsView";
 import HomeTabs from "../features/home/HomeTabs";
 import LessonsView from "../features/home/LessonsView";
 import { homeTabs, itemsScope, limitLessons, resolveHomeView } from "../features/home/homeState";
+import { FinalReport, FinalResults, ReviewResults, RoundResults, SpeedResults } from "../features/results/ResultScreens";
+import { DeleteCategoryConfirm, ResetConfirm } from "../features/shell/ConfirmDialogs";
 // Screens most players open rarely load on demand, keeping the first
 // download small: Admin (and all its tools), Live, Leaderboard, Profile.
 // Local mode (no accounts): each browser tab is its own player, kept for
@@ -1739,44 +1741,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           </aside>
         </div>}
         {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} onSignOut={onSignOut ? logOut : null} loggingOut={loggingOut} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onRenameWord={renameWord} onResolveReport={resolveQuestionReport} onReopenReport={reopenQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} dataTools={dataTools}/></Suspense>}
-        {confirmAction && (
-          <div className="wh-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmAction(null); }}>
-          <div className="wh-panel wh-confirm-panel" role="alertdialog">
-            <p>
-              {confirmAction === "reset"
-                ? "Reset all progress? This clears your score, streaks, mastery, and level stats. Your imported words and content stay untouched."
-                : "Clear everything? This deletes your progress AND all imported words, grammar, and stories. This cannot be undone — make sure you have a Full Backup first."}
-            </p>
-            <div className="wh-regen-actions">
-              <button
-                className="wh-level-btn"
-                onClick={async () => { if (confirmAction === "reset") await handleReset(); else await handleWipeEverything(); setConfirmAction(null); }}
-              >
-                {confirmAction === "reset" ? "Yes, reset progress" : "Yes, delete everything"}
-              </button>
-              <button className="wh-back-btn wh-nav-btn" onClick={() => setConfirmAction(null)}>Cancel</button>
-            </div>
-          </div>
-          </div>
-        )}
-        {deleteCategoryTarget && (
-          <div className="wh-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setDeleteCategoryTarget(null); }}>
-          <div className="wh-panel wh-confirm-panel" role="alertdialog">
-            <p>
-              Delete the category "{deleteCategoryTarget.title}"? This removes its words, grammar, combos, stories, and challenges from your content. This cannot be undone — make sure you have a Full Backup first.
-            </p>
-            <div className="wh-regen-actions">
-              <button
-                className="wh-level-btn wh-danger-btn"
-                onClick={() => { deleteLevelCategory(deleteCategoryTarget); setDeleteCategoryTarget(null); }}
-              >
-                Yes, delete category
-              </button>
-              <button className="wh-back-btn wh-nav-btn" onClick={() => setDeleteCategoryTarget(null)}>Cancel</button>
-            </div>
-          </div>
-          </div>
-        )}
+        {confirmAction && <ResetConfirm action={confirmAction} onConfirm={confirmAction === "reset" ? handleReset : handleWipeEverything} onClose={() => setConfirmAction(null)} />}
+        {deleteCategoryTarget && <DeleteCategoryConfirm level={deleteCategoryTarget} onConfirm={deleteLevelCategory} onClose={() => setDeleteCategoryTarget(null)} />}
 
         {badgesOpen && (
           <div className="wh-panel">
@@ -2155,59 +2121,14 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         )}
 
         {screen === "results" && currentLevel && lastRoundSummary && (
-          <div className="wh-results-card">
-            <div className="wh-results-stamp">CASE CLOSED</div>
-            <div style={{ fontFamily: "'Special Elite', monospace", fontSize: 20 }}>{currentLevel.title}</div>
-            <div className="wh-results-score"><b>{formatAccuracy(lastRoundSummary.accuracy)}%</b> accuracy — {lastRoundSummary.correct}/{lastRoundSummary.total} correct · {formatStars(lastRoundSummary.earnedStars)}</div>
-            <div className="wh-results-learning"><span>{lastRoundSummary.improved} improved</span><span>{lastRoundSummary.masteredGained} mastered</span></div>
-            {learningInsights.topConfusion && <div className="wh-results-note">Investigation note: watch the difference between {learningInsights.topConfusion.pair[0]} and {learningInsights.topConfusion.pair[1]}.</div>}
-            <div className="wh-results-actions">
-              <button className="secondary" onClick={retryLevel}>Retry case</button>
-              {lastRoundSummary.passed && currentLevel.items.some((item) => item.kind === "word") && <button className="secondary" onClick={() => startFinalCase(currentLevelIndex)}>Final Case</button>}
-              {lastRoundSummary.passed && hasNextLevel && <button className="primary" onClick={() => startLevel(nextLevelIndex)}>Next Case →</button>}
-              <button className="secondary" onClick={backToLevels}>Back to levels</button>
-            </div>
-          </div>
+          <RoundResults level={currentLevel} summary={lastRoundSummary} topConfusion={learningInsights.topConfusion} canFinalCase={currentLevel.items.some((item) => item.kind === "word")} hasNext={hasNextLevel}
+            onRetry={retryLevel} onFinalCase={() => startFinalCase(currentLevelIndex)} onNext={() => startLevel(nextLevelIndex)} onBack={backToLevels} />
         )}
-
-        {screen === "reviewResults" && lastRoundSummary && (
-          <div className="wh-results-card">
-            <div className="wh-results-stamp">EVIDENCE REVIEWED</div>
-            <div style={{ fontFamily: "'Special Elite', monospace", fontSize: 20 }}>Weak Evidence</div>
-            <div className="wh-results-score"><b>{formatAccuracy(lastRoundSummary.accuracy)}%</b> accuracy — {lastRoundSummary.correct}/{lastRoundSummary.total} correct</div>
-            <div className="wh-results-learning"><span>{lastRoundSummary.improved} improved</span><span>{lastRoundSummary.masteredGained} mastered</span><span>{lastRoundSummary.weakCount} still need review</span></div>
-            <div className="wh-results-note">Review timing and weak-mode signals were updated from today’s evidence.</div>
-            <div className="wh-results-actions">{weakCandidates.length > 0 && <button className="primary" onClick={startWeakReview}>Review More</button>}<button className="secondary" onClick={backToLevels}>Back to levels</button></div>
-          </div>
-        )}
-
+        {screen === "reviewResults" && lastRoundSummary && <ReviewResults summary={lastRoundSummary} canReviewMore={weakCandidates.length > 0} onReviewMore={startWeakReview} onBack={backToLevels} />}
         {screen === "finalReport" && currentLevel && finalRecallSummary && (
-          <div className="wh-results-card">
-            <div className="wh-results-stamp">RECALL SECURED</div>
-            <div style={{ fontFamily: "'Special Elite', monospace", fontSize: 20 }}>FINAL CASE — {currentLevel.title}</div>
-            <div className="wh-results-score">Recall: <b>{finalRecallSummary.correct}/{finalRecallSummary.total}</b> correct</div>
-            <div className="wh-case-report">
-              <div style={{ fontFamily: "'Special Elite', monospace", fontSize: 18 }}>CASE REPORT</div>
-              <div className="wh-results-note">Write 1–3 understandable sentences using the evidence words naturally. AI checks meaning, not just string presence.</div>
-              <div className="wh-evidence-list">{finalCaseWords.map((word) => { const used = normalizeAnswerText(finalReportText).includes(normalizeAnswerText(word.word)); return <span key={word.word} className={`wh-evidence-chip ${used ? "used" : ""}`}>{used ? "✓ " : ""}{word.word}</span>; })}</div>
-              <textarea value={finalReportText} onChange={(e) => setFinalReportText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); if (finalReportText.trim() && !aiBusy) finishFinalCaseReport(); } }} placeholder="Write your case report here…" disabled={aiBusy} />
-              <div className="wh-results-note">Evidence text detected: {finalEvidenceUsed}/{finalCaseWords.length}. Semantic credit is decided only after evaluation.</div>
-              {aiError && <div className="wh-feedback-card">{aiError}</div>}
-            </div>
-            <div className="wh-results-actions"><button className="primary" onClick={finishFinalCaseReport} disabled={!finalReportText.trim() || aiBusy}>{aiBusy ? "Examining report…" : "Submit Case Report"}</button><button className="secondary" onClick={backToLevels}>Leave Case</button></div>
-          </div>
+          <FinalReport level={currentLevel} recall={finalRecallSummary} words={finalCaseWords} text={finalReportText} onText={setFinalReportText} evidenceUsed={finalEvidenceUsed} busy={aiBusy} error={aiError} onSubmit={finishFinalCaseReport} onBack={backToLevels} />
         )}
-
-        {screen === "finalResults" && currentLevel && finalCaseResult && (
-          <div className="wh-results-card">
-            <div className="wh-results-stamp">FINAL CASE SOLVED</div>
-            <div style={{ fontFamily: "'Special Elite', monospace", fontSize: 20 }}>{currentLevel.title}</div>
-            <div className="wh-results-score">Report quality: <b>{finalCaseResult.quality}</b></div>
-            <div className="wh-evidence-list">{finalCaseResult.words.map((item) => <span key={item.word} className={`wh-evidence-chip ${item.productionSuccess ? "used" : ""}`}>{item.word} {item.productionSuccess ? "✅" : item.used ? "⚠️" : "❌"}</span>)}</div>
-            <div className="wh-results-note">{finalCaseResult.feedback || "Production evidence was recorded only for words used with the correct meaning. Normal mastery requirements still apply."}</div>
-            <div className="wh-results-actions"><button className="secondary" onClick={backToLevels}>Back to levels</button></div>
-          </div>
-        )}
+        {screen === "finalResults" && currentLevel && finalCaseResult && <FinalResults level={currentLevel} result={finalCaseResult} onBack={backToLevels} />}
 
         {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge player={livePlayer} friendsApi={friendsApi} onSocialChanged={refreshSocial} library={library.status === "ready" ? library : null} levels={LEVELS} code={route.code} sound={settings.sound} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} limits={{ maxPlayers: isAdmin ? 10 : app.liveMaxPlayers, canCreate: isAdmin || app.liveCreate !== "admin", defaultCount: settings.liveQuestions ?? app.liveDefaultQuestions, defaultSeconds: settings.liveSeconds ?? app.liveDefaultSeconds, maxHours: isAdmin ? 168 : app.liveMaxHours }} /></Suspense>}
         {screen === "data" && <Suspense fallback={<ScreenSkeleton />}><ImportExport variant="game" isAdmin={isAdmin} tools={dataTools} onBack={backToLevels} /></Suspense>}
@@ -2223,22 +2144,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         {screen === "library" && library.status === "ready" && <Suspense fallback={<ScreenSkeleton />}><LibraryPage isAdmin={isAdmin} api={library.api} ids={library.ids} words={WORDS} grammar={GRAMMAR} levels={courseLevelGroups().levels} friendsApi={friendsApi} onPractice={startViewPractice} onInboxChanged={refreshLibraryInbox} onAskWord={openAskAi} onRefreshIds={library.refreshIds} /></Suspense>}
         {screen === "friends" && <Suspense fallback={<ScreenSkeleton />}><FriendsPage api={friendsApi} onChanged={refreshSocial} local={friendsApi.mode === "local"} /></Suspense>}
 
-        {screen === "speedResults" && (
-          <div className="wh-results-card">
-            <div className="wh-results-stamp">Time's Up</div>
-            <div style={{ fontFamily: "'Special Elite', monospace", fontSize: 20 }}>Speed Round</div>
-            <div className="wh-results-score">
-              <b>{speedScore}</b> points — {speedCorrect}/{speedAnswered} correct · best combo x{speedBestCombo}
-            </div>
-            {speedScore >= bestSpeedScore && speedScore > 0 && (
-              <div className="wh-results-unlock">🏆 New best score!</div>
-            )}
-            <div className="wh-results-actions">
-              <button className="primary" onClick={startSpeedRound}>Play again</button>
-              <button className="secondary" onClick={backToLevels}>Back to levels</button>
-            </div>
-          </div>
-        )}
+        {screen === "speedResults" && <SpeedResults score={speedScore} correct={speedCorrect} answered={speedAnswered} bestCombo={speedBestCombo} best={bestSpeedScore} onAgain={startSpeedRound} onBack={backToLevels} />}
       </div>
       {showNav && <BottomNav screen={screen === "friends" || screen === "library" || screen === "catalog" ? "profile" : screen === "join" ? "levels" : screen} badges={{ live: social.invites, profile: social.requests }} isAdmin={isAdmin} showRanks={isAdmin || app.leaderboard} onNavigate={(id) => setScreen(id)} />}
     </div>

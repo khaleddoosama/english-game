@@ -74,7 +74,10 @@ export default function MyViewsHome({ api, rootId = null, offers = 0, onPractice
         <div className="lib-empty"><p><b>You have no views yet.</b> A view is a way to pick some of your library’s words, like “A1.1 › sports”. Tap <b>+</b> to make one.</p></div>
       )}
       <div className="wh-levels-list lib-readonly" aria-label="Your views">
-        {root
+        {rootId && flat && !root && <p className="ui-muted">That view isn’t here any more. Pick another tab.</p>}
+        {rootId && !root
+          ? null
+          : root
           ? (root.children.length
             ? <>{card(root, `All of ${root.name}`, `${root.id}-all`)}{root.children.map((c) => <Group key={c.id} v={c} depth={1} />)}</>
             : card(root, root.name))

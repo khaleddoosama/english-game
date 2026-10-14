@@ -1,0 +1,109 @@
+// @vitest-environment jsdom
+// The screens after a round and the "are you sure" boxes, on their own.
+import { act } from "react";
+import { createRoot } from "react-dom/client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { FinalReport, FinalResults, ReviewResults, RoundResults, SpeedResults } from "../src/features/results/ResultScreens.jsx";
+import { DeleteCategoryConfirm, ResetConfirm } from "../src/features/shell/ConfirmDialogs.jsx";
+
+let root, host;
+beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; });
+afterEach(async () => { await act(async () => root?.unmount()); host?.remove(); });
+const render = async (el) => { host = document.createElement("div"); document.body.append(host); root = createRoot(host); await act(async () => root.render(el)); };
+const $ = (s) => host.querySelector(s);
+const $$ = (s) => [...host.querySelectorAll(s)];
+const btn = (text) => $$("button").find((b) => b.textContent === text);
+const click = async (el) => { await act(async () => { el.dispatchEvent(new MouseEvent("click", { bubbles: true })); }); };
+const level = { title: "Personality" };
+const summary = { accuracy: 90, correct: 9, total: 10, earnedStars: 2, improved: 3, masteredGained: 1, passed: true, weakCount: 2 };
+
+describe("RoundResults", () => {
+  const base = { level, summary, topConfusion: null, canFinalCase: true, hasNext: true, onRetry: vi.fn(), onFinalCase: vi.fn(), onNext: vi.fn(), onBack: vi.fn() };
+  it("shows the numbers and every button when the round was passed", async () => {
+    await render(<RoundResults {...base} topConfusion={{ pair: ["Brand", "Campaign"] }} />);
+    expect($(".wh-results-stamp").textContent).toBe("CASE CLOSED");
+    expect($(".wh-results-score").textContent).toContain("9/10 correct");
+    expect($(".wh-results-learning").textContent).toContain("3 improved");
+    expect($(".wh-results-note").textContent).toContain("Brand and Campaign");
+    expect($$(".wh-results-actions button").map((b) => b.textContent)).toEqual(["Retry case", "Final Case", "Next Case →", "Back to levels"]);
+    await click(btn("Next Case →")); expect(base.onNext).toHaveBeenCalled();
+    await click(btn("Retry case")); expect(base.onRetry).toHaveBeenCalled();
+  });
+  it("a failed round offers only Retry and Back; no Final Case without words", async () => {
+    await render(<RoundResults {...base} summary={{ ...summary, passed: false }} />);
+    expect($$(".wh-results-actions button").map((b) => b.textContent)).toEqual(["Retry case", "Back to levels"]);
+    await act(async () => root.unmount()); host.remove();
+    await render(<RoundResults {...base} canFinalCase={false} hasNext={false} />);
+    expect($$(".wh-results-actions button").map((b) => b.textContent)).toEqual(["Retry case", "Back to levels"]);
+  });
+});
+
+describe("ReviewResults and SpeedResults", () => {
+  it("Review More only when there are weak words left", async () => {
+    await render(<ReviewResults summary={summary} canReviewMore onReviewMore={() => {}} onBack={() => {}} />);
+    expect(btn("Review More")).toBeTruthy();
+    expect($(".wh-results-learning").textContent).toContain("2 still need review");
+    await act(async () => root.unmount()); host.remove();
+    await render(<ReviewResults summary={summary} canReviewMore={false} onReviewMore={() => {}} onBack={() => {}} />);
+    expect(btn("Review More")).toBeUndefined();
+  });
+  it("a new best score is announced only when it beats the old one", async () => {
+    const props = { score: 120, correct: 8, answered: 10, bestCombo: 5, onAgain: vi.fn(), onBack: vi.fn() };
+    await render(<SpeedResults {...props} best={100} />);
+    expect($(".wh-results-score").textContent).toContain("120 points — 8/10 correct · best combo x5");
+    expect($(".wh-results-unlock")).toBeTruthy();
+    await click(btn("Play again")); expect(props.onAgain).toHaveBeenCalled();
+    await act(async () => root.unmount()); host.remove();
+    await render(<SpeedResults {...props} best={500} />);
+    expect($(".wh-results-unlock")).toBeNull();
+  });
+});
+
+describe("FinalReport and FinalResults", () => {
+  const words = [{ word: "Brand" }, { word: "Campaign" }];
+  it("marks the evidence words used in the text and can't submit an empty report or while busy", async () => {
+    const onSubmit = vi.fn();
+    await render(<FinalReport level={level} recall={{ correct: 4, total: 5 }} words={words} text="A strong brand helps." onText={() => {}} evidenceUsed={1} busy={false} error={null} onSubmit={onSubmit} onBack={() => {}} />);
+    expect($$(".wh-evidence-chip").map((c) => [c.textContent, c.classList.contains("used")])).toEqual([["✓ Brand", true], ["Campaign", false]]);
+    expect($(".wh-results-score").textContent).toContain("4/5");
+    await click(btn("Submit Case Report")); expect(onSubmit).toHaveBeenCalled();
+    await act(async () => root.unmount()); host.remove();
+    await render(<FinalReport level={level} recall={{ correct: 1, total: 1 }} words={words} text="   " onText={() => {}} evidenceUsed={0} busy={false} error="Try again" onSubmit={onSubmit} onBack={() => {}} />);
+    expect(btn("Submit Case Report").disabled).toBe(true);
+    expect($(".wh-feedback-card").textContent).toBe("Try again");
+  });
+  it("the verdict shows each word as used well, used wrongly or missed", async () => {
+    await render(<FinalResults level={level} onBack={() => {}} result={{ quality: "strong", feedback: "", words: [{ word: "A", productionSuccess: true }, { word: "B", used: true }, { word: "C" }] }} />);
+    expect($$(".wh-evidence-chip").map((c) => c.textContent)).toEqual(["A ✅", "B ⚠️", "C ❌"]);
+    expect($(".wh-results-note").textContent).toContain("Normal mastery requirements still apply");
+  });
+});
+
+describe("confirm dialogs", () => {
+  it("reset and wipe say different things, run the action, then close", async () => {
+    const onConfirm = vi.fn(async () => {}), onClose = vi.fn();
+    await render(<ResetConfirm action="reset" onConfirm={onConfirm} onClose={onClose} />);
+    expect($("p").textContent).toContain("Reset all progress?");
+    await click(btn("Yes, reset progress"));
+    expect(onConfirm).toHaveBeenCalled(); expect(onClose).toHaveBeenCalled();
+    await act(async () => root.unmount()); host.remove();
+    await render(<ResetConfirm action="wipe" onConfirm={onConfirm} onClose={onClose} />);
+    expect($("p").textContent).toContain("Clear everything?");
+    expect(btn("Yes, delete everything")).toBeTruthy();
+  });
+  it("Cancel and a tap outside close it without doing anything", async () => {
+    const onConfirm = vi.fn(), onClose = vi.fn();
+    await render(<DeleteCategoryConfirm level={level} onConfirm={onConfirm} onClose={onClose} />);
+    expect($("p").textContent).toContain('Delete the category "Personality"?');
+    await click(btn("Cancel")); expect(onClose).toHaveBeenCalledTimes(1);
+    await act(async () => { $(".wh-modal-overlay").dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); });
+    expect(onClose).toHaveBeenCalledTimes(2);
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+  it("deleting a category hands the level back", async () => {
+    const onConfirm = vi.fn(), onClose = vi.fn();
+    await render(<DeleteCategoryConfirm level={level} onConfirm={onConfirm} onClose={onClose} />);
+    await click(btn("Yes, delete category"));
+    expect(onConfirm).toHaveBeenCalledWith(level); expect(onClose).toHaveBeenCalled();
+  });
+});
