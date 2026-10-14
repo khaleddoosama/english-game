@@ -38,13 +38,14 @@ export default function LibraryWords({ items, rows, grammar = [], isAdmin = fals
   return (
     <div className="lib-words">
       <p className="lib-summary">{count(items.words.length, "word")}{items.rules.length ? ` · ${count(items.rules.length, "rule")}` : ""} in your library{loose ? ` · ${loose} not in any view` : ""}</p>
-      <WordPicker words={pool} selected={sel.set} onToggle={sel.toggle} onSetMany={sel.setMany} searchLabel="Search your library" placeholder="Search your library" tagOf={(k) => (viewsOf.get(k) ? `in ${count(viewsOf.get(k), "view")}` : "no view")}
+      {!items.words.length && <p className="ui-muted">No words in your library yet, only grammar rules (below).</p>}
+      {items.words.length > 0 && <WordPicker words={pool} selected={sel.set} onToggle={sel.toggle} onSetMany={sel.setMany} searchLabel="Search your library" placeholder="Search your library" tagOf={(k) => (viewsOf.get(k) ? `in ${count(viewsOf.get(k), "view")}` : "no view")}
         empty={() => <p className="ui-muted">Nothing matches.</p>}>
         <div className="lib-source" role="group" aria-label="Which words">
           <button className={`chip ${only === "all" ? "on" : ""}`} aria-pressed={only === "all"} onClick={() => setOnly("all")}>All</button>
           <button className={`chip ${only === "loose" ? "on" : ""}`} aria-pressed={only === "loose"} onClick={() => setOnly("loose")}>Not in a view ({loose})</button>
         </div>
-      </WordPicker>
+      </WordPicker>}
 
       {sel.set.size > 0 && (
         <form className="lib-actionbar" onSubmit={addTo}>

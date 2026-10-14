@@ -246,6 +246,17 @@ describe("the library (all my words) and the views", () => {
     expect(tab("Views").getAttribute("aria-selected")).toBe("true");
   });
 
+  it("the Library tab counts grammar rules too, and shows them when there are no words", async () => {
+    const v = await api.create("G");
+    await api.addRules(v, ["r-g1", "r-g2"]);
+    await render({ grammar: [{ id: "g1", rule: "Used to" }, { id: "g2", rule: "Articles" }], ids: idsFromMaps(new Map(), new Map([["g1", "r-g1"], ["g2", "r-g2"]])) }); await flush();
+    expect(tab("Library").textContent).toContain("2");
+    await click(tab("Library"));
+    expect($(".lib-words").textContent).toContain("0 words · 2 rules in your library");
+    expect($(".lib-rules").textContent).toContain("Used to");
+    expect($(".lib-words .lib-picker input")?.getAttribute("aria-label")).not.toBe("Search your library");   // no empty word list
+  });
+
   it("the Library tab lists every word I have, how many views each is in, and those in no view", async () => {
     await pre(); await render();
     await click(tab("Library"));
