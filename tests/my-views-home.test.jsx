@@ -82,4 +82,21 @@ describe("MyViewsHome", () => {
     await click($$("button").find((b) => b.textContent === "Catalog"));
     expect(window.location.pathname).toBe("/catalog");
   });
+
+  it("any depth works: every view with views inside is a heading, with a + to add a view inside it", async () => {
+    const g = await api.create("Gateway"); const a = await api.create("A1.1", g); const t = await api.create("Articles", a); await api.create("Deep", t);
+    await render();
+    expect($$(".lib-readonly h3").map((h) => h.textContent.trim().split(" ")[0])).toEqual(["Gateway", "A1.1", "Articles"]);
+    expect($$(".lib-readonly .wh-level-title").map((x) => x.textContent)).toEqual(["All of Gateway", "All of A1.1", "All of Articles", "Deep"]);
+    await click($('button[aria-label="New view inside A1.1"]'));
+    expect(window.location.pathname + window.location.search).toBe(`/library?new=1&parent=${encodeURIComponent(a)}`);
+  });
+
+  it("a view with nothing inside is a card with a pencil and a + of its own", async () => {
+    const z = await api.create("Z1");
+    await render();
+    expect($$(".lib-readonly h3").length).toBe(0);
+    await click($('button[aria-label="New view inside Z1"]'));
+    expect(window.location.search).toBe(`?new=1&parent=${encodeURIComponent(z)}`);
+  });
 });

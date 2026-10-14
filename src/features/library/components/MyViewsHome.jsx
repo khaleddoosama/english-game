@@ -49,18 +49,20 @@ export default function MyViewsHome({ api, offers = 0, onPractice, ids, mastery 
           </div>
           <div className="wh-level-meta wh-level-stage-detail">{c.Mastered} mastered · {c.Learned} learned · {c.Familiar} familiar · {c.New} new</div>
         </div>
-        {!v.children.length && edit(v)}
+        {!v.children.length && <>{edit(v)}{add(v)}</>}
         <button className="wh-level-btn lib-go" disabled={!v.words && !v.rules && !v.children.length} onClick={() => onPractice(v.id, true, v.name)}><Play size={13} /> Practice</button>
       </div>
     );
   };
-  // Like Gateway > A1.1 > Articles: a view with views inside is a heading, with
-  // "All of …" and one card for each view inside it; a view with none is a card.
+  const add = (v) => <button className="lib-plus lib-plus-sm" aria-label={`New view inside ${v.name}`} title={`New view inside ${v.name}`} onClick={() => navigate(`/library?new=1&parent=${encodeURIComponent(v.id)}`)}><Plus size={14} /></button>;
+  // Like Gateway > A1.1 > Articles, at any depth: a view with views inside is a
+  // heading (its name, a + to add a view inside it, a pencil), with "All of …"
+  // and one block for each view inside it; a view with none is a card.
   function Group({ v, depth }) {
     if (!v.children.length) return card(v, v.name);
     return (
-      <div className="wh-level-group-block">
-        <h3 className="wh-level-group-heading">{v.name} <small>{describe(itemsOf(v.id))}</small> {edit(v)}</h3>
+      <div className={`wh-level-group-block lib-depth-${Math.min(depth, 3)}`}>
+        <h3 className="wh-level-group-heading">{v.name} <small>{describe(itemsOf(v.id))}</small> {edit(v)} {add(v)}</h3>
         {card(v, `All of ${v.name}`, `${v.id}-all`)}
         {v.children.map((c) => <Group key={c.id} v={c} depth={depth + 1} />)}
       </div>
