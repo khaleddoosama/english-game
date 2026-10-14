@@ -9,6 +9,9 @@ export const MAX_SHARES_WAITING = 50;
 export const MAX_LIBRARY = 5000;
 export const MAX_LINKS = 50;
 export const LINK_DAYS = 30;
+export const MAX_CATALOG = 20;
+export const MAX_TITLE = 60;
+export const MAX_DESCRIPTION = 300;
 export const MAX_NAME = 60;
 export const NAME_ERROR = 'A view name is 1 to 60 characters and has no "::" in it.';
 
@@ -39,6 +42,10 @@ export const MSG = Object.freeze({
   linkGone: ["This link no longer works.", "P0002"],
   linkOwn: ["This is your own view.", "22023"],
   linkTooMany: ["You have 50 links open. Take some back first.", "55000"],
+  catalogTitle: [`Give it a title of up to ${MAX_TITLE} characters.`, "22023"],
+  catalogDescription: [`The description is up to ${MAX_DESCRIPTION} characters.`, "22023"],
+  catalogTooMany: [`You have ${MAX_CATALOG} views in the catalog. Take some down first.`, "55000"],
+  catalogGone: ["That view is no longer in the catalog.", "P0002"],
   shareNoRoom: (n) => [`You do not have room for ${n} more views (the most is ${MAX_VIEWS}).`, "55000"],
 });
 

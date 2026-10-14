@@ -321,3 +321,65 @@ describe("sharing a view by link (local mirror of migration 0031)", () => {
     await bad(bob.linkAccept(token), /room for 2 more views/);
   });
 });
+
+describe("the catalog (local mirror of migration 0032)", () => {
+  const as = (user, now, isAdmin = () => false) => createLocalLibraryApi({ storage, me: () => user, now, isAdmin, nameOf: (id) => ({ a: "ann", b: "bob", c: "cat" })[id] });
+  let ann, bob, top, sub;
+  beforeEach(async () => {
+    let clock = 1000; const now = () => ++clock;
+    ann = as("a", now); bob = as("b", now);
+    top = await ann.create("Movies"); sub = await ann.create("Horror", top);
+    await ann.add(top, ["w1"]); await ann.add(sub, ["w2"]); await ann.addRules(top, ["r1"]);
+  });
+
+  it("only the owner publishes, with a title; publishing again updates the same entry", async () => {
+    await bad(bob.catalogPublish(top, "x"), /does not exist/);
+    await bad(ann.catalogPublish(top, "  "), /title/);
+    await bad(ann.catalogPublish(top, "x".repeat(61)), /title/);
+    await bad(ann.catalogPublish(top, "ok", "x".repeat(301)), /description/);
+    const e = await ann.catalogPublish(top, "  Movie night ", "Scary");
+    expect(e.title).toBe("Movie night");
+    expect((await ann.catalogPublish(top, "Movie night 2", "Scary")).id).toBe(e.id);
+    expect((await bob.catalogList()).length).toBe(1);
+  });
+
+  it("everyone can browse and search (title, description, owner); counts show what it holds", async () => {
+    await ann.catalogPublish(top, "Movie night", "Scary and fun");
+    const [e] = await bob.catalogList();
+    expect(e).toMatchObject({ title: "Movie night", from: "ann", words: 2, rules: 1, views: 2, mine: false, taken: false });
+    for (const q of ["movie", "SCARY", "ann"]) expect((await bob.catalogList(q)).length).toBe(1);
+    expect((await bob.catalogList("zzz")).length).toBe(0);
+    expect((await ann.catalogList())[0].mine).toBe(true);
+  });
+
+  it("taking makes my own copy; twice gives the same one; the owner can't take their own", async () => {
+    const { id } = await ann.catalogPublish(top, "Movie night");
+    const got = await bob.catalogTake(id);
+    expect(got).toMatchObject({ views: 2, words: 2, rules: 1 });
+    expect((await bob.contents(got.view, true)).map((x) => x.id).sort()).toEqual(["r1", "w1", "w2"]);
+    expect((await bob.catalogList())[0]).toMatchObject({ taken: true, takes: 1 });
+    expect(await bob.catalogTake(id)).toMatchObject({ already: true, view: got.view });
+    expect((await bob.catalogList())[0].takes).toBe(1);
+    await bad(ann.catalogTake(id), /your own view/);
+  });
+
+  it("taking down: the owner or an admin; the copy stays; it can be published again", async () => {
+    const { id } = await ann.catalogPublish(top, "Movie night");
+    const copy = await bob.catalogTake(id);
+    await bob.catalogUnpublish(id);                                        // not the owner: nothing happens
+    expect((await bob.catalogList()).length).toBe(1);
+    await as("c", () => 5000, () => true).catalogUnpublish(id);            // an admin
+    expect((await bob.catalogList()).length).toBe(0);
+    await bad(bob.catalogTake(id), /no longer in the catalog/);
+    expect((await bob.tree()).some((v) => v.id === copy.view)).toBe(true);
+    expect((await ann.catalogPublish(top, "Again")).id).not.toBe(id);
+  });
+
+  it("a removed view drops out, and 20 open entries is the most", async () => {
+    await ann.catalogPublish(top, "Movie night");
+    await ann.remove(top);
+    expect((await bob.catalogList()).length).toBe(0);
+    for (let i = 1; i <= 20; i++) await ann.catalogPublish(await ann.create(`V${i}`), `T${i}`);
+    await bad(ann.catalogPublish(await ann.create("V21"), "T21"), /20 views/);
+  });
+});

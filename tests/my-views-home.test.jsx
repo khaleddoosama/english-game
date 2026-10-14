@@ -67,4 +67,19 @@ describe("MyViewsHome", () => {
     await click($(".lib-offers"));
     expect(window.location.pathname).toBe("/library");
   });
+
+  it("a view with views inside is a heading with an All card and a card for each, like Gateway", async () => {
+    const g = await api.create("Gateway"); const a = await api.create("A1.1", g); await api.create("Articles", a); await api.create("Pronouns", a);
+    await api.add(a, ["w1"]);
+    await render();
+    expect($$(".lib-readonly h3").map((h) => h.textContent.replace(/\s+/g, " ").trim().split(" ")[0])).toEqual(["Gateway", "A1.1"]);
+    const titles = $$(".lib-readonly .wh-level-title").map((t) => t.textContent);
+    expect(titles).toEqual(["All of Gateway", "All of A1.1", "Articles", "Pronouns"]);
+  });
+
+  it("opens the catalog", async () => {
+    await render();
+    await click($$("button").find((b) => b.textContent === "Catalog"));
+    expect(window.location.pathname).toBe("/catalog");
+  });
 });

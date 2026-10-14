@@ -14,6 +14,8 @@ describe("routes", () => {
     expect(parseRoute("/stats").screen).toBe("stats");
     expect(parseRoute("/friends")).toEqual({ screen: "friends" });
     expect(pathFor("friends")).toBe("/friends");
+    expect(parseRoute("/catalog")).toEqual({ screen: "catalog" });
+    expect(pathFor("catalog")).toBe("/catalog");
     expect(parseRoute("/nope").screen).toBe("notFound");
   });
 

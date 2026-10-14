@@ -192,7 +192,7 @@ Home shows three views: **By lesson** (each lesson, with its units; the default 
 player), **My views** (each view as the same kind of card, with its progress), and
 **Gateway** (the course levels and their sessions; the owner's own view, shown to
 the admin only). Gateway and By lesson are built from the content for everyone;
-nothing is copied per player. My views on Home is read only (browse and practise);
+nothing is copied per player. On Home a player sees only the words and rules in their own library (the admin sees all of the course). My views on Home is read only (browse and practise), grouped like Gateway: a view with views inside is a heading with an *All of …* card and a card for each view;
 the pencil on a view and the **+** open the library page to edit, delete or make
 one. There, words are picked from lists with search, lesson and level filters,
 *Select all shown*, and bulk actions (add to a view, make a new view, remove).
@@ -205,11 +205,16 @@ one. There, words are picked from lists with search, lesson and level filters,
   (`/join/<token>`, good for 30 days, can be taken back). Whoever accepts gets
   their own copy (the views inside it, the words, the rules) in their library;
   words only the sender made stay private.
+- **Catalog** (`/catalog`, migration `0032`): a player publishes one of their
+  views (title and short description, from its Share menu); everyone signed in
+  can search the catalog and take their own copy with one tap. The owner, or
+  the admin, can take an entry down; copies already taken stay. 20 entries a
+  player.
 - **Your own words** (`sense_create`) are private rows of the same dictionary
   table; a player's changes to a shared word are kept as a *patch*, so an admin
   fix still reaches them.
 
-How it is built: `supabase/migrations/0026`–`0031` (tables, row-level security,
+How it is built: `supabase/migrations/0026`–`0032` (tables, row-level security,
 functions; nothing is physically removed, only flagged); `0027` copies the
 dictionary from `content_items` and `dictionary_sync()` keeps the copy in step
 after every content save. The app talks to it through one interface
