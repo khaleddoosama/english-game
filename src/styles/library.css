@@ -45,3 +45,5 @@
 .lib-friends { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; }
 .lib-link { background: none; border: 0; color: var(--gold); cursor: pointer; padding: 0; font: inherit; text-decoration: underline; }
 .lib-chips li button { font-size: 11px; color: var(--gold); }
+
+.lib-embedded { display: grid; gap: 0; }

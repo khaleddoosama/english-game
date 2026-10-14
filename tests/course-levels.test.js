@@ -119,8 +119,13 @@ describe("editing and importing", () => {
     expect(courseLevelWarnings([{ level: "Level-4" }, { level: "B1" }, { level: "A1.2" }])).toEqual([]);
   });
 
-  it("the home layout can be By course level", () => {
-    expect(normalizeSettings({ levelView: "course" }).levelView).toBe("course");
-    expect(normalizeSettings({ levelView: "nonsense" }).levelView).toBe("lesson");
+  it("home opens on Gateway (the course levels) unless the player chose another view", () => {
+    expect(normalizeSettings({}).levelView).toBe("course");
+    expect(normalizeSettings({ levelView: "nonsense" }).levelView).toBe("course");
+    expect(normalizeSettings({ levelView: "lesson" }).levelView).toBe("lesson");
+    expect(normalizeSettings({ levelView: "mine" }).levelView).toBe("mine");
+  });
+  it("the old By unit view now lives inside By lesson", () => {
+    expect(normalizeSettings({ levelView: "group" }).levelView).toBe("lesson");
   });
 });

@@ -17,8 +17,9 @@ import "../../styles/library.css";
 //   onInboxChanged() - the number of offers waiting changed
 //   onAskWord(term) - opens the AI helper for a word that isn't in the dictionary yet
 //   onRefreshIds() - reloads the key <-> id map (words added since the app started)
+//   embedded - shown inside the home screen (no page header)
 // The page only arranges the parts; each part owns its own little state.
-export default function LibraryPage({ api, ids, words, grammar, levels = [], friendsApi = null, onPractice, onInboxChanged, onAskWord = null, onRefreshIds = null }) {
+export default function LibraryPage({ api, ids, words, grammar, levels = [], friendsApi = null, onPractice, onInboxChanged, onAskWord = null, onRefreshIds = null, embedded = false }) {
   const lib = useViews({ api, ids });
   const [offers, setOffers] = useState([]);
   const wordByKey = useMemo(() => new Map(words.map((w) => [w.word, w])), [words]);
@@ -43,11 +44,13 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
 
   if (lib.loading) return <section className="ui-page"><div className="ui-skeleton-row" /></section>;
   return (
-    <section className="ui-page lib">
-      <header className="ui-page-head lib-head">
-        <h2><BookOpen size={20} /> My library</h2>
-        <button className="wh-back-btn" onClick={() => navigate("/profile")}>Back</button>
-      </header>
+    <section className={`${embedded ? "lib-embedded" : "ui-page"} lib`}>
+      {!embedded && (
+        <header className="ui-page-head lib-head">
+          <h2><BookOpen size={20} /> My library</h2>
+          <button className="wh-back-btn" onClick={() => navigate("/profile")}>Back</button>
+        </header>
+      )}
       {lib.notice && <p className={`lib-notice ${lib.notice.kind}`} role={lib.notice.kind === "error" ? "alert" : "status"}>{lib.notice.text}</p>}
 
       <ShareInbox offers={offers} busy={lib.busy} onAnswer={answer} />

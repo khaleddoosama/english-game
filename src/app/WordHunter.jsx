@@ -187,6 +187,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     library.api.inbox().then((list) => setLibraryInbox(list.length), () => {});
   }, [library]);
   useEffect(() => { refreshLibraryInbox(); }, [refreshLibraryInbox, screen]);
+  // Home shows one view at a time; My views needs the library, so without it Gateway shows.
+  const homeView = settings.levelView === "mine" && library.status !== "ready" ? "course" : settings.levelView;
   function launchSession(session) { setActiveSession(session); setScreen("session"); }
   // One extra question style per word for Level Practice, built with the
   // adaptive-engine builders and converted to the V2 question shape.
@@ -1834,17 +1836,17 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           </div>
         )}
 
-        {screen === "levels" && section === "practice" && LEVELS.length > 0 && (
-          <div className="wh-level-view-toggle" role="group" aria-label="Show levels">
-            {[["lesson", "By lesson"], ["group", "By unit"], ["course", "By course level"]].map(([id, label]) => (
-              <button key={id} className={settings.levelView === id ? "active" : ""} aria-pressed={settings.levelView === id} onClick={() => setSettings((prev) => ({ ...prev, levelView: id }))}>{label}</button>
+        {screen === "levels" && section === "practice" && (LEVELS.length > 0 || library.status === "ready") && (
+          <div className="wh-level-view-toggle" role="group" aria-label="Show views">
+            {[["course", "Gateway"], ["lesson", "By lesson"], ...(library.status === "ready" ? [["mine", "My views"]] : [])].map(([id, label]) => (
+              <button key={id} className={homeView === id ? "active" : ""} aria-pressed={homeView === id} onClick={() => setSettings((prev) => ({ ...prev, levelView: id }))}>{label}</button>
             ))}
           </div>
         )}
 
         {/* By course level: the Gateway course's levels (A1.2 …) from every
             lesson, each split into its sessions. */}
-        {screen === "levels" && section === "practice" && settings.levelView === "course" && (() => {
+        {screen === "levels" && section === "practice" && homeView === "course" && (() => {
           const { levels: courseLevels, none } = courseLevelGroups();
           const card = (key, title, meta, items, onPlay) => {
             const counts = levelStageBreakdown({ items }, mastery);
@@ -1888,47 +1890,14 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           );
         })()}
 
-        {/* By unit: each lesson's course units as their own cards. */}
-        {screen === "levels" && section === "practice" && settings.levelView === "group" && (
-          <div className="wh-levels-list">
-            {LEVELS.map((level, i) => {
-              const unlocked = isLevelUnlocked(i);
-              const LevelIcon = TOPIC_ICONS[level.title] || BookOpen;
-              const groups = levelGroups(level);
-              if (!groups.length) return null;
-              return (
-                <div key={level.id} className="wh-level-group-block">
-                  <h3 className="wh-level-group-heading">{level.title} <small>{groups.filter((g) => g.id).length} units</small></h3>
-                  {groups.map((g) => {
-                    const counts = levelStageBreakdown(g, mastery);
-                    return (
-                      <div key={g.id || "other"} className={`wh-level-card ${unlocked ? "" : "locked"}`}>
-                        <div className="wh-level-icon"><LevelIcon size={20} /></div>
-                        <div className="wh-level-info">
-                          <div className="wh-level-title">{g.title}</div>
-                          <div className="wh-level-meta">{g.items.length} word{g.items.length === 1 ? "" : "s"}</div>
-                          <div className="wh-level-stage-bar" aria-hidden="true">
-                            <span className="wh-level-stage-seg mastered" style={{ width: `${(counts.Mastered / g.items.length) * 100}%` }} />
-                            <span className="wh-level-stage-seg learned" style={{ width: `${(counts.Learned / g.items.length) * 100}%` }} />
-                            <span className="wh-level-stage-seg familiar" style={{ width: `${(counts.Familiar / g.items.length) * 100}%` }} />
-                          </div>
-                          <div className="wh-level-meta wh-level-stage-detail">
-                            {counts.Mastered} mastered · {counts.Learned} learned · {counts.Familiar} familiar · {counts.New} new
-                          </div>
-                        </div>
-                        <button className="wh-level-btn" disabled={!unlocked} onClick={() => startLevel(i, g)}>
-                          {unlocked ? <Play size={13} /> : <Lock size={13} />} {unlocked ? "Practice" : "Locked"}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
+        {/* My views: the player's own library (views inside views). */}
+        {screen === "levels" && section === "practice" && homeView === "mine" && library.status === "ready" && (
+          <Suspense fallback={<ScreenSkeleton />}>
+            <LibraryPage embedded api={library.api} ids={library.ids} words={WORDS} grammar={GRAMMAR} levels={courseLevelGroups().levels} friendsApi={friendsApi} onPractice={startViewPractice} onInboxChanged={refreshLibraryInbox} onAskWord={openAskAi} onRefreshIds={library.refreshIds} />
+          </Suspense>
         )}
 
-        {screen === "levels" && section === "practice" && settings.levelView !== "group" && settings.levelView !== "course" && (
+        {screen === "levels" && section === "practice" && homeView === "lesson" && (
           <div className="wh-levels-list">
             {LEVELS.map((level, i) => {
               const unlocked = isLevelUnlocked(i);
@@ -1966,6 +1935,24 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
                     <div className="wh-level-meta wh-level-stage-detail">
                       {stageCounts.Mastered} mastered · {stageCounts.Learned} learned · {stageCounts.Familiar} familiar · {stageCounts.New} new
                     </div>
+                    {(() => {
+                      // The lesson's course units: a view inside the lesson view.
+                      const units = levelGroups(level).filter((g) => g.id);
+                      if (!units.length) return null;
+                      return (
+                        <details className="wh-level-units">
+                          <summary>{units.length} unit{units.length === 1 ? "" : "s"}</summary>
+                          <ul>
+                            {units.map((g) => (
+                              <li key={g.id}>
+                                <span>{g.title}<small>{g.items.length} word{g.items.length === 1 ? "" : "s"}</small></span>
+                                <button className="wh-level-btn" disabled={!unlocked} onClick={() => startLevel(i, g)}>{unlocked ? <Play size={13} /> : <Lock size={13} />} Practice</button>
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      );
+                    })()}
                   </div>
                   <button
                     className="wh-level-btn"
