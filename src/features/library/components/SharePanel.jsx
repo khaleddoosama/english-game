@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Link2, Send } from "lucide-react";
+import { BookCopy, Copy, Link2, Send } from "lucide-react";
 
 // Share the open view: send it to friends (they get an offer), or make a link
 // anyone signed in can open to take their own copy.
@@ -16,6 +16,17 @@ export default function SharePanel({ api, friendsApi, view, empty, busy, onSend 
   const toggle = (id) => setTo((cur) => { const n = new Set(cur); n.has(id) ? n.delete(id) : n.add(id); return n; });
   async function send() {
     if ((await onSend([...to])) !== undefined) setTo(new Set());
+  }
+  const [pub, setPub] = useState(null);       // { id } once published
+  const [title, setTitle] = useState(view.name);
+  const [about, setAbout] = useState("");
+  const [pubNote, setPubNote] = useState(null);
+  async function publish() {
+    setPubNote(null);
+    try { setPub(await api.catalogPublish(view.id, title, about)); setPubNote("It is in the catalog now."); } catch (e) { setPubNote(e.message); }
+  }
+  async function unpublish() {
+    try { await api.catalogUnpublish(pub.id); setPub(null); setPubNote("It is out of the catalog."); } catch (e) { setPubNote(e.message); }
   }
   const url = link ? `${window.location.origin}/join/${link.token}` : "";
   async function makeLink() {
@@ -48,6 +59,17 @@ export default function SharePanel({ api, friendsApi, view, empty, busy, onSend 
             </>
           )}
         {linkNote && <p className="ui-muted" role="status">{linkNote}</p>}
+      </div>
+      <div className="lib-link-box">
+        <h5><BookCopy size={13} /> To the catalog</h5>
+        <div className="lib-inline">
+          <input value={title} maxLength={60} onChange={(e) => setTitle(e.target.value)} aria-label="Catalog title" placeholder="Title" />
+          <input value={about} maxLength={300} onChange={(e) => setAbout(e.target.value)} aria-label="Catalog description" placeholder="What is it for? (optional)" />
+          <button className="ui-row-btn" disabled={busy || empty || !title.trim()} onClick={publish}>{pub ? "Update" : "Publish"}</button>
+          {pub && <button className="ui-row-btn" onClick={unpublish}>Take it down</button>}
+        </div>
+        <p className="ui-muted">Everyone signed in can find it and take their own copy. Words only you made stay private.</p>
+        {pubNote && <p className="ui-muted" role="status">{pubNote}</p>}
       </div>
       {friendsApi && (
         <div className="lib-friend-box">

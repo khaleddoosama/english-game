@@ -110,6 +110,13 @@ describe.skipIf(!PGURL)("library API <-> SQL functions", () => {
     await A.linkRevoke(link.token);
     expect(await B.linkInfo(link.token)).toEqual({ valid: false, reason: "taken_back" });
     await expect(B.linkAccept(link.token)).rejects.toThrow(/no longer works/);
+    // the catalog: publish, browse, take, take down
+    const entry = await A.catalogPublish(top, "Contract view", "for the test");
+    expect(entry).toMatchObject({ id: expect.any(String), title: "Contract view" });
+    expect((await B.catalogList("contract view", 10))[0]).toMatchObject({ id: entry.id, from: `${tag}a`, mine: false, taken: false, words: expect.any(Number) });
+    expect(await B.catalogTake(entry.id)).toMatchObject({ view: expect.any(String), skipped: expect.any(Number) });
+    await A.catalogUnpublish(entry.id);
+    expect(await B.catalogList("contract view", 10)).toEqual([]);
     const list = await A.libraryList();
     expect(list.words.length).toBeGreaterThan(0);
     expect(list.words[0]).toEqual(expect.objectContaining({ id: expect.any(String), views: expect.any(Number) }));

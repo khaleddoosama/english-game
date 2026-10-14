@@ -45,6 +45,7 @@ const FriendsPage = lazy(() => import("../features/social/FriendsPage"));
 const LibraryPage = lazy(() => import("../features/library/LibraryPage"));
 const JoinPage = lazy(() => import("../features/library/JoinPage"));
 const MyViewsHome = lazy(() => import("../features/library/components/MyViewsHome"));
+const CatalogPage = lazy(() => import("../features/library/CatalogPage"));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage"));
 const ImportExport = lazy(() => import("../features/data/ImportExport"));
 const StudyDashboard = lazy(() => import("../features/stats/StudyDashboard"));
@@ -190,6 +191,23 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   }, [library]);
   useEffect(() => { refreshLibraryInbox(); }, [refreshLibraryInbox, screen]);
   // Home shows one view at a time; My views needs the library, so without it Gateway shows.
+  // A player (not the admin) sees only the words and rules in their own library on Home;
+  // the whole course is the admin's. The library's keys are read again whenever Home opens.
+  const [libraryKeys, setLibraryKeys] = useState(null);
+  useEffect(() => {
+    if (library.status !== "ready" || screen !== "levels") return;
+    let alive = true;
+    library.api.libraryList().then((l) => alive && setLibraryKeys({ words: new Set(l.words.map((w) => library.ids.keyOfSense(w.id)).filter(Boolean)), rules: new Set(l.rules.map((r) => library.ids.keyOfRule(r.id)).filter(Boolean)) }), () => {});
+    return () => { alive = false; };
+  }, [library, screen]);
+  const limitHome = library.status === "ready" && !isAdmin && !!libraryKeys;
+  const inLibrary = (it) => (it.kind === "word" ? libraryKeys.words.has(it.obj.word) : it.kind === "grammar" ? libraryKeys.rules.has(it.obj.id) : false);
+  const homeLevels = limitHome ? LEVELS.map((l) => ({ ...l, items: l.items.filter(inLibrary) })).filter((l) => l.items.length) : LEVELS;
+  function startItemsPractice(title, items) {
+    const scope = { words: new Set(items.filter((i) => i.kind === "word").map((i) => i.obj.word)), rules: new Set(items.filter((i) => i.kind === "grammar").map((i) => i.obj.id)) };
+    setCurrentLevelIndex(null);
+    startPractice(title, null, { title, scope }, (w) => scope.words.has(w.word));
+  }
   // Gateway is the owner's own view (the admin's); everyone else starts on By lesson.
   const homeView = (settings.levelView === "mine" && library.status !== "ready") || (settings.levelView === "course" && !isAdmin) ? "lesson" : settings.levelView;
   function launchSession(session) { setActiveSession(session); setScreen("session"); }
@@ -990,8 +1008,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   // group (optional): one subCategory of the lesson, from levelGroups().
   function startLevel(index, group = null) {
     const level = LEVELS[index]; if(!level) return;
-    setCurrentLevelIndex(index);
     const sessionTitle = group ? `${level.title} · ${group.title}` : level.title;
+    if (limitHome) return startItemsPractice(sessionTitle, group ? group.items : (homeLevels.find((l) => l.id === level.id)?.items || []));
+    setCurrentLevelIndex(index);
     startPractice(sessionTitle, level.title, group ? { title: sessionTitle, ...(group.id ? { [group.field === "unit" ? "unit" : "subCategory"]: group.id } : { noGroup: group.field }) } : {}, (w) => w.category === level.title);
   }
   // A course level (A1.2 …) from every lesson: the whole level, one of its
@@ -1850,7 +1869,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         {/* By course level: the Gateway course's levels (A1.2 …) from every
             lesson, each split into its sessions. */}
         {screen === "levels" && section === "practice" && homeView === "course" && (() => {
-          const { levels: courseLevels, none } = courseLevelGroups();
+          const { levels: courseLevels, none } = limitHome ? courseLevelGroups(WORDS.filter((w) => libraryKeys.words.has(w.word)), GRAMMAR.filter((g) => libraryKeys.rules.has(g.id))) : courseLevelGroups();
           const card = (key, title, meta, items, onPlay) => {
             const counts = levelStageBreakdown({ items }, mastery);
             return (
@@ -1866,7 +1885,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
                   </div>
                   <div className="wh-level-meta wh-level-stage-detail">{counts.Mastered} mastered · {counts.Learned} learned · {counts.Familiar} familiar · {counts.New} new</div>
                 </div>
-                <button className="wh-level-btn" onClick={onPlay}><Play size={13} /> Practice</button>
+                <button className="wh-level-btn" onClick={limitHome ? () => startItemsPractice(title, items) : onPlay}><Play size={13} /> Practice</button>
               </div>
             );
           };
@@ -1902,7 +1921,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
         {screen === "levels" && section === "practice" && homeView === "lesson" && (
           <div className="wh-levels-list">
-            {LEVELS.map((level, i) => {
+            {limitHome && !homeLevels.length && <div className="lib-empty"><p><b>Your library is empty.</b> Add words to your library and they show up here, in their lessons. Open <b>My views</b> to make your first view.</p><button className="wh-level-btn" onClick={() => navigate("/library")}>Open my library</button></div>}
+            {homeLevels.map((level) => {
+              const i = LEVELS.findIndex((l) => l.id === level.id);
               const unlocked = isLevelUnlocked(i);
               const cleared = clearedSet.has(level.id);
               const stageCounts = levelStageBreakdown(level, mastery);
@@ -2295,6 +2316,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         {screen === "join" && (library.status === "ready"
           ? <Suspense fallback={<ScreenSkeleton />}><JoinPage api={library.api} token={route.token} onTaken={(out, open) => { refreshLibraryInbox(); if (open) { setSettings((prev) => ({ ...prev, levelView: "mine" })); navigate("/"); } }} /></Suspense>
           : <section className="ui-page"><p className="ui-muted">{library.status === "loading" ? "Loading…" : "Shared views aren’t available yet."}</p></section>)}
+        {screen === "catalog" && (library.status === "ready"
+          ? <Suspense fallback={<ScreenSkeleton />}><CatalogPage api={library.api} isAdmin={isAdmin} onTaken={refreshLibraryInbox} /></Suspense>
+          : <section className="ui-page"><p className="ui-muted">{library.status === "loading" ? "Loading…" : "The catalog isn’t available yet."}</p></section>)}
         {screen === "library" && library.status === "ready" && <Suspense fallback={<ScreenSkeleton />}><LibraryPage api={library.api} ids={library.ids} words={WORDS} grammar={GRAMMAR} levels={courseLevelGroups().levels} friendsApi={friendsApi} onPractice={startViewPractice} onInboxChanged={refreshLibraryInbox} onAskWord={openAskAi} onRefreshIds={library.refreshIds} /></Suspense>}
         {screen === "friends" && <Suspense fallback={<ScreenSkeleton />}><FriendsPage api={friendsApi} onChanged={refreshSocial} local={friendsApi.mode === "local"} /></Suspense>}
 
@@ -2315,7 +2339,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           </div>
         )}
       </div>
-      {showNav && <BottomNav screen={screen === "friends" || screen === "library" ? "profile" : screen === "join" ? "levels" : screen} badges={{ live: social.invites, profile: social.requests }} isAdmin={isAdmin} showRanks={isAdmin || app.leaderboard} onNavigate={(id) => setScreen(id)} />}
+      {showNav && <BottomNav screen={screen === "friends" || screen === "library" || screen === "catalog" ? "profile" : screen === "join" ? "levels" : screen} badges={{ live: social.invites, profile: social.requests }} isAdmin={isAdmin} showRanks={isAdmin || app.leaderboard} onNavigate={(id) => setScreen(id)} />}
     </div>
   );
 }

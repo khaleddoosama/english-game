@@ -1,5 +1,5 @@
 // The library API over Supabase: every call is one database function
-// (migrations 0026-0030) and the function does every check. This file only
+// (migrations 0026-0032) and the function does every check. This file only
 // names the arguments.
 import { friendlyError } from "./libraryErrors";
 import { senseFromCard } from "./libraryRules";
@@ -42,5 +42,10 @@ export function createOnlineLibraryApi(client) {
     linkInfo: (token) => rpc("view_link_info", { p_token: token }),
     linkAccept: (token) => rpc("view_link_accept", { p_token: token }),
     linkRevoke: (token) => rpc("view_link_revoke", { p_token: token }),
+    // the catalog (migration 0032)
+    catalogPublish: (view, title, description = "") => rpc("catalog_publish", { p_view: view, p_title: title, p_description: description }),
+    catalogUnpublish: (entry) => rpc("catalog_unpublish", { p_entry: entry }),
+    catalogList: (query = "", limit = 50) => rpc("catalog_list", { p_query: query, p_limit: limit }),
+    catalogTake: (entry) => rpc("catalog_take", { p_entry: entry }),
   };
 }
