@@ -40,7 +40,9 @@ function pickPoolVariant(pools,key,seed){
 function withoutRemovedFields(content) {
   const out = {...content};
   delete out.puns;
-  if (Array.isArray(out.words)) out.words = out.words.map(({sentenceBuild, example, ...w}) => (!w.situation && example ? {...w, situation: example} : w));
+  // An entry that is not an object (null, a number) is left for validateContent to report.
+  const dropRemoved = ({sentenceBuild, example, ...w}) => (!w.situation && example ? {...w, situation: example} : w);
+  if (Array.isArray(out.words)) out.words = out.words.map(x => x && typeof x === 'object' ? dropRemoved(x) : x);
   if (Array.isArray(out.challenges)) out.challenges = out.challenges.filter(c => !['buildSentence','build-sentence'].includes(c?.type || c?.mode));
   return out;
 }
