@@ -2,7 +2,7 @@
 // it and take their own copy; it can be taken back and it runs out.
 import { LINK_DAYS, MAX_LINKS, MSG } from "../libraryRules";
 import { copyViewForPlayer } from "./localCopy";
-import { descendants, findView, summaryOf } from "./localViews";
+import { deepSummary, findView } from "./localViews";
 
 const DAY = 86400000;
 
@@ -32,7 +32,7 @@ export function createLocalLinksApi(ctx) {
       if (l.expires <= now()) return { valid: false, reason: "expired" };
       const theirs = load(l.owner), v = findView(theirs, l.view);
       if (!v) return { valid: false, reason: "removed" };
-      return { valid: true, name: v.name, from: nameOf(l.owner), mine: l.owner === me(), ...summaryOf(v), views: descendants(theirs, v).length + 1, taken: takes().some((t) => t.token === token && t.user === me()) };
+      return { valid: true, name: v.name, from: nameOf(l.owner), mine: l.owner === me(), ...deepSummary(theirs, v), taken: takes().some((t) => t.token === token && t.user === me()) };
     },
     async linkAccept(token) {
       const all = links(), l = all.find((x) => x.token === token);

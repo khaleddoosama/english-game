@@ -154,7 +154,7 @@ describe("sharing a view (local mirror of migration 0029)", () => {
     expect(await ann.inbox()).toEqual([]);
     expect(await as("c").inbox()).toEqual([]);
     const [item] = await bob.inbox();
-    expect(item).toMatchObject({ name: "A1.1", from: "ann", words: 1, rules: 0, views: 2 });
+    expect(item).toMatchObject({ name: "A1.1", from: "ann", words: 3, rules: 1, views: 2 });
   });
 
   it("accepting makes b's own copy, with the views inside, words and rules", async () => {
@@ -262,7 +262,7 @@ describe("sharing a view by link (local mirror of migration 0031)", () => {
 
   it("what it shows, to anyone (no friendship needed)", async () => {
     const { token } = await ann.linkCreate(top);
-    expect(await bob.linkInfo(token)).toMatchObject({ valid: true, name: "A1.1 sports", from: "ann", words: 1, rules: 0, views: 2, mine: false, taken: false });
+    expect(await bob.linkInfo(token)).toMatchObject({ valid: true, name: "A1.1 sports", from: "ann", words: 2, rules: 1, views: 2, mine: false, taken: false });
     expect((await ann.linkInfo(token)).mine).toBe(true);
     expect(await bob.linkInfo("nope")).toEqual({ valid: false, reason: "not_found" });
   });

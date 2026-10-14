@@ -7,7 +7,7 @@ import { SHOWN } from "./format";
 
 // The open view: its path, what can be done to it, what is in it, and adding more.
 // Shown with key={view.id}, so everything in it starts fresh for each view.
-export default function ViewPanel({ view, roots, inside, api, ids, words, wordByKey, ruleByKey, friendsApi, busy, act, setNotice, onPractice, onRemoved, onCreated, onRefreshIds, onAskWord }) {
+export default function ViewPanel({ view, roots, inside, libraryKeys, api, ids, words, wordByKey, ruleByKey, friendsApi, busy, act, setNotice, onPractice, onRemoved, onCreated, onRefreshIds, onAskWord }) {
   const [rename, setRename] = useState(null);
   const [sub, setSub] = useState("");
   const [sure, setSure] = useState(false);
@@ -61,7 +61,7 @@ export default function ViewPanel({ view, roots, inside, api, ids, words, wordBy
         <button className="ui-row-btn" disabled={busy || !sub.trim()}><Plus size={14} /> Add</button>
       </form>
 
-      {friendsApi && <SharePanel friendsApi={friendsApi} view={view} empty={!total && !view.children.length} busy={busy} onSend={send} />}
+      <SharePanel api={api} friendsApi={friendsApi} view={view} empty={!total && !view.children.length} busy={busy} onSend={send} />
 
       <h4 className="lib-sub">In this view</h4>
       {!inside.words.length && !inside.rules.length && <p className="ui-muted">Nothing yet. Add words below.</p>}
@@ -71,7 +71,7 @@ export default function ViewPanel({ view, roots, inside, api, ids, words, wordBy
       </ul>
       {inside.words.length > SHOWN && <button className="lib-link" onClick={() => setShowAll((v) => !v)}>{showAll ? "Show fewer" : `Show all ${inside.words.length} words`}</button>}
 
-      <AddWords words={words} wordByKey={wordByKey} ids={ids} busy={busy} setNotice={setNotice} onAskWord={onAskWord} onRefreshIds={onRefreshIds}
+      <AddWords words={words} libraryKeys={libraryKeys} wordByKey={wordByKey} ids={ids} busy={busy} setNotice={setNotice} onAskWord={onAskWord} onRefreshIds={onRefreshIds}
         onAdd={(senseIds, okText) => act(() => (senseIds.length ? api.add(view.id, senseIds) : 0), okText)} />
     </div>
   );

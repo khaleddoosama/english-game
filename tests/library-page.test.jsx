@@ -199,3 +199,106 @@ describe("a view with many items", () => {
     expect($$(".lib-chips li:not(.rule)").length).toBe(70);
   });
 });
+
+describe("the library (all my words) and the views", () => {
+  const pre = async () => {
+    const v = await api.create("V");
+    await api.add(v, ["sense-0", "sense-3"]);        // Reluctant, Shrink: in a view
+    await api.libraryAdd(["sense-1"]);                // Cast: in my library, in no view
+    return v;
+  };
+  const tab = (name) => $$('[role="tab"]').find((t) => t.textContent.startsWith(name));
+
+  it("two tabs: Views (default) and Library, each with a count", async () => {
+    await pre(); await render();
+    expect($$('[role="tab"]').map((t) => t.textContent.replace(/\s+/g, " ").trim())).toEqual(["Views 1", "Library 3"]);
+    expect(tab("Views").getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("the Library tab lists every word I have, how many views each is in, and those in no view", async () => {
+    await pre(); await render();
+    await click(tab("Library"));
+    expect($(".lib-summary").textContent).toContain("3 words in your library · 1 not in any view");
+    const rows = $$(".lib-wordlist li").map((li) => li.textContent.replace(/\s+/g, " "));
+    expect(rows.some((r) => r.includes("Reluctant") && r.includes("in 1 view"))).toBe(true);
+    expect(rows.some((r) => r.includes("Cast") && r.includes("no view"))).toBe(true);
+    await click($(".lib-inline .chip"));                                   // Not in a view
+    expect($$(".lib-wordlist li").length).toBe(1);
+    await type($('input[aria-label="Search your library"]'), "zzz");
+    expect($(".lib-wordlist + *, .lib-words").textContent).toContain("Nothing matches");
+  });
+
+  it("removing a word from the library takes two taps and takes it out of its views too", async () => {
+    const v = await pre(); await render();
+    await click(tab("Library"));
+    const rm = $('button[aria-label="Remove Reluctant from my library"]');
+    await click(rm);
+    expect($('button[aria-label="Tap again to remove Reluctant"]')).toBeTruthy();   // first tap only asks
+    await click($('button[aria-label="Tap again to remove Reluctant"]'));
+    expect($(".lib-notice").textContent).toContain("Removed “Reluctant”");
+    expect((await api.contents(v, false)).map((x) => x.id)).toEqual(["sense-3"]);
+    expect((await api.libraryList()).words.map((w) => w.id).sort()).toEqual(["sense-1", "sense-3"]);
+  });
+
+  it("an empty library says how to fill it", async () => {
+    await render();
+    await click(tab("Library"));
+    expect($(".lib-empty").textContent).toContain("no words yet");
+  });
+
+  it("adding words to a view starts from my library, and can switch to the dictionary", async () => {
+    const v = await pre(); await render();
+    await click($(".lib-tree .lib-name"));
+    expect($('.lib-source .chip.on').textContent).toContain("From my library (3)");
+    await type($('input[aria-label="Search words"]'), "shrink");
+    expect($$(".lib-results li").length).toBe(1);
+    await type($('input[aria-label="Search words"]'), "none");
+    await type($('input[aria-label="Search words"]'), "zzzz");
+    expect($(".lib-panel").textContent).toContain("in your library");
+    await click($$("button").find((b) => b.textContent === "Search the dictionary"));
+    expect($('.lib-source .chip.on').textContent).toContain("From the dictionary");
+    expect(v).toBeTruthy();
+  });
+
+  it("with nothing in my library yet, adding starts from the dictionary", async () => {
+    await render();
+    await type($('input[aria-label="New view name"]'), "V"); await click(buttonWith("Create"));
+    expect($('.lib-source .chip.on').textContent).toContain("From the dictionary");
+  });
+});
+
+describe("sharing by link", () => {
+  const sharePanel = async () => {
+    await render();
+    await type($('input[aria-label="New view name"]'), "V"); await click(buttonWith("Create"));
+    await type($('input[aria-label="Search words"]'), "shr"); await click($$('.lib-results input[type="checkbox"]')[0]); await click(buttonWith("selected"));
+    await act(async () => { $(".lib-share summary").click(); await new Promise((r) => setTimeout(r, 0)); });
+  };
+
+  it("Get a link shows it with Copy and Take it back; taking it back stops it", async () => {
+    await sharePanel();
+    await click(buttonWith("Get a link"));
+    const url = $('input[aria-label="Link to this view"]').value;
+    expect(url).toMatch(/\/join\/[a-z0-9]{20,}$/);
+    expect($(".lib-link-box").textContent).toContain("works for 30 days");
+    const token = url.split("/join/")[1];
+    expect((await api.linkInfo(token)).valid).toBe(true);
+    await click(buttonWith("Take it back"));
+    expect($('input[aria-label="Link to this view"]')).toBeNull();
+    expect((await api.linkInfo(token)).reason).toBe("taken_back");
+  });
+
+  it("asking again shows the same link", async () => {
+    await sharePanel();
+    await click(buttonWith("Get a link"));
+    const first = $('input[aria-label="Link to this view"]').value;
+    expect((await api.linkCreate((await api.tree())[0].id)).token).toBe(first.split("/join/")[1]);
+  });
+
+  it("a view with nothing in it can't get a link", async () => {
+    await render();
+    await type($('input[aria-label="New view name"]'), "Empty"); await click(buttonWith("Create"));
+    await act(async () => { $(".lib-share summary").click(); await new Promise((r) => setTimeout(r, 0)); });
+    expect(buttonWith("Get a link").disabled).toBe(true);
+  });
+});

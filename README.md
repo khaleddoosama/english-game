@@ -133,7 +133,7 @@ loads all content for every player and the admin's own progress.
 Every page has its own address, and filters live in the query string, so a
 refresh or a shared link opens the same view:
 `/`, `/stories`, `/play`, `/stats?show=started`, `/badges`, `/live`,
-`/live/<code>`, `/live?invite=<friend id>`, `/leaderboard`, `/friends`, `/library`, `/profile`, `/settings`, `/data`, and
+`/live/<code>`, `/live?invite=<friend id>`, `/leaderboard`, `/friends`, `/library`, `/join/<token>`, `/profile`, `/settings`, `/data`, and
 `/admin/<section>/<item>?filters`, e.g. `/admin/words?hasPicture=false`,
 `/admin/grammar/g5`, `/admin/ai?status=error`.
 
@@ -173,37 +173,49 @@ meanings of its word, an `antonyms` entry may name a meaning exactly
 entry), and the Import Center warns about a `meaning` that holds
 "1) … 2) …".
 
-## My library (views)
+## My library and views
 
-Every player has their own library on top of the shared dictionary, organised
-in **views**: folders that can sit inside each other, up to four levels
-(`A1.1 › movies › horror`). A word or a grammar rule can be in any number of
-views; progress belongs to the word, never to a view. Open it from
-*Profile → My library* (`/library`).
+Two things, on purpose:
 
-- **Practise** a view (with or without the views inside it); a view that holds
-  only grammar rules is a grammar round. The wrong answers still come from the
-  whole dictionary, so a small view is not an easy one.
-- **Add words** by searching the dictionary, by pasting a list (up to 200; a
-  word with several meanings asks which one), or by starting a view from a
-  course level. A word the dictionary doesn't have can be written with *Ask AI*.
-- **Share** a view with friends: they get an offer in their inbox and, when they
-  accept, their own copy (the views inside it, the words, the rules). Words only
-  the sender made stay private. **Live** challenges can take their words from a view.
+- **Library**: every word (and grammar rule) a player has. Words get in by
+  searching the dictionary, pasting a list, starting from a course level,
+  accepting something a friend shared, or writing one's own. Open it from
+  *Home → My views → Library* (or `/library`); each word says how many views it
+  is in, and removing one takes it out of every view.
+- **Views**: ways to pick some of the library's words and rules, as folders
+  that can sit inside each other, up to four levels (`A1.1 › sports › football`).
+  A word can be in any number of views; progress belongs to the word, never to a
+  view. Adding to a view starts from the library (or the whole dictionary, which
+  also adds to the library).
+
+Home shows three views: **Gateway** (the course levels and their sessions, the
+default for a new player), **By lesson** (each lesson, with its units), and
+**My views**. Gateway and By lesson are built from the content for everyone;
+nothing is copied per player.
+
+- **Practise** a view (with or without the views inside it); a view of only
+  grammar rules is a grammar round. Wrong answers still come from the whole
+  dictionary, so a small view is not an easy one. **Live** challenges can take
+  their words from a view.
+- **Share** a view: to friends (an offer in their inbox) or **by link**
+  (`/join/<token>`, good for 30 days, can be taken back). Whoever accepts gets
+  their own copy (the views inside it, the words, the rules) in their library;
+  words only the sender made stay private.
 - **Your own words** (`sense_create`) are private rows of the same dictionary
   table; a player's changes to a shared word are kept as a *patch*, so an admin
   fix still reaches them.
 
-How it is built: `supabase/migrations/0026`–`0030` (tables, row-level security,
-functions; nothing is physically removed, only flagged), `0027` copies the
+How it is built: `supabase/migrations/0026`–`0031` (tables, row-level security,
+functions; nothing is physically removed, only flagged); `0027` copies the
 dictionary from `content_items` and `dictionary_sync()` keeps the copy in step
 after every content save. The app talks to it through one interface
-(`src/features/library/libraryApi.js`) with two implementations — Supabase
-functions, and a localStorage mirror for local mode and the tests — and the
-library stays hidden until the dictionary has been copied. Tests: `supabase/tests/library.sql`,
-`dictionary_sync.sql`, `view_shares.sql`, `sense_create.sql`; `tests/library*.test.js(x)`; and
-`tests/library-contract.test.js`, which runs the app's API against the real SQL
-functions (set `PGURL`; CI does).
+(`src/features/library/libraryApi.js`) with two implementations: Supabase
+functions, and a localStorage mirror for local mode and the tests. The library
+stays hidden until the dictionary has been copied. Tests:
+`supabase/tests/library.sql`, `dictionary_sync.sql`, `view_shares.sql`,
+`view_links.sql`, `sense_create.sql`; `tests/library*.test.js(x)`,
+`tests/join-page.test.jsx`; and `tests/library-contract.test.js`, which runs the
+app's API against the real SQL functions (set `PGURL`; CI does).
 
 ## Admin panel
 

@@ -59,7 +59,7 @@ begin
   perform pg_temp.act(c);
   info := public.view_link_info(tok);
   perform pg_temp.must((info ->> 'valid')::boolean and info ->> 'name' = 'A1.1 sports' and info ->> 'from' = 'lk_a', 'a stranger sees what is offered and from whom');
-  perform pg_temp.must((info ->> 'views')::int = 2 and (info ->> 'words')::int = 1 and (info ->> 'rules')::int = 0, 'with the counts of the top view (' || info::text || ')');
+  perform pg_temp.must((info ->> 'views')::int = 2 and (info ->> 'words')::int = 2 and (info ->> 'rules')::int = 1, 'with what the whole view holds, without the private word (' || info::text || ')');
   perform pg_temp.must(not (info ->> 'mine')::boolean and not (info ->> 'taken')::boolean, 'not theirs, not taken yet');
   perform pg_temp.act(a);
   perform pg_temp.must((public.view_link_info(tok) ->> 'mine')::boolean, 'the owner is told it is theirs');

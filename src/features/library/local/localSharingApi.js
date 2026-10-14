@@ -2,7 +2,7 @@
 // accepting copies the view, and what is inside it, into the friend's own.
 import { MAX_SHARES_WAITING, MAX_SHARE_USERS, MSG } from "../libraryRules";
 import { copyViewForPlayer } from "./localCopy";
-import { descendants, findView, summaryOf } from "./localViews";
+import { deepSummary, findView } from "./localViews";
 
 export function createLocalSharingApi(ctx) {
   const { me, load, loadShares, saveShares, fail, areFriends, nameOf, now } = ctx;
@@ -29,7 +29,7 @@ export function createLocalSharingApi(ctx) {
       return loadShares().filter((x) => x.to === me() && x.status === "pending").flatMap((x) => {
         const theirs = load(x.from), v = findView(theirs, x.view);
         if (!v || !areFriends(me(), x.from)) return [];
-        return [{ id: x.id, name: v.name, from: nameOf(x.from), from_id: x.from, at: new Date(x.at).toISOString(), ...summaryOf(v), views: descendants(theirs, v).length + 1 }];
+        return [{ id: x.id, name: v.name, from: nameOf(x.from), from_id: x.from, at: new Date(x.at).toISOString(), ...deepSummary(theirs, v) }];
       }).sort((a, b) => (a.at < b.at ? 1 : -1));
     },
     async accept(shareId) {

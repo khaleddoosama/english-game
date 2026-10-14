@@ -210,8 +210,14 @@ begin
   if not found then return jsonb_build_object('valid', false, 'reason', 'removed'); end if;
   return jsonb_build_object('valid', true, 'name', c.name,
     'from', (select username from public.profiles where id = l.owner_id), 'mine', l.owner_id = (select auth.uid()),
-    'words', (select count(*) from public.collection_senses cs where cs.collection_id = c.id and cs.removed_at is null),
-    'rules', (select count(*) from public.collection_rules cr where cr.collection_id = c.id and cr.removed_at is null),
+    'words', (select count(distinct cs.sense_id) from public.collection_senses cs
+              join public.collections d on d.id = cs.collection_id and d.owner_id = c.owner_id and d.deleted_at is null and (d.id = c.id or d.path like c.path || '::%')
+              join public.senses se on se.id = cs.sense_id and se.deleted_at is null and se.visibility = 'public' and se.review_status <> 'rejected'
+              where cs.removed_at is null),
+    'rules', (select count(distinct cr.rule_id) from public.collection_rules cr
+              join public.collections d on d.id = cr.collection_id and d.owner_id = c.owner_id and d.deleted_at is null and (d.id = c.id or d.path like c.path || '::%')
+              join public.grammar_rules r on r.id = cr.rule_id and r.deleted_at is null
+              where cr.removed_at is null),
     'views', (select count(*) from public.collections d where d.owner_id = c.owner_id and d.deleted_at is null and (d.id = c.id or d.path like c.path || '::%')),
     'taken', exists (select 1 from public.view_link_takes t where t.token = p_token and t.user_id = (select auth.uid())));
 end;
@@ -280,6 +286,33 @@ as $$
     'rules', coalesce((select jsonb_agg(jsonb_build_object('id', r.rule_id, 'added_at', r.added_at) order by r.added_at desc)
       from public.library_rules r join public.grammar_rules g on g.id = r.rule_id and g.deleted_at is null
       where r.user_id = (select auth.uid()) and r.removed_at is null), '[]'::jsonb));
+$$;
+
+-- The friends' inbox says how much the whole offered view holds (what the
+-- friend would get), not only its top level.
+create or replace function public.view_shares_inbox()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id', s.id, 'name', c.name, 'from', p.username, 'from_id', s.from_user, 'at', s.created_at,
+    'words', (select count(distinct cs.sense_id) from public.collection_senses cs
+              join public.collections d on d.id = cs.collection_id and d.owner_id = c.owner_id and d.deleted_at is null and (d.id = c.id or d.path like c.path || '::%')
+              join public.senses se on se.id = cs.sense_id and se.deleted_at is null and se.visibility = 'public' and se.review_status <> 'rejected'
+              where cs.removed_at is null),
+    'rules', (select count(distinct cr.rule_id) from public.collection_rules cr
+              join public.collections d on d.id = cr.collection_id and d.owner_id = c.owner_id and d.deleted_at is null and (d.id = c.id or d.path like c.path || '::%')
+              join public.grammar_rules r on r.id = cr.rule_id and r.deleted_at is null
+              where cr.removed_at is null),
+    'views', (select count(*) from public.collections d where d.owner_id = c.owner_id and d.deleted_at is null and (d.id = c.id or d.path like c.path || '::%'))
+  ) order by s.created_at desc), '[]'::jsonb)
+  from public.collection_shares s
+  join public.collections c on c.id = s.collection_id and c.deleted_at is null
+  join public.profiles p on p.id = s.from_user
+  where s.to_user = (select auth.uid()) and s.status = 'pending';
 $$;
 
 do $$

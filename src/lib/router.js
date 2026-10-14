@@ -72,6 +72,7 @@ export function parseRoute(path) {
     case "profile": return { screen: "profile" };
     case "friends": return { screen: "friends" };
     case "library": return { screen: "library" };
+    case "join": return { screen: "join", token: a || "" };
     case "stats": return { screen: "stats" };
     case "badges": return { screen: "badges" };
     case "data": return { screen: "data" };
@@ -86,6 +87,7 @@ export function pathFor(screen, extra = {}) {
   const enc = encodeURIComponent;
   switch (screen) {
     case "levels": return extra.section === "stories" ? "/stories" : "/";
+    case "join": return `/join/${enc(extra.token || "")}`;
     case "live": return extra.code ? `/live/${enc(extra.code)}` : "/live";
     case "admin": return `/admin${extra.section && extra.section !== "overview" ? `/${enc(extra.section)}` : ""}${extra.item != null ? `/${enc(extra.item)}` : ""}`;
     case "leaderboard": case "profile": case "friends": case "library": case "stats": case "badges": case "data": case "settings": return `/${screen}`;
