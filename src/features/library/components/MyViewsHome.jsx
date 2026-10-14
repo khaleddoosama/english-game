@@ -10,7 +10,7 @@ import "../../../styles/library.css";
 // My views on the home screen: read only. Browse, and practise. Anything that
 // changes a view (rename, move, remove, add words, share) lives in the library
 // page, a tap away from the pencil on each view; the + makes a new one there.
-export default function MyViewsHome({ api, offers = 0, onPractice, ids, mastery = {}, words = [], grammar = [] }) {
+export default function MyViewsHome({ api, rootId = null, offers = 0, onPractice, ids, mastery = {}, words = [], grammar = [] }) {
   const [flat, setFlat] = useState(null);
   const load = useCallback(() => api.tree().then(setFlat, () => setFlat([])), [api]);
   useEffect(() => { load(); }, [load]);
@@ -30,6 +30,7 @@ export default function MyViewsHome({ api, offers = 0, onPractice, ids, mastery 
   const describe = (items) => { const w = items.filter((i) => i.kind === "word").length, g = items.length - w; return [w && count(w, "word"), g && count(g, "grammar rule")].filter(Boolean).join(" · ") || "Empty"; };
 
   const tree = useMemo(() => buildTree(flat || []), [flat]);
+  const root = rootId ? tree.find((v) => v.id === rootId) || null : null;
   const edit = (v) => <button className="lib-icon" aria-label={`Edit ${v.name}`} title="Edit in my library" onClick={() => navigate(`/library?view=${encodeURIComponent(v.id)}`)}><Pencil size={14} /></button>;
   // A view as a lesson-style card: its own progress and a Practice button.
   const card = (v, title, key) => {
@@ -72,11 +73,10 @@ export default function MyViewsHome({ api, offers = 0, onPractice, ids, mastery 
   return (
     <div className="lib-home">
       <div className="lib-home-head">
-        <span />
+        <span>{root && root.children.length > 0 && <>{edit(root)}{add(root)}</>}</span>
         <span>
           <button className="ui-row-btn" onClick={() => navigate("/catalog")}>Catalog</button>
           <button className="ui-row-btn" onClick={() => navigate("/library")}>My library</button>
-          <button className="lib-plus" aria-label="New view" title="New view" onClick={() => navigate("/library?new=1")}><Plus size={16} /></button>
         </span>
       </div>
       {offers > 0 && (
@@ -87,7 +87,11 @@ export default function MyViewsHome({ api, offers = 0, onPractice, ids, mastery 
         <div className="lib-empty"><p><b>You have no views yet.</b> A view is a way to pick some of your library’s words, like “A1.1 › sports”. Tap <b>+</b> to make one.</p></div>
       )}
       <div className="wh-levels-list lib-readonly" aria-label="Your views">
-        {tree.map((v) => <Group key={v.id} v={v} depth={0} />)}
+        {root
+          ? (root.children.length
+            ? <>{card(root, `All of ${root.name}`, `${root.id}-all`)}{root.children.map((c) => <Group key={c.id} v={c} depth={1} />)}</>
+            : card(root, root.name))
+          : tree.map((v) => <Group key={v.id} v={v} depth={0} />)}
       </div>
     </div>
   );

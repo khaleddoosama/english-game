@@ -189,7 +189,7 @@ Two things, on purpose:
   also adds to the library).
 
 Home shows three views: **By lesson** (each lesson, with its units; the default for a new
-player), **My views** (each view as the same kind of card, with its progress), and
+player), **one tab for each of the player's biggest views** (Gateway, Unit …, with a **+** tab for a new one; inside, the views in it as headings and cards with their progress), and
 **Gateway** (the course levels and their sessions; the owner's own view, shown to
 the admin only). Gateway and By lesson are built from the content for everyone;
 nothing is copied per player. On Home a player sees only the words and rules in their own library (the admin sees all of the course). My views on Home is read only (browse and practise), grouped like Gateway: a view with views inside is a heading with an *All of …* card and a card for each view;

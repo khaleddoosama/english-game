@@ -200,6 +200,14 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     library.api.libraryList().then((l) => alive && setLibraryKeys({ words: new Set(l.words.map((w) => library.ids.keyOfSense(w.id)).filter(Boolean)), rules: new Set(l.rules.map((r) => library.ids.keyOfRule(r.id)).filter(Boolean)) }), () => {});
     return () => { alive = false; };
   }, [library, screen]);
+  // The player's biggest views (Gateway, Unit …): each is a tab on Home, in place of "My views".
+  const [libraryRoots, setLibraryRoots] = useState(null);
+  useEffect(() => {
+    if (library.status !== "ready" || screen !== "levels") return;
+    let alive = true;
+    library.api.tree().then((rows) => alive && setLibraryRoots(rows.filter((v) => !v.parent).sort((a, b) => (a.position ?? 0) - (b.position ?? 0)).map((v) => ({ id: v.id, name: v.name }))), () => {});
+    return () => { alive = false; };
+  }, [library, screen, libraryInbox]);
   const limitHome = library.status === "ready" && !isAdmin && !!libraryKeys;
   const inLibrary = (it) => (it.kind === "word" ? libraryKeys.words.has(it.obj.word) : it.kind === "grammar" ? libraryKeys.rules.has(it.obj.id) : false);
   const homeLevels = limitHome ? LEVELS.map((l) => ({ ...l, items: l.items.filter(inLibrary) })).filter((l) => l.items.length) : LEVELS;
@@ -209,7 +217,15 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     startPractice(title, null, { title, scope }, (w) => scope.words.has(w.word));
   }
   // Gateway is the owner's own view (the admin's); everyone else starts on By lesson.
-  const homeView = (settings.levelView === "mine" && library.status !== "ready") || (settings.levelView === "course" && !isAdmin) ? "lesson" : settings.levelView;
+  // The home tab is "lesson", "course" (Gateway, admin) or "view:<id>" (one of my biggest views).
+  const homeView = (() => {
+    const v = settings.levelView;
+    if (v === "course") return isAdmin ? "course" : "lesson";
+    if (v === "mine") return libraryRoots?.[0] ? `view:${libraryRoots[0].id}` : "lesson";
+    if (v.startsWith("view:")) return library.status !== "ready" || (libraryRoots && !libraryRoots.some((r) => `view:${r.id}` === v)) ? "lesson" : v;
+    return v;
+  })();
+  const openRoot = homeView.startsWith("view:") ? homeView.slice(5) : null;
   function launchSession(session) { setActiveSession(session); setScreen("session"); }
   // One extra question style per word for Level Practice, built with the
   // adaptive-engine builders and converted to the V2 question shape.
@@ -1860,9 +1876,10 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
         {screen === "levels" && section === "practice" && (LEVELS.length > 0 || library.status === "ready") && (
           <div className="wh-level-view-toggle" role="group" aria-label="Show views">
-            {[...(isAdmin ? [["course", "Gateway"]] : []), ["lesson", "By lesson"], ...(library.status === "ready" ? [["mine", "My views"]] : [])].map(([id, label]) => (
+            {[...(isAdmin && !(libraryRoots || []).some((r) => r.name.toLowerCase() === "gateway") ? [["course", "Gateway"]] : []), ["lesson", "By lesson"], ...(library.status === "ready" ? (libraryRoots || []).map((r) => [`view:${r.id}`, r.name]) : [])].map(([id, label]) => (
               <button key={id} className={homeView === id ? "active" : ""} aria-pressed={homeView === id} onClick={() => setSettings((prev) => ({ ...prev, levelView: id }))}>{label}</button>
             ))}
+            {library.status === "ready" && <button className="lib-plus lib-tab-plus" aria-label="New view" title="New view" onClick={() => navigate("/library?new=1")}>+</button>}
           </div>
         )}
 
@@ -1913,9 +1930,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         })()}
 
         {/* My views: read only. Editing happens in the library page (Profile › My library). */}
-        {screen === "levels" && section === "practice" && homeView === "mine" && library.status === "ready" && (
+        {screen === "levels" && section === "practice" && openRoot && library.status === "ready" && (
           <Suspense fallback={<ScreenSkeleton />}>
-            <MyViewsHome api={library.api} offers={libraryInbox} onPractice={startViewPractice} ids={library.ids} mastery={mastery} words={WORDS} grammar={GRAMMAR} />
+            <MyViewsHome key={openRoot} rootId={openRoot} api={library.api} offers={libraryInbox} onPractice={startViewPractice} ids={library.ids} mastery={mastery} words={WORDS} grammar={GRAMMAR} />
           </Suspense>
         )}
 
@@ -2314,7 +2331,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} friendsApi={friendsApi} hiddenForPlayers={isAdmin && !app.leaderboard} /></Suspense>}
         {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage social={social} libraryOn={library.status === "ready"} libraryInbox={libraryInbox} onSignOut={onSignOut ? logOut : null} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
         {screen === "join" && (library.status === "ready"
-          ? <Suspense fallback={<ScreenSkeleton />}><JoinPage api={library.api} token={route.token} onTaken={(out, open) => { refreshLibraryInbox(); if (open) { setSettings((prev) => ({ ...prev, levelView: "mine" })); navigate("/"); } }} /></Suspense>
+          ? <Suspense fallback={<ScreenSkeleton />}><JoinPage api={library.api} token={route.token} onTaken={(out, open) => { refreshLibraryInbox(); if (open) { setSettings((prev) => ({ ...prev, levelView: out?.view ? `view:${out.view}` : "lesson" })); navigate("/"); } }} /></Suspense>
           : <section className="ui-page"><p className="ui-muted">{library.status === "loading" ? "Loading…" : "Shared views aren’t available yet."}</p></section>)}
         {screen === "catalog" && (library.status === "ready"
           ? <Suspense fallback={<ScreenSkeleton />}><CatalogPage api={library.api} isAdmin={isAdmin} onTaken={refreshLibraryInbox} /></Suspense>
