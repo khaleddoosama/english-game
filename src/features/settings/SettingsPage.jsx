@@ -23,7 +23,7 @@ function Stepper({ value, min, max, step = 1, onChange, label, unit }) {
   );
 }
 
-export default function SettingsPage({ settings, onChange, onBack, onOpen, app }) {
+export default function SettingsPage({ settings, onChange, onBack, onOpen, app, isAdmin = false }) {
   const set = (patch) => onChange(normalizeSettings({ ...settings, ...patch }));
   const voices = typeof window !== "undefined" && "speechSynthesis" in window;
   return (
@@ -57,7 +57,7 @@ export default function SettingsPage({ settings, onChange, onBack, onOpen, app }
         <Row label="Text size"><Choice label="Text size" value={settings.textSize} onChange={(v) => set({ textSize: v })} options={[["normal", "Normal"], ["large", "Large"], ["xlarge", "Extra large"]]} /></Row>
         <Row label="Number keys on answers" hint="Shows 1–4 to answer with the keyboard"><Toggle label="Number keys" checked={settings.shortcuts} onChange={(v) => set({ shortcuts: v })} /></Row>
         <Row label="Reduce motion" hint="Fewer animations"><Toggle label="Reduce motion" checked={settings.reduceMotion} onChange={(v) => set({ reduceMotion: v })} /></Row>
-        <Row label="Home opens on"><Choice label="Home view" value={settings.levelView} onChange={(v) => set({ levelView: v })} options={[["course", "Gateway"], ["lesson", "By lesson"], ["mine", "My views"]]} /></Row>
+        <Row label="Home opens on"><Choice label="Home view" value={settings.levelView} onChange={(v) => set({ levelView: v })} options={[["lesson", "By lesson"], ["mine", "My views"], ...(isAdmin ? [["course", "Gateway"]] : [])]} /></Row>
       </section>
 
       <section className="st-card">
