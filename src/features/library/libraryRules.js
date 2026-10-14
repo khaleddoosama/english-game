@@ -7,6 +7,8 @@ export const MAX_PER_CALL = 200;
 export const MAX_SHARE_USERS = 20;
 export const MAX_SHARES_WAITING = 50;
 export const MAX_LIBRARY = 5000;
+export const MAX_LINKS = 50;
+export const LINK_DAYS = 30;
 export const MAX_NAME = 60;
 export const NAME_ERROR = 'A view name is 1 to 60 characters and has no "::" in it.';
 
@@ -34,6 +36,9 @@ export const MSG = Object.freeze({
   shareGone: ["That share is no longer waiting.", "P0002"],
   shareRemoved: ["The sender removed that view.", "P0002"],
   shareUnfriended: ["You are no longer friends.", "42501"],
+  linkGone: ["This link no longer works.", "P0002"],
+  linkOwn: ["This is your own view.", "22023"],
+  linkTooMany: ["You have 50 links open. Take some back first.", "55000"],
   shareNoRoom: (n) => [`You do not have room for ${n} more views (the most is ${MAX_VIEWS}).`, "55000"],
 });
 

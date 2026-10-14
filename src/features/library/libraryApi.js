@@ -11,13 +11,15 @@
 //              remove(id) add(view, senseIds) drop(view, senseId) addRules(view, ruleIds)
 //              contents(view, deep?) -> [{ kind: "sense" | "rule", id }]
 //   library    libraryAdd(senseIds) libraryRemove(senseId) patch(senseId, patch, note?) createWord(card)
+//              libraryList() -> { words: [{ id, note, patch, added_at, views }], rules: [{ id }] }
 //   sharing    share(view, userIds) inbox() accept(shareId) dismiss(shareId)
+//   links      linkCreate(view) linkInfo(token) linkAccept(token) linkRevoke(token)
 import { isLocalMode, supabase } from "../../lib/supabase";
 import { createLocalLibraryApi } from "./local/localLibraryApi";
 import { createOnlineLibraryApi } from "./onlineLibraryApi";
 
 export { LibraryError } from "./libraryErrors";
-export { MAX_DEPTH, MAX_LIBRARY, MAX_NAME, MAX_PER_CALL, MAX_SHARES_WAITING, MAX_SHARE_USERS, MAX_VIEWS, NAME_ERROR, cleanViewName, senseFromCard, validViewName } from "./libraryRules";
+export { LINK_DAYS, MAX_DEPTH, MAX_LIBRARY, MAX_LINKS, MAX_NAME, MAX_PER_CALL, MAX_SHARES_WAITING, MAX_SHARE_USERS, MAX_VIEWS, NAME_ERROR, cleanViewName, senseFromCard, validViewName } from "./libraryRules";
 export { createLocalLibraryApi, createOnlineLibraryApi as createSupabaseLibraryApi };
 
 // Online: the Supabase functions. Local mode: the localStorage mirror, which

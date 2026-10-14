@@ -75,7 +75,8 @@ begin
   inbox := public.view_shares_inbox();
   perform pg_temp.must(jsonb_array_length(inbox) = 1, 'b sees the offer');
   perform pg_temp.must(inbox #>> '{0,name}' = 'A1.1' and inbox #>> '{0,from}' = 'sh_a', 'with its name and who sent it');
-  perform pg_temp.must((inbox #>> '{0,views}')::int = 1, 'and how many views are inside it');
+  perform pg_temp.must((inbox #>> '{0,views}')::int = 2, 'and how many views it holds');
+  perform pg_temp.must((inbox #>> '{0,words}')::int = 3 and (inbox #>> '{0,rules}')::int = 1, 'and what the whole view holds, without the private word (' || (inbox #>> '{0,words}') || ')');
   sh := (inbox #>> '{0,id}')::uuid;
 
   -- a stranger can neither accept nor dismiss it

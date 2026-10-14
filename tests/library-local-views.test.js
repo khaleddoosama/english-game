@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeKeys, childrenOf, depthOf, descendantIds, descendants, emptyDb, findView, heightBelow, liveViews, nameTaken, pathFor, summaryOf } from "../src/features/library/local/localViews.js";
+import { activeKeys, childrenOf, deepSummary, depthOf, descendantIds, descendants, emptyDb, findView, heightBelow, liveViews, nameTaken, pathFor, summaryOf } from "../src/features/library/local/localViews.js";
 import { MSG, NAME_ERROR, cleanViewName, validViewName } from "../src/features/library/libraryRules.js";
 import { LibraryError, friendlyError } from "../src/features/library/libraryErrors.js";
 
@@ -35,6 +35,13 @@ describe("local view helpers", () => {
     expect(activeKeys(db().views[0].senses)).toEqual(["w1"]);
     expect(activeKeys(undefined)).toEqual([]);
     expect(summaryOf(db().views[0])).toEqual({ words: 1, rules: 1 });
+  });
+  it("what a view holds with the views inside it, each word once", () => {
+    const d = db();
+    d.views[1].senses = { w1: { at: 1 }, w3: { at: 1 } };       // movies has w1 too (also in A1.1) and w3
+    d.views[2].senses = { w3: { at: 1 }, w4: { at: 1 } };
+    expect(deepSummary(d, d.views[0])).toEqual({ words: 3, rules: 1, views: 3 });   // w1, w3, w4
+    expect(deepSummary(d, d.views[3])).toEqual({ words: 0, rules: 0, views: 1 });
   });
 });
 

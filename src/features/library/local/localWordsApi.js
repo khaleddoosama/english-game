@@ -10,12 +10,20 @@ export function createLocalWordsApi(ctx) {
     if (senseIds.length > MAX_PER_CALL) fail(MSG.tooManyWords);
     if (activeKeys(db.entries).length + senseIds.length > MAX_LIBRARY) fail(MSG.libraryFull);
     const ok = senseIds.filter((s) => canSee(s));
-    for (const s of ok) db.entries[s] = { patch: db.entries[s]?.patch || {}, note: db.entries[s]?.note || null };
+    for (const s of ok) db.entries[s] = { patch: db.entries[s]?.patch || {}, note: db.entries[s]?.note || null, at: db.entries[s] && !db.entries[s].removed ? db.entries[s].at : now() };
     save(db);
     return ok;
   };
   return {
     libraryAdd,
+    // Everything in my library, newest first, with how many of my views each word is in.
+    async libraryList() {
+      const db = load();
+      const words = Object.entries(db.entries).filter(([, e]) => !e.removed)
+        .map(([id, e]) => ({ id, note: e.note || null, patch: e.patch || {}, added_at: new Date(e.at || 0).toISOString(), views: liveViews(db).filter((v) => v.senses[id] && !v.senses[id].removed).length }));
+      const rules = [...new Set(liveViews(db).flatMap((v) => activeKeys(v.rules)))].map((id) => ({ id, added_at: null }));
+      return { words, rules };
+    },
     async libraryRemove(senseId) {
       const db = load();
       if (db.entries[senseId]) db.entries[senseId].removed = true;

@@ -43,7 +43,8 @@ describe("player settings", () => {
     expect(normalizeSettings({ autoAdvanceMs: 2000, textSize: "xlarge", speedSeconds: 90 })).toMatchObject({ autoAdvanceMs: 2000, textSize: "xlarge", speedSeconds: 90 });
   });
   it("keeps older saved settings working", () => {
-    const old = { questionsPerRound: 20, newWordsPerRound: 0, weakReviewSize: 8, enablePairModes: false, sound: false, dailyGoal: 40, levelView: "group" };
+    const old = { questionsPerRound: 20, newWordsPerRound: 0, weakReviewSize: 8, enablePairModes: false, sound: false, dailyGoal: 40, levelView: "lesson" };
     expect(normalizeSettings(old)).toMatchObject(old);
+    expect(normalizeSettings({ ...old, levelView: "group" }).levelView).toBe("lesson");   // By unit became part of By lesson
   });
 });

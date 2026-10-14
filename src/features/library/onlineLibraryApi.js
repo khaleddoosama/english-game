@@ -25,6 +25,7 @@ export function createOnlineLibraryApi(client) {
     contents: (view, deep = true) => rpc("view_contents", { p_view: view, p_deep: deep }),
     // the library and the player's own words
     libraryAdd: (senseIds) => rpc("library_add", { p_senses: senseIds }),
+    libraryList: () => rpc("library_list"),
     libraryRemove: (senseId) => rpc("library_remove", { p_sense: senseId }),
     patch: (senseId, patch, note = null) => rpc("library_patch", { p_sense: senseId, p_patch: patch, p_note: note }),
     createWord: (card) => {
@@ -36,5 +37,10 @@ export function createOnlineLibraryApi(client) {
     inbox: () => rpc("view_shares_inbox"),
     accept: (shareId) => rpc("view_share_accept", { p_share: shareId }),
     dismiss: (shareId) => rpc("view_share_dismiss", { p_share: shareId }),
+    // sharing a view by link
+    linkCreate: (view) => rpc("view_link_create", { p_view: view }),
+    linkInfo: (token) => rpc("view_link_info", { p_token: token }),
+    linkAccept: (token) => rpc("view_link_accept", { p_token: token }),
+    linkRevoke: (token) => rpc("view_link_revoke", { p_token: token }),
   };
 }

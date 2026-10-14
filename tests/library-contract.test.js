@@ -100,6 +100,19 @@ describe.skipIf(!PGURL)("library API <-> SQL functions", () => {
     expect((await A.createWord({ word: "quokka", meaning: "again" })).id).toBe(mine.id);
     expect(await A.add(sub, [mine.id])).toBe(1);
     await expect(B.add(top, [mine.id])).rejects.toThrow();
+    // by link: make, look, take, take back; and my library as a list
+    const link = await A.linkCreate(top);
+    expect(link.token.length).toBeGreaterThan(20);
+    expect(await B.linkInfo(link.token)).toMatchObject({ valid: true, name: "A1.1", from: `${tag}a`, mine: false });
+    const taken = await B.linkAccept(link.token);
+    expect(taken).toMatchObject({ name: expect.stringContaining(`(from ${tag}a)`), skipped: 0 });
+    expect((await B.linkAccept(link.token)).already).toBe(true);
+    await A.linkRevoke(link.token);
+    expect(await B.linkInfo(link.token)).toEqual({ valid: false, reason: "taken_back" });
+    await expect(B.linkAccept(link.token)).rejects.toThrow(/no longer works/);
+    const list = await A.libraryList();
+    expect(list.words.length).toBeGreaterThan(0);
+    expect(list.words[0]).toEqual(expect.objectContaining({ id: expect.any(String), views: expect.any(Number) }));
     // remove a view: gone from the tree, words stay in the library
     await A.remove(top);
     expect((await A.tree()).map((v) => v.id)).toEqual([sub]);

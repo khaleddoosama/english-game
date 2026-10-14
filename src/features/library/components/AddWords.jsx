@@ -5,12 +5,15 @@ import { count } from "./format";
 // Put words in the open view: search the dictionary and tick, or paste a list.
 // A word the id map doesn't know was added after the app started: the map is
 // reloaded once and it is tried again.
-export default function AddWords({ words, wordByKey, ids, busy, onAdd, onAskWord, onRefreshIds, setNotice }) {
+export default function AddWords({ words, libraryKeys, wordByKey, ids, busy, onAdd, onAskWord, onRefreshIds, setNotice }) {
   const [query, setQuery] = useState("");
   const [paste, setPaste] = useState("");
   const [pasted, setPasted] = useState(null);
   const [picked, setPicked] = useState(() => new Set());
-  const results = useMemo(() => searchWords(words, query, 30), [words, query]);
+  // Where the words come from: the ones already in my library, or the whole dictionary (which also adds them to my library).
+  const [source, setSource] = useState(libraryKeys.size ? "library" : "dictionary");
+  const pool = useMemo(() => (source === "library" ? words.filter((w) => libraryKeys.has(w.word)) : words), [source, words, libraryKeys]);
+  const results = useMemo(() => searchWords(pool, query, 30), [pool, query]);
   const toggle = (k) => setPicked((s) => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
 
   async function add(keys) {
@@ -25,8 +28,15 @@ export default function AddWords({ words, wordByKey, ids, busy, onAdd, onAskWord
   return (
     <>
       <h4 className="lib-sub">Add words</h4>
+      <div className="lib-source" role="group" aria-label="Where to take words from">
+        <button className={`chip ${source === "library" ? "on" : ""}`} aria-pressed={source === "library"} onClick={() => setSource("library")}>From my library ({libraryKeys.size})</button>
+        <button className={`chip ${source === "dictionary" ? "on" : ""}`} aria-pressed={source === "dictionary"} onClick={() => setSource("dictionary")}>From the dictionary</button>
+      </div>
       <input className="lib-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by word or meaning" aria-label="Search words" />
-      {!results.length && query.trim().length > 1 && onAskWord && (
+      {!results.length && query.trim().length > 1 && source === "library" && (
+        <p className="ui-muted">Nothing called “{query.trim()}” in your library. <button className="lib-link" onClick={() => setSource("dictionary")}>Search the dictionary</button></p>
+      )}
+      {!results.length && query.trim().length > 1 && source === "dictionary" && onAskWord && (
         <p className="ui-muted">Nothing called “{query.trim()}”. <button className="lib-link" onClick={() => onAskWord(query.trim())}>Ask AI about it</button></p>
       )}
       {results.length > 0 && (
@@ -42,9 +52,9 @@ export default function AddWords({ words, wordByKey, ids, busy, onAdd, onAskWord
         </>
       )}
       <details className="lib-paste">
-        <summary>Add a list (one word per line, up to 200)</summary>
+        <summary>Add a list (one word per line, up to 200){source === "library" ? " from your library" : ""}</summary>
         <textarea rows={5} value={paste} onChange={(e) => { setPaste(e.target.value); setPasted(null); }} placeholder={"reluctant\nonce in a blue moon\ncast"} aria-label="Words to add" />
-        <button className="ui-row-btn" disabled={!paste.trim()} onClick={() => setPasted(matchPasted(paste, words))}>Check the list</button>
+        <button className="ui-row-btn" disabled={!paste.trim()} onClick={() => setPasted(matchPasted(paste, pool))}>Check the list</button>
         {pasted && (
           <div className="lib-checked">
             <p>{pasted.matched.length} found{pasted.ambiguous.length ? `, ${pasted.ambiguous.length} with more than one meaning` : ""}{pasted.missing.length ? `, ${pasted.missing.length} not in the dictionary` : ""}.</p>

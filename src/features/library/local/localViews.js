@@ -29,3 +29,9 @@ export const activeKeys = (items) => Object.entries(items || {}).filter(([, e]) 
 
 // What the tree and the inbox say about a view.
 export const summaryOf = (v) => ({ words: activeKeys(v.senses).length, rules: activeKeys(v.rules).length });
+
+// What a view and the views inside it hold together (each word or rule once).
+export function deepSummary(db, v) {
+  const all = [v, ...descendants(db, v)];
+  return { words: new Set(all.flatMap((x) => activeKeys(x.senses))).size, rules: new Set(all.flatMap((x) => activeKeys(x.rules))).size, views: all.length };
+}
