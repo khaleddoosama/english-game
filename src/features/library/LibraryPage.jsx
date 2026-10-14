@@ -68,7 +68,7 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
       <ShareInbox offers={offers} busy={lib.busy} onAnswer={answer} />
       <div className="lib-tabs" role="tablist" aria-label="Library or views">
         <button role="tab" aria-selected={tab === "views"} className={tab === "views" ? "on" : ""} onClick={() => setTab("views")}>Views <small>{lib.flat.length}</small></button>
-        <button role="tab" aria-selected={tab === "library"} className={tab === "library" ? "on" : ""} onClick={() => setTab("library")}>Library <small>{lib.mine.words.length}</small></button>
+        <button role="tab" aria-selected={tab === "library"} className={tab === "library" ? "on" : ""} onClick={() => setTab("library")}>Library <small>{lib.mine.words.length + lib.mine.rules.length}</small></button>
       </div>
 
       {tab === "library" && (
