@@ -228,3 +228,96 @@ describe("a word of my own", () => {
     await expect(api.createWord({ word: "", meaning: "m" })).rejects.toThrow(/1 to 120/);
   });
 });
+
+describe("my library as a list", () => {
+  it("lists my words with how many views each is in, newest first; rules from my views", async () => {
+    let t = 1000;
+    const api = createLocalLibraryApi({ storage: memory(), me: () => "a", now: () => ++t });
+    const v = await api.create("V"), w = await api.create("W");
+    await api.add(v, ["w1", "w2"]); await api.add(w, ["w1"]); await api.libraryAdd(["w3"]); await api.addRules(v, ["r1"]);
+    const { words, rules } = await api.libraryList();
+    expect(words.map((x) => [x.id, x.views]).sort()).toEqual([["w1", 2], ["w2", 1], ["w3", 0]]);
+    expect(rules.map((r) => r.id)).toEqual(["r1"]);
+    await api.libraryRemove("w2");
+    expect((await api.libraryList()).words.map((x) => x.id).sort()).toEqual(["w1", "w3"]);
+  });
+});
+
+describe("sharing a view by link (local mirror of migration 0031)", () => {
+  const as = (user, now) => createLocalLibraryApi({ storage, me: () => user, now, nameOf: (id) => ({ a: "ann", b: "bob", c: "cat" })[id] });
+  let ann, bob, top, sub, clock;
+  beforeEach(async () => {
+    clock = 1000; const now = () => ++clock;
+    ann = as("a", now); bob = as("b", now);
+    top = await ann.create("A1.1 sports"); sub = await ann.create("football", top);
+    await ann.add(top, ["w1"]); await ann.add(sub, ["w2"]); await ann.addRules(sub, ["r1"]);
+  });
+
+  it("only the owner can make a link; asking again gives the same one", async () => {
+    const l = await ann.linkCreate(top);
+    expect(l.token.length).toBeGreaterThan(20);
+    expect((await ann.linkCreate(top)).token).toBe(l.token);
+    await bad(bob.linkCreate(top), /does not exist/);
+  });
+
+  it("what it shows, to anyone (no friendship needed)", async () => {
+    const { token } = await ann.linkCreate(top);
+    expect(await bob.linkInfo(token)).toMatchObject({ valid: true, name: "A1.1 sports", from: "ann", words: 1, rules: 0, views: 2, mine: false, taken: false });
+    expect((await ann.linkInfo(token)).mine).toBe(true);
+    expect(await bob.linkInfo("nope")).toEqual({ valid: false, reason: "not_found" });
+  });
+
+  it("taking it makes my own copy; taking it twice gives the same one; the owner can't take their own", async () => {
+    const { token } = await ann.linkCreate(top);
+    const got = await bob.linkAccept(token);
+    expect(got).toMatchObject({ name: "A1.1 sports (from ann)", views: 2, words: 2, rules: 1 });
+    expect((await bob.contents(got.view, true)).map((x) => x.id).sort()).toEqual(["r1", "w1", "w2"]);
+    expect((await bob.linkInfo(token)).taken).toBe(true);
+    const again = await bob.linkAccept(token);
+    expect(again).toMatchObject({ already: true, view: got.view });
+    expect((await bob.tree()).length).toBe(2);
+    await bad(ann.linkAccept(token), /your own view/);
+    expect((await ann.linkInfo(token)).mine).toBe(true);
+  });
+
+  it("after removing the copy it can be taken again, as a new one", async () => {
+    const { token } = await ann.linkCreate(top);
+    const first = await bob.linkAccept(token);
+    await bob.remove(first.view);
+    const second = await bob.linkAccept(token);
+    expect(second.view).not.toBe(first.view);
+    expect(second.already).toBeUndefined();
+  });
+
+  it("taking it back, running out, and a removed view all stop it", async () => {
+    const { token } = await ann.linkCreate(top);
+    await bob.linkRevoke(token);                                     // not the owner: nothing happens
+    expect((await bob.linkInfo(token)).valid).toBe(true);
+    await ann.linkRevoke(token);
+    expect(await bob.linkInfo(token)).toEqual({ valid: false, reason: "taken_back" });
+    await bad(bob.linkAccept(token), /no longer works/);
+    const fresh = await ann.linkCreate(top);
+    expect(fresh.token).not.toBe(token);
+    const late = as("b", () => Date.now() + 40 * 86400000);          // 40 days on
+    expect(await late.linkInfo(fresh.token)).toEqual({ valid: false, reason: "expired" });
+    await ann.remove(top);
+    expect(await bob.linkInfo(fresh.token)).toEqual({ valid: false, reason: "removed" });
+  });
+
+  it("the copy is independent of the original", async () => {
+    const { token } = await ann.linkCreate(top);
+    const got = await bob.linkAccept(token);
+    await bob.rename(got.view, "Mine now");
+    await ann.add(top, ["w9"]);
+    expect((await ann.tree())[0].name).toBe("A1.1 sports");
+    expect((await bob.contents(got.view, true)).length).toBe(3);
+  });
+
+  it("at most 50 links open, and no room for the copy is refused", async () => {
+    const { token } = await ann.linkCreate(top);
+    for (let i = 0; i < 49; i++) await ann.linkCreate(await ann.create(`v${i}`));
+    await bad(ann.linkCreate(await ann.create("one more")), /50 links/);
+    for (let i = 0; i < 199; i++) await bob.create(`b${i}`);
+    await bad(bob.linkAccept(token), /room for 2 more views/);
+  });
+});
