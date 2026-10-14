@@ -375,6 +375,16 @@ describe("the catalog (local mirror of migration 0032)", () => {
     expect((await ann.catalogPublish(top, "Again")).id).not.toBe(id);
   });
 
+  it("the owner (or an admin) edits the title and description; the list carries when, and the view only for the owner", async () => {
+    const { id } = await ann.catalogPublish(top, "Movie night", "Scary");
+    await bad(bob.catalogEdit(id, "hack"), /not yours/);
+    await bad(ann.catalogEdit(id, " "), /title/);
+    expect((await ann.catalogEdit(id, "Renamed", "New text")).title).toBe("Renamed");
+    expect((await ann.catalogList())[0]).toMatchObject({ title: "Renamed", description: "New text", view: top });
+    expect((await bob.catalogList())[0].view).toBeNull();
+    expect((await as("c", () => 9000, () => true).catalogEdit(id, "By admin")).title).toBe("By admin");
+  });
+
   it("a removed view drops out, and 20 open entries is the most", async () => {
     await ann.catalogPublish(top, "Movie night");
     await ann.remove(top);

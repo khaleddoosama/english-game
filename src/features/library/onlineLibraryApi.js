@@ -44,6 +44,7 @@ export function createOnlineLibraryApi(client) {
     linkRevoke: (token) => rpc("view_link_revoke", { p_token: token }),
     // the catalog (migration 0032)
     catalogPublish: (view, title, description = "") => rpc("catalog_publish", { p_view: view, p_title: title, p_description: description }),
+    catalogEdit: (entry, title, description = "") => rpc("catalog_edit", { p_entry: entry, p_title: title, p_description: description }),
     catalogUnpublish: (entry) => rpc("catalog_unpublish", { p_entry: entry }),
     catalogList: (query = "", limit = 50) => rpc("catalog_list", { p_query: query, p_limit: limit }),
     catalogTake: (entry) => rpc("catalog_take", { p_entry: entry }),

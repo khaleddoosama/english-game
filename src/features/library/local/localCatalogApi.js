@@ -19,14 +19,23 @@ export function createLocalCatalogApi(ctx) {
       if (d.length > MAX_DESCRIPTION) fail(MSG.catalogDescription);
       const all = entries();
       let e = all.find((x) => x.view === view && x.owner === me() && !x.down);
-      if (e) { e.title = t; e.description = d; }
+      if (e) { e.title = t; e.description = d; e.edited = now(); }
       else {
         if (all.filter((x) => x.owner === me() && live(x)).length >= MAX_CATALOG) fail(MSG.catalogTooMany);
-        e = { id: `c${all.length + 1}-${now()}`, view, owner: me(), title: t, description: d, at: now(), down: false, takes: 0 };
+        e = { id: `c${all.length + 1}-${now()}`, view, owner: me(), title: t, description: d, at: now(), edited: now(), down: false, takes: 0 };
         all.push(e);
       }
       write("library1:catalog", all);
       return { id: e.id, title: e.title, description: e.description };
+    },
+    async catalogEdit(id, title, description = "") {
+      const t = String(title || "").trim(), d = String(description || "").trim();
+      if (!t || t.length > MAX_TITLE) fail(MSG.catalogTitle);
+      if (d.length > MAX_DESCRIPTION) fail(MSG.catalogDescription);
+      const all = entries(), e = all.find((x) => x.id === id && !x.down && (x.owner === me() || isAdmin()));
+      if (!e) fail(MSG.catalogNotYours);
+      e.title = t; e.description = d; e.edited = now(); write("library1:catalog", all);
+      return { id: e.id, title: e.title, description: e.description, updated_at: new Date(e.edited).toISOString() };
     },
     async catalogUnpublish(id) {
       const all = entries(), e = all.find((x) => x.id === id && !x.down);
@@ -36,7 +45,7 @@ export function createLocalCatalogApi(ctx) {
       const q = String(query || "").trim().toLowerCase(), had = takes();
       return entries().filter((e) => live(e) && (!q || [e.title, e.description, nameOf(e.owner)].some((s) => String(s).toLowerCase().includes(q))))
         .sort((a, b) => b.at - a.at).slice(0, Math.max(1, Math.min(limit || 50, 100)))
-        .map((e) => ({ id: e.id, title: e.title, description: e.description, from: nameOf(e.owner), mine: e.owner === me(), at: new Date(e.at).toISOString(), takes: e.takes,
+        .map((e) => ({ id: e.id, title: e.title, description: e.description, from: nameOf(e.owner), mine: e.owner === me(), at: new Date(e.at).toISOString(), updated_at: new Date(e.edited || e.at).toISOString(), view: e.owner === me() ? e.view : null, takes: e.takes,
           ...deepSummary(load(e.owner), findView(load(e.owner), e.view)), taken: had.some((t) => t.entry === e.id && t.user === me()) }));
     },
     async catalogTake(id) {
