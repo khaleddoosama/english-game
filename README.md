@@ -133,7 +133,7 @@ loads all content for every player and the admin's own progress.
 Every page has its own address, and filters live in the query string, so a
 refresh or a shared link opens the same view:
 `/`, `/stories`, `/play`, `/stats?show=started`, `/badges`, `/live`,
-`/live/<code>`, `/live?invite=<friend id>`, `/leaderboard`, `/friends`, `/profile`, `/settings`, `/data`, and
+`/live/<code>`, `/live?invite=<friend id>`, `/leaderboard`, `/friends`, `/library`, `/profile`, `/settings`, `/data`, and
 `/admin/<section>/<item>?filters`, e.g. `/admin/words?hasPicture=false`,
 `/admin/grammar/g5`, `/admin/ai?status=error`.
 
@@ -173,6 +173,38 @@ meanings of its word, an `antonyms` entry may name a meaning exactly
 entry), and the Import Center warns about a `meaning` that holds
 "1) … 2) …".
 
+## My library (views)
+
+Every player has their own library on top of the shared dictionary, organised
+in **views**: folders that can sit inside each other, up to four levels
+(`A1.1 › movies › horror`). A word or a grammar rule can be in any number of
+views; progress belongs to the word, never to a view. Open it from
+*Profile → My library* (`/library`).
+
+- **Practise** a view (with or without the views inside it); a view that holds
+  only grammar rules is a grammar round. The wrong answers still come from the
+  whole dictionary, so a small view is not an easy one.
+- **Add words** by searching the dictionary, by pasting a list (up to 200; a
+  word with several meanings asks which one), or by starting a view from a
+  course level. A word the dictionary doesn't have can be written with *Ask AI*.
+- **Share** a view with friends: they get an offer in their inbox and, when they
+  accept, their own copy (the views inside it, the words, the rules). Words only
+  the sender made stay private. **Live** challenges can take their words from a view.
+- **Your own words** (`sense_create`) are private rows of the same dictionary
+  table; a player's changes to a shared word are kept as a *patch*, so an admin
+  fix still reaches them.
+
+How it is built: `supabase/migrations/0026`–`0030` (tables, row-level security,
+functions; nothing is physically removed, only flagged), `0027` copies the
+dictionary from `content_items` and `dictionary_sync()` keeps the copy in step
+after every content save. The app talks to it through one interface
+(`src/features/library/libraryApi.js`) with two implementations — Supabase
+functions, and a localStorage mirror for local mode and the tests — and the
+library stays hidden until the dictionary has been copied. Tests: `supabase/tests/library.sql`,
+`dictionary_sync.sql`, `view_shares.sql`, `sense_create.sql`; `tests/library*.test.js(x)`; and
+`tests/library-contract.test.js`, which runs the app's API against the real SQL
+functions (set `PGURL`; CI does).
+
 ## Admin panel
 
 Signed in as an admin, the **Admin** tab opens (Back to game and Log out
@@ -207,10 +239,10 @@ refuses anyone who isn't an admin.
 api/                 Vercel Functions: ai, tts, image-import, keepalive
 src/engine/          game logic (moved verbatim from the original single file)
 src/features/        session, live, admin, data (import/export), stats (dashboard),
-                     settings, media, social (leaderboard, profile, friends), auth, shell
+                     settings, media, social (leaderboard, profile, friends), library, auth, shell
 src/lib/             supabase client, auth, repo (diff-based saves + caches), router,
                      app settings, ai, images
-src/styles/          tokens, app, auth, ui, admin, live, friends, data, stats, settings
+src/styles/          tokens, app, auth, ui, admin, live, friends, library, data, stats, settings
 supabase/migrations/ database schema and policies
 supabase/tests/      SQL tests (run inside a rolled-back transaction)
 tests/               Vitest unit tests

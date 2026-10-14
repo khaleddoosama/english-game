@@ -34,3 +34,14 @@
 .lib-paste textarea { width: 100%; box-sizing: border-box; margin: 8px 0; }
 .lib-checked fieldset { border: 1px solid var(--line); border-radius: var(--radius); margin: 8px 0; padding: 6px 10px; }
 @media (max-width: 480px) { .lib-tree li { flex-wrap: wrap; } .lib-go { margin-left: calc(var(--depth) * 0px); } }
+
+.lib-inbox { margin: 12px 0; padding: 10px 12px; border: 1px solid var(--gold); border-radius: var(--radius); display: grid; gap: 8px; }
+.lib-inbox ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.lib-inbox li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.lib-inbox li > span:first-child { display: grid; gap: 2px; min-width: 0; }
+.lib-inbox small { color: var(--text-dim); font: 11px var(--font-mono); }
+.lib-primary { border-color: var(--gold); color: var(--gold); }
+.lib-share summary { cursor: pointer; color: var(--gold); display: flex; align-items: center; gap: 6px; }
+.lib-friends { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.lib-link { background: none; border: 0; color: var(--gold); cursor: pointer; padding: 0; font: inherit; text-decoration: underline; }
+.lib-chips li button { font-size: 11px; color: var(--gold); }
