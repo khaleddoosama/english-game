@@ -212,7 +212,7 @@ describe("words the dictionary doesn't have yet", () => {
 });
 
 describe("a view with many items", () => {
-  it("shows rules that share a title as one chip with a count, and caps the word list", async () => {
+  it("shows every rule as its own chip with an x, and caps the word list", async () => {
     const many = Array.from({ length: 70 }, (_, i) => ({ word: `Word${i}`, meaning: "m" }));
     const rules = Array.from({ length: 5 }, (_, i) => ({ id: `g${i}`, rule: "Subject pronouns" })).concat([{ id: "g9", rule: "Articles" }]);
     const mapIds = idsFromMaps(new Map(many.map((w) => [w.word, `s-${w.word}`])), new Map(rules.map((r) => [r.id, `r-${r.id}`])));
@@ -222,7 +222,10 @@ describe("a view with many items", () => {
     await render({ words: many, grammar: rules, ids: mapIds });
     await click($(".lib-tree .lib-name"));
     expect($$(".lib-chips li:not(.rule)").length).toBe(60);
-    expect($$(".lib-chips li.rule").map((l) => l.textContent.trim()).sort()).toEqual(["Articles", "Subject pronouns ×5"]);
+    expect($$(".lib-chips li.rule").length).toBe(6);
+    await click($('button[aria-label="Take Articles out"]'));
+    expect($$(".lib-chips li.rule").length).toBe(5);
+    expect((await api.contents(view, false)).filter((x) => x.kind === "rule").length).toBe(5);
     await click($(".lib-panel .lib-link"));
     expect($$(".lib-chips li:not(.rule)").length).toBe(70);
   });
@@ -368,5 +371,58 @@ describe("sharing by link", () => {
     await type($('input[aria-label="New view name"]'), "Empty"); await click(buttonWith("Create"));
     await act(async () => { $(".lib-share summary").click(); await new Promise((r) => setTimeout(r, 0)); });
     expect(buttonWith("Get a link").disabled).toBe(true);
+  });
+});
+
+describe("grammar rules in a view and in the library", () => {
+  const GRAM = [{ id: "g1", rule: "Used to", category: "Grammar", level: "A1.1" }, { id: "g2", rule: "Articles", category: "Grammar", level: "A1.1" }, { id: "g3", rule: "Pronouns", category: "Grammar", level: "A1.1" }];
+  const gids = idsFromMaps(new Map(), new Map(GRAM.map((g) => [g.id, `r-${g.id}`])));
+  const tab = (name) => $$('[role="tab"]').find((t) => t.textContent.startsWith(name));
+  const check = (root, name) => [...root.querySelectorAll("li")].find((li) => li.textContent.includes(name)).querySelector("input");
+
+  it("adds rules to the open view from all rules, and they go into the library too", async () => {
+    const v = await api.create("G");
+    await render({ grammar: GRAM, ids: gids }); await flush();
+    await click($(".lib-tree .lib-name"));
+    const d = $(".lib-add-rules"); await act(async () => { d.open = true; d.dispatchEvent(new Event("toggle")); });
+    await click(check($(".lib-add-rules"), "Articles"));
+    await click($$(".lib-add-rules button").find((b) => b.textContent === "Add 1 rule"));
+    expect((await api.contents(v, false)).map((x) => x.id)).toEqual(["r-g2"]);
+    expect((await api.libraryList()).rules.map((r) => r.id)).toEqual(["r-g2"]);
+    expect($$(".lib-chips li.rule").map((l) => l.textContent.trim())).toEqual(["Articles"]);
+  });
+
+  it("the Library tab lists my rules; add them to a view, or remove them from the library after a second tap", async () => {
+    const v = await api.create("G");
+    await api.addRules(v, ["r-g1", "r-g2"]);
+    const w = await api.create("W");
+    await render({ grammar: GRAM, ids: gids }); await flush();
+    await click(tab("Library"));
+    expect($(".lib-rules").textContent).toContain("Grammar rules");
+    await click(check($(".lib-rules"), "Used to"));
+    await act(async () => { const sel = $('select[aria-label="Add rules to view"]'); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(sel, w); sel.dispatchEvent(new Event("change", { bubbles: true })); });
+    await click($$(".lib-rules .lib-actionbar button").find((b) => b.textContent === "Add"));
+    expect((await api.contents(w, false)).map((x) => x.id)).toEqual(["r-g1"]);
+    await click(check($(".lib-rules"), "Articles"));
+    await click($$(".lib-rules .lib-actionbar button").find((b) => b.textContent === "Remove from library"));
+    expect($(".lib-rules .lib-actionbar").textContent).toContain("Tap again to remove from library");
+    await click($$(".lib-rules .lib-actionbar button").find((b) => b.textContent.startsWith("Tap again")));
+    expect((await api.libraryList()).rules.map((r) => r.id).sort()).toEqual(["r-g1"]);
+    expect((await api.contents(v, false)).map((x) => x.id)).toEqual(["r-g1"]);       // out of the view as well
+  });
+
+  it("only the admin gets Edit rule, for one ticked rule, which opens the grammar editor", async () => {
+    await api.addRules(await api.create("G"), ["r-g1"]);
+    await render({ grammar: GRAM, ids: gids }); await flush();
+    await click(tab("Library"));
+    await click(check($(".lib-rules"), "Used to"));
+    expect($$(".lib-rules .lib-actionbar button").some((b) => b.textContent.includes("Edit rule"))).toBe(false);
+    await act(async () => root.unmount()); host.remove();
+    await render({ grammar: GRAM, ids: gids, isAdmin: true }); await flush();
+    await click(tab("Library"));
+    await click(check($(".lib-rules"), "Used to"));
+    await click($$(".lib-rules .lib-actionbar button").find((b) => b.textContent.includes("Edit rule")));
+    expect(window.location.pathname).toBe("/admin/grammar/g1");
+    window.history.replaceState({}, "", "/");
   });
 });

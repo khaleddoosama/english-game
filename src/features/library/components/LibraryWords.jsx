@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { count } from "./format";
+import LibraryRules from "./LibraryRules";
 import WordPicker from "./WordPicker";
 import { useSelection } from "./useSelection";
 
 // My library: every word I have, whether or not it is in a view. Tick some
 // and put them in a view (an existing one, or a new one made from them), or
 // take them out of the library, which takes them out of every view too.
-export default function LibraryWords({ items, rows, ruleByKey, wordByKey, busy, onAddToView, onNewView, onRemove }) {
+export default function LibraryWords({ items, rows, grammar = [], isAdmin = false, wordByKey, busy, onAddToView, onNewView, onRemove, onAddRulesToView, onRemoveRules }) {
   const sel = useSelection();
   const [only, setOnly] = useState("all");           // all | loose (not in any view)
   const [target, setTarget] = useState("");
@@ -17,11 +18,6 @@ export default function LibraryWords({ items, rows, ruleByKey, wordByKey, busy, 
   const viewsOf = useMemo(() => new Map(items.words.map((w) => [w.key, w.views])), [items.words]);
   const pool = useMemo(() => items.words.filter((w) => only === "all" || w.views === 0).map((w) => wordByKey.get(w.key)).filter(Boolean), [items.words, only, wordByKey]);
   const loose = items.words.filter((w) => w.views === 0).length;
-  const ruleGroups = useMemo(() => {
-    const by = new Map();
-    for (const r of items.rules) { const label = ruleByKey.get(r.key)?.rule || r.key; by.set(label, (by.get(label) || 0) + 1); }
-    return [...by];
-  }, [items.rules, ruleByKey]);
 
   if (!items.words.length && !items.rules.length) {
     return <div className="lib-empty"><p><b>Your library has no words yet.</b> Add words from a view (search the dictionary, paste a list, or start from a course level), or open a link a friend sent you.</p></div>;
@@ -74,12 +70,7 @@ export default function LibraryWords({ items, rows, ruleByKey, wordByKey, busy, 
         </form>
       )}
 
-      {ruleGroups.length > 0 && (
-        <>
-          <h4 className="lib-sub">Grammar rules</h4>
-          <ul className="lib-chips">{ruleGroups.map(([label, n]) => <li key={label} className="rule"><span>{label}{n > 1 ? ` ×${n}` : ""}</span></li>)}</ul>
-        </>
-      )}
+      <LibraryRules rules={items.rules} grammar={grammar} rows={rows} busy={busy} isAdmin={isAdmin} onAddToView={onAddRulesToView} onRemove={onRemoveRules} />
     </div>
   );
 }

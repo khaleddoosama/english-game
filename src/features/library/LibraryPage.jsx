@@ -20,7 +20,7 @@ import "../../styles/library.css";
 //   onRefreshIds() - reloads the key <-> id map (words added since the app started)
 //   /library?view=<id> opens that view; /library?new=1 starts on making one
 // The page only arranges the parts; each part owns its own little state.
-export default function LibraryPage({ api, ids, words, grammar, levels = [], friendsApi = null, onPractice, onInboxChanged, onAskWord = null, onRefreshIds = null }) {
+export default function LibraryPage({ api, ids, words, grammar, levels = [], friendsApi = null, onPractice, onInboxChanged, onAskWord = null, onRefreshIds = null, isAdmin = false }) {
   const lib = useViews({ api, ids });
   const start = useMemo(() => readQuery(window.location.search), []);
   const newParent = start.parent ? lib.rows.find((v) => v.id === start.parent) || null : null;   // /library?new=1&parent=<id>
@@ -28,6 +28,7 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
   const [tab, setTab] = useState("views");                 // "views" | "library"
   const libraryKeys = useMemo(() => new Set(lib.mine.words.map((w) => w.key)), [lib.mine.words]);
   const wordByKey = useMemo(() => new Map(words.map((w) => [w.word, w])), [words]);
+  const libraryRuleKeys = useMemo(() => new Set(lib.mine.rules.map((r) => r.key)), [lib.mine.rules]);
   const ruleByKey = useMemo(() => new Map(grammar.map((g) => [g.id, g])), [grammar]);
 
   const loadOffers = useCallback(async () => { try { setOffers(await api.inbox()); } catch { setOffers([]); } }, [api]);
@@ -71,7 +72,9 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
       </div>
 
       {tab === "library" && (
-        <LibraryWords items={lib.mine} rows={lib.rows} wordByKey={wordByKey} ruleByKey={ruleByKey} busy={lib.busy}
+        <LibraryWords items={lib.mine} rows={lib.rows} grammar={grammar} isAdmin={isAdmin} wordByKey={wordByKey} busy={lib.busy}
+          onAddRulesToView={(viewId, keys) => lib.act(() => api.addRules(viewId, keys.map(ids.ruleOf).filter(Boolean)), (n) => (n ? `Added ${count(n, "rule")} to the view.` : "Those are already in that view."))}
+          onRemoveRules={(keys) => lib.act(async () => { for (const k of keys) await api.libraryRemoveRule(ids.ruleOf(k)); return keys.length; }, (n) => `Removed ${count(n, "rule")} from your library.`)}
           onAddToView={(viewId, keys) => lib.act(() => api.add(viewId, keys.map(ids.senseOf).filter(Boolean)), (n) => (n ? `Added ${n} to the view.` : "Those are already in that view."))}
           onNewView={async (name, keys) => {
             const id = await lib.act(async () => { const made = await api.create(name); await api.add(made, keys.map(ids.senseOf).filter(Boolean)); return made; }, `Made “${name.trim()}” with ${count(keys.length, "word")}.`);
@@ -91,7 +94,7 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
           <CreateViews api={api} ids={ids} levels={levels} busy={lib.busy} act={lib.act} onCreated={lib.select} autoFocus={start.new === "1"} parent={newParent} />
           <ViewTree rows={lib.rows} selected={lib.view?.id} onSelect={lib.select} onPractice={onPractice}
             panel={lib.view && (
-              <ViewPanel key={lib.view.id} view={lib.view} roots={lib.roots} inside={lib.inside} libraryKeys={libraryKeys} api={api} ids={ids} words={words} wordByKey={wordByKey} ruleByKey={ruleByKey}
+              <ViewPanel key={lib.view.id} view={lib.view} roots={lib.roots} inside={lib.inside} libraryKeys={libraryKeys} libraryRuleKeys={libraryRuleKeys} grammar={grammar} api={api} ids={ids} words={words} wordByKey={wordByKey} ruleByKey={ruleByKey}
                 friendsApi={friendsApi} busy={lib.busy} act={lib.act} setNotice={lib.setNotice} onPractice={onPractice} onCreated={lib.select} onRemoved={() => lib.select(null)}
                 onRefreshIds={onRefreshIds} onAskWord={onAskWord} />
             )} />

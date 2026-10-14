@@ -1,5 +1,5 @@
 // The library API over Supabase: every call is one database function
-// (migrations 0026-0032) and the function does every check. This file only
+// (migrations 0026-0035) and the function does every check. This file only
 // names the arguments.
 import { friendlyError } from "./libraryErrors";
 import { senseFromCard } from "./libraryRules";
@@ -22,10 +22,13 @@ export function createOnlineLibraryApi(client) {
     add: (view, senseIds) => rpc("view_add", { p_view: view, p_senses: senseIds }),
     drop: (view, senseId) => rpc("view_drop", { p_view: view, p_sense: senseId }),
     addRules: (view, ruleIds) => rpc("view_add_rules", { p_view: view, p_rules: ruleIds }),
+    dropRule: (view, ruleId) => rpc("view_drop_rule", { p_view: view, p_rule: ruleId }),
     contents: (view, deep = true) => rpc("view_contents", { p_view: view, p_deep: deep }),
     // the library and the player's own words
     libraryAdd: (senseIds) => rpc("library_add", { p_senses: senseIds }),
     libraryList: () => rpc("library_list"),
+    libraryAddRules: (ruleIds) => rpc("library_add_rules", { p_rules: ruleIds }),
+    libraryRemoveRule: (ruleId) => rpc("library_remove_rule", { p_rule: ruleId }),
     libraryRemove: (senseId) => rpc("library_remove", { p_sense: senseId }),
     patch: (senseId, patch, note = null) => rpc("library_patch", { p_sense: senseId, p_patch: patch, p_note: note }),
     createWord: (card) => {

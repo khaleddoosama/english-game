@@ -110,6 +110,12 @@ describe.skipIf(!PGURL)("library API <-> SQL functions", () => {
     await A.linkRevoke(link.token);
     expect(await B.linkInfo(link.token)).toEqual({ valid: false, reason: "taken_back" });
     await expect(B.linkAccept(link.token)).rejects.toThrow(/no longer works/);
+    // grammar rules in the library: add, put in a view, take out of the view, take out of the library
+    await A.libraryRemoveRule(r1);
+    expect((await A.libraryList()).rules.map((r) => r.id)).not.toContain(r1);
+    expect(await A.libraryAddRules([r1])).toBe(1);
+    expect(await A.libraryAddRules([r1])).toBe(0);
+    await A.dropRule(sub, r1);
     // the catalog: publish, browse, take, take down
     const entry = await A.catalogPublish(top, "Contract view", "for the test");
     expect(entry).toMatchObject({ id: expect.any(String), title: "Contract view" });

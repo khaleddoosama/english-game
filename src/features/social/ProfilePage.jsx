@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { navigate } from "../../lib/router";
 import { formatMs } from "../live/liveRules";
-import { Award, BookOpen, Copy, Download, KeyRound, LogOut, SlidersHorizontal, Users } from "lucide-react";
+import { Award, BookCopy, BookOpen, Copy, Download, KeyRound, LogOut, SlidersHorizontal, Users } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { isLocalMode } from "../../lib/supabase";
 import { fetchLiveHistory } from "./socialApi";
@@ -44,6 +44,7 @@ export default function ProfilePage({ libraryOn = false, libraryInbox = 0, stats
       <div className="ui-row-actions">
         <button className="ui-row-btn" onClick={onOpenStats}><Award size={16} /> Full stats &amp; weak words</button>
         <button className="ui-row-btn" onClick={() => navigate("/friends")}><Users size={16} /> Friends{social.requests > 0 && <b className="ui-badge inline" aria-label={`${social.requests} requests waiting`}>{social.requests}</b>}</button>
+        {libraryOn && <button className="ui-row-btn" onClick={() => navigate("/catalog")}><BookCopy size={16} /> Catalog</button>}
         {libraryOn && <button className="ui-row-btn" onClick={() => navigate("/library")}><BookOpen size={16} /> My library{libraryInbox > 0 && <b className="ui-badge inline" aria-label={`${libraryInbox} shared views waiting`}>{libraryInbox}</b>}</button>}
         <button className="ui-row-btn" onClick={() => navigate("/settings")}><SlidersHorizontal size={16} /> Settings</button>
       </div>

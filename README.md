@@ -209,11 +209,12 @@ one. There, words are picked from lists with search, lesson and level filters,
   views (title and short description, from its Share menu); everyone signed in
   can search the catalog and take their own copy with one tap. Each entry shows its author, when it was published and edited, how many times it was taken and what it holds; the owner can edit, open or delete it (and an admin can delete any); copies already taken stay. 20 entries a
   player.
+- **Grammar rules** work like words: add them to the library or a view from a searchable list (lesson and level filters), take one out of a view (✕), or out of the library (second tap; it leaves every view of mine too). The admin can open a rule in the grammar editor from the library; a rule's wording is shared, so it is edited there.
 - **Your own words** (`sense_create`) are private rows of the same dictionary
   table; a player's changes to a shared word are kept as a *patch*, so an admin
   fix still reaches them.
 
-How it is built: `supabase/migrations/0026`–`0034` (tables, row-level security,
+How it is built: `supabase/migrations/0026`–`0035` (tables, row-level security,
 functions; nothing is physically removed, only flagged); `0027` copies the
 dictionary from `content_items` and `dictionary_sync()` keeps the copy in step
 after every content save. The app talks to it through one interface

@@ -56,9 +56,17 @@ export function createLocalViewsApi(ctx) {
       if (!v) fail(MSG.noView);
       if (ruleIds.length > MAX_PER_CALL) fail(MSG.tooManyRules);
       let n = 0;
-      for (const r of ruleIds) if (!v.rules[r] || v.rules[r].removed) { v.rules[r] = { at: now() }; n++; }
+      db.rules ||= {};
+      for (const r of ruleIds) {
+        if (!v.rules[r] || v.rules[r].removed) { v.rules[r] = { at: now() }; n++; }
+        if (!db.rules[r] || db.rules[r].removed) db.rules[r] = { at: now() };
+      }
       save(db);
       return n;
+    },
+    async dropRule(view, ruleId) {
+      const db = load(), v = findView(db, view);
+      if (v?.rules[ruleId]) { v.rules[ruleId].removed = true; save(db); }
     },
     async drop(view, senseId) {
       const db = load(), v = findView(db, view);

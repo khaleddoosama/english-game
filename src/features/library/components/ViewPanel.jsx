@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { Plus, Play, Trash2, X } from "lucide-react";
 import { moveTargets } from "../libraryTree";
+import AddRules from "./AddRules";
 import AddWords from "./AddWords";
 import SharePanel from "./SharePanel";
 import { SHOWN } from "./format";
 
 // The open view: its path, what can be done to it, what is in it, and adding more.
 // Shown with key={view.id}, so everything in it starts fresh for each view.
-export default function ViewPanel({ view, roots, inside, libraryKeys, api, ids, words, wordByKey, ruleByKey, friendsApi, busy, act, setNotice, onPractice, onRemoved, onCreated, onRefreshIds, onAskWord }) {
+export default function ViewPanel({ view, roots, inside, libraryKeys, libraryRuleKeys = new Set(), grammar = [], api, ids, words, wordByKey, ruleByKey, friendsApi, busy, act, setNotice, onPractice, onRemoved, onCreated, onRefreshIds, onAskWord }) {
   const [rename, setRename] = useState(null);
   const [sub, setSub] = useState("");
   const [sure, setSure] = useState(false);
@@ -15,12 +16,7 @@ export default function ViewPanel({ view, roots, inside, libraryKeys, api, ids, 
   const total = view.words + view.rules;
   const inViewKeys = useMemo(() => new Set(inside.words), [inside.words]);
 
-  // Rules that share a title (a set of questions on one topic) show as one chip with a count.
-  const ruleGroups = useMemo(() => {
-    const by = new Map();
-    for (const k of inside.rules) { const label = ruleByKey.get(k)?.rule || k; by.set(label, (by.get(label) || 0) + 1); }
-    return [...by];
-  }, [inside.rules, ruleByKey]);
+  const inViewRuleKeys = useMemo(() => new Set(inside.rules), [inside.rules]);
 
   async function createInside(e) {
     e.preventDefault();
@@ -65,15 +61,17 @@ export default function ViewPanel({ view, roots, inside, libraryKeys, api, ids, 
       <SharePanel api={api} friendsApi={friendsApi} view={view} empty={!total && !view.children.length} busy={busy} onSend={send} />
 
       <h4 className="lib-sub">In this view</h4>
-      {!inside.words.length && !inside.rules.length && <p className="ui-muted">Nothing yet. Add words below.</p>}
+      {!inside.words.length && !inside.rules.length && <p className="ui-muted">Nothing yet. Add words or grammar rules below.</p>}
       <ul className="lib-chips">
         {(showAll ? inside.words : inside.words.slice(0, SHOWN)).map((k) => <li key={k}><span>{k}</span><button aria-label={`Take ${k} out`} onClick={() => act(() => api.drop(view.id, ids.senseOf(k)))}><X size={12} /></button></li>)}
-        {ruleGroups.map(([label, n]) => <li key={label} className="rule"><span>{label}{n > 1 ? ` ×${n}` : ""}</span></li>)}
+        {inside.rules.map((k) => { const name = ruleByKey.get(k)?.rule || k; return <li key={k} className="rule"><span>{name}</span><button aria-label={`Take ${name} out`} onClick={() => act(() => api.dropRule(view.id, ids.ruleOf(k)))}><X size={12} /></button></li>; })}
       </ul>
       {inside.words.length > SHOWN && <button className="lib-link" onClick={() => setShowAll((v) => !v)}>{showAll ? "Show fewer" : `Show all ${inside.words.length} words`}</button>}
 
       <AddWords words={words} libraryKeys={libraryKeys} inView={inViewKeys} wordByKey={wordByKey} ids={ids} busy={busy} setNotice={setNotice} onAskWord={onAskWord} onRefreshIds={onRefreshIds}
         onAdd={(senseIds, okText) => act(() => (senseIds.length ? api.add(view.id, senseIds) : 0), okText)} />
+      <AddRules grammar={grammar} libraryRuleKeys={libraryRuleKeys} inView={inViewRuleKeys} busy={busy}
+        onAdd={(keys) => act(() => api.addRules(view.id, keys.map(ids.ruleOf).filter(Boolean)), (n) => (n ? `Added ${n === 1 ? "1 rule" : `${n} rules`}.` : "Those are already here."))} />
     </div>
   );
 }

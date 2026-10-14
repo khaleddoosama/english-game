@@ -21,8 +21,24 @@ export function createLocalWordsApi(ctx) {
       const db = load();
       const words = Object.entries(db.entries).filter(([, e]) => !e.removed)
         .map(([id, e]) => ({ id, note: e.note || null, patch: e.patch || {}, added_at: new Date(e.at || 0).toISOString(), views: liveViews(db).filter((v) => v.senses[id] && !v.senses[id].removed).length }));
-      const rules = [...new Set(liveViews(db).flatMap((v) => activeKeys(v.rules)))].map((id) => ({ id, added_at: null }));
+      const rules = [...new Set([...Object.entries(db.rules || {}).filter(([, e]) => !e.removed).map(([id]) => id), ...liveViews(db).flatMap((v) => activeKeys(v.rules))])].map((id) => ({ id, added_at: null }));
       return { words, rules };
+    },
+    // Grammar rules in my library (a rule in a view is in my library too).
+    async libraryAddRules(ruleIds) {
+      if (ruleIds.length > MAX_PER_CALL) fail(MSG.tooManyRules);
+      const db = load(); db.rules ||= {};
+      const had = new Set([...Object.entries(db.rules).filter(([, e]) => !e.removed).map(([id]) => id), ...liveViews(db).flatMap((v) => activeKeys(v.rules))]);
+      let n = 0;
+      for (const r of ruleIds) if (!had.has(r)) { db.rules[r] = { at: now() }; n++; }
+      save(db);
+      return n;
+    },
+    async libraryRemoveRule(ruleId) {
+      const db = load(); db.rules ||= {};
+      if (db.rules[ruleId]) db.rules[ruleId].removed = true;
+      for (const v of liveViews(db)) if (v.rules[ruleId]) v.rules[ruleId].removed = true;
+      save(db);
     },
     async libraryRemove(senseId) {
       const db = load();
