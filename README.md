@@ -180,7 +180,7 @@ Two things, on purpose:
 - **Library**: every word (and grammar rule) a player has. Words get in by
   searching the dictionary, pasting a list, starting from a course level,
   accepting something a friend shared, or writing one's own. Open it from
-  *Home → My views → Library* (or `/library`); each word says how many views it
+  the **My library** button on *Home → My views* (or `/library`); each word says how many views it
   is in, and removing one takes it out of every view.
 - **Views**: ways to pick some of the library's words and rules, as folders
   that can sit inside each other, up to four levels (`A1.1 › sports › football`).
@@ -191,7 +191,10 @@ Two things, on purpose:
 Home shows three views: **Gateway** (the course levels and their sessions, the
 default for a new player), **By lesson** (each lesson, with its units), and
 **My views**. Gateway and By lesson are built from the content for everyone;
-nothing is copied per player.
+nothing is copied per player. My views on Home is read only (browse and practise);
+the pencil on a view and the **+** open the library page to edit, delete or make
+one. There, words are picked from lists with search, lesson and level filters,
+*Select all shown*, and bulk actions (add to a view, make a new view, remove).
 
 - **Practise** a view (with or without the views inside it); a view of only
   grammar rules is a grammar round. Wrong answers still come from the whole

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen } from "lucide-react";
-import { navigate } from "../../lib/router";
+import { navigate, readQuery } from "../../lib/router";
 import CreateViews from "./components/CreateViews";
 import LibraryWords from "./components/LibraryWords";
 import ShareInbox from "./components/ShareInbox";
@@ -18,10 +18,11 @@ import "../../styles/library.css";
 //   onInboxChanged() - the number of offers waiting changed
 //   onAskWord(term) - opens the AI helper for a word that isn't in the dictionary yet
 //   onRefreshIds() - reloads the key <-> id map (words added since the app started)
-//   embedded - shown inside the home screen (no page header)
+//   /library?view=<id> opens that view; /library?new=1 starts on making one
 // The page only arranges the parts; each part owns its own little state.
-export default function LibraryPage({ api, ids, words, grammar, levels = [], friendsApi = null, onPractice, onInboxChanged, onAskWord = null, onRefreshIds = null, embedded = false }) {
+export default function LibraryPage({ api, ids, words, grammar, levels = [], friendsApi = null, onPractice, onInboxChanged, onAskWord = null, onRefreshIds = null }) {
   const lib = useViews({ api, ids });
+  const start = useMemo(() => readQuery(window.location.search), []);
   const [offers, setOffers] = useState([]);
   const [tab, setTab] = useState("views");                 // "views" | "library"
   const libraryKeys = useMemo(() => new Set(lib.mine.words.map((w) => w.key)), [lib.mine.words]);
@@ -30,6 +31,14 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
 
   const loadOffers = useCallback(async () => { try { setOffers(await api.inbox()); } catch { setOffers([]); } }, [api]);
   useEffect(() => { loadOffers(); }, [loadOffers]);
+
+  // /library?view=<id> (the pencil on home) opens that view, once it has loaded.
+  const opened = useRef(false);
+  useEffect(() => {
+    if (opened.current || lib.loading) return;
+    opened.current = true;
+    if (start.view && lib.rows.some((v) => v.id === start.view)) lib.select(start.view);
+  }, [lib.loading, lib.rows, start.view]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function answer(offer, accept) {
     lib.setBusy(true); lib.setNotice(null);
@@ -47,13 +56,11 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
 
   if (lib.loading) return <section className="ui-page"><div className="ui-skeleton-row" /></section>;
   return (
-    <section className={`${embedded ? "lib-embedded" : "ui-page"} lib`}>
-      {!embedded && (
-        <header className="ui-page-head lib-head">
-          <h2><BookOpen size={20} /> My library</h2>
-          <button className="wh-back-btn" onClick={() => navigate("/profile")}>Back</button>
-        </header>
-      )}
+    <section className="ui-page lib">
+      <header className="ui-page-head lib-head">
+        <h2><BookOpen size={20} /> My library</h2>
+        <button className="wh-back-btn" onClick={() => navigate("/profile")}>Back</button>
+      </header>
       {lib.notice && <p className={`lib-notice ${lib.notice.kind}`} role={lib.notice.kind === "error" ? "alert" : "status"}>{lib.notice.text}</p>}
 
       <ShareInbox offers={offers} busy={lib.busy} onAnswer={answer} />
@@ -63,8 +70,14 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
       </div>
 
       {tab === "library" && (
-        <LibraryWords items={lib.mine} wordByKey={wordByKey} ruleByKey={ruleByKey} busy={lib.busy}
-          onRemove={(w) => lib.act(() => api.libraryRemove(w.id), `Removed “${w.key}” from your library.`)} />
+        <LibraryWords items={lib.mine} rows={lib.rows} wordByKey={wordByKey} ruleByKey={ruleByKey} busy={lib.busy}
+          onAddToView={(viewId, keys) => lib.act(() => api.add(viewId, keys.map(ids.senseOf).filter(Boolean)), (n) => (n ? `Added ${n} to the view.` : "Those are already in that view."))}
+          onNewView={async (name, keys) => {
+            const id = await lib.act(async () => { const made = await api.create(name); await api.add(made, keys.map(ids.senseOf).filter(Boolean)); return made; }, `Made “${name.trim()}” with ${count(keys.length, "word")}.`);
+            if (id) { lib.select(id); setTab("views"); }
+            return id;
+          }}
+          onRemove={(keys) => lib.act(async () => { for (const k of keys) await api.libraryRemove(ids.senseOf(k)); return keys.length; }, (n) => `Removed ${count(n, "word")} from your library.`)} />
       )}
 
       {tab === "views" && (
@@ -74,7 +87,7 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
               <p><b>You have no views yet.</b> A view is a way to pick some of your library’s words, like “A1.1 › sports”. Make one, add words to it, practise just that, and send it to a friend or share a link.</p>
             </div>
           )}
-          <CreateViews api={api} ids={ids} levels={levels} busy={lib.busy} act={lib.act} onCreated={lib.select} />
+          <CreateViews api={api} ids={ids} levels={levels} busy={lib.busy} act={lib.act} onCreated={lib.select} autoFocus={start.new === "1"} />
           <ViewTree rows={lib.rows} selected={lib.view?.id} onSelect={lib.select} onPractice={onPractice} />
           {lib.view && (
             <ViewPanel key={lib.view.id} view={lib.view} roots={lib.roots} inside={lib.inside} libraryKeys={libraryKeys} api={api} ids={ids} words={words} wordByKey={wordByKey} ruleByKey={ruleByKey}

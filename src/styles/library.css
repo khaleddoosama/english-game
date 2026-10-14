@@ -46,7 +46,6 @@
 .lib-link { background: none; border: 0; color: var(--gold); cursor: pointer; padding: 0; font: inherit; text-decoration: underline; }
 .lib-chips li button { font-size: 11px; color: var(--gold); }
 
-.lib-embedded { display: grid; gap: 0; }
 
 .lib-tabs { display: flex; gap: 6px; margin: 12px 0; border-bottom: 1px solid var(--line); }
 .lib-tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--text-dim); padding: 8px 14px; font: inherit; cursor: pointer; }
@@ -69,3 +68,28 @@
 .lib-link-box h5, .lib-friend-box h5 { margin: 0; font: 12px var(--font-mono); color: var(--text-dim); display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: .05em; }
 .lib-link-box input[readonly] { flex: 1 1 200px; font: 12px var(--font-mono); }
 .lib-join .lib-inbox { margin-top: 12px; }
+
+/* The picker (library and dictionary): filters, a bar with Select all, and the list. */
+.lib-picker { display: grid; gap: 8px; }
+.lib-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.lib-filters select { flex: 1 1 140px; }
+.lib-pickbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; font: 12px var(--font-mono); color: var(--text-dim); flex-wrap: wrap; }
+.lib-results li.in { opacity: .6; }
+.lib-tag { margin-inline-start: auto; font: 11px var(--font-mono); font-style: normal; color: var(--text-dim); white-space: nowrap; }
+.lib-results label { align-items: center; }
+.lib-actionbar { position: sticky; bottom: 76px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; margin: 8px 0; background: var(--ink-soft); border: 1px solid var(--gold); border-radius: var(--radius); z-index: 3; }
+.lib-actionbar b { color: var(--gold); }
+.lib-actionbar select, .lib-actionbar input { flex: 1 1 140px; min-width: 0; }
+/* My views on home: read only. */
+.lib-home { display: grid; gap: 10px; }
+.lib-home-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.lib-home-head h3 { margin: 0; font-size: 1.05rem; }
+.lib-home-head span { display: inline-flex; gap: 8px; align-items: center; }
+.lib-home .ui-row-btn { margin: 0; padding: 8px 10px; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; }
+.lib-plus, .lib-icon { background: none; border: 1px solid var(--line); color: var(--gold); border-radius: 999px; width: 34px; height: 34px; display: inline-grid; place-items: center; cursor: pointer; flex: none; }
+.lib-plus { border-color: var(--gold); }
+.lib-icon { width: 32px; height: 32px; color: var(--text-dim); }
+.lib-icon:hover, .lib-plus:hover { border-color: var(--gold); color: var(--gold); }
+.lib-offers { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: var(--ink-soft); border: 1px solid var(--gold); color: var(--gold); border-radius: var(--radius); padding: 9px 12px; cursor: pointer; font: inherit; }
+.lib-name.static { cursor: default; }
+.lib-readonly li { align-items: center; }

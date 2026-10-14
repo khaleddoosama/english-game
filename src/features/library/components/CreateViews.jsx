@@ -3,7 +3,7 @@ import { FolderPlus } from "lucide-react";
 
 // Make a view at the top level, or start one from a course level (its words
 // and rules go in at once).
-export default function CreateViews({ api, ids, levels, busy, act, onCreated }) {
+export default function CreateViews({ api, ids, levels, busy, act, onCreated, autoFocus = false }) {
   const [name, setName] = useState("");
   const [level, setLevel] = useState("");
 
@@ -29,7 +29,7 @@ export default function CreateViews({ api, ids, levels, busy, act, onCreated }) 
   return (
     <div className="lib-make">
       <form onSubmit={create} className="lib-inline">
-        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} placeholder="New view, e.g. A1.1" aria-label="New view name" />
+        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} placeholder="New view, e.g. A1.1" aria-label="New view name" autoFocus={autoFocus} />
         <button className="ui-row-btn" disabled={busy || !name.trim()}><FolderPlus size={15} /> Create</button>
       </form>
       {levels.length > 0 && (

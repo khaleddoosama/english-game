@@ -44,6 +44,7 @@ const ProfilePage = lazy(() => import("../features/social/ProfilePage"));
 const FriendsPage = lazy(() => import("../features/social/FriendsPage"));
 const LibraryPage = lazy(() => import("../features/library/LibraryPage"));
 const JoinPage = lazy(() => import("../features/library/JoinPage"));
+const MyViewsHome = lazy(() => import("../features/library/components/MyViewsHome"));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage"));
 const ImportExport = lazy(() => import("../features/data/ImportExport"));
 const StudyDashboard = lazy(() => import("../features/stats/StudyDashboard"));
@@ -1891,10 +1892,10 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           );
         })()}
 
-        {/* My views: the player's own library (views inside views). */}
+        {/* My views: read only. Editing happens in the library page (Profile › My library). */}
         {screen === "levels" && section === "practice" && homeView === "mine" && library.status === "ready" && (
           <Suspense fallback={<ScreenSkeleton />}>
-            <LibraryPage embedded api={library.api} ids={library.ids} words={WORDS} grammar={GRAMMAR} levels={courseLevelGroups().levels} friendsApi={friendsApi} onPractice={startViewPractice} onInboxChanged={refreshLibraryInbox} onAskWord={openAskAi} onRefreshIds={library.refreshIds} />
+            <MyViewsHome api={library.api} offers={libraryInbox} onPractice={startViewPractice} />
           </Suspense>
         )}
 

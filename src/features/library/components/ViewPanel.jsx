@@ -13,6 +13,7 @@ export default function ViewPanel({ view, roots, inside, libraryKeys, api, ids, 
   const [sure, setSure] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const total = view.words + view.rules;
+  const inViewKeys = useMemo(() => new Set(inside.words), [inside.words]);
 
   // Rules that share a title (a set of questions on one topic) show as one chip with a count.
   const ruleGroups = useMemo(() => {
@@ -71,7 +72,7 @@ export default function ViewPanel({ view, roots, inside, libraryKeys, api, ids, 
       </ul>
       {inside.words.length > SHOWN && <button className="lib-link" onClick={() => setShowAll((v) => !v)}>{showAll ? "Show fewer" : `Show all ${inside.words.length} words`}</button>}
 
-      <AddWords words={words} libraryKeys={libraryKeys} wordByKey={wordByKey} ids={ids} busy={busy} setNotice={setNotice} onAskWord={onAskWord} onRefreshIds={onRefreshIds}
+      <AddWords words={words} libraryKeys={libraryKeys} inView={inViewKeys} wordByKey={wordByKey} ids={ids} busy={busy} setNotice={setNotice} onAskWord={onAskWord} onRefreshIds={onRefreshIds}
         onAdd={(senseIds, okText) => act(() => (senseIds.length ? api.add(view.id, senseIds) : 0), okText)} />
     </div>
   );

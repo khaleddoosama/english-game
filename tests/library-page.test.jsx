@@ -219,23 +219,61 @@ describe("the library (all my words) and the views", () => {
     await pre(); await render();
     await click(tab("Library"));
     expect($(".lib-summary").textContent).toContain("3 words in your library · 1 not in any view");
-    const rows = $$(".lib-wordlist li").map((li) => li.textContent.replace(/\s+/g, " "));
+    const rows = $$(".lib-results li").map((li) => li.textContent.replace(/\s+/g, " "));
     expect(rows.some((r) => r.includes("Reluctant") && r.includes("in 1 view"))).toBe(true);
     expect(rows.some((r) => r.includes("Cast") && r.includes("no view"))).toBe(true);
-    await click($(".lib-inline .chip"));                                   // Not in a view
-    expect($$(".lib-wordlist li").length).toBe(1);
+    await click($$(".lib-source .chip").find((b) => b.textContent.startsWith("Not in a view")));
+    expect($$(".lib-results li").length).toBe(1);
     await type($('input[aria-label="Search your library"]'), "zzz");
-    expect($(".lib-wordlist + *, .lib-words").textContent).toContain("Nothing matches");
+    expect($(".lib-words").textContent).toContain("Nothing matches");
   });
 
-  it("removing a word from the library takes two taps and takes it out of its views too", async () => {
+  it("tick words and put them in a view; words already in it are marked", async () => {
+    const v = await pre();
+    const w = await api.create("W");
+    await render();
+    await click(tab("Library"));
+    expect($(".lib-actionbar")).toBeNull();                                   // nothing picked, no bar
+    await click($$('.lib-results input[type="checkbox"]').find((c) => c.closest("li").textContent.includes("Cast")));
+    expect($(".lib-actionbar").textContent).toContain("1 word selected");
+    await act(async () => { const sel = $('select[aria-label="Add to view"]'); const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set; set.call(sel, w); sel.dispatchEvent(new Event("change", { bubbles: true })); });
+    await click($$(".lib-actionbar button").find((b) => b.textContent === "Add"));
+    expect($(".lib-notice").textContent).toContain("Added 1 to the view.");
+    expect((await api.contents(w, false)).map((x) => x.id)).toEqual(["sense-1"]);
+    expect($(".lib-actionbar")).toBeNull();                                   // the selection is cleared
+    expect(v).toBeTruthy();
+  });
+
+  it("Select all shown picks everything on the screen, and Clear shown undoes it", async () => {
+    await pre(); await render();
+    await click(tab("Library"));
+    await click($$("button").find((b) => b.textContent.startsWith("Select all shown")));
+    expect($(".lib-actionbar").textContent).toContain("3 words selected");
+    await click($$("button").find((b) => b.textContent === "Clear shown"));
+    expect($(".lib-actionbar")).toBeNull();
+  });
+
+  it("make a new view from the ticked words", async () => {
+    await pre(); await render();
+    await click(tab("Library"));
+    await click($$("button").find((b) => b.textContent.startsWith("Select all shown")));
+    await click($$(".lib-actionbar button").find((b) => b.textContent === "New view…"));
+    await type($('input[aria-label="New view from these words"]'), "Fresh");
+    await click($$(".lib-actionbar button").find((b) => b.textContent === "Create and add"));
+    expect($(".lib-notice").textContent).toContain("Made “Fresh” with 3 words.");
+    expect(tab("Views").getAttribute("aria-selected")).toBe("true");          // it opens the new view
+    const fresh = (await api.tree()).find((x) => x.name === "Fresh");
+    expect((await api.contents(fresh.id, false)).length).toBe(3);
+  });
+
+  it("removing the ticked words from the library takes two taps and takes them out of their views too", async () => {
     const v = await pre(); await render();
     await click(tab("Library"));
-    const rm = $('button[aria-label="Remove Reluctant from my library"]');
-    await click(rm);
-    expect($('button[aria-label="Tap again to remove Reluctant"]')).toBeTruthy();   // first tap only asks
-    await click($('button[aria-label="Tap again to remove Reluctant"]'));
-    expect($(".lib-notice").textContent).toContain("Removed “Reluctant”");
+    await click($$('.lib-results input[type="checkbox"]').find((c) => c.closest("li").textContent.includes("Reluctant")));
+    await click($$(".lib-actionbar button").find((b) => b.textContent === "Remove from library"));
+    expect($(".lib-actionbar").textContent).toContain("Tap again to remove from library");   // the first tap only asks
+    await click($$(".lib-actionbar button").find((b) => b.textContent.startsWith("Tap again")));
+    expect($(".lib-notice").textContent).toContain("Removed 1 word from your library.");
     expect((await api.contents(v, false)).map((x) => x.id)).toEqual(["sense-3"]);
     expect((await api.libraryList()).words.map((w) => w.id).sort()).toEqual(["sense-1", "sense-3"]);
   });
@@ -252,6 +290,8 @@ describe("the library (all my words) and the views", () => {
     expect($('.lib-source .chip.on').textContent).toContain("From my library (3)");
     await type($('input[aria-label="Search words"]'), "shrink");
     expect($$(".lib-results li").length).toBe(1);
+    expect($(".lib-results li").textContent).toContain("in this view");               // Shrink is already in V
+    expect($('.lib-results input[type="checkbox"]').disabled).toBe(true);
     await type($('input[aria-label="Search words"]'), "none");
     await type($('input[aria-label="Search words"]'), "zzzz");
     expect($(".lib-panel").textContent).toContain("in your library");
