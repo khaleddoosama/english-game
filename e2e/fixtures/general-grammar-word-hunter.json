@@ -1,0 +1,1205 @@
+{
+  "schemaVersion": 2,
+  "kind": "content",
+  "note": "General Grammar: subject pronouns, object pronouns, possessive adjectives, possessive pronouns and articles. Each id ends with the question number, so more can be added later.",
+  "words": [],
+  "grammar": [
+    {
+      "id": "g-general-subject-1",
+      "rule": "Subject pronouns (I, you, he, she, it, we, they) come before the verb and do the action",
+      "prompt": "My sister is a doctor. ______ works at a hospital.",
+      "options": [
+        "She",
+        "Her",
+        "Hers",
+        "He"
+      ],
+      "answer": "She",
+      "explanation": "Use a subject pronoun before the verb to say who does the action: I, you, he, she, it, we, they. Object forms (me, him, her, us, them) and possessives (my, his, her) can't be the subject.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-subject-2",
+      "rule": "Subject pronouns (I, you, he, she, it, we, they) come before the verb and do the action",
+      "prompt": "Tom and I are friends. ______ play football together.",
+      "options": [
+        "We",
+        "Us",
+        "Our",
+        "They"
+      ],
+      "answer": "We",
+      "explanation": "Use a subject pronoun before the verb to say who does the action: I, you, he, she, it, we, they. Object forms (me, him, her, us, them) and possessives (my, his, her) can't be the subject.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-subject-3",
+      "rule": "Subject pronouns (I, you, he, she, it, we, they) come before the verb and do the action",
+      "prompt": "The keys are on the table. ______ are next to the phone.",
+      "options": [
+        "They",
+        "Them",
+        "Their",
+        "It"
+      ],
+      "answer": "They",
+      "explanation": "Use a subject pronoun before the verb to say who does the action: I, you, he, she, it, we, they. Object forms (me, him, her, us, them) and possessives (my, his, her) can't be the subject.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-subject-4",
+      "rule": "Subject pronouns (I, you, he, she, it, we, they) come before the verb and do the action",
+      "prompt": "The weather is hot today. ______ is 40 degrees.",
+      "options": [
+        "It",
+        "He",
+        "They",
+        "She"
+      ],
+      "answer": "It",
+      "explanation": "Use a subject pronoun before the verb to say who does the action: I, you, he, she, it, we, they. Object forms (me, him, her, us, them) and possessives (my, his, her) can't be the subject.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-subject-5",
+      "rule": "Subject pronouns (I, you, he, she, it, we, they) come before the verb and do the action",
+      "prompt": "Ali is tired. ______ wants to sleep.",
+      "options": [
+        "He",
+        "Him",
+        "His",
+        "It"
+      ],
+      "answer": "He",
+      "explanation": "Use a subject pronoun before the verb to say who does the action: I, you, he, she, it, we, they. Object forms (me, him, her, us, them) and possessives (my, his, her) can't be the subject.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-subject-6",
+      "rule": "Subject pronouns (I, you, he, she, it, we, they) come before the verb and do the action",
+      "prompt": "______ am from Egypt.",
+      "options": [
+        "I",
+        "Me",
+        "My",
+        "Mine"
+      ],
+      "answer": "I",
+      "explanation": "Use a subject pronoun before the verb to say who does the action: I, you, he, she, it, we, they. Object forms (me, him, her, us, them) and possessives (my, his, her) can't be the subject.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-subject-7",
+      "rule": "Subject pronouns (I, you, he, she, it, we, they) come before the verb and do the action",
+      "prompt": "Sara and Mona are students. ______ study English.",
+      "options": [
+        "They",
+        "Them",
+        "Their",
+        "She"
+      ],
+      "answer": "They",
+      "explanation": "Use a subject pronoun before the verb to say who does the action: I, you, he, she, it, we, they. Object forms (me, him, her, us, them) and possessives (my, his, her) can't be the subject.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-subject-8",
+      "rule": "Subject pronouns (I, you, he, she, it, we, they) come before the verb and do the action",
+      "prompt": "(To two friends) ______ must hurry, or you will miss the bus.",
+      "options": [
+        "You",
+        "Your",
+        "We",
+        "They"
+      ],
+      "answer": "You",
+      "explanation": "Use a subject pronoun before the verb to say who does the action: I, you, he, she, it, we, they. Object forms (me, him, her, us, them) and possessives (my, his, her) can't be the subject.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-subject-9",
+      "rule": "Subject pronouns (I, you, he, she, it, we, they) come before the verb and do the action",
+      "prompt": "Mr. Smith is my teacher. ______ is very kind.",
+      "options": [
+        "He",
+        "Him",
+        "His",
+        "She"
+      ],
+      "answer": "He",
+      "explanation": "Use a subject pronoun before the verb to say who does the action: I, you, he, she, it, we, they. Object forms (me, him, her, us, them) and possessives (my, his, her) can't be the subject.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-subject-10",
+      "rule": "Subject pronouns (I, you, he, she, it, we, they) come before the verb and do the action",
+      "prompt": "My brother and I live in Cairo. ______ live in a small flat.",
+      "options": [
+        "We",
+        "Us",
+        "Our",
+        "They"
+      ],
+      "answer": "We",
+      "explanation": "Use a subject pronoun before the verb to say who does the action: I, you, he, she, it, we, they. Object forms (me, him, her, us, them) and possessives (my, his, her) can't be the subject.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-subject-11",
+      "rule": "Subject pronouns (I, you, he, she, it, we, they) come before the verb and do the action",
+      "prompt": "Are ______ ready? — Yes, I am.",
+      "options": [
+        "you",
+        "your",
+        "yours",
+        "yourself"
+      ],
+      "answer": "you",
+      "explanation": "Use a subject pronoun before the verb to say who does the action: I, you, he, she, it, we, they. Object forms (me, him, her, us, them) and possessives (my, his, her) can't be the subject.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-subject-12",
+      "rule": "Subject pronouns (I, you, he, she, it, we, they) come before the verb and do the action",
+      "prompt": "Laila is my neighbour. ______ is a nurse.",
+      "options": [
+        "She",
+        "Her",
+        "Hers",
+        "It"
+      ],
+      "answer": "She",
+      "explanation": "Use a subject pronoun before the verb to say who does the action: I, you, he, she, it, we, they. Object forms (me, him, her, us, them) and possessives (my, his, her) can't be the subject.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-object-1",
+      "rule": "Object pronouns (me, you, him, her, it, us, them) come after a verb or a preposition",
+      "prompt": "I love my parents. I call ______ every day.",
+      "options": [
+        "them",
+        "they",
+        "their",
+        "theirs"
+      ],
+      "answer": "them",
+      "explanation": "Use an object pronoun after a verb or a preposition: me, you, him, her, it, us, them. Subject pronouns (I, he, they) and possessive adjectives (my, his, their) don't go there.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-object-2",
+      "rule": "Object pronouns (me, you, him, her, it, us, them) come after a verb or a preposition",
+      "prompt": "Can you help ______? I can't find my bag.",
+      "options": [
+        "me",
+        "I",
+        "my",
+        "mine"
+      ],
+      "answer": "me",
+      "explanation": "Use an object pronoun after a verb or a preposition: me, you, him, her, it, us, them. Subject pronouns (I, he, they) and possessive adjectives (my, his, their) don't go there.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-object-3",
+      "rule": "Object pronouns (me, you, him, her, it, us, them) come after a verb or a preposition",
+      "prompt": "That is Sara. Do you know ______?",
+      "options": [
+        "her",
+        "she",
+        "hers",
+        "herself"
+      ],
+      "answer": "her",
+      "explanation": "Use an object pronoun after a verb or a preposition: me, you, him, her, it, us, them. Subject pronouns (I, he, they) and possessive adjectives (my, his, their) don't go there.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-object-4",
+      "rule": "Object pronouns (me, you, him, her, it, us, them) come after a verb or a preposition",
+      "prompt": "We are late. The teacher is waiting for ______.",
+      "options": [
+        "us",
+        "we",
+        "our",
+        "ours"
+      ],
+      "answer": "us",
+      "explanation": "Use an object pronoun after a verb or a preposition: me, you, him, her, it, us, them. Subject pronouns (I, he, they) and possessive adjectives (my, his, their) don't go there.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-object-5",
+      "rule": "Object pronouns (me, you, him, her, it, us, them) come after a verb or a preposition",
+      "prompt": "The cat is hungry. Give ______ some food.",
+      "options": [
+        "it",
+        "its",
+        "it's",
+        "they"
+      ],
+      "answer": "it",
+      "explanation": "Use an object pronoun after a verb or a preposition: me, you, him, her, it, us, them. Subject pronouns (I, he, they) and possessive adjectives (my, his, their) don't go there.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-object-6",
+      "rule": "Object pronouns (me, you, him, her, it, us, them) come after a verb or a preposition",
+      "prompt": "My brother is angry. Don't talk to ______ now.",
+      "options": [
+        "him",
+        "he",
+        "his",
+        "himself"
+      ],
+      "answer": "him",
+      "explanation": "Use an object pronoun after a verb or a preposition: me, you, him, her, it, us, them. Subject pronouns (I, he, they) and possessive adjectives (my, his, their) don't go there.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-object-7",
+      "rule": "Object pronouns (me, you, him, her, it, us, them) come after a verb or a preposition",
+      "prompt": "These books are heavy. Please carry ______ for me.",
+      "options": [
+        "them",
+        "they",
+        "their",
+        "theirs"
+      ],
+      "answer": "them",
+      "explanation": "Use an object pronoun after a verb or a preposition: me, you, him, her, it, us, them. Subject pronouns (I, he, they) and possessive adjectives (my, his, their) don't go there.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-object-8",
+      "rule": "Object pronouns (me, you, him, her, it, us, them) come after a verb or a preposition",
+      "prompt": "She gave ______ a present for my birthday.",
+      "options": [
+        "me",
+        "I",
+        "my",
+        "mine"
+      ],
+      "answer": "me",
+      "explanation": "Use an object pronoun after a verb or a preposition: me, you, him, her, it, us, them. Subject pronouns (I, he, they) and possessive adjectives (my, his, their) don't go there.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-object-9",
+      "rule": "Object pronouns (me, you, him, her, it, us, them) come after a verb or a preposition",
+      "prompt": "I like Tom. I often play football with ______.",
+      "options": [
+        "him",
+        "he",
+        "his",
+        "himself"
+      ],
+      "answer": "him",
+      "explanation": "Use an object pronoun after a verb or a preposition: me, you, him, her, it, us, them. Subject pronouns (I, he, they) and possessive adjectives (my, his, their) don't go there.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-object-10",
+      "rule": "Object pronouns (me, you, him, her, it, us, them) come after a verb or a preposition",
+      "prompt": "Where are the children? I can't see ______.",
+      "options": [
+        "them",
+        "they",
+        "their",
+        "theirs"
+      ],
+      "answer": "them",
+      "explanation": "Use an object pronoun after a verb or a preposition: me, you, him, her, it, us, them. Subject pronouns (I, he, they) and possessive adjectives (my, his, their) don't go there.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-object-11",
+      "rule": "Object pronouns (me, you, him, her, it, us, them) come after a verb or a preposition",
+      "prompt": "Your friend is calling. Please answer ______.",
+      "options": [
+        "him",
+        "he",
+        "his",
+        "himself"
+      ],
+      "answer": "him",
+      "explanation": "Use an object pronoun after a verb or a preposition: me, you, him, her, it, us, them. Subject pronouns (I, he, they) and possessive adjectives (my, his, their) don't go there.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-object-12",
+      "rule": "Object pronouns (me, you, him, her, it, us, them) come after a verb or a preposition",
+      "prompt": "Mona is my best friend. I talk to ______ every day.",
+      "options": [
+        "her",
+        "she",
+        "hers",
+        "herself"
+      ],
+      "answer": "her",
+      "explanation": "Use an object pronoun after a verb or a preposition: me, you, him, her, it, us, them. Subject pronouns (I, he, they) and possessive adjectives (my, his, their) don't go there.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-possadj-1",
+      "rule": "Possessive adjectives (my, your, his, her, its, our, their) go before a noun",
+      "prompt": "I have a car. ______ car is blue.",
+      "options": [
+        "My",
+        "Mine",
+        "I",
+        "Me"
+      ],
+      "answer": "My",
+      "explanation": "A possessive adjective comes before a noun and shows who it belongs to: my, your, his, her, its, our, their. Don't use mine, yours, hers, ours or theirs before a noun, and don't confuse its (belonging) with it's (it is).",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-possadj-2",
+      "rule": "Possessive adjectives (my, your, his, her, its, our, their) go before a noun",
+      "prompt": "She loves ______ job.",
+      "options": [
+        "her",
+        "hers",
+        "she",
+        "herself"
+      ],
+      "answer": "her",
+      "explanation": "A possessive adjective comes before a noun and shows who it belongs to: my, your, his, her, its, our, their. Don't use mine, yours, hers, ours or theirs before a noun, and don't confuse its (belonging) with it's (it is).",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-possadj-3",
+      "rule": "Possessive adjectives (my, your, his, her, its, our, their) go before a noun",
+      "prompt": "We live with ______ grandparents.",
+      "options": [
+        "our",
+        "ours",
+        "us",
+        "we"
+      ],
+      "answer": "our",
+      "explanation": "A possessive adjective comes before a noun and shows who it belongs to: my, your, his, her, its, our, their. Don't use mine, yours, hers, ours or theirs before a noun, and don't confuse its (belonging) with it's (it is).",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-possadj-4",
+      "rule": "Possessive adjectives (my, your, his, her, its, our, their) go before a noun",
+      "prompt": "Tom is washing ______ hands.",
+      "options": [
+        "his",
+        "him",
+        "he",
+        "himself"
+      ],
+      "answer": "his",
+      "explanation": "A possessive adjective comes before a noun and shows who it belongs to: my, your, his, her, its, our, their. Don't use mine, yours, hers, ours or theirs before a noun, and don't confuse its (belonging) with it's (it is).",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-possadj-5",
+      "rule": "Possessive adjectives (my, your, his, her, its, our, their) go before a noun",
+      "prompt": "They sold ______ house last year.",
+      "options": [
+        "their",
+        "theirs",
+        "them",
+        "they"
+      ],
+      "answer": "their",
+      "explanation": "A possessive adjective comes before a noun and shows who it belongs to: my, your, his, her, its, our, their. Don't use mine, yours, hers, ours or theirs before a noun, and don't confuse its (belonging) with it's (it is).",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-possadj-6",
+      "rule": "Possessive adjectives (my, your, his, her, its, our, their) go before a noun",
+      "prompt": "The company changed ______ name last month.",
+      "options": [
+        "its",
+        "it's",
+        "it",
+        "our"
+      ],
+      "answer": "its",
+      "explanation": "A possessive adjective comes before a noun and shows who it belongs to: my, your, his, her, its, our, their. Don't use mine, yours, hers, ours or theirs before a noun, and don't confuse its (belonging) with it's (it is).",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-possadj-7",
+      "rule": "Possessive adjectives (my, your, his, her, its, our, their) go before a noun",
+      "prompt": "Do you have ______ passport with you?",
+      "options": [
+        "your",
+        "yours",
+        "you",
+        "you're"
+      ],
+      "answer": "your",
+      "explanation": "A possessive adjective comes before a noun and shows who it belongs to: my, your, his, her, its, our, their. Don't use mine, yours, hers, ours or theirs before a noun, and don't confuse its (belonging) with it's (it is).",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-possadj-8",
+      "rule": "Possessive adjectives (my, your, his, her, its, our, their) go before a noun",
+      "prompt": "Sara and ______ brother are in the garden.",
+      "options": [
+        "her",
+        "hers",
+        "she",
+        "herself"
+      ],
+      "answer": "her",
+      "explanation": "A possessive adjective comes before a noun and shows who it belongs to: my, your, his, her, its, our, their. Don't use mine, yours, hers, ours or theirs before a noun, and don't confuse its (belonging) with it's (it is).",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-possadj-9",
+      "rule": "Possessive adjectives (my, your, his, her, its, our, their) go before a noun",
+      "prompt": "I forgot ______ keys at home.",
+      "options": [
+        "my",
+        "mine",
+        "me",
+        "I"
+      ],
+      "answer": "my",
+      "explanation": "A possessive adjective comes before a noun and shows who it belongs to: my, your, his, her, its, our, their. Don't use mine, yours, hers, ours or theirs before a noun, and don't confuse its (belonging) with it's (it is).",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-possadj-10",
+      "rule": "Possessive adjectives (my, your, his, her, its, our, their) go before a noun",
+      "prompt": "We love ______ new teacher.",
+      "options": [
+        "our",
+        "ours",
+        "we",
+        "us"
+      ],
+      "answer": "our",
+      "explanation": "A possessive adjective comes before a noun and shows who it belongs to: my, your, his, her, its, our, their. Don't use mine, yours, hers, ours or theirs before a noun, and don't confuse its (belonging) with it's (it is).",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-possadj-11",
+      "rule": "Possessive adjectives (my, your, his, her, its, our, their) go before a noun",
+      "prompt": "You should wear ______ coat today. It's cold.",
+      "options": [
+        "your",
+        "yours",
+        "you",
+        "you're"
+      ],
+      "answer": "your",
+      "explanation": "A possessive adjective comes before a noun and shows who it belongs to: my, your, his, her, its, our, their. Don't use mine, yours, hers, ours or theirs before a noun, and don't confuse its (belonging) with it's (it is).",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-possadj-12",
+      "rule": "Possessive adjectives (my, your, his, her, its, our, their) go before a noun",
+      "prompt": "Ali is proud of ______ son.",
+      "options": [
+        "his",
+        "him",
+        "he",
+        "hers"
+      ],
+      "answer": "his",
+      "explanation": "A possessive adjective comes before a noun and shows who it belongs to: my, your, his, her, its, our, their. Don't use mine, yours, hers, ours or theirs before a noun, and don't confuse its (belonging) with it's (it is).",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-posspron-1",
+      "rule": "Possessive pronouns (mine, yours, his, hers, ours, theirs) stand alone, with no noun after them",
+      "prompt": "This bag is not yours. It's ______.",
+      "options": [
+        "mine",
+        "my",
+        "me",
+        "I"
+      ],
+      "answer": "mine",
+      "explanation": "A possessive pronoun replaces 'possessive adjective + noun' and is used alone: This is my bag = This bag is mine. Forms: mine, yours, his, hers, ours, theirs. Never add a noun after it.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-posspron-2",
+      "rule": "Possessive pronouns (mine, yours, his, hers, ours, theirs) stand alone, with no noun after them",
+      "prompt": "Whose phone is this? — It belongs to Sara. It's ______.",
+      "options": [
+        "hers",
+        "her",
+        "she",
+        "herself"
+      ],
+      "answer": "hers",
+      "explanation": "A possessive pronoun replaces 'possessive adjective + noun' and is used alone: This is my bag = This bag is mine. Forms: mine, yours, his, hers, ours, theirs. Never add a noun after it.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-posspron-3",
+      "rule": "Possessive pronouns (mine, yours, his, hers, ours, theirs) stand alone, with no noun after them",
+      "prompt": "Our house is big, but the Smiths' house is bigger. ______ is bigger.",
+      "options": [
+        "Theirs",
+        "Their",
+        "Them",
+        "They"
+      ],
+      "answer": "Theirs",
+      "explanation": "A possessive pronoun replaces 'possessive adjective + noun' and is used alone: This is my bag = This bag is mine. Forms: mine, yours, his, hers, ours, theirs. Never add a noun after it.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-posspron-4",
+      "rule": "Possessive pronouns (mine, yours, his, hers, ours, theirs) stand alone, with no noun after them",
+      "prompt": "Is this your pen? — No, ______ is the blue one.",
+      "options": [
+        "mine",
+        "my",
+        "me",
+        "I"
+      ],
+      "answer": "mine",
+      "explanation": "A possessive pronoun replaces 'possessive adjective + noun' and is used alone: This is my bag = This bag is mine. Forms: mine, yours, his, hers, ours, theirs. Never add a noun after it.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-posspron-5",
+      "rule": "Possessive pronouns (mine, yours, his, hers, ours, theirs) stand alone, with no noun after them",
+      "prompt": "These seats belong to us. They are ______.",
+      "options": [
+        "ours",
+        "our",
+        "us",
+        "we"
+      ],
+      "answer": "ours",
+      "explanation": "A possessive pronoun replaces 'possessive adjective + noun' and is used alone: This is my bag = This bag is mine. Forms: mine, yours, his, hers, ours, theirs. Never add a noun after it.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-posspron-6",
+      "rule": "Possessive pronouns (mine, yours, his, hers, ours, theirs) stand alone, with no noun after them",
+      "prompt": "I forgot my umbrella. Can I use ______?",
+      "options": [
+        "yours",
+        "your",
+        "you",
+        "you're"
+      ],
+      "answer": "yours",
+      "explanation": "A possessive pronoun replaces 'possessive adjective + noun' and is used alone: This is my bag = This bag is mine. Forms: mine, yours, his, hers, ours, theirs. Never add a noun after it.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-posspron-7",
+      "rule": "Possessive pronouns (mine, yours, his, hers, ours, theirs) stand alone, with no noun after them",
+      "prompt": "Tom's car is old, but Sara's is new. ______ is new.",
+      "options": [
+        "Hers",
+        "Her",
+        "She",
+        "Herself"
+      ],
+      "answer": "Hers",
+      "explanation": "A possessive pronoun replaces 'possessive adjective + noun' and is used alone: This is my bag = This bag is mine. Forms: mine, yours, his, hers, ours, theirs. Never add a noun after it.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-posspron-8",
+      "rule": "Possessive pronouns (mine, yours, his, hers, ours, theirs) stand alone, with no noun after them",
+      "prompt": "My room is small, but ______ is very big. (the room that belongs to you)",
+      "options": [
+        "yours",
+        "your",
+        "you",
+        "you're"
+      ],
+      "answer": "yours",
+      "explanation": "A possessive pronoun replaces 'possessive adjective + noun' and is used alone: This is my bag = This bag is mine. Forms: mine, yours, his, hers, ours, theirs. Never add a noun after it.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-posspron-9",
+      "rule": "Possessive pronouns (mine, yours, his, hers, ours, theirs) stand alone, with no noun after them",
+      "prompt": "These tickets aren't ours. They belong to Ali and Omar. They're ______.",
+      "options": [
+        "theirs",
+        "their",
+        "them",
+        "they"
+      ],
+      "answer": "theirs",
+      "explanation": "A possessive pronoun replaces 'possessive adjective + noun' and is used alone: This is my bag = This bag is mine. Forms: mine, yours, his, hers, ours, theirs. Never add a noun after it.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-posspron-10",
+      "rule": "Possessive pronouns (mine, yours, his, hers, ours, theirs) stand alone, with no noun after them",
+      "prompt": "The red bag belongs to Ahmed. It is ______.",
+      "options": [
+        "his",
+        "him",
+        "he",
+        "himself"
+      ],
+      "answer": "his",
+      "explanation": "A possessive pronoun replaces 'possessive adjective + noun' and is used alone: This is my bag = This bag is mine. Forms: mine, yours, his, hers, ours, theirs. Never add a noun after it.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-posspron-11",
+      "rule": "Possessive pronouns (mine, yours, his, hers, ours, theirs) stand alone, with no noun after them",
+      "prompt": "Which of these cups is ______, Sara? (belongs to you)",
+      "options": [
+        "yours",
+        "your",
+        "you",
+        "you're"
+      ],
+      "answer": "yours",
+      "explanation": "A possessive pronoun replaces 'possessive adjective + noun' and is used alone: This is my bag = This bag is mine. Forms: mine, yours, his, hers, ours, theirs. Never add a noun after it.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-posspron-12",
+      "rule": "Possessive pronouns (mine, yours, his, hers, ours, theirs) stand alone, with no noun after them",
+      "prompt": "Is this scarf Mona's? — Yes, it's ______.",
+      "options": [
+        "hers",
+        "her",
+        "she",
+        "herself"
+      ],
+      "answer": "hers",
+      "explanation": "A possessive pronoun replaces 'possessive adjective + noun' and is used alone: This is my bag = This bag is mine. Forms: mine, yours, his, hers, ours, theirs. Never add a noun after it.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Pronouns"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-article-1",
+      "rule": "Articles: a / an / the, or no article",
+      "prompt": "I have ______ apple in my bag.",
+      "options": [
+        "an",
+        "a",
+        "the",
+        "(no article)"
+      ],
+      "answer": "an",
+      "explanation": "Use a before a consonant sound and an before a vowel sound (an apple, an honest man, a university). Use the for something specific or unique (the sun, the Nile). Use no article for meals, sports and general plurals.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Articles"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-article-2",
+      "rule": "Articles: a / an / the, or no article",
+      "prompt": "She is ______ teacher.",
+      "options": [
+        "a",
+        "an",
+        "the",
+        "(no article)"
+      ],
+      "answer": "a",
+      "explanation": "Use a before a consonant sound and an before a vowel sound (an apple, an honest man, a university). Use the for something specific or unique (the sun, the Nile). Use no article for meals, sports and general plurals.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Articles"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-article-3",
+      "rule": "Articles: a / an / the, or no article",
+      "prompt": "He is ______ honest man.",
+      "options": [
+        "an",
+        "a",
+        "the",
+        "(no article)"
+      ],
+      "answer": "an",
+      "explanation": "Use a before a consonant sound and an before a vowel sound (an apple, an honest man, a university). Use the for something specific or unique (the sun, the Nile). Use no article for meals, sports and general plurals.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Articles"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-article-4",
+      "rule": "Articles: a / an / the, or no article",
+      "prompt": "My brother has ______ university degree.",
+      "options": [
+        "a",
+        "an",
+        "the",
+        "(no article)"
+      ],
+      "answer": "a",
+      "explanation": "Use a before a consonant sound and an before a vowel sound (an apple, an honest man, a university). Use the for something specific or unique (the sun, the Nile). Use no article for meals, sports and general plurals.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Articles"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-article-5",
+      "rule": "Articles: a / an / the, or no article",
+      "prompt": "I saw a film yesterday. ______ film was great.",
+      "options": [
+        "The",
+        "A",
+        "An",
+        "(no article)"
+      ],
+      "answer": "The",
+      "explanation": "Use a before a consonant sound and an before a vowel sound (an apple, an honest man, a university). Use the for something specific or unique (the sun, the Nile). Use no article for meals, sports and general plurals.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Articles"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-article-6",
+      "rule": "Articles: a / an / the, or no article",
+      "prompt": "______ sun rises in the east.",
+      "options": [
+        "The",
+        "A",
+        "An",
+        "(no article)"
+      ],
+      "answer": "The",
+      "explanation": "Use a before a consonant sound and an before a vowel sound (an apple, an honest man, a university). Use the for something specific or unique (the sun, the Nile). Use no article for meals, sports and general plurals.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Articles"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-article-7",
+      "rule": "Articles: a / an / the, or no article",
+      "prompt": "I usually have ______ breakfast at seven.",
+      "options": [
+        "(no article)",
+        "a",
+        "an",
+        "the"
+      ],
+      "answer": "(no article)",
+      "explanation": "Use a before a consonant sound and an before a vowel sound (an apple, an honest man, a university). Use the for something specific or unique (the sun, the Nile). Use no article for meals, sports and general plurals.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Articles"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-article-8",
+      "rule": "Articles: a / an / the, or no article",
+      "prompt": "Cairo is ______ capital of Egypt.",
+      "options": [
+        "the",
+        "a",
+        "an",
+        "(no article)"
+      ],
+      "answer": "the",
+      "explanation": "Use a before a consonant sound and an before a vowel sound (an apple, an honest man, a university). Use the for something specific or unique (the sun, the Nile). Use no article for meals, sports and general plurals.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Articles"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-article-9",
+      "rule": "Articles: a / an / the, or no article",
+      "prompt": "We play ______ football every Friday.",
+      "options": [
+        "(no article)",
+        "the",
+        "a",
+        "an"
+      ],
+      "answer": "(no article)",
+      "explanation": "Use a before a consonant sound and an before a vowel sound (an apple, an honest man, a university). Use the for something specific or unique (the sun, the Nile). Use no article for meals, sports and general plurals.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Articles"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-article-10",
+      "rule": "Articles: a / an / the, or no article",
+      "prompt": "She wants to be ______ engineer.",
+      "options": [
+        "an",
+        "a",
+        "the",
+        "(no article)"
+      ],
+      "answer": "an",
+      "explanation": "Use a before a consonant sound and an before a vowel sound (an apple, an honest man, a university). Use the for something specific or unique (the sun, the Nile). Use no article for meals, sports and general plurals.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Articles"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-article-11",
+      "rule": "Articles: a / an / the, or no article",
+      "prompt": "Look at ______ moon tonight! It's beautiful.",
+      "options": [
+        "the",
+        "a",
+        "an",
+        "(no article)"
+      ],
+      "answer": "the",
+      "explanation": "Use a before a consonant sound and an before a vowel sound (an apple, an honest man, a university). Use the for something specific or unique (the sun, the Nile). Use no article for meals, sports and general plurals.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Articles"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-article-12",
+      "rule": "Articles: a / an / the, or no article",
+      "prompt": "I need ______ umbrella. It's raining.",
+      "options": [
+        "an",
+        "a",
+        "the",
+        "(no article)"
+      ],
+      "answer": "an",
+      "explanation": "Use a before a consonant sound and an before a vowel sound (an apple, an honest man, a university). Use the for something specific or unique (the sun, the Nile). Use no article for meals, sports and general plurals.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Articles"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-article-13",
+      "rule": "Articles: a / an / the, or no article",
+      "prompt": "Do you have ______ pen I can borrow?",
+      "options": [
+        "a",
+        "an",
+        "the",
+        "(no article)"
+      ],
+      "answer": "a",
+      "explanation": "Use a before a consonant sound and an before a vowel sound (an apple, an honest man, a university). Use the for something specific or unique (the sun, the Nile). Use no article for meals, sports and general plurals.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Articles"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-article-14",
+      "rule": "Articles: a / an / the, or no article",
+      "prompt": "______ Nile is the longest river in Africa.",
+      "options": [
+        "The",
+        "A",
+        "An",
+        "(no article)"
+      ],
+      "answer": "The",
+      "explanation": "Use a before a consonant sound and an before a vowel sound (an apple, an honest man, a university). Use the for something specific or unique (the sun, the Nile). Use no article for meals, sports and general plurals.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Articles"
+      ],
+      "level": "A1.1"
+    },
+    {
+      "id": "g-general-article-15",
+      "rule": "Articles: a / an / the, or no article",
+      "prompt": "My sister works in ______ bank. She is a cashier.",
+      "options": [
+        "a",
+        "an",
+        "the",
+        "(no article)"
+      ],
+      "answer": "a",
+      "explanation": "Use a before a consonant sound and an before a vowel sound (an apple, an honest man, a university). Use the for something specific or unique (the sun, the Nile). Use no article for meals, sports and general plurals.",
+      "category": "General Grammar",
+      "categoryId": "general-grammar",
+      "units": [
+        "Articles"
+      ],
+      "level": "A1.1"
+    }
+  ]
+}

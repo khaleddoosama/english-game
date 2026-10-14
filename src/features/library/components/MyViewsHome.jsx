@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { GraduationCap, Inbox, Pencil, Play, Plus } from "lucide-react";
-import { levelStageBreakdown } from "../../../engine/data";
+import { Inbox, Pencil, Plus } from "lucide-react";
+import StageCard from "../../home/StageCard";
+import { describeItems } from "../../home/homeState";
 import { scopeFromContents } from "../scope";
 import { navigate } from "../../../lib/router";
 import { buildTree, flattenTree } from "../libraryTree";
@@ -27,35 +28,21 @@ export default function MyViewsHome({ api, rootId = null, offers = 0, onPractice
     return [...[...sc.words].map((k) => words.find((w) => w.word === k)).filter(Boolean).map((obj) => ({ kind: "word", obj })),
       ...[...sc.rules].map((k) => grammar.find((g) => g.id === k)).filter(Boolean).map((obj) => ({ kind: "grammar", obj }))];
   };
-  const describe = (items) => { const w = items.filter((i) => i.kind === "word").length, g = items.length - w; return [w && count(w, "word"), g && count(g, "grammar rule")].filter(Boolean).join(" · ") || "Empty"; };
+  const describe = (items) => describeItems(items) || "Empty";
 
   const tree = useMemo(() => buildTree(flat || []), [flat]);
   const root = rootId ? tree.find((v) => v.id === rootId) || null : null;
   const edit = (v) => <button className="lib-icon" aria-label={`Edit ${v.name}`} title="Edit in my library" onClick={() => navigate(`/library?view=${encodeURIComponent(v.id)}`)}><Pencil size={14} /></button>;
+  const add = (v) => <button className="lib-plus lib-plus-sm" aria-label={`New view inside ${v.name}`} title={`New view inside ${v.name}`} onClick={() => navigate(`/library?new=1&parent=${encodeURIComponent(v.id)}`)}><Plus size={14} /></button>;
   // A view as a lesson-style card: its own progress and a Practice button.
   const card = (v, title, key) => {
     const items = itemsOf(v.id);
-    const c = levelStageBreakdown({ items }, mastery);
-    const pct = (n) => `${items.length ? (n / items.length) * 100 : 0}%`;
     return (
-      <div key={key || v.id} className="wh-level-card">
-        <div className="wh-level-icon"><GraduationCap size={20} /></div>
-        <div className="wh-level-info">
-          <div className="wh-level-title">{title}</div>
-          <div className="wh-level-meta">{describe(items)}</div>
-          <div className="wh-level-stage-bar" aria-hidden="true">
-            <span className="wh-level-stage-seg mastered" style={{ width: pct(c.Mastered) }} />
-            <span className="wh-level-stage-seg learned" style={{ width: pct(c.Learned) }} />
-            <span className="wh-level-stage-seg familiar" style={{ width: pct(c.Familiar) }} />
-          </div>
-          <div className="wh-level-meta wh-level-stage-detail">{c.Mastered} mastered · {c.Learned} learned · {c.Familiar} familiar · {c.New} new</div>
-        </div>
-        {!v.children.length && <>{edit(v)}{add(v)}</>}
-        <button className="wh-level-btn lib-go" disabled={!(v.deep_words ?? v.words) && !(v.deep_rules ?? v.rules)} onClick={() => onPractice(v.id, true, v.name)}><Play size={13} /> Practice</button>
-      </div>
+      <StageCard key={key || v.id} title={title} meta={describe(items)} items={items} mastery={mastery} playClass="wh-level-btn lib-go"
+        actions={!v.children.length && <>{edit(v)}{add(v)}</>}
+        disabled={!(v.deep_words ?? v.words) && !(v.deep_rules ?? v.rules)} onPlay={() => onPractice(v.id, true, v.name)} />
     );
   };
-  const add = (v) => <button className="lib-plus lib-plus-sm" aria-label={`New view inside ${v.name}`} title={`New view inside ${v.name}`} onClick={() => navigate(`/library?new=1&parent=${encodeURIComponent(v.id)}`)}><Plus size={14} /></button>;
   // Like Gateway > A1.1 > Articles, at any depth: a view with views inside is a
   // heading (its name, a + to add a view inside it, a pencil), with "All of …"
   // and one block for each view inside it; a view with none is a card.
@@ -87,7 +74,10 @@ export default function MyViewsHome({ api, rootId = null, offers = 0, onPractice
         <div className="lib-empty"><p><b>You have no views yet.</b> A view is a way to pick some of your library’s words, like “A1.1 › sports”. Tap <b>+</b> to make one.</p></div>
       )}
       <div className="wh-levels-list lib-readonly" aria-label="Your views">
-        {root
+        {rootId && flat && !root && <p className="ui-muted">That view isn’t here any more. Pick another tab.</p>}
+        {rootId && !root
+          ? null
+          : root
           ? (root.children.length
             ? <>{card(root, `All of ${root.name}`, `${root.id}-all`)}{root.children.map((c) => <Group key={c.id} v={c} depth={1} />)}</>
             : card(root, root.name))

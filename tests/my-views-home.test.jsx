@@ -112,4 +112,11 @@ describe("MyViewsHome", () => {
     await render({ rootId: z });
     expect($$(".lib-readonly .wh-level-title").map((x) => x.textContent)).toEqual(["Z1"]);
   });
+
+  it("a biggest view that is gone shows a note, not every other view", async () => {
+    await api.create("Other");
+    await render({ rootId: "gone" });
+    expect($(".lib-readonly .wh-level-card")).toBeNull();
+    expect($(".lib-home").textContent).toContain("isn’t here any more");
+  });
 });
