@@ -51,7 +51,7 @@ export default function MyViewsHome({ api, rootId = null, offers = 0, onPractice
           <div className="wh-level-meta wh-level-stage-detail">{c.Mastered} mastered · {c.Learned} learned · {c.Familiar} familiar · {c.New} new</div>
         </div>
         {!v.children.length && <>{edit(v)}{add(v)}</>}
-        <button className="wh-level-btn lib-go" disabled={!v.words && !v.rules && !v.children.length} onClick={() => onPractice(v.id, true, v.name)}><Play size={13} /> Practice</button>
+        <button className="wh-level-btn lib-go" disabled={!(v.deep_words ?? v.words) && !(v.deep_rules ?? v.rules)} onClick={() => onPractice(v.id, true, v.name)}><Play size={13} /> Practice</button>
       </div>
     );
   };

@@ -31,7 +31,7 @@ describe("CatalogPage", () => {
   it("lists what people published, with who and what it holds", async () => {
     await render(bob);
     const t = $(".lib-catalog-list").textContent;
-    expect(t).toContain("Movie night"); expect(t).toContain("Scary and fun"); expect(t).toContain("by ann"); expect(t).toContain("2 words");
+    expect(t).toContain("Movie night"); expect(t).toContain("Scary and fun"); expect(t).toContain("Byann"); expect(t).toContain("2 words");
   });
   it("searches, and says when nothing matches", async () => {
     await render(bob);
@@ -47,15 +47,30 @@ describe("CatalogPage", () => {
     expect((await bob.tree()).length).toBe(1);
     expect($$("button").some((b) => b.textContent === "Add again")).toBe(true);
   });
-  it("my own entry can be taken down, not added", async () => {
+  it("each entry shows who, when, how many times it was taken and what it holds", async () => {
+    await bob.catalogTake((await bob.catalogList())[0].id);
+    await render(bob);
+    const t = $(".lib-entry-meta").textContent;
+    expect(t).toContain("Byann"); expect(t).toContain("Published"); expect(t).toContain("Taken1 time"); expect(t).toContain("2 words");
+  });
+  it("my own entry can be edited, opened in my library, and deleted after a second tap; not added", async () => {
     await render(ann);
     expect($$("button").some((b) => b.textContent === "Add to my library")).toBe(false);
-    await click($$("button").find((b) => b.textContent === "Take it down"));
+    await click($$("button").find((b) => b.textContent.includes("Edit")));
+    await type($('input[aria-label="Catalog title"]'), "Renamed");
+    await click($$("button").find((b) => b.textContent === "Save"));
+    expect($(".lib-catalog-list").textContent).toContain("Renamed");
+    await click($$("button").find((b) => b.textContent === "Open in my library"));
+    expect(window.location.pathname).toBe("/library");
+    await click($$("button").find((b) => b.textContent === "Delete"));
+    expect($$("button").some((b) => b.textContent === "Tap again to delete")).toBe(true);   // the first tap only asks
+    await click($$("button").find((b) => b.textContent === "Tap again to delete"));
     expect($(".lib-empty").textContent).toContain("The catalog is empty");
+    expect($(".lib-notice").textContent).toContain("Copies people already took stay theirs");
   });
   it("an admin can remove someone else's", async () => {
     await render(bob, { isAdmin: true });
-    expect($$("button").some((b) => b.textContent === "Remove")).toBe(true);
+    expect($$("button").some((b) => b.textContent === "Delete")).toBe(true);
   });
   it("an empty catalog says how to fill it", async () => {
     storage = memory(); await render(as("b"));

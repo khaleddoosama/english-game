@@ -14,7 +14,7 @@
 //              libraryList() -> { words: [{ id, note, patch, added_at, views }], rules: [{ id }] }
 //   sharing    share(view, userIds) inbox() accept(shareId) dismiss(shareId)
 //   links      linkCreate(view) linkInfo(token) linkAccept(token) linkRevoke(token)
-//   catalog    catalogPublish(view, title, description?) catalogUnpublish(entry) catalogList(query?, limit?) catalogTake(entry)
+//   catalog    catalogPublish(view, title, description?) catalogEdit(entry, title, description?) catalogUnpublish(entry) catalogList(query?, limit?) catalogTake(entry)
 import { isLocalMode, supabase } from "../../lib/supabase";
 import { createLocalLibraryApi } from "./local/localLibraryApi";
 import { createOnlineLibraryApi } from "./onlineLibraryApi";

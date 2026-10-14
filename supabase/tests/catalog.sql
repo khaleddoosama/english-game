@@ -54,6 +54,19 @@ begin
   perform pg_temp.must((e ->> 'id')::uuid = eid, 'the same entry is updated, not doubled');
   perform pg_temp.must((select count(*) from public.catalog_entries where collection_id = v_top and unpublished_at is null) = 1, 'one open entry per view');
 
+  -- the owner edits the title and description; others cannot; the list says when and gives the owner the view
+  perform pg_temp.act(b);
+  perform pg_temp.must(pg_temp.fails(format('select public.catalog_edit(%L, ''hack'', '''')', eid)), 'someone else cannot edit it');
+  perform pg_temp.act(a);
+  perform pg_temp.must(pg_temp.fails(format('select public.catalog_edit(%L, '''', '''')', eid)), 'an edit needs a title');
+  e := public.catalog_edit(eid, 'Movie night 3', 'Edited');
+  perform pg_temp.must(e ->> 'title' = 'Movie night 3', 'the owner can edit');
+  perform pg_temp.must((public.catalog_list('', 50) -> 0 ->> 'view')::uuid = v_top, 'an owner gets the view behind their entry');
+  perform pg_temp.must((public.catalog_list('', 50) -> 0 ->> 'updated_at') is not null, 'the list says when it was edited');
+  e := public.catalog_edit(eid, 'Movie night 2', 'Scary and fun');
+  perform pg_temp.act(b);
+  perform pg_temp.must((public.catalog_list('', 50) -> 0 -> 'view') = 'null'::jsonb, 'others do not get the owner''s view id');
+
   -- everyone signed in can browse; counts leave the private word out
   perform pg_temp.act(b);
   list := public.catalog_list('', 50);

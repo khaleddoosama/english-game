@@ -45,6 +45,7 @@ export const MSG = Object.freeze({
   catalogTitle: [`Give it a title of up to ${MAX_TITLE} characters.`, "22023"],
   catalogDescription: [`The description is up to ${MAX_DESCRIPTION} characters.`, "22023"],
   catalogTooMany: [`You have ${MAX_CATALOG} views in the catalog. Take some down first.`, "55000"],
+  catalogNotYours: ["That view is not in the catalog, or it is not yours.", "P0002"],
   catalogGone: ["That view is no longer in the catalog.", "P0002"],
   shareNoRoom: (n) => [`You do not have room for ${n} more views (the most is ${MAX_VIEWS}).`, "55000"],
 });
