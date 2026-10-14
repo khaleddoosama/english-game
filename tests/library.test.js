@@ -393,3 +393,36 @@ describe("the catalog (local mirror of migration 0032)", () => {
     await bad(ann.catalogPublish(await ann.create("V21"), "T21"), /20 views/);
   });
 });
+
+describe("grammar rules in the library (local mirror of migration 0035)", () => {
+  let ann, bob, v;
+  beforeEach(async () => { ann = createLocalLibraryApi({ storage, me: () => "a" }); bob = createLocalLibraryApi({ storage, me: () => "b" }); v = await ann.create("G"); });
+  it("rules go into the library without a view, and adding again changes nothing", async () => {
+    expect(await ann.libraryAddRules(["r1", "r2"])).toBe(2);
+    expect(await ann.libraryAddRules(["r1"])).toBe(0);
+    expect((await ann.libraryList()).rules.map((r) => r.id).sort()).toEqual(["r1", "r2"]);
+  });
+  it("a rule put in a view is in the library; taking it out of the view keeps it there", async () => {
+    await ann.addRules(v, ["r1"]);
+    expect((await ann.libraryList()).rules.map((r) => r.id)).toEqual(["r1"]);
+    await ann.dropRule(v, "r1");
+    expect((await ann.contents(v, false)).length).toBe(0);
+    expect((await ann.libraryList()).rules.map((r) => r.id)).toEqual(["r1"]);
+  });
+  it("removing from the library takes it out of every view of mine, and can be added back", async () => {
+    const w = await ann.create("W");
+    await ann.addRules(v, ["r1"]); await ann.addRules(w, ["r1", "r2"]);
+    await ann.libraryRemoveRule("r1");
+    expect((await ann.libraryList()).rules.map((r) => r.id)).toEqual(["r2"]);
+    expect((await ann.contents(v, false)).length).toBe(0);
+    expect((await ann.contents(w, false)).map((x) => x.id)).toEqual(["r2"]);
+    expect(await ann.libraryAddRules(["r1"])).toBe(1);
+  });
+  it("someone else's library and views are not touched, and 200 is the most at a time", async () => {
+    await ann.addRules(v, ["r1"]);
+    await bob.libraryRemoveRule("r1"); await bob.dropRule(v, "r1");
+    expect((await ann.libraryList()).rules.length).toBe(1);
+    expect((await ann.contents(v, false)).length).toBe(1);
+    await bad(ann.libraryAddRules(Array.from({ length: 201 }, (_, i) => `r${i}`)), /up to 200 rules/);
+  });
+});

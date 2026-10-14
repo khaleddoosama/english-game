@@ -109,3 +109,4 @@
 .lib-entry-actions { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
 .lib-entry-edit { flex: 1 1 100%; display: grid; gap: 8px; }
 .lib-entry-edit input, .lib-entry-edit textarea { background: #fff8; color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; font: inherit; }
+.wh-level-view-toggle .lib-catalog-tab { margin-left: auto; }

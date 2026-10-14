@@ -1880,6 +1880,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
               <button key={id} className={homeView === id ? "active" : ""} aria-pressed={homeView === id} onClick={() => setSettings((prev) => ({ ...prev, levelView: id }))}>{label}</button>
             ))}
             {library.status === "ready" && <button className="lib-plus lib-tab-plus" aria-label="New view" title="New view" onClick={() => navigate("/library?new=1")}>+</button>}
+            {library.status === "ready" && <button className="lib-catalog-tab" onClick={() => navigate("/catalog")}>Catalog</button>}
           </div>
         )}
 
@@ -1938,7 +1939,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
         {screen === "levels" && section === "practice" && homeView === "lesson" && (
           <div className="wh-levels-list">
-            {limitHome && !homeLevels.length && <div className="lib-empty"><p><b>Your library is empty.</b> Add words to your library and they show up here, in their lessons. Open <b>My views</b> to make your first view.</p><button className="wh-level-btn" onClick={() => navigate("/library")}>Open my library</button></div>}
+            {limitHome && !homeLevels.length && <div className="lib-empty"><p><b>Your library is empty.</b> Add words to your library and they show up here, in their lessons. Take a ready-made course from the <b>Catalog</b>, or open your library to add words yourself.</p><button className="wh-level-btn" onClick={() => navigate("/catalog")}>Browse the catalog</button> <button className="wh-level-btn" onClick={() => navigate("/library")}>Open my library</button></div>}
             {homeLevels.map((level) => {
               const i = LEVELS.findIndex((l) => l.id === level.id);
               const unlocked = isLevelUnlocked(i);
@@ -2336,7 +2337,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         {screen === "catalog" && (library.status === "ready"
           ? <Suspense fallback={<ScreenSkeleton />}><CatalogPage api={library.api} isAdmin={isAdmin} onTaken={refreshLibraryInbox} /></Suspense>
           : <section className="ui-page"><p className="ui-muted">{library.status === "loading" ? "Loading…" : "The catalog isn’t available yet."}</p></section>)}
-        {screen === "library" && library.status === "ready" && <Suspense fallback={<ScreenSkeleton />}><LibraryPage api={library.api} ids={library.ids} words={WORDS} grammar={GRAMMAR} levels={courseLevelGroups().levels} friendsApi={friendsApi} onPractice={startViewPractice} onInboxChanged={refreshLibraryInbox} onAskWord={openAskAi} onRefreshIds={library.refreshIds} /></Suspense>}
+        {screen === "library" && library.status === "ready" && <Suspense fallback={<ScreenSkeleton />}><LibraryPage isAdmin={isAdmin} api={library.api} ids={library.ids} words={WORDS} grammar={GRAMMAR} levels={courseLevelGroups().levels} friendsApi={friendsApi} onPractice={startViewPractice} onInboxChanged={refreshLibraryInbox} onAskWord={openAskAi} onRefreshIds={library.refreshIds} /></Suspense>}
         {screen === "friends" && <Suspense fallback={<ScreenSkeleton />}><FriendsPage api={friendsApi} onChanged={refreshSocial} local={friendsApi.mode === "local"} /></Suspense>}
 
         {screen === "speedResults" && (

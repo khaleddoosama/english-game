@@ -8,9 +8,9 @@
 // LibraryApi (all calls return promises; ids are the server's ids, which in
 // local mode are the game's own word and rule keys):
 //   views      tree() create(name, parent?, source?) rename(id, name) move(id, parent?)
-//              remove(id) add(view, senseIds) drop(view, senseId) addRules(view, ruleIds)
+//              remove(id) add(view, senseIds) drop(view, senseId) addRules(view, ruleIds) dropRule(view, ruleId)
 //              contents(view, deep?) -> [{ kind: "sense" | "rule", id }]
-//   library    libraryAdd(senseIds) libraryRemove(senseId) patch(senseId, patch, note?) createWord(card)
+//   library    libraryAdd(senseIds) libraryRemove(senseId) libraryAddRules(ruleIds) libraryRemoveRule(ruleId) patch(senseId, patch, note?) createWord(card)
 //              libraryList() -> { words: [{ id, note, patch, added_at, views }], rules: [{ id }] }
 //   sharing    share(view, userIds) inbox() accept(shareId) dismiss(shareId)
 //   links      linkCreate(view) linkInfo(token) linkAccept(token) linkRevoke(token)

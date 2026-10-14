@@ -12,7 +12,7 @@ const PAGE = 60;
 //   disabled  - keys that are already in (shown ticked, can't be changed)
 //   onToggle(key)    onSetMany(keys, on)    empty(query) - what to show when nothing matches
 //   tagOf(key) - a small note after a word (for example how many views it is in)
-export default function WordPicker({ words, selected, onToggle, onSetMany, disabled = new Set(), disabledLabel = "already in", tagOf = null, placeholder = "Search by word or meaning", searchLabel = "Search words", empty = null, children }) {
+export default function WordPicker({ words, selected, onToggle, onSetMany, disabled = new Set(), disabledLabel = "already in", tagOf = null, keyOf = (w) => w.word, nameOf = (w) => w.word, noun = "word", placeholder = "Search by word or meaning", searchLabel = "Search words", empty = null, children }) {
   const [query, setQuery] = useState("");
   const [lesson, setLesson] = useState("");
   const [level, setLevel] = useState("");
@@ -24,8 +24,8 @@ export default function WordPicker({ words, selected, onToggle, onSetMany, disab
     const base = query.trim() ? searchWords(words, query, 5000) : words;
     return base.filter((w) => (!lesson || w.category === lesson) && (!level || V2.courseLevelOf(w) === level));
   }, [words, query, lesson, level]);
-  const pickable = list.filter((w) => !disabled.has(w.word));
-  const allPicked = pickable.length > 0 && pickable.every((w) => selected.has(w.word));
+  const pickable = list.filter((w) => !disabled.has(keyOf(w)));
+  const allPicked = pickable.length > 0 && pickable.every((w) => selected.has(keyOf(w)));
   const reset = (fn) => (e) => { fn(e.target.value); setShown(PAGE); };
 
   return (
@@ -51,20 +51,20 @@ export default function WordPicker({ words, selected, onToggle, onSetMany, disab
       {list.length > 0 && (
         <>
           <div className="lib-pickbar">
-            <span>{count(list.length, "word")} shown · {selected.size} selected</span>
+            <span>{count(list.length, noun)} shown · {selected.size} selected</span>
             <span>
-              <button className="lib-link" disabled={!pickable.length} onClick={() => onSetMany(pickable.map((w) => w.word), !allPicked)}>{allPicked ? "Clear shown" : `Select all shown (${pickable.length})`}</button>
+              <button className="lib-link" disabled={!pickable.length} onClick={() => onSetMany(pickable.map(keyOf), !allPicked)}>{allPicked ? "Clear shown" : `Select all shown (${pickable.length})`}</button>
             </span>
           </div>
           <ul className="lib-results">
             {list.slice(0, shown).map((w) => {
-              const inAlready = disabled.has(w.word);
+              const key = keyOf(w), inAlready = disabled.has(key);
               return (
-                <li key={w.word} className={inAlready ? "in" : ""}>
+                <li key={key} className={inAlready ? "in" : ""}>
                   <label>
-                    <input type="checkbox" checked={inAlready || selected.has(w.word)} disabled={inAlready} onChange={() => onToggle(w.word)} />
-                    <b>{w.word}</b><small>{w.meaning}</small>
-                    {inAlready ? <i className="lib-tag">{disabledLabel}</i> : tagOf && tagOf(w.word) && <i className="lib-tag">{tagOf(w.word)}</i>}
+                    <input type="checkbox" checked={inAlready || selected.has(key)} disabled={inAlready} onChange={() => onToggle(key)} />
+                    <b>{nameOf(w)}</b><small>{w.meaning}</small>
+                    {inAlready ? <i className="lib-tag">{disabledLabel}</i> : tagOf && tagOf(key) && <i className="lib-tag">{tagOf(key)}</i>}
                   </label>
                 </li>
               );
