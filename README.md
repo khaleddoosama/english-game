@@ -17,6 +17,7 @@ npm test         # unit tests (Vitest): engine, saves, routing, Live, import/exp
                  # grammar editor, dashboard numbers, settings, audit, AI log
 npm run lint     # ESLint: names that aren't defined, hooks called out of order,
                  # unused variables (CI runs it before the tests)
+npm run e2e      # browser specs (Playwright) against the built app in local mode
 ```
 
 Without Supabase settings the app runs in **local mode**: one local admin,
@@ -24,6 +25,23 @@ everything stored in this browser's IndexedDB, AI features off. Two tabs can
 play a Live Challenge against each other. Copy `.env.example` to `.env.local`
 and fill it in to use the real backend (AI calls need `vercel dev`, since
 `/api` runs as Vercel Functions).
+
+## Tests
+
+Four layers, from cheap to costly; a change is covered at the lowest layer that
+can show it:
+
+| Layer | Where | Run with | What it checks |
+| --- | --- | --- | --- |
+| Unit | `tests/*.test.js` | `npm test` | pure logic: the engine, rules, routing, ids, `features/home/homeState.js` |
+| Feature | `tests/library*.test.js`, `supabase/tests/*.sql` | `npm test`, `supabase/ci/run-tests.sh` | a feature through its API: the library over a local mirror, the same calls against the real SQL functions (`library-contract.test.js`) |
+| Component | `tests/*.test.jsx` | `npm test` | one screen or piece on its own (jsdom): the library page, the catalog, the Home pieces |
+| End to end | `e2e/specs/*.cjs` | `npm run e2e [name…]` | the built app in a real browser, in local mode: library, catalog, sharing, Home tabs, grammar, Live with friends |
+
+`npm run e2e` starts `vite preview` (building first if `dist/` is missing), runs
+each spec in its own process and prints one line per spec. It needs a Chromium:
+`npx playwright-core install chromium`, or set `CHROME_PATH`. Screenshots go to
+`e2e/out/` (not committed). CI runs all four layers.
 
 ## Environment variables
 
@@ -259,13 +277,14 @@ refuses anyone who isn't an admin.
 ```
 api/                 Vercel Functions: ai, tts, image-import, keepalive
 src/engine/          game logic (moved verbatim from the original single file)
-src/features/        session, live, admin, data (import/export), stats (dashboard),
+src/features/        home (the Home tabs and cards), session, live, admin, data (import/export), stats (dashboard),
                      settings, media, social (leaderboard, profile, friends), library, auth, shell
 src/lib/             supabase client, auth, repo (diff-based saves + caches), router,
                      app settings, ai, images
 src/styles/          tokens, app, auth, ui, admin, live, friends, library, data, stats, settings
 supabase/migrations/ database schema and policies
 supabase/tests/      SQL tests (run inside a rolled-back transaction)
-tests/               Vitest unit tests
+tests/               Vitest unit and component tests
+e2e/                 browser specs (Playwright) and their runner
 legacy/              the original single-file Claude artifact, for reference
 ```

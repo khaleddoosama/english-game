@@ -1,5 +1,5 @@
 # Every push and pull request: lint (undefined names, hooks called out of
-# order), the unit tests and the build, and every
+# order), the unit tests, the build, the browser specs, and every
 # database migration plus the SQL tests on a fresh Postgres.
 name: CI
 on:
@@ -19,6 +19,20 @@ jobs:
       - run: npm run lint
       - run: npx vitest run
       - run: npx vite build
+
+  # The built app in a real browser, in local mode (no database).
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+      - run: npx vite build
+      - run: npm run e2e
 
   database:
     runs-on: ubuntu-latest

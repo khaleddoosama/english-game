@@ -24,4 +24,6 @@ export default [
   },
   { files: ["api/**/*.js", "vite.config.js"], languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: globals.node } },
   { files: ["tests/**/*.{js,jsx}"], languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: { ...globals.node, ...globals.browser }, parserOptions: { ecmaFeatures: { jsx: true } } }, plugins: { react }, rules: { "react/jsx-uses-vars": "error" } },
+  // Browser specs (CommonJS, Playwright): Node for the runner, the browser for what runs inside page.evaluate.
+  { files: ["e2e/**/*.cjs"], languageOptions: { ecmaVersion: "latest", sourceType: "commonjs", globals: { ...globals.node, ...globals.browser } } },
 ];
