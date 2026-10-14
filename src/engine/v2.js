@@ -536,8 +536,11 @@ function makeQuestion(w,mode,words,rng=Math.random,difficulty=1,pools=null,boost
   const pool=poolType&&pools?{poolType,poolItemId:usable?variant.id:'seed'}:{};
   const q={id:`${w.word}:${mode}`,mode,targets:[w.word],hints:w.hints||[],explanation:w.meaning,type:'mcq',answers:[w.word],difficulty,...pool};
   if(mode==='transform')return {...q,type:'typing',prompt:`Use “${w.word}” to rewrite: ${w.transformExample.before}`,answers:[w.transformExample.after],explanation:w.transformExample.after,modelOnly:true};
-  if(mode==='typing')return {...q,type:'typing',prompt:w.meaning};
-  if(mode==='gapTyping')return {...q,type:'typing',prompt:w.gap};
+  // A typed question that shows the word it asks for is no question. Whole
+  // words only, so "Insane" in the meaning of "Sane" is fine.
+  const showsAnswer=text=>new RegExp(`(^|[^\\p{L}\\p{N}])${norm(bareWord(w.word)).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}($|[^\\p{L}\\p{N}])`,'u').test(norm(text));
+  if(mode==='typing')return showsAnswer(w.meaning)?null:{...q,type:'typing',prompt:w.meaning};
+  if(mode==='gapTyping')return showsAnswer(w.gap)?null:{...q,type:'typing',prompt:w.gap};
   q.prompt=mode==='meaning'?w.word:mode==='reverse'?w.meaning:mode==='gap'?w.gap:w.situation;
   // Easier questions take at most one distractor from the word's own
   // subCategory; from difficulty 3 all of them may (Strain, Fracture, Bruise…).
