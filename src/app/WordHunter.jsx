@@ -215,6 +215,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     return () => { alive = false; };
   }, [library, screen, libraryInbox]);
   const limitHome = library.status === "ready" && !isAdmin && !!libraryKeys;
+  // A player's library is still being read: don't show the whole course for a moment before cutting it down.
+  const waitingForLibrary = library.status === "ready" && !isAdmin && !libraryKeys;
   const homeLevels = limitHome ? limitLessons(LEVELS, libraryKeys) : LEVELS;
   function startItemsPractice(title, items) {
     const scope = itemsScope(items);
@@ -1842,7 +1844,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         )}
 
         {/* Gateway (admin): the course's levels (A1.2 …) from every lesson, each split into its sessions. */}
-        {screen === "levels" && section === "practice" && homeView === "course" && (() => {
+        {screen === "levels" && section === "practice" && waitingForLibrary && (homeView === "course" || homeView === "lesson") && <ScreenSkeleton />}
+        {screen === "levels" && section === "practice" && !waitingForLibrary && homeView === "course" && (() => {
           const { levels, none } = limitHome ? courseLevelGroups(WORDS.filter((w) => libraryKeys.words.has(w.word)), GRAMMAR.filter((g) => libraryKeys.rules.has(g.id))) : courseLevelGroups();
           return <CourseLevelsView levels={levels} none={none} mastery={mastery} limited={limitHome} onPlay={startItemsPractice} onStartLevel={startCourseLevel} />;
         })()}
@@ -1854,7 +1857,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           </Suspense>
         )}
 
-        {screen === "levels" && section === "practice" && homeView === "lesson" && (
+        {screen === "levels" && section === "practice" && !waitingForLibrary && homeView === "lesson" && (
           <LessonsView levels={homeLevels} indexOf={(level) => LEVELS.findIndex((l) => l.id === level.id)} mastery={mastery} isAdmin={isAdmin} emptyLibrary={limitHome && !homeLevels.length}
             isUnlocked={isLevelUnlocked} clearedSet={clearedSet} starsOf={getLevelStars} onStart={startLevel} onFinalCase={startFinalCase} onDelete={setDeleteCategoryTarget}
             onOpenLibrary={() => navigate("/library")} onOpenCatalog={() => navigate("/catalog")} />

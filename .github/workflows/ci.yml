@@ -55,4 +55,4 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx vitest run tests/library-contract.test.js
+      - run: npx vitest run tests/library-contract.test.js tests/library-differential.test.js
