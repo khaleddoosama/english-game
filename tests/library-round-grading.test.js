@@ -30,6 +30,7 @@ describe("grading a typed answer", () => {
   });
 
   it("two slips are a wrong answer, not a spelling one", () => {
+    expect(grade(typing("campaign"), "kampaigm")).toMatchObject({ correct: false, spelling: false });      // two letters off
     expect(grade(typing("campaign"), "campain!x")).toMatchObject({ correct: false, spelling: false });
     expect(grade(typing("campaign"), "cmpaing")).toMatchObject({ correct: false, spelling: false });
   });
