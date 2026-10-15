@@ -70,6 +70,10 @@ Note: there are no review dates (`nextReviewAt` is always 0). Words come back by
 | View names, nesting (4 levels), moves, 200 views, per-player libraries | `library`, `library-tree`, `library-local-views` (existing) |
 | 200 words per call; 5000 words in a library; removing one makes room | `library-content-input` › how many words a library holds |
 | A word of own: 1 to 120 characters after trimming, nothing added when refused | `library-regressions` › a word of my own |
+| An offer ends with the friendship, is not brought back, the accept still checks it, copies stay | `supabase/tests/view_shares_friendship.sql`, `tests/integration/sharing.test.js`, `tests/library.test.js` |
+| Removing a view that is not mine: same quiet answer as for one that does not exist, nothing changes | `tests/integration/isolation.test.js`, `tests/library-remove-errors.test.js` |
+| A rename into a name another word has is refused and changes nothing | `tests/word-rename.test.js`, `supabase/tests/rename_conflict.sql`, `tests/integration/content-rename.test.js` |
+| A view with one new word is introduced and asked once | `tests/round-single-new-word.test.js` |
 | The local mirror and the SQL functions agree | `library-contract`, `library-differential` (need `PGURL`) |
 
 ## Pasted lists, content and import
@@ -96,7 +100,7 @@ Note: there are no review dates (`nextReviewAt` is always 0). Words come back by
 
 These are decisions or limits, not tested as correct behaviour.
 
-- **A one-word view of a new word has no questions.** The round shows the word, then ends, because the last introduced word is never the first question. Not changed: it is a product choice.
+- **A one-word view of a new word** now asks that word once after introducing it (`tests/round-single-new-word.test.js`); it used to give a card with no question. The rule that the word just introduced is not the first question stays for rounds that have anything else to ask.
 - **A letter swap counts as wrong, not as a spelling slip** (`campaing` for `campaign`). Spelling uses plain edit distance 1. The existing test is named "one-letter slip" but only checks `correct: false`.
 - **The answer check for choice questions is by substring.** "Sane" with the meaning `Opposite of "Insane"` loses its choice questions. One word in the 989 of the backup. The typed check is by whole word.
 - **Unknown words in a combo or an exclusion list** are turned into stub words on import, not reported.

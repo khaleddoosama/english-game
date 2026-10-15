@@ -79,6 +79,57 @@ and `useLibrary` takes `people` instead of importing the friends module.
 - Next module to extract: the plan proposes splitting `repo.js` first, then question reports.
 - The earlier open decisions (offers from a former friend, quiet no-ops, merging a rename, deleted senses in `view_contents`, a one-word new view) are unchanged.
 
+## Step 3 (third conversation): loop, repo split, four decisions, migration review
+
+Owner's decisions: fix loop (a); split `repo.js` gradually; four behaviour decisions (A-D); review 0037/0038
+(and the new 0039/0040). Refactoring and fixes are in separate commits.
+
+| Group | Commits (subjects) | Kind |
+| --- | --- | --- |
+| Loop `engine/ai` <-> `engine/questions` | "Engine: normalizeAnswerText moves to engine/text.js…" | refactor; guard now expects no file loops |
+| Pin repo saving before the split | "Test: how the repo saves progress when the network fails…" (15 tests) | tests |
+| repo.js split | "…move the pure parts into src/lib/repo/", "…content state and reports state move into their own stores", "…local-mode repo moves…" | refactor (556 -> 289 lines) |
+| Defect found by the close-page scenario | "Test (red): a save the server received but the device never heard back…", "Fix: progress saved by the server but not acknowledged is no longer counted twice…", "Integration test: the lost-answer save…" | fix (separate) |
+| Decision C (rename into an existing name) | "Test (red)…", "Rename a word: the app refuses…", "Migration 0039…" | tests, app, migration |
+| Decision D (one new word) | "Test (red)…", "Engine: a round whose only candidate is the word just introduced asks it once…" | test, fix |
+| Decision B (not-mine view) | "Tests: removing a view that is not mine…" | tests only (behaviour already right) |
+| Decision A (offers after the friendship) | "Test (red)…", "Migration 0040…" | tests, migration, local mirror |
+| Migration review and rollback | "Upgrade check for migrations 0037-0040…", `docs/migrations/review-0037-0040.md`, `supabase/rollback/0037_0040_down.sql` | docs, scripts |
+
+### Verified (branch head)
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | clean |
+| `npx vitest run` | 63 files passed, 9 skipped; 715 tests passed, 84 skipped (need `PGURL`) |
+| `npx vite build` + `npm run e2e` (all) | 14 of 14 browser specs, on a rebuilt `dist/` |
+| `supabase/ci/run-tests.sh` (all 26 SQL test files, migrations 0001-0040) | all ok |
+| `supabase/ci/run-integration.sh` | 75 passed |
+| `library-contract`, `library-differential` with `PGURL` | 9 passed |
+| `supabase/ci/check-upgrade.sh` (0036 + made-up data -> 0040, checks, rollback) | passed |
+| previous app (`e4f9c97`) database tests against the migrated database | 47 passed; its SQL tests: 1 differs on purpose (`view_shares.sql`) |
+
+### Not tested
+
+- Any real Supabase project, production data or volumes, the CI job on GitHub (the new `check-upgrade.sh` is not in CI).
+- In a real browser: a view with one new word (covered by unit tests and the engine only); the refused rename (the app's
+  guard shows a toast, covered only by the pure rule's tests); closing a real tab during a save.
+- `apply_item_renames` called alone; renames made before 0037 (not repaired).
+- The progress engine inside `repo.js` was not split (reason in `docs/architecture/repo.md`).
+
+### Migrations 0037-0040: nothing applied anywhere
+
+Read `docs/migrations/review-0037-0040.md` first. Order, effects, compatibility, rollback and what was not verified are there.
+
+### To continue
+
+1. Read `CLAUDE.md`, `docs/architecture/modules.md`, `docs/architecture/repo.md`, `docs/modules/my-library.md`, this file.
+2. `git status` clean, `npm run lint && npx vitest run`. Database tests need any PostgreSQL 15+:
+   `PGADMIN=<url> supabase/ci/run-integration.sh`, `PGURL=<empty db> supabase/ci/run-tests.sh`, `PGADMIN=<url> supabase/ci/check-upgrade.sh`.
+3. Open items, in the owner's hands: review and apply (or not) the four migrations; the loops `engine/media/lib` and `social/live`;
+   the repair of old renames; a per-save id to close the lost-answer limit; merging two words (a feature with a preview);
+   the next modules in the plan (question reports, content administration…).
+
 ## Not done / left on purpose
 
 - **Folders of the module were not reshuffled** (the layers are named in the

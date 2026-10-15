@@ -109,9 +109,10 @@ Clusters found by function name (line numbers approximate, from the day of writi
 | Status ("saving", "offline") | `statusHub` | small shared piece |
 | Local implementation | `createLocalRepo` | `repo/local.js` |
 
-`repo.js` is covered by `tests/repo.test.js`, `tests/review-audit.test.js` (with a
-JS fake of the database) and `tests/integration/*` (real PostgreSQL). Those are
-the safety net for splitting it. **Not started.**
+`repo.js` is covered by `tests/repo.test.js`, `tests/repo-saving.test.js`, `tests/review-audit.test.js` (with a
+JS fake of the database) and `tests/integration/*` (real PostgreSQL). **Done in part**: the pure parts and the
+content and reports stores are out (556 -> 289 lines); the progress engine stayed together on purpose. See
+`docs/architecture/repo.md` for the state map and the reason.
 
 ## Plan for the other modules
 
@@ -119,7 +120,7 @@ Order is by how self-contained the cluster is and how well it is covered.
 
 | # | Module | Why this order | First step |
 | --- | --- | --- | --- |
-| 1 | `repo` split into content / progress / reports | Biggest single file under the shell, best test net (unit + real database) | extract the pure parts of `progress` and `reports`, keep the same exported repo object |
+| 1 | `repo` split into content / progress / reports (**done** except the progress engine, see `repo.md`) | Biggest single file under the shell, best test net (unit + real database) | extract the pure parts of `progress` and `reports`, keep the same exported repo object |
 | 2 | Question reports | Self-contained handlers, one data shape | pin with `tests/` on `sameReport`, `reconcileReports`; move handlers to `features/reports` |
 | 3 | Content administration | Touches content and mastery; has the rename path now covered by integration tests | move `renameWord`, `migrateRenamedProgress`, `mergeCategories`... behind a `useContentAdmin` hook |
 | 4 | Import / export orchestration | `features/data` already has `transfer.js` (pure) | move `applyImport`, `exportFile`, backup handlers next to it |
@@ -127,9 +128,9 @@ Order is by how self-contained the cluster is and how well it is covered.
 | 6 | Progress state | Everything reads it; do after 1 | after `repo/progress` is split |
 | 7 | Session/practice flow | Largest, most coupled | last, one answer type at a time |
 
-Known debts the guards list (not fixed here, outside My Library):
+Known debts the guards list (outside My Library):
 
-- loop `engine/ai` <-> `engine/questions` (files)
+- ~~loop `engine/ai` <-> `engine/questions`~~ fixed: `normalizeAnswerText` moved to `engine/text.js`
 - loop `engine` <-> `features/media` <-> `lib` (the engine imports the media feature, and `lib` imports the engine)
 - loop `features/social` <-> `features/live`
 

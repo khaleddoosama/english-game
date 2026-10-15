@@ -1,6 +1,6 @@
 # Module: My Library
 
-Status: documented from the code on branch `ccr-29322d12-v8wkmd` (see
+Status: documented from the code on branch `ccr-29322d12-v8wkmd` (migrations 0026-0040) (see
 `docs/work-tracking/my-library.md` for what was checked and when). Written in
 English, like the rest of the project's docs.
 
@@ -25,7 +25,7 @@ In the module (`src/features/library/`, `src/styles/library.css`):
 | Orchestration | `useLibrary.js` + `openLibrary.js` (is the library on, the API, the id maps), `useLibraryHome.js` (offers, keys, biggest views), `useViews.js` (tree, open view, contents, "run a change"), `useViewScope.js`, `viewRound.js`, `ownWords.js`, `libraryActions.js` (the page's changes and their sentences) |
 | Rules (pure) | `libraryRules.js` (limits, messages, `senseFromCard`), `libraryTree.js` (tree, search, pasted lists), `libraryHome.js` (Home's keys, roots, limits), `scope.js` (a view as `{ words, rules }`), `libraryIds.js` (game key <-> server id), `libraryErrors.js` |
 | The one interface | `libraryApi.js` with two implementations: `onlineLibraryApi.js` (Supabase functions) and `local/*` (localStorage mirror, for local mode and tests) |
-| Database | migrations `0026`-`0038` (library, sync, sharing, links, catalog, rules, rename, delete) and `supabase/tests/*.sql` |
+| Database | migrations `0026`-`0040` (library, sync, sharing, links, catalog, rules, rename, delete, rename needs a free name, offers end with the friendship) and `supabase/tests/*.sql` |
 
 Not in the module: the dictionary content itself (`content_items`, admin
 editors), the practice engine (`src/engine/v2.js`), progress saving
@@ -103,7 +103,7 @@ Behaviour worth knowing:
   made are private and are left out (the result says how many, once for each
   place they were in).
 - A renamed word keeps its sense, so library entries and views follow the rename
-  (migration `0037`). Only when the new name has no sense yet.
+  (migration `0037`); a rename into a name another word has is refused (`0039`).
 - Deleting a player removes their library data first; copies others took stay (`0038`).
 - A practice round from a view asks only the view's words and rules; wrong
   answers still come from the whole dictionary. See `docs/library-unit-test-matrix.md`.
@@ -123,22 +123,32 @@ Behaviour worth knowing:
 
 Rule-by-rule list: `docs/library-unit-test-matrix.md`.
 
-## Known differences and open decisions
+## Decisions taken (owner, this branch) and what is still open
 
-These are recorded, not changed, because the wanted behaviour is not stated.
+Taken, implemented and tested (details and evidence: `docs/migrations/review-0037-0040.md`,
+`docs/work-tracking/my-library.md`):
 
-1. **Offers from someone no longer a friend.** The server lists them and refuses
-   them on accept ("You are no longer friends."); the local mirror hides them.
-2. **Removing or dropping what is not yours** is a quiet no-op on the server (an
-   error would say the view does not exist for the caller).
-3. **A rename into a name that already has a sense** is not merged; the old
-   sense is flagged deleted as before.
-4. **`view_contents` returns deleted senses.** The app drops ids it cannot map to a
-   key, so nothing shows; the count a view reports may differ until it does.
-5. **The library is hidden** until the dictionary has been copied
-   (`useLibrary` status `off`), also when the connection fails once.
-6. **A one-word view of a new word** gives a round with no question (engine rule:
-   the last introduced word is never the first test).
+1. **Offers after a friendship ends** leave the inbox and the badge and do not return with a new friendship;
+   the accept still checks the friendship; copies already taken stay; the sender may offer again (migration 0040,
+   the local mirror ends stale offers when the inbox is read).
+2. **Removing or dropping what is not yours** keeps the same quiet answer as for something that does not exist,
+   and changes nothing. Real errors (network, server) are still thrown. (Tests only; no code change.)
+3. **Renaming a word to a name another word has** is refused, in the editor, in the app's rename handler and in
+   `content_save_v2` (migration 0039), with nothing changed. Two meanings of one headword stay allowed. Merging is
+   a separate feature, not started.
+4. **A view with one new word** introduces it and then asks it once (`initialTraining`); the word becomes Familiar
+   after a right answer, as for any first answer; no mastery rule changed; no question is made up.
+
+Still open or limited:
+
+- **Renames made before migration 0037** left library entries on deleted words; they are not repaired (the review
+  has the query that finds them).
+- **`apply_item_renames`**, called alone by an admin, still merges progress without the new check (it is the
+  low-level step of `content_save_v2`).
+- **`view_contents` returns deleted senses**; the app drops ids it cannot map to a key.
+- **The library is hidden** until the dictionary has been copied (`useLibrary` status `off`), also when the
+  connection fails once.
+- **A save with no idempotency key**: see `docs/architecture/repo.md` (the limit after the lost-answer fix).
 
 ## Where to continue
 

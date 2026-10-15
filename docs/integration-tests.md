@@ -51,7 +51,7 @@ clock), and cleanup.
 | `isolation.test.js` | every table has RLS; anon reads nothing; no player reads or writes another's rows through tables or functions |
 | `admin-denied.test.js` | every `admin_*` and admin-checking function refuses players and visitors; no way to become admin; the admin's own actions work, are audited, and delete a player who used the library |
 
-## Defects these tests found (fixed in migrations 0037 and 0038)
+## Defects these tests found (fixed in migrations 0037 and 0038; later decisions in 0039 and 0040: `docs/migrations/review-0037-0040.md`)
 
 - A renamed word lost its place in players' libraries and views (the sync made
   a new word and deleted the old one). Fixed by `0037_rename_keeps_sense.sql`.
@@ -63,9 +63,9 @@ databases, never to a real project. Review them before deploying.
 
 ## Known differences between server and local mirror
 
-The online API lists a share offer from someone who is no longer a friend and
-refuses it on accept; the local mirror hides it. Removing or dropping what is
-not yours is a silent no-op on the server (nothing changes).
+Removing or dropping what is not yours is a quiet no-op on the server and in the mirror (nothing changes, and
+the answer is the same for a view that does not exist). Offers from a former friend now end on both sides
+(migration 0040; the mirror ends them lazily, when the inbox is read).
 
 ## What this does NOT prove (stub PostgreSQL vs real Supabase)
 
