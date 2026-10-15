@@ -1,0 +1,136 @@
+# Module: My Library
+
+Status: documented from the code on branch `ccr-29322d12-v8wkmd` (see
+`docs/work-tracking/my-library.md` for what was checked and when). Written in
+English, like the rest of the project's docs.
+
+## Purpose
+
+A player's own set of words and grammar rules (the **library**), and ways to
+pick some of them as **views** (folders that can sit inside each other, up to
+4 levels). A view can be practised, shared with a friend, shared by link, or
+published in a **catalog**. Progress belongs to the word, never to a view.
+
+User-facing description: `README.md`, section "My library and views".
+
+## Scope
+
+In the module (`src/features/library/`, `src/styles/library.css`):
+
+| Part | Files |
+| --- | --- |
+| Screens | `LibraryPage.jsx` (`/library`), `CatalogPage.jsx` (`/catalog`), `JoinPage.jsx` (`/join/<token>`), `components/MyViewsHome.jsx` (the "My views" area of Home) |
+| Screen pieces | `components/*` (view tree, view panel, word/rule pickers, share panel and inbox, create views) |
+| State hooks | `useLibrary.js` (is the library on, the API, the id maps), `useViews.js` (tree, open view, contents, "run a change"), `useViewScope.js` (`useMyViews`, `useViewScope`, for other modules) |
+| Pure logic | `libraryRules.js` (limits, messages, `senseFromCard`), `libraryTree.js` (tree, search, pasted lists), `scope.js` (a view as `{ words, rules }`), `libraryIds.js` (game key <-> server id), `libraryErrors.js` |
+| The one interface | `libraryApi.js` with two implementations: `onlineLibraryApi.js` (Supabase functions) and `local/*` (localStorage mirror, for local mode and tests) |
+| Database | migrations `0026`-`0038` (library, sync, sharing, links, catalog, rules, rename, delete) and `supabase/tests/*.sql` |
+
+Not in the module: the dictionary content itself (`content_items`, admin
+editors), the practice engine (`src/engine/v2.js`), progress saving
+(`src/lib/repo.js`), friends (`features/social`), Home cards (`features/home`).
+
+## Public surface (what other modules may use)
+
+| Who | Imports | For |
+| --- | --- | --- |
+| `app/WordHunter.jsx` | `useLibrary`, `scopeFromContents`, `scopeIsEmpty`; lazily `LibraryPage`, `JoinPage`, `CatalogPage`, `components/MyViewsHome` | wiring: routes, starting a round from a view, Home tabs |
+| `features/live/LiveChallenge.jsx` | `useMyViews`, `useViewScope` | take a challenge's words from a view |
+
+`tests/library-boundary.test.js` keeps this list closed: a new outside import
+of the module's files fails the test until this table is updated.
+
+The module depends on (outward): `lib/router`, `lib/supabase`, `engine/v2`
+(`V2.norm`, `V2.headword`), `features/social/friendsApi` (local friends, for
+the mirror), `features/home/StageCard` and `homeState` (only
+`MyViewsHome`, which draws Home cards). These are the shared contracts it
+relies on; none was changed by this work.
+
+## The API contract (`libraryApi.js`)
+
+All calls return promises; ids are the server's ids (in local mode, the game's
+own word and rule keys). The full list is the comment at the top of
+`libraryApi.js`. Online, every call is one database function (named in
+`onlineLibraryApi.js`) and the function does every check; the app only names
+the arguments. Errors are `LibraryError { message, code }` (SQLSTATE).
+
+Both implementations must offer the same calls. `tests/library-boundary.test.js`
+checks the names match.
+
+## Data (migrations 0026-0038)
+
+`headwords` and `senses` (a word and its meanings; public ones come from the
+course through `dictionary_sync`, private ones belong to a player),
+`sense_links`, `grammar_rules` and `grammar_questions`, `collections` (views;
+official course ones have no owner), `collection_senses`, `collection_rules`,
+`library_entries` and `library_rules` (what a player has), `sense_progress` and
+`rule_progress`, `collection_shares`, `view_links` and `view_link_takes`,
+`catalog_entries` and `catalog_takes`. Every table has row-level security;
+players read their own and the public course, and write only through the
+`security definer` functions. Nothing is physically removed by the app, only
+flagged (`removed_at`, `deleted_at`), except where a migration says otherwise.
+
+The game still keys words by their text. `senses.legacy_key` holds that text, and
+`libraryIds.js` maps key <-> id. A word of the player's own has no legacy key;
+its key is `Headword` or `Headword (label)`.
+
+## Rules (the same on both sides: `libraryRules.js`)
+
+| Rule | Value |
+| --- | --- |
+| Views per player | 200; 4 levels deep; name 1-60 characters, no `::`; unique among siblings (any case) |
+| Words or rules per call | 200 |
+| Words in a library | 5000 |
+| Own words per player | 500 (server only); name 1-120 characters, meaning 1-2000 |
+| Friends per share / offers waiting for a friend | 20 / 50 |
+| Open links per player / life of a link | 50 / 30 days |
+| Catalog entries per player | 20; title 1-60, description up to 300 |
+| A patch (the player's own wording) | an object, under 7000 characters |
+
+Behaviour worth knowing:
+
+- Removing a word from the library takes it out of every view of the player's.
+- A shared or taken copy is independent of the original. Words only the sender
+  made are private and are left out (the result says how many, once for each
+  place they were in).
+- A renamed word keeps its sense, so library entries and views follow the rename
+  (migration `0037`). Only when the new name has no sense yet.
+- Deleting a player removes their library data first; copies others took stay (`0038`).
+- A practice round from a view asks only the view's words and rules; wrong
+  answers still come from the whole dictionary. See `docs/library-unit-test-matrix.md`.
+
+## Tests
+
+| What | Where | Run |
+| --- | --- | --- |
+| Rules, tree, search, pasted lists, scope, local mirror, sharing mirror | `tests/library*.test.js`, `tests/view-scope*.test.*`, `tests/home-state.test.js` | `npm test` |
+| Screens | `tests/library-page.test.jsx`, `catalog-page`, `join-page`, `my-views-home`, `word-picker`, `view-scope-hooks` | `npm test` |
+| Rounds from a view (options, scope, grading, mastery) | `tests/library-round-*.test.js` | `npm test` |
+| Hooks and boundary | `tests/library-hooks.test.jsx`, `tests/library-boundary.test.js` | `npm test` |
+| The SQL functions | `supabase/tests/*.sql` | `supabase/ci/run-tests.sh` |
+| App API against the SQL functions | `tests/library-contract.test.js`, `library-differential.test.js` | needs `PGURL` |
+| App code against PostgreSQL as anon / authenticated | `tests/integration/*` | `supabase/ci/run-integration.sh` (`docs/integration-tests.md`) |
+| Browser | `e2e/specs/lib*.cjs`, `library.cjs`, `grammar-lib.cjs`, `homeviews.cjs` | `npm run e2e` |
+
+Rule-by-rule list: `docs/library-unit-test-matrix.md`.
+
+## Known differences and open decisions
+
+These are recorded, not changed, because the wanted behaviour is not stated.
+
+1. **Offers from someone no longer a friend.** The server lists them and refuses
+   them on accept ("You are no longer friends."); the local mirror hides them.
+2. **Removing or dropping what is not yours** is a quiet no-op on the server (an
+   error would say the view does not exist for the caller).
+3. **A rename into a name that already has a sense** is not merged; the old
+   sense is flagged deleted as before.
+4. **`view_contents` returns deleted senses.** The app drops ids it cannot map to a
+   key, so nothing shows; the count a view reports may differ until it does.
+5. **The library is hidden** until the dictionary has been copied
+   (`useLibrary` status `off`), also when the connection fails once.
+6. **A one-word view of a new word** gives a round with no question (engine rule:
+   the last introduced word is never the first test).
+
+## Where to continue
+
+`docs/work-tracking/my-library.md`.
