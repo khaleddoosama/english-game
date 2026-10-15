@@ -1,3 +1,4 @@
+/* global WHRepo -- the repo bundle, loaded by the page this spec opens */
 // A save whose answer is lost, a real tab closed, another device saving, the tab opened again - with the
 // game's own repo code (src/lib/repo.js, bundled for the browser), a REAL IndexedDB in Chromium, and a REAL
 // PostgreSQL (migrations applied) behind it. Needs PGURL; without it the spec is skipped.
