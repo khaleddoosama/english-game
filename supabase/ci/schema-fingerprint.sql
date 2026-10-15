@@ -3,6 +3,8 @@
 -- columns, constraints, indexes, policies, triggers. Read-only: only SELECTs.
 --   psql "$URL" -X -q -A -t -f supabase/ci/schema-fingerprint.sql > fingerprint.txt
 -- Not included: data, the other schemas (auth, storage, ...), object owners (they differ per host).
+-- Names are printed with their schema whatever the session's search_path is (it differs per role on a real project).
+set search_path = pg_catalog;
 select line from (
   select 'function ' || p.oid::regprocedure::text
          || ' src=' || md5(p.prosrc) || ' secdef=' || p.prosecdef || ' vol=' || p.provolatile::text
