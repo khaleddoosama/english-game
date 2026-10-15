@@ -220,6 +220,14 @@ describe("sharing a view (local mirror of migration 0029)", () => {
     expect(fresh.id).not.toBe(id);
     expect((await bob.accept(fresh.id)).view).toBeTruthy();
   });
+  it("an offer made before offers carried a friendship stamp is still valid while the two are friends", async () => {
+    await ann.share(top, ["b"]);
+    const shares = JSON.parse(storage.getItem("library1:shares"));
+    for (const x of shares) delete x.since;                                        // as stored by the earlier version
+    storage.setItem("library1:shares", JSON.stringify(shares));
+    expect((await bob.inbox()).map((o) => o.id)).toEqual([shares[0].id]);
+    expect((await bob.accept(shares[0].id)).view).toBeTruthy();
+  });
   it("what was accepted stays when the friendship ends", async () => {
     await ann.share(top, ["b"]);
     const [{ id }] = await bob.inbox();

@@ -6,9 +6,10 @@ import { deepSummary, findView } from "./localViews";
 
 export function createLocalSharingApi(ctx) {
   const { me, load, loadShares, saveShares, fail, areFriends, nameOf, now } = ctx;
-  // The friendship an offer was made under. Without a stamp (no friends store to ask) the check is just "are friends".
+  // The friendship an offer was made under. An offer made before the stamp existed has none: for it the check is
+  // just "are friends" (it cannot be told from a later friendship, and ending it would lose a valid offer).
   const since = (x, y) => ctx.friendSince?.(x, y) ?? null;
-  const sameFriendship = (sh) => areFriends(sh.to, sh.from) && (sh.since ?? null) === since(sh.to, sh.from);
+  const sameFriendship = (sh) => areFriends(sh.to, sh.from) && (!("since" in sh) || sh.since === since(sh.to, sh.from));
 
   return {
     async share(view, userIds) {
