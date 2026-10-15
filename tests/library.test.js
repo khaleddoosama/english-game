@@ -196,12 +196,22 @@ describe("sharing a view (local mirror of migration 0029)", () => {
     await ann.share(top, ["b"]);
     const [{ id }] = await bob.inbox();
     storage.setItem("friends1:p:a|b", JSON.stringify({ status: "removed" }));
+    await bad(bob.accept(id), /no longer friends/);                         // a waiting offer still checks the friendship
     expect(await bob.inbox()).toEqual([]);
-    await bad(bob.accept(id), /no longer friends/);
     befriend("a", "b");
+    expect(await bob.inbox()).toEqual([]);                                  // the old offer does not come back with the friendship
+    await bad(bob.accept(id), /no longer waiting/);
+    expect(await ann.share(top, ["b"])).toBe(1);                             // but it can be offered again
+    expect((await bob.inbox()).map((o) => o.id)).not.toContain(id);
     await ann.remove(top);
     expect(await bob.inbox()).toEqual([]);
-    await bad(bob.accept(id), /removed that view/);
+  });
+  it("what was accepted stays when the friendship ends", async () => {
+    await ann.share(top, ["b"]);
+    const [{ id }] = await bob.inbox();
+    const copy = await bob.accept(id);
+    storage.setItem("friends1:p:a|b", JSON.stringify({ status: "removed" }));
+    expect((await bob.tree()).map((v) => v.id)).toContain(copy.view);
   });
 
   it("no room for the copy: refused", async () => {

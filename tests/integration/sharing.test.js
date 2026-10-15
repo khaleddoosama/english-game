@@ -108,16 +108,41 @@ describe.skipIf(!PGURL)("sharing a view", () => {
       await A.add(trip, [ids.senseOf(N("Plane"))]);
     });
 
-    it("an offer cannot be accepted once the friendship has ended, nor once the view is gone", async () => {
+    it("when the friendship ends, the waiting offer leaves the inbox and the count, and a new friendship does not bring it back", async () => {
       await A.share(trip, [bob.id]);
       const offer = (await B.inbox())[0];
       const before = (await B.tree()).length;
+      expect((await B.inbox()).length).toBe(1);                                            // what the red badge counts
       await ann.client.rpc("friend_remove", { p_user: bob.id });
-      // The server still lists the offer (the local mirror hides it: see docs/integration-tests.md), but refuses it.
-      await expect(B.accept(offer.id)).rejects.toMatchObject({ code: "42501", message: expect.stringMatching(/no longer friends/) });
+      expect(await B.inbox()).toEqual([]);                                                 // no offer, no badge
+      await expect(B.accept(offer.id)).rejects.toMatchObject({ code: "P0002", message: expect.stringMatching(/no longer waiting/) });
       expect((await B.tree()).length).toBe(before);
-      await befriend(ann, bob);                                                            // friends again: the same offer works
-      expect((await B.inbox()).map((o) => o.id)).toContain(offer.id);
+      await befriend(ann, bob);                                                            // friends again
+      expect(await B.inbox()).toEqual([]);                                                 // the old offer stays gone
+      expect(await A.share(trip, [bob.id])).toBe(1);                                       // the sender may offer it again
+      const fresh = (await B.inbox())[0];
+      expect(fresh.id).not.toBe(offer.id);
+    });
+
+    it("what a friend already accepted stays when the friendship ends", async () => {
+      const taken = (await B.inbox())[0];
+      const copy = await B.accept(taken.id);
+      await ann.client.rpc("friend_remove", { p_user: bob.id });
+      expect((await B.tree()).map((v) => v.id)).toContain(copy.view);
+      expect(await keys(B, bob.client, copy.view)).toContain(N("Ticket"));
+      await befriend(ann, bob);
+    });
+
+    it("the server still checks the friendship when accepting, for an offer that is still waiting", async () => {
+      await A.share(food === undefined ? trip : trip, [bob.id]);
+      const offer = (await B.inbox())[0];
+      superuser.sql(`update public.friendships set status = 'removed' where user_a = least('${ann.id}'::uuid, '${bob.id}'::uuid) and user_b = greatest('${ann.id}'::uuid, '${bob.id}'::uuid)`);   // ended without friend_remove
+      await expect(B.accept(offer.id)).rejects.toMatchObject({ code: "42501", message: expect.stringMatching(/no longer friends/) });
+      superuser.sql(`update public.friendships set status = 'accepted' where user_a = least('${ann.id}'::uuid, '${bob.id}'::uuid) and user_b = greatest('${ann.id}'::uuid, '${bob.id}'::uuid)`);
+      expect(await B.inbox()).toEqual([]);                                                 // seen as ended once, and gone for good
+    });
+
+    it("an offer cannot be accepted once the view is gone", async () => {
       const extra = await A.create("Extra");
       await A.share(extra, [bob.id]);
       const offer2 = (await B.inbox()).find((o) => o.name === "Extra");
