@@ -161,4 +161,44 @@ describe.skipIf(!PGURL)("players cannot reach each other's data", () => {
     expect(r.error).toBeNull();
     expect(superuser.rows(`select stats from public.mastery where user_id = '${ann.id}' and item_key = '${N("Plane")}'`)[0].stats.total).toBe(3);
   });
+
+  describe("removing a view that is not mine", () => {
+    const GHOST = "00000000-0000-4000-8000-0000000000ff";
+
+    it("answers the same whether the view does not exist or belongs to someone else, and changes nothing", async () => {
+      const before = annsRows();
+      const gone = await bob.client.rpc("view_remove", { p_id: GHOST });
+      const hers = await bob.client.rpc("view_remove", { p_id: view });
+      expect(gone).toEqual({ data: null, error: null });
+      expect(hers).toEqual(gone);                                        // nothing tells him the view exists, or whose it is
+      expect(annsRows()).toEqual(before);
+      const viaApi = [await B.remove(GHOST), await B.remove(view)];
+      expect(viaApi).toEqual([null, null]);
+      expect(annsRows()).toEqual(before);
+      expect((await A.contents(view)).length).toBeGreaterThan(0);        // and her view still holds its words
+    });
+
+    it("the same for taking a word out of a view, and for the rules of a view", async () => {
+      const before = annsRows();
+      for (const call of [bob.client.rpc("view_drop", { p_view: GHOST, p_sense: own }), bob.client.rpc("view_drop", { p_view: view, p_sense: own }),
+        bob.client.rpc("view_drop_rule", { p_view: view, p_rule: GHOST })]) {
+        expect(await call).toEqual({ data: null, error: null });
+      }
+      expect(annsRows()).toEqual(before);
+    });
+
+    it("a mistake in the call is still an error, not hidden: an id that is not an id", async () => {
+      expect((await bob.client.rpc("view_remove", { p_id: "not-an-id" })).error).toMatchObject({ code: "22P02" });
+    });
+
+    it("her own view is really removed when she removes it, and she is told of a failure", async () => {
+      const temp = await A.create("Temporary");
+      await A.add(temp, [own]);
+      await A.remove(temp);
+      expect((await A.tree()).map((v) => v.id)).not.toContain(temp);
+      expect(superuser.rows(`select deleted_at is not null as gone from public.collections where id = '${temp}'`)[0].gone).toBe(true);
+      expect((await A.libraryList()).words.map((w) => w.id)).toContain(own);                 // the word stays in her library
+      await expect(createOnlineLibraryApi({ rpc: async () => ({ data: null, error: { message: "statement timeout", code: "57014" } }) }).remove(view)).rejects.toMatchObject({ code: "57014" });
+    });
+  });
 });
