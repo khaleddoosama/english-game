@@ -12,6 +12,7 @@ import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTER
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildEntryQuestion, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, entryFileMeta, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, uniqueStrings, v2SessionFromEntries } from "../engine/questions";
 import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, locateReportSource, reviewReportedQuestion, spellingDistanceInfo } from "../engine/ai";
 import { normalizeAnswerText } from "../engine/text";
+import { renameProblem } from "../engine/wordIdentity";
 import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
@@ -442,6 +443,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   // point at it follow, and every player's progress moves with it (sent
   // with the next content save; see migrateRenamedProgress).
   function renameWord(from, nextWord){
+    const problem = renameProblem(customWords, from, nextWord.word);
+    if (problem) { setToast({ text: problem }); return; }
     const renames={words:[{from,to:nextWord.word}],categories:[]};
     const words=customWords.map(w=>V2.norm(w.word)===V2.norm(from)?nextWord:w);
     const linked=V2.applyRenames({words,combos:customCombos,stories:customStories,challenges:customChallenges,grammar:customGrammar},renames);
