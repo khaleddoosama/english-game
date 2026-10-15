@@ -1,6 +1,7 @@
 import { V2 } from "./v2";
 import { WORDS } from "./data";
 import { findWordByLabel, getWordPools, levenshtein, semanticRelation, situationLeaks } from "./questions";
+import { normalizeAnswerText } from "./text";
 import { callAiText } from "../lib/ai";
 import { managedAiFunction, isAiCancelled, updateAiOperation } from "../lib/aiOperations.js";
 /* ----------------------------- CONTENT GENERATION --------------------------- */
@@ -657,10 +658,6 @@ Required shape:
     words: evaluatedWords,
     feedback: String(raw.feedback || "").slice(0, 260),
   };
-}
-
-export function normalizeAnswerText(value) {
-  return String(value || "").normalize("NFKD").toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, " ").trim();
 }
 
 export function containsRequiredTerm(text, term) {

@@ -1,5 +1,5 @@
 // The shape of src/: no loops between files, no loops between modules, and
-// the library module stays out of any loop. Three loops and one upward import
+// the library module stays out of any loop. Two loops and one upward import
 // exist today and are listed as known debts (docs/architecture/modules.md,
 // "Plan"); this test fails when a new one appears, and also when a listed one
 // is fixed, so the list can only get shorter.
@@ -10,8 +10,8 @@ const graph = fileGraph();
 const modules = moduleGraph(graph);
 
 describe("no new loops between files", () => {
-  it("only the known one", () => {
-    expect(cycles(graph)).toEqual([["engine/ai", "engine/questions"]]);
+  it("none", () => {
+    expect(cycles(graph)).toEqual([]);
   });
 });
 
