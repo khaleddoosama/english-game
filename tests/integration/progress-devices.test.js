@@ -147,4 +147,23 @@ describe.skipIf(!PGURL)("progress from two devices", () => {
     expect(rows(`select data from public.progress where user_id = '${bob.id}' and section = 'core'`)[0].data.score).toBe(77);
     expect(await repoOn("tablet-2").loadProgress()).toBeNull();
   });
+
+  it("a save the database received but whose answer was lost is not counted twice when the player comes back", async () => {
+    const solo = await signUp(`${tag}solo`);
+    useDevice("solo-phone");
+    const lossy = { ...solo.client, rpc: async (name, args) => { const out = await solo.client.rpc(name, args); if (name === "save_progress_v2" && lossy.drop) throw new Error("connection lost after the database saved"); return out; } };
+    const repo = createSupabaseRepo({ userId: solo.id, isAdmin: false, client: lossy });
+    await repo.loadProgress();
+    await repo.saveProgress({ score: 100, attempted: 10, mastery: {}, sessionLogs: [] });
+    lossy.drop = true;
+    await repo.saveProgress({ score: 150, attempted: 15, mastery: {}, sessionLogs: [] });     // the database has it; the device does not know
+    repo.dispose();
+    const again = createSupabaseRepo({ userId: solo.id, isAdmin: false, client: solo.client });
+    const loaded = await again.loadProgress();
+    expect(loaded).toMatchObject({ score: 150, attempted: 15 });
+    await again.saveProgress(loaded);
+    expect(rows(`select data from public.progress where user_id = '${solo.id}' and section = 'core'`)[0].data).toMatchObject({ score: 150, attempted: 15 });
+    expect(rows(`select score from public.profiles where id = '${solo.id}'`)[0].score).toBe(150);
+    again.dispose();
+  });
 });
