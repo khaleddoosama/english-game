@@ -162,4 +162,44 @@ describe.skipIf(!PGURL)("renaming and editing words", () => {
       expect((await library.libraryList()).words.map((w) => w.id)).toContain(charlie);          // same id: the library entry is still there
     });
   });
+
+  describe("renaming into a name another word already has", () => {
+    let delta, echo, view;
+    beforeAll(async () => {
+      await publish((c) => { c.words.push(word(N("Delta"), { category: N("Lesson") }), word(N("Echo"), { category: N("Lesson") })); });
+      const library = createOnlineLibraryApi(ann.client);
+      delta = await senseOf(ann.client, N("Delta"));
+      echo = await senseOf(ann.client, N("Echo"));
+      await library.libraryAdd([delta, echo]);
+      view = await library.create("Greek");
+      await library.add(view, [delta, echo]);
+      await ann.client.rpc("save_progress_v2", { p_sections: {}, p_expected: null, p_mastery: { [N("Delta")]: { total: 5, correct: 4 }, [N("Echo")]: { total: 2, correct: 1 } }, p_mastery_removes: [], p_profile: null });
+    });
+
+    it("is refused with a clear message, and neither word, nor any progress, nor any view changes", async () => {
+      const contentBefore = superuser.rows(`select kind, key, data, deleted from public.content_items where key like '${tag}%' order by key`);
+      const versionBefore = superuser.rows("select version from public.content_meta where id = 1")[0].version;
+      const wordsBefore = superuser.rows(`select legacy_key, deleted_at is null as live from public.senses where legacy_key like '${tag}%' order by legacy_key`);
+      useDevice("admin-laptop");
+      const next = structuredClone(content);
+      next.words = next.words.filter((w) => w.word !== N("Delta"));
+      next.words.find((w) => w.word === N("Echo")).meaning = "merged by hand";
+      await expect(adminRepo.saveContent(next, { renames: [{ kind: "word", from: N("Delta"), to: N("Echo") }] })).rejects.toMatchObject({ code: "23505", message: expect.stringContaining(`There is already a word called "${N("Echo")}"`) });
+      expect(superuser.rows(`select kind, key, data, deleted from public.content_items where key like '${tag}%' order by key`)).toEqual(contentBefore);
+      expect(superuser.rows("select version from public.content_meta where id = 1")[0].version).toBe(versionBefore);
+      expect(superuser.rows(`select legacy_key, deleted_at is null as live from public.senses where legacy_key like '${tag}%' order by legacy_key`)).toEqual(wordsBefore);
+      expect(mastery(N("Delta"))).toMatchObject({ total: 5 });
+      expect(mastery(N("Echo"))).toMatchObject({ total: 2 });
+      const library = createOnlineLibraryApi(ann.client);
+      expect((await library.contents(view)).map((r) => r.id).sort()).toEqual([delta, echo].sort());
+      expect((await library.libraryList()).words.map((w) => w.id)).toEqual(expect.arrayContaining([delta, echo]));
+      expect(superuser.rows(`select 1 from public.item_key_aliases where from_key = '${N("Delta")}'`)).toEqual([]);
+    });
+
+    it("the admin can still rename to a free name afterwards (nothing was left half done)", async () => {
+      await publish((c) => { c.words.find((w) => w.word === N("Delta")).word = N("Delta2"); }, { renames: [{ kind: "word", from: N("Delta"), to: N("Delta2") }] });
+      expect(mastery(N("Delta2"))).toMatchObject({ total: 5 });
+      expect(await senseOf(ann.client, N("Delta2"))).toBe(delta);
+    });
+  });
 });
