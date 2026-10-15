@@ -1,13 +1,108 @@
--- Rollback of migrations 0037-0040: puts the five functions they replaced back as they were
--- before (generated from a database at migration 0036) and removes what they added.
--- Run in one transaction:  psql "$URL" -1 -f supabase/rollback/0037_0040_down.sql
+-- Rollback of migrations 0037-0042: puts the functions they replaced back as they were before
+-- (generated from a database at migration 0036) and removes what they added.
+-- Run in one transaction:  psql "$URL" -1 -f supabase/rollback/0037_0042_down.sql
 --
 -- What it cannot undo (data the migrations changed):
 --  0037  senses renamed in place keep their new legacy_key (harmless: it is the right key).
 --  0038  players deleted with the new function stay deleted (that is what delete means).
 --  0040  offers that were ended ('expired') become 'dismissed': they are not brought back
 --        as waiting offers, because many were between players who are not friends.
+--  0042  the record of operation ids (progress_ops) is dropped. Saves already applied stay applied;
+--        a client that still holds an unanswered save would send it again and it would be applied again.
 -- Nothing else is changed by the migrations.
+--
+-- Order: newest first. Before running it on a real database compare that database with the
+-- assumptions in docs/migrations/review-0037-0042.md (supabase/ci/preflight-compare.sh, read-only).
+
+-- 0042: save_progress_v2 without the operation id (the six-argument function again), and no record table
+drop function public.save_progress_v2(jsonb, jsonb, jsonb, text[], jsonb, boolean, uuid);
+CREATE OR REPLACE FUNCTION public.save_progress_v2(p_sections jsonb, p_expected jsonb, p_mastery jsonb, p_mastery_removes text[], p_profile jsonb, p_replace boolean DEFAULT false)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_user uuid := (select auth.uid());
+  v_sections jsonb := coalesce(p_sections, '{}'::jsonb);
+  v_replace boolean := coalesce(p_replace, false);
+  v_conflicts text[];
+  v_old_score integer;
+  v_new_score integer;
+  v_gain integer;
+  v_week date;
+begin
+  if v_user is null then
+    raise exception 'not signed in' using errcode = '42501';
+  end if;
+  if jsonb_typeof(v_sections) <> 'object' or jsonb_typeof(coalesce(p_mastery, '{}'::jsonb)) <> 'object' then
+    raise exception 'sections and mastery must be objects' using errcode = '22023';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('progress:' || v_user::text));
+
+  if not v_replace and p_expected is not null then
+    select array_agg(p.section order by p.section) into v_conflicts
+    from public.progress p
+    where p.user_id = v_user and v_sections ? p.section
+      and p.rev is distinct from public.json_int(p_expected -> p.section);
+    if v_conflicts is not null then
+      return jsonb_build_object(
+        'conflict', to_jsonb(v_conflicts),
+        'sections', (select jsonb_object_agg(section, jsonb_build_object('data', data, 'rev', rev))
+                     from public.progress where user_id = v_user and section = any (v_conflicts)));
+    end if;
+  end if;
+
+  select public.json_int(data -> 'score') into v_old_score from public.progress where user_id = v_user and section = 'core';
+
+  insert into public.progress (user_id, section, data, updated_at)
+  select v_user, s.key, s.value, now() from jsonb_each(v_sections) as s
+  on conflict (user_id, section) do update set data = excluded.data;
+
+  insert into public.mastery (user_id, item_key, stats, updated_at)
+  select distinct on (x.k) v_user, x.k, x.value, now()
+  from (
+    select coalesce(a.to_key, m.key) as k, m.value, (a.to_key is null) as direct
+    from jsonb_each(coalesce(p_mastery, '{}'::jsonb)) as m
+    left join public.item_key_aliases a on a.kind = 'word' and a.from_key = m.key
+  ) as x
+  order by x.k, x.direct desc
+  on conflict (user_id, item_key) do update set
+    stats = case when v_replace or coalesce(public.json_int(excluded.stats -> 'total'), 0) >= coalesce(public.json_int(public.mastery.stats -> 'total'), 0)
+                 then excluded.stats else public.mastery.stats end,
+    updated_at = now();
+  if p_mastery_removes is not null and cardinality(p_mastery_removes) > 0 then
+    delete from public.mastery where user_id = v_user and item_key = any (p_mastery_removes);
+  end if;
+
+  if v_sections ? 'core' then
+    v_new_score := greatest(coalesce(public.json_int(v_sections #> '{core,score}'), 0), 0);
+    v_gain := case when v_replace then 0 else greatest(v_new_score - coalesce(v_old_score, 0), 0) end;
+    v_week := case when (p_profile ->> 'week_start') ~ '^\d{4}-\d{2}-\d{2}$' then (p_profile ->> 'week_start')::date end;
+    update public.profiles set
+      score = v_new_score,
+      study_streak = greatest(coalesce(public.json_int(v_sections #> '{core,studyStreak}'), study_streak), 0),
+      best_study_streak = greatest(coalesce(public.json_int(v_sections #> '{core,bestStudyStreak}'), best_study_streak), 0),
+      week_score = case when v_week is null or v_replace then week_score
+                        when week_start is distinct from v_week then v_gain
+                        else week_score + v_gain end,
+      week_start = case when v_week is null or v_replace then week_start else v_week end,
+      updated_at = now()
+    where id = v_user;
+  end if;
+  if public.json_int(p_profile -> 'mastered_count') is not null then
+    update public.profiles set mastered_count = greatest(public.json_int(p_profile -> 'mastered_count'), 0) where id = v_user;
+  end if;
+
+  return jsonb_build_object('revs', coalesce((select jsonb_object_agg(section, rev) from public.progress where user_id = v_user and v_sections ? section), '{}'::jsonb));
+end;
+$function$;
+revoke execute on function public.save_progress_v2(jsonb, jsonb, jsonb, text[], jsonb, boolean) from public, anon;
+grant execute on function public.save_progress_v2(jsonb, jsonb, jsonb, text[], jsonb, boolean) to authenticated;
+drop table public.progress_ops;
+
+-- 0041: apply_item_renames may be called by signed-in players again (it refuses non-admins itself)
+grant execute on function public.apply_item_renames(jsonb) to authenticated;
 
 -- 0040
 update public.collection_shares set status = 'dismissed', updated_at = now() where status = 'expired';

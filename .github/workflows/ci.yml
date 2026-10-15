@@ -58,3 +58,11 @@ jobs:
       - run: npx vitest run tests/library-contract.test.js tests/library-differential.test.js
       # The app's code against the real SQL functions as anon / authenticated (tests/integration).
       - run: PGADMIN=$PGURL supabase/ci/run-integration.sh
+      # Upgrade and rollback of migrations 0037-0042 on a database as it was before them, with made-up
+      # data, comparing the whole schema (functions and who may execute them, tables, RLS, constraints...)
+      # before and after the rollback. Makes and drops its own database.
+      - run: PGADMIN=$PGURL supabase/ci/check-upgrade.sh
+      # A real tab closed after a save whose answer was lost, with the game's own repo code in Chromium and
+      # the migrated database behind it (the spec is skipped without PGURL, so the e2e job above skips it).
+      - run: npx playwright-core install --with-deps chromium
+      - run: node e2e/specs/saveclose.cjs
