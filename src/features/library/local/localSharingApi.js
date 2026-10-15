@@ -26,9 +26,14 @@ export function createLocalSharingApi(ctx) {
       return sent;
     },
     async inbox() {
-      return loadShares().filter((x) => x.to === me() && x.status === "pending").flatMap((x) => {
+      // Like the server (migration 0040): an offer from someone who is no longer a friend ends on sight, so a new
+      // friendship does not bring it back. (Local mode has no "friend removed" event to end it earlier.)
+      const all = loadShares();
+      const stale = all.filter((x) => x.to === me() && x.status === "pending" && !areFriends(me(), x.from));
+      if (stale.length) { for (const x of stale) x.status = "expired"; saveShares(all); }
+      return all.filter((x) => x.to === me() && x.status === "pending").flatMap((x) => {
         const theirs = load(x.from), v = findView(theirs, x.view);
-        if (!v || !areFriends(me(), x.from)) return [];
+        if (!v) return [];
         return [{ id: x.id, name: v.name, from: nameOf(x.from), from_id: x.from, at: new Date(x.at).toISOString(), ...deepSummary(theirs, v) }];
       }).sort((a, b) => (a.at < b.at ? 1 : -1));
     },

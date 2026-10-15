@@ -138,8 +138,9 @@ describe.skipIf(!PGURL)("sharing a view", () => {
       const offer = (await B.inbox())[0];
       superuser.sql(`update public.friendships set status = 'removed' where user_a = least('${ann.id}'::uuid, '${bob.id}'::uuid) and user_b = greatest('${ann.id}'::uuid, '${bob.id}'::uuid)`);   // ended without friend_remove
       await expect(B.accept(offer.id)).rejects.toMatchObject({ code: "42501", message: expect.stringMatching(/no longer friends/) });
+      expect(await B.inbox()).toEqual([]);                                                 // hidden, and ended on sight
       superuser.sql(`update public.friendships set status = 'accepted' where user_a = least('${ann.id}'::uuid, '${bob.id}'::uuid) and user_b = greatest('${ann.id}'::uuid, '${bob.id}'::uuid)`);
-      expect(await B.inbox()).toEqual([]);                                                 // seen as ended once, and gone for good
+      expect(await B.inbox()).toEqual([]);                                                 // and not back with the friendship
     });
 
     it("an offer cannot be accepted once the view is gone", async () => {
