@@ -10,7 +10,7 @@ vi.mock("../../src/lib/idb", async () => (await import("./devices.js")).idbMock)
 import { createSupabaseRepo } from "../../src/lib/repo";
 import { loadIds } from "../../src/features/library/libraryIds.js";
 import { createOnlineLibraryApi } from "../../src/features/library/onlineLibraryApi.js";
-import { PGURL, cleanup, newTag, promote, signUp, superuser } from "./harness";
+import { PGURL, anon, cleanup, newTag, promote, signUp, superuser } from "./harness";
 import { resetDevices, useDevice } from "./devices";
 import { word } from "../libraryFixtures";
 
@@ -200,6 +200,32 @@ describe.skipIf(!PGURL)("renaming and editing words", () => {
       await publish((c) => { c.words.find((w) => w.word === N("Delta")).word = N("Delta2"); }, { renames: [{ kind: "word", from: N("Delta"), to: N("Delta2") }] });
       expect(mastery(N("Delta2"))).toMatchObject({ total: 5 });
       expect(await senseOf(ann.client, N("Delta2"))).toBe(delta);
+    });
+  });
+
+  describe("the low-level rename step is not a way around the check", () => {
+    // apply_item_renames moves every player's progress from one name to another and, when both names
+    // exist, merges the two records. It is meant to run only inside content_save_v2.
+    it("nobody can call it directly: not a visitor, not a player, not even the admin; the privilege is really gone", async () => {
+      const args = { p_renames: [{ kind: "word", from: N("Foxtrot"), to: N("Golf") }] };
+      for (const [who, client] of [["a player", ann.client], ["the admin", admin.client], ["a visitor", anon()]]) {
+        expect((await client.rpc("apply_item_renames", args)).error, who).toMatchObject({ code: "42501" });
+      }
+      for (const role of ["anon", "authenticated"]) {
+        expect(superuser.one(`select has_function_privilege('${role}', 'public.apply_item_renames(jsonb)', 'execute')`), role).toBe("f");
+      }
+    });
+
+    it("so progress cannot be merged through it, and the real path (a save) still renames", async () => {
+      await publish((c) => { c.words.push(word(N("Foxtrot"), { category: N("Lesson") }), word(N("Golf"), { category: N("Lesson") })); });
+      await ann.client.rpc("save_progress_v2", { p_sections: {}, p_expected: null, p_mastery: { [N("Foxtrot")]: { total: 6 }, [N("Golf")]: { total: 2 } }, p_mastery_removes: [], p_profile: null });
+      const direct = await admin.client.rpc("apply_item_renames", { p_renames: [{ kind: "word", from: N("Foxtrot"), to: N("Golf") }] });
+      expect(direct.error).toMatchObject({ code: "42501" });
+      expect(mastery(N("Foxtrot"))).toMatchObject({ total: 6 });
+      expect(mastery(N("Golf"))).toMatchObject({ total: 2 });
+      await publish((c) => { c.words.find((w) => w.word === N("Foxtrot")).word = N("Foxtrot2"); }, { renames: [{ kind: "word", from: N("Foxtrot"), to: N("Foxtrot2") }] });
+      expect(mastery(N("Foxtrot2"))).toMatchObject({ total: 6 });
+      expect(mastery(N("Foxtrot"))).toBeUndefined();
     });
   });
 });
