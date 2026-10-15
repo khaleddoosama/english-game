@@ -1,3 +1,4 @@
+/* global process, console */
 // Routes what supabase-js sends (/auth/v1, /rest/v1) to GoTrue and PostgREST, as a project's gateway does.
 //   node tests/realstack/proxy.cjs            listens on 54330; GoTrue on 54332, PostgREST on 54333
 const http = require('node:http');
