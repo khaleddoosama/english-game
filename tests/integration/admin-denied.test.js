@@ -1,7 +1,8 @@
 // Scenario 7: administration is for the admin. A normal player and a visitor
 // are refused at the database, whatever the app's screens would have shown,
 // and nothing changes. Every function that checks for an admin is tried
-// (the list comes from the database, so a new one is covered by itself).
+// (the list comes from the database: every function that checks for an admin,
+// and every function named admin_*, so one that lost its check is still caught).
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PGURL, anon, cleanup, functionCatalog, newTag, promote, signUp, superuser } from "./harness";
 
@@ -17,7 +18,7 @@ describe.skipIf(!PGURL)("admin operations are refused to everyone else", () => {
 
   const adminFunctions = () => {
     const names = superuser.rows(`select distinct p.proname as name from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-      where n.nspname = 'public' and p.prokind = 'f' and (p.prosrc ilike '%require_admin%' or p.prosrc ilike '%is_admin()%')
+      where n.nspname = 'public' and p.prokind = 'f' and (p.prosrc ilike '%require_admin%' or p.prosrc ilike '%is_admin()%' or starts_with(p.proname, 'admin_'))
         and p.proname not in ('require_admin', 'reports_keep_decision', 'reports_no_resurrect', 'catalog_edit', 'catalog_unpublish', 'live_create', 'live_end')`).map((r) => r.name);
     return names.map((name) => functionCatalog().find((f) => f.name === name)).filter(Boolean);
   };

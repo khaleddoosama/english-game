@@ -56,3 +56,5 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx vitest run tests/library-contract.test.js tests/library-differential.test.js
+      # The app's code against the real SQL functions as anon / authenticated (tests/integration).
+      - run: PGADMIN=$PGURL supabase/ci/run-integration.sh
