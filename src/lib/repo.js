@@ -30,6 +30,7 @@ const newDraftId = () => (globalThis.crypto?.randomUUID ? globalThis.crypto.rand
 
 export { stableJson } from "./stableJson";
 import { stableJson } from "./stableJson";
+import { addNewToLibrary } from "./saveToLibrary";
 
 const emptyContent = () => ({ words: [], grammar: [], challenges: [], stories: [], combos: [], levelOrder: [], note: "" });
 const hasContent = (c) => !!c && CONTENT_KINDS.some((k) => (c[k] || []).length);
@@ -229,7 +230,14 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
     // Keep the library's copy of the dictionary (migration 0027) in step. Best
     // effort: the game doesn't read it yet, and before that migration there is
     // nothing to call.
-    Promise.resolve(sb.rpc("dictionary_sync")).then((out) => { if (out?.error && !["42883", "PGRST202"].includes(out.error.code)) console.warn("dictionary_sync:", out.error.message); }, () => {});
+    // What is new in this save then joins the admin's own library (the senses exist once the sync is done).
+    const fresh = upserts.filter((r) => !contentRows.has(`${r.kind}\u0000${r.key}`) && (r.kind === "words" || r.kind === "grammar"));
+    Promise.resolve(sb.rpc("dictionary_sync"))
+      .then((out) => {
+        if (out?.error) { if (!["42883", "PGRST202"].includes(out.error.code)) console.warn("dictionary_sync:", out.error.message); return null; }
+        return fresh.length ? addNewToLibrary(sb, fresh) : null;
+      })
+      .catch((e) => console.warn("library:", e?.message || e));
     for (const row of upserts) contentRows.set(`${row.kind}\u0000${row.key}`, { kind: row.kind, key: row.key, json: row.json, position: row.position });
     for (const r of removes) contentRows.delete(`${r.kind}\u0000${r.key}`);
     contentMeta = { levelOrder: stableJson(levelOrder), note };
