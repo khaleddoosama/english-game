@@ -129,9 +129,10 @@ describe("each player has their own", () => {
 });
 
 describe("sharing a view (local mirror of migration 0029)", () => {
-  const befriend = (x, y) => storage.setItem(`friends1:p:${[x, y].sort().join("|")}`, JSON.stringify({ status: "accepted" }));
+  let stamp = 0;                                              // each new friendship gets its own time, as the friends store writes it
+  const befriend = (x, y) => storage.setItem(`friends1:p:${[x, y].sort().join("|")}`, JSON.stringify({ status: "accepted", updated_at: `t${++stamp}` }));
   const names = () => storage.setItem("friends1:users", JSON.stringify({ a: "ann", b: "bob", c: "cat" }));
-  const as = (user, canSee) => createLocalLibraryApi({ storage, me: () => user, canSee, areFriends: (x, y) => JSON.parse(storage.getItem(`friends1:p:${[x, y].sort().join("|")}`) || "null")?.status === "accepted", nameOf: (id) => ({ a: "ann", b: "bob", c: "cat" })[id] });
+  const as = (user, canSee) => createLocalLibraryApi({ storage, me: () => user, canSee, areFriends: (x, y) => JSON.parse(storage.getItem(`friends1:p:${[x, y].sort().join("|")}`) || "null")?.status === "accepted", nameOf: (id) => ({ a: "ann", b: "bob", c: "cat" })[id], friendSince: (x, y) => JSON.parse(storage.getItem(`friends1:p:${[x, y].sort().join("|")}`) || "null")?.updated_at });
   let ann, bob, top, sub;
   beforeEach(async () => {
     names(); befriend("a", "b");
@@ -206,6 +207,19 @@ describe("sharing a view (local mirror of migration 0029)", () => {
     await ann.remove(top);
     expect(await bob.inbox()).toEqual([]);
   });
+  it("friendship removed and restored before the inbox is opened: the old offer is still dead, a new one works", async () => {
+    await ann.share(top, ["b"]);
+    const id = JSON.parse(storage.getItem("library1:shares"))[0].id;           // bob has not looked at the inbox yet
+    storage.setItem("friends1:p:a|b", JSON.stringify({ status: "removed" }));
+    befriend("a", "b");
+    expect(await bob.inbox()).toEqual([]);
+    await bad(bob.accept(id), /no longer (friends|waiting)/);
+    expect(await bob.tree()).toEqual([]);
+    expect(await ann.share(top, ["b"])).toBe(1);
+    const [fresh] = await bob.inbox();
+    expect(fresh.id).not.toBe(id);
+    expect((await bob.accept(fresh.id)).view).toBeTruthy();
+  });
   it("what was accepted stays when the friendship ends", async () => {
     await ann.share(top, ["b"]);
     const [{ id }] = await bob.inbox();
@@ -254,7 +268,7 @@ describe("my library as a list", () => {
 });
 
 describe("sharing a view by link (local mirror of migration 0031)", () => {
-  const as = (user, now) => createLocalLibraryApi({ storage, me: () => user, now, nameOf: (id) => ({ a: "ann", b: "bob", c: "cat" })[id] });
+  const as = (user, now) => createLocalLibraryApi({ storage, me: () => user, now, nameOf: (id) => ({ a: "ann", b: "bob", c: "cat" })[id], friendSince: (x, y) => JSON.parse(storage.getItem(`friends1:p:${[x, y].sort().join("|")}`) || "null")?.updated_at });
   let ann, bob, top, sub, clock;
   beforeEach(async () => {
     clock = 1000; const now = () => ++clock;
@@ -333,7 +347,7 @@ describe("sharing a view by link (local mirror of migration 0031)", () => {
 });
 
 describe("the catalog (local mirror of migration 0032)", () => {
-  const as = (user, now, isAdmin = () => false) => createLocalLibraryApi({ storage, me: () => user, now, isAdmin, nameOf: (id) => ({ a: "ann", b: "bob", c: "cat" })[id] });
+  const as = (user, now, isAdmin = () => false) => createLocalLibraryApi({ storage, me: () => user, now, isAdmin, nameOf: (id) => ({ a: "ann", b: "bob", c: "cat" })[id], friendSince: (x, y) => JSON.parse(storage.getItem(`friends1:p:${[x, y].sort().join("|")}`) || "null")?.updated_at });
   let ann, bob, top, sub;
   beforeEach(async () => {
     let clock = 1000; const now = () => ++clock;

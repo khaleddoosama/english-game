@@ -16,7 +16,7 @@ import { renameProblem } from "../engine/wordIdentity";
 import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
-import { getFriendsApi, localAreFriends, localNameOf } from "../features/social/friendsApi";
+import { getFriendsApi, localAreFriends, localFriendSince, localNameOf } from "../features/social/friendsApi";
 import { LibraryRoutes, MyViewsHome, homeLimits, keepInLibrary, scopeIsEmpty, scopeOfView, useLibrary, useLibraryHome } from "../features/library";
 import { useSocialCounts } from "../features/social/useSocialCounts";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
@@ -45,7 +45,7 @@ const lastAdminPath = () => { try { const p = localStorage.getItem("wh-admin-pat
 const masteredCountFor = (m) => Object.entries(m || {}).filter(([k, v]) => isWordKey(k) && V2.stage(v) === "Mastered").length;
 const PLAY_SCREENS = new Set(["session", "playing", "results", "reviewResults", "finalReport", "finalResults", "speed", "speedResults"]);
 // Who the player's friends are in local mode, for the library's sharing (the library does not import the friends module).
-const LOCAL_PEOPLE = { areFriends: (a, b) => localAreFriends(window.localStorage, a, b), nameOf: (id) => localNameOf(window.localStorage, id) };
+const LOCAL_PEOPLE = { areFriends: (a, b) => localAreFriends(window.localStorage, a, b), friendSince: (a, b) => localFriendSince(window.localStorage, a, b), nameOf: (id) => localNameOf(window.localStorage, id) };
 const AdminPanel = lazy(() => import("../features/admin/AdminPanel").then((m) => ({ default: m.AdminPanel })));
 const LiveChallenge = lazy(() => import("../features/live/LiveChallenge").then((m) => ({ default: m.LiveChallenge })));
 const Leaderboard = lazy(() => import("../features/social/Leaderboard"));
