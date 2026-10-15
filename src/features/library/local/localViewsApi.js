@@ -42,7 +42,6 @@ export function createLocalViewsApi(ctx) {
       save(db);
       return id;
     },
-    edit,
     rename: (id, name) => edit(id, { name }),
     move: (id, parent = null) => edit(id, { move: true, parent }),
     async remove(id) {
