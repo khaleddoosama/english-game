@@ -5,9 +5,9 @@
 // half-working.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { isLocalMode, supabase } from "../../lib/supabase";
-import { getLibraryApi } from "./libraryApi";
 import { localAreFriends, localNameOf } from "../social/friendsApi";
 import { identityIds, loadIds } from "./libraryIds";
+import { openLibrary } from "./openLibrary";
 
 export function useLibrary({ enabled, me, knownWord = () => true }) {
   const [state, setState] = useState({ status: "loading" });
@@ -22,21 +22,9 @@ export function useLibrary({ enabled, me, knownWord = () => true }) {
   useEffect(() => {
     if (!enabled) return undefined;
     let alive = true;
-    (async () => {
-      try {
-        if (isLocalMode) {
-          const storage = window.localStorage;
-          const api = getLibraryApi({ storage, me: () => me, canSee: knownWord, areFriends: (a, b) => localAreFriends(storage, a, b), nameOf: (id) => localNameOf(storage, id) });
-          if (alive) setState({ status: "ready", api, ids: identityIds });
-          return;
-        }
-        const api = getLibraryApi();
-        await api.tree();                                   // fails while the tables aren't there
-        const { ids, words } = await loadIds(supabase);
-        if (!words) { if (alive) setState({ status: "off" }); return; }
-        if (alive) setState({ status: "ready", api, ids });
-      } catch { if (alive) setState({ status: "off" }); }
-    })();
+    const storage = isLocalMode ? window.localStorage : null;
+    const local = isLocalMode ? { storage, me: () => me, canSee: knownWord, areFriends: (a, b) => localAreFriends(storage, a, b), nameOf: (id) => localNameOf(storage, id) } : null;
+    openLibrary({ local, client: supabase }).then((next) => { if (alive) setState(next); });
     return () => { alive = false; };
   }, [enabled, me]); // eslint-disable-line react-hooks/exhaustive-deps
   return useMemo(() => ({ ...state, refreshIds }), [state, refreshIds]);
