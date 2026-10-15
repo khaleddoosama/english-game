@@ -46,13 +46,18 @@ begin
   perform public.dictionary_sync();
   perform pg_temp.must((select count(*) from public.senses where legacy_key like 'zzrn%' and deleted_at is null) = 2, 'a second sync adds or removes nothing');
 
-  -- a rename into a name that already has its own sense is left alone: nothing is merged by guesswork
+  -- a rename into a name another word already has is refused now (migration 0039), so the sync never has to choose
   insert into public.content_items (kind, key, data) values ('words', 'zzrnA', '{"word":"zzrnA","type":"vocab","category":"zzrnLesson","meaning":"a"}'), ('words', 'zzrnB', '{"word":"zzrnB","type":"vocab","category":"zzrnLesson","meaning":"b"}');
   perform public.dictionary_sync();
-  perform public.content_save_v2(null, '[]'::jsonb, '[{"kind":"words","key":"zzrnA"}]'::jsonb, null, null, '[{"kind":"word","from":"zzrnA","to":"zzrnB"}]'::jsonb, null, true);
-  perform public.dictionary_sync();
-  perform pg_temp.must((select deleted_at is not null from public.senses where legacy_key = 'zzrnA'), 'the old word is gone when the new name already had a sense');
-  perform pg_temp.must((select deleted_at is null from public.senses where legacy_key = 'zzrnB'), 'the word that already had the name is kept');
+  begin
+    perform public.content_save_v2(null, '[]'::jsonb, '[{"kind":"words","key":"zzrnA"}]'::jsonb, null, null, '[{"kind":"word","from":"zzrnA","to":"zzrnB"}]'::jsonb, null, true);
+    raise exception 'FAIL: the rename into an existing word was accepted';
+  exception when others then
+    if sqlerrm like 'FAIL:%' then raise; end if;
+    perform pg_temp.must(sqlstate = '23505', 'refused as a name already taken');
+  end;
+  perform pg_temp.must((select deleted_at is null from public.senses where legacy_key = 'zzrnA'), 'the word is still there');
+  perform pg_temp.must((select deleted_at is null from public.senses where legacy_key = 'zzrnB'), 'the other word is still there');
 
   -- only an admin can run the sync (the rename step is not granted to anyone but the sync)
   perform set_config('request.jwt.claims', json_build_object('sub', v_user, 'role', 'authenticated')::text, true);
