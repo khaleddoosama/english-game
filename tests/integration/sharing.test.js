@@ -124,6 +124,20 @@ describe.skipIf(!PGURL)("sharing a view", () => {
       expect(fresh.id).not.toBe(offer.id);
     });
 
+    it("friendship removed and restored before the inbox is opened: the old offer cannot be accepted, copies already taken stay", async () => {
+      await A.share(trip, [bob.id]);
+      const keep = (await B.accept((await B.inbox())[0].id)).view;                         // taken before: a copy Bob owns
+      await A.share(trip, [bob.id]);                                                       // Bob never looks at the inbox from here on
+      const old = superuser.one(`select id from public.collection_shares where from_user = '${ann.id}' and to_user = '${bob.id}' and status = 'pending'`);
+      await ann.client.rpc("friend_remove", { p_user: bob.id });
+      await befriend(ann, bob);                                                            // friends again at once
+      await expect(B.accept(old)).rejects.toMatchObject({ code: "P0002", message: expect.stringMatching(/no longer waiting/) });
+      expect(await B.inbox()).toEqual([]);
+      expect((await B.tree()).map((v) => v.id)).toContain(keep);
+      expect(await A.share(trip, [bob.id])).toBe(1);                                       // a new offer under the new friendship works
+      expect(await B.inbox()).toHaveLength(1);
+    });
+
     it("what a friend already accepted stays when the friendship ends", async () => {
       const taken = (await B.inbox())[0];
       const copy = await B.accept(taken.id);
