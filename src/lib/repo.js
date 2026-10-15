@@ -12,19 +12,17 @@
 import { supabase } from "./supabase";
 import { idb } from "./idb";
 import { mergeMasteryRecord, mergeSection } from "./progressMerge";
-import { contentFromCache, emptyContent, hasContent, planContentSave } from "./repo/contentPlan";
+import { emptyContent, hasContent } from "./repo/contentPlan";
+import { createContentStore } from "./repo/contentStore";
 import { fetchAll } from "./repo/fetchAll";
 import { CONTENT_FIELDS, hasServerRows, masteryDiff, profileSummary, splitSections, weekStart } from "./repo/progressShape";
-import { reconcileReports } from "./repo/reportsMerge";
+import { createReportsSync } from "./repo/reportsSync";
 import { createStatusHub } from "./repo/status";
 import { mergeUnsynced } from "./repo/unsyncedMerge";
 
 export { CONTENT_KINDS } from "./repo/contentPlan";
 export { weekStart } from "./repo/progressShape";
-const UPSERT_BATCH = 250, RETRY_MS = 15000;
-const newDraftId = () => (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID()
-  : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => (c ^ (Math.random() * 16 >> (c / 4))).toString(16)));
-
+const RETRY_MS = 15000;
 export { stableJson } from "./stableJson";
 import { stableJson } from "./stableJson";
 
@@ -41,94 +39,13 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
   let savedProfile = "";
   let savedRevs = new Map();                // section -> revision on the server
   let masterySince = "";                    // newest mastery updated_at seen
-  let savedReports = new Map();             // id -> json (own reports, as in the reports table)
-  let savedRemoteReports = new Map();       // id -> json (other players', admin only)
   let lastLocal = null;                     // the app's newest progress
   const mergedSubs = new Set();             // told when another device's changes were merged in
   const notifyMerged = (data) => { for (const fn of mergedSubs) { try { fn(data); } catch (e) { console.error(e); } } };
-  // Content state on the server.
-  let contentRows = new Map();              // `${kind}\u0000${key}` -> { kind, key, json, position }
-  let contentMeta = { levelOrder: "[]", note: "" };
-  let contentVersion = null;                // content_meta.version this device last saw
-
-  function rememberContent(cache) {
-    contentRows = new Map(Object.entries(cache.items).map(([id, row]) => [id, { kind: row.kind, key: row.key, json: stableJson(row.data), position: row.position }]));
-    contentMeta = { levelOrder: stableJson(cache.levelOrder || []), note: cache.note || "" };
-    contentVersion = cache.version ?? null;
-  }
-
-  async function loadContent() {
-    const cache = await idb.get("content-cache");
-    let meta;
-    try {
-      const { data, error } = await sb.from("content_meta").select("version, level_order, note").eq("id", 1).single();
-      if (error) throw error;
-      meta = data;
-    } catch (e) {
-      // Offline: play from the cache if there is one.
-      if (cache) { rememberContent(cache); return contentFromCache(cache); }
-      throw e;
-    }
-    if (cache && cache.version === meta.version) { rememberContent(cache); return hasContent(contentFromCache(cache)) ? contentFromCache(cache) : null; }
-    const cols = "kind, key, data, position, deleted, updated_at";
-    const incremental = !!(cache && cache.syncedAt);
-    const rows = incremental
-      ? await fetchAll(() => sb.from("content_items").select(cols).gt("updated_at", cache.syncedAt).order("updated_at").order("kind").order("key"))
-      : await fetchAll(() => sb.from("content_items").select(cols).eq("deleted", false).order("kind").order("key"));
-    const items = incremental ? { ...cache.items } : {};
-    let syncedAt = incremental ? cache.syncedAt : null;
-    for (const row of rows) {
-      const id = `${row.kind}\u0000${row.key}`;
-      if (row.deleted) delete items[id]; else items[id] = { kind: row.kind, key: row.key, data: row.data, position: row.position };
-      if (!syncedAt || row.updated_at > syncedAt) syncedAt = row.updated_at;
-    }
-    const next = { version: meta.version, syncedAt, items, levelOrder: meta.level_order || [], note: meta.note || "" };
-    await idb.set("content-cache", next);
-    rememberContent(next);
-    const content = contentFromCache(next);
-    return hasContent(content) ? content : null;
-  }
-
-  // Admin only. Upserts changed items, tombstones removed ones. Positions keep
-  // their order with gaps, so deleting or appending never renumbers the rest.
-  // renames: [{ kind: "word" | "category", from, to }] applied to every
-  // player's progress in the same transaction (content_save_v2).
-  async function saveContent(content, { renames = [] } = {}) {
-    if (!isAdmin) return;
-    const { upserts, removes, levelOrder, note, metaChanged } = planContentSave(content, contentRows, contentMeta);
-    if (!upserts.length && !removes.length && !metaChanged && !renames.length) return;
-    // One call when it fits; otherwise the batches go into a draft and the
-    // last call publishes everything at once, so players never see half.
-    const rows = upserts.map(({ json, ...row }) => row);
-    const draft = rows.length > UPSERT_BATCH ? newDraftId() : null;
-    for (let i = 0; i + UPSERT_BATCH < rows.length; i += UPSERT_BATCH) {
-      const { error } = await sb.rpc("content_save_v2", { p_draft: draft, p_upserts: rows.slice(i, i + UPSERT_BATCH), p_removes: [], p_level_order: null, p_note: null, p_renames: null, p_expected_version: null, p_publish: false });
-      if (error) throw error;
-    }
-    const lastStart = draft ? Math.floor((rows.length - 1) / UPSERT_BATCH) * UPSERT_BATCH : 0;
-    const { data: result, error } = await sb.rpc("content_save_v2", {
-      p_draft: draft, p_upserts: rows.slice(lastStart), p_removes: removes, p_level_order: levelOrder, p_note: note,
-      p_renames: renames.length ? renames : null, p_expected_version: contentVersion, p_publish: true,
-    });
-    if (error) {
-      if (error.code === "40001") throw Object.assign(new Error(error.message), { conflict: true });
-      throw error;
-    }
-    const version = result?.version ?? null;
-    contentVersion = version;
-    // Keep the library's copy of the dictionary (migration 0027) in step. Best
-    // effort: the game doesn't read it yet, and before that migration there is
-    // nothing to call.
-    Promise.resolve(sb.rpc("dictionary_sync")).then((out) => { if (out?.error && !["42883", "PGRST202"].includes(out.error.code)) console.warn("dictionary_sync:", out.error.message); }, () => {});
-    for (const row of upserts) contentRows.set(`${row.kind}\u0000${row.key}`, { kind: row.kind, key: row.key, json: row.json, position: row.position });
-    for (const r of removes) contentRows.delete(`${r.kind}\u0000${r.key}`);
-    contentMeta = { levelOrder: stableJson(levelOrder), note };
-    // Keep the admin's own cache current so the next start is a cache hit.
-    const items = {};
-    for (const [id, row] of contentRows) items[id] = { kind: row.kind, key: row.key, data: JSON.parse(row.json), position: row.position };
-    const cache = await idb.get("content-cache");
-    await idb.set("content-cache", { version, syncedAt: cache?.syncedAt || null, items, levelOrder, note });
-  }
+  // Reports: what the reports table is known to hold lives in this store.
+  const reportsSync = createReportsSync({ sb, isAdmin });
+  // Content: its own state (what the server holds, its version) lives in the store.
+  const content = createContentStore({ sb, isAdmin });
 
   async function loadProgress() {
     const snapshot = await idb.get(snapshotKey);
@@ -164,63 +81,21 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
     const sectionReports = serverSections.reports?.reports || [];
     // Other players' reports: shown in Admin, tracked separately.
     const remote = reportRows.map((row) => ({ ...row.data, resolvedAt: row.resolved_at ? Date.parse(row.resolved_at) : row.data.resolvedAt || null, _remote: true, _from: row.profiles?.username || "player", _filedAt: row.created_at || null }));
-    for (const r of remote) savedRemoteReports.set(r.id, stableJson(r));
+    reportsSync.rememberRemote(remote);
     const hasServer = hasServerRows(sections, masteryRows);
     // Play from this device that never reached the server: merge it with
     // whatever other devices saved meanwhile; the next save sends it.
     if (snapshot?.dirty && snapshot.data) {
       const merged = mergeUnsynced(snapshot, serverSections, mastery, savedRevs);
-      merged.reports = [...reconcile((merged.reports || []).filter((r) => !r?._remote), sectionReports, ownReportRows), ...remote];
+      merged.reports = [...reportsSync.reconcile((merged.reports || []).filter((r) => !r?._remote), sectionReports, ownReportRows), ...remote];
       lastLocal = merged;
       return merged;
     }
-    if (data.reports) data.reports = reconcile(data.reports, sectionReports, ownReportRows);
+    if (data.reports) data.reports = reportsSync.reconcile(data.reports, sectionReports, ownReportRows);
     if (remote.length) data.reports = [...(data.reports || []), ...remote];
     const out = hasServer || remote.length ? data : null;
     lastLocal = out;
     return out;
-  }
-
-  // The player's own reports against the reports table (src/lib/repo/reportsMerge.js);
-  // what the table holds is remembered here, in the repo's one copy of that state.
-  function reconcile(local, sectionReports, rows) {
-    const { reports, saved } = reconcileReports({ local, sectionReports, rows, isAdmin });
-    for (const [id, json] of saved) savedReports.set(id, json);
-    return reports;
-  }
-
-  async function syncReports(own, remote) {
-    const nextOwn = new Map(own.filter((r) => r?.id).map((r) => [r.id, stableJson(r)]));
-    // Only the admin decides whether a report is resolved; the server keeps
-    // that part of a player's report as it is, whatever the player sends.
-    const upserts = [...nextOwn].filter(([id, json]) => savedReports.get(id) !== json).map(([id, json]) => {
-      const data = JSON.parse(json);
-      return isAdmin ? { id, data, resolved_at: data.resolvedAt ? new Date(data.resolvedAt).toISOString() : null } : { id, data };
-    });
-    // A player's device keeps only the newest resolved reports; dropping
-    // older ones there doesn't delete them for the admin.
-    const deletes = [...savedReports].filter(([id, json]) => !nextOwn.has(id) && (isAdmin || !JSON.parse(json).resolvedAt)).map(([id]) => id);
-    if (upserts.length) {
-      const { error } = await sb.from("reports").upsert(upserts);
-      if (error && error.code !== "42501") throw error;
-      // A report someone else filed (in a backup imported here) can't be
-      // written by this player: skip it instead of failing every save. The
-      // next start drops it from this player's list.
-      if (error) for (const row of upserts) { const { error: e } = await sb.from("reports").upsert([row]); if (e && e.code !== "42501") throw e; }
-    }
-    if (deletes.length) { const { error } = await sb.from("reports").delete().in("id", deletes); if (error) throw error; }
-    savedReports = nextOwn;
-    if (!isAdmin) return;
-    const nextRemote = new Map(remote.map((r) => [r.id, stableJson(r)]));
-    for (const [id, json] of nextRemote) {
-      if (savedRemoteReports.get(id) === json) continue;
-      const { _remote, _from, _filedAt, ...report } = JSON.parse(json);
-      const { error } = await sb.from("reports").update({ data: report, resolved_at: report.resolvedAt ? new Date(report.resolvedAt).toISOString() : null }).eq("id", id);
-      if (error) throw error;
-    }
-    const gone = [...savedRemoteReports.keys()].filter((id) => !nextRemote.has(id));
-    if (gone.length) { const { error } = await sb.from("reports").delete().in("id", gone); if (error) throw error; }
-    savedRemoteReports = nextRemote;
   }
 
   // Sends what changed. When another device wrote one of the sections
@@ -239,12 +114,11 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
       const { upserts, removes } = masteryDiff(savedMasteryRefs, savedMasteryJson, data.mastery);
       const profile = profileSummary(data);
       const profileJson = stableJson(profile);
-      const reportsChanged = own.some((r) => r?.id && savedReports.get(r.id) !== stableJson(r)) || own.filter((r) => r?.id).length !== savedReports.size
-        || (isAdmin && (remote.length !== savedRemoteReports.size || remote.some((r) => savedRemoteReports.get(r.id) !== stableJson(r))));
+      const reportsChanged = reportsSync.changed(own, remote);
       if (!Object.keys(changedSections).length && !Object.keys(upserts).length && !removes.length && profileJson === savedProfile && !reportsChanged) return data;
       // Reports go first: the progress that lists a report is never on the
       // server before the report itself (see reconcileReports).
-      if (reportsChanged) await syncReports(own, remote);
+      if (reportsChanged) await reportsSync.sync(own, remote);
       const expected = Object.fromEntries(Object.keys(changedSections).map((name) => [name, savedRevs.get(name) ?? null]));
       const { data: result, error } = await sb.rpc("save_progress_v2", {
         p_sections: changedSections, p_expected: expected, p_mastery: upserts, p_mastery_removes: removes, p_profile: profile, p_replace: !!replace,
@@ -363,8 +237,8 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
   return {
     mode: "supabase",
     status,
-    loadContent,
-    saveContent,
+    loadContent: content.load,
+    saveContent: content.save,
     loadProgress,
     // replace: a restored backup; it overwrites instead of merging.
     async saveProgress(data, { replace = false } = {}) {
@@ -384,7 +258,7 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
       savedSections = new Map(); savedRevs = new Map(); savedMasteryJson = new Map(); savedMasteryRefs = new Map(); savedProfile = ""; lastLocal = null;
       await (idbQueue = idbQueue.then(() => idb.del(snapshotKey)));
     },
-    async wipeContent() { await saveContent(emptyContent()); },
+    async wipeContent() { await content.save(emptyContent()); },
     dispose() { if (typeof window !== "undefined") window.removeEventListener("online", onOnline); clearTimeout(retryTimer); },
   };
 }
