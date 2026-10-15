@@ -114,6 +114,10 @@ describe("a device copy that was never sent, against the server", () => {
     const out = mergeUnsynced(snap({ score: 130 }, { core: 3 }, { core: stableJson({ score: 100 }) }), { core: { score: 150 } }, {}, new Map([["core", 4]]));
     expect(out.score).toBe(180);
   });
+  it("a section the server already holds exactly as this copy has it is not added a second time", () => {
+    const out = mergeUnsynced(snap({ score: 150, attempted: 15 }, { core: 3 }, { core: stableJson({ score: 100, attempted: 10 }) }), { core: { score: 150, attempted: 15 } }, {}, new Map([["core", 4]]));
+    expect(out).toMatchObject({ score: 150, attempted: 15 });
+  });
   it("a record both sides have: the one with more answers wins", () => {
     const out = mergeUnsynced(snap({ mastery: { W: { total: 2 } } }, {}, {}), {}, { W: { total: 5, correct: 5 } }, new Map());
     expect(out.mastery.W.total).toBe(5);
