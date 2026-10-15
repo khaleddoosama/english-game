@@ -14,7 +14,7 @@ import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequir
 import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
-import { getFriendsApi } from "../features/social/friendsApi";
+import { getFriendsApi, localAreFriends, localNameOf } from "../features/social/friendsApi";
 import { LibraryRoutes, MyViewsHome, homeLimits, keepInLibrary, scopeIsEmpty, scopeOfView, useLibrary, useLibraryHome } from "../features/library";
 import { useSocialCounts } from "../features/social/useSocialCounts";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
@@ -42,6 +42,8 @@ function localTabPlayer() {
 const lastAdminPath = () => { try { const p = localStorage.getItem("wh-admin-path"); return p && p.startsWith("/admin") ? p : "/admin"; } catch { return "/admin"; } };
 const masteredCountFor = (m) => Object.entries(m || {}).filter(([k, v]) => isWordKey(k) && V2.stage(v) === "Mastered").length;
 const PLAY_SCREENS = new Set(["session", "playing", "results", "reviewResults", "finalReport", "finalResults", "speed", "speedResults"]);
+// Who the player's friends are in local mode, for the library's sharing (the library does not import the friends module).
+const LOCAL_PEOPLE = { areFriends: (a, b) => localAreFriends(window.localStorage, a, b), nameOf: (id) => localNameOf(window.localStorage, id) };
 const AdminPanel = lazy(() => import("../features/admin/AdminPanel").then((m) => ({ default: m.AdminPanel })));
 const LiveChallenge = lazy(() => import("../features/live/LiveChallenge").then((m) => ({ default: m.LiveChallenge })));
 const Leaderboard = lazy(() => import("../features/social/Leaderboard"));
@@ -68,7 +70,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const friendsApi = useMemo(() => getFriendsApi(() => livePlayer), [livePlayer]);
   const { counts: social, refresh: refreshSocial } = useSocialCounts(friendsApi, loaded);
   // My library (views inside views); off until the dictionary has been moved to the new tables.
-  const library = useLibrary({ enabled: loaded, me: livePlayer.id, knownWord: (k) => WORDS.some((w) => w.word === k) });
+  const library = useLibrary({ enabled: loaded, me: livePlayer.id, knownWord: (k) => WORDS.some((w) => w.word === k), people: LOCAL_PEOPLE });
   const [customCombos, setCustomCombos] = useState([]);
   const [customStories, setCustomStories] = useState([]);
   const [askAiOpen,setAskAiOpen]=useState(false);

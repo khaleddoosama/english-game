@@ -52,7 +52,6 @@ describe("what the module imports from the rest of the app", () => {
       "engine/v2",
       "features/home/StageCard",
       "features/home/homeState",
-      "features/social/friendsApi",
       "lib/router",
       "lib/supabase",
       "styles/library",

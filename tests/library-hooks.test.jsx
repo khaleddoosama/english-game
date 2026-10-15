@@ -102,6 +102,23 @@ describe("useLibrary", () => {
     expect(await seen.refreshIds()).toBe(identityIds);
   });
 
+  it("local mode learns who the player's friends are from the app, not from the friends module", async () => {
+    env.local = true;
+    const people = { areFriends: vi.fn((a, b) => a === "u1" && b === "u2"), nameOf: (id) => `name-${id}` };
+    await mount(LibraryProbe, { enabled: true, me: "u1", people });
+    const view = await seen.api.create("Trip");
+    expect(await seen.api.share(view, ["u2"])).toBe(1);                          // a friend
+    await expect(seen.api.share(view, ["u3"])).rejects.toThrow(/only with your friends/);
+    expect(people.areFriends).toHaveBeenCalled();
+  });
+
+  it("local mode with no people given has no friends", async () => {
+    env.local = true;
+    await mount(LibraryProbe, { enabled: true, me: "u1" });
+    const view = await seen.api.create("Trip");
+    await expect(seen.api.share(view, ["u2"])).rejects.toThrow(/only with your friends/);
+  });
+
   it("local mode keeps one library for each player", async () => {
     env.local = true;
     await mount(LibraryProbe, { enabled: true, me: "u1" });

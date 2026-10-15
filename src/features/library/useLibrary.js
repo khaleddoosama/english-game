@@ -5,11 +5,14 @@
 // half-working.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { isLocalMode, supabase } from "../../lib/supabase";
-import { localAreFriends, localNameOf } from "../social/friendsApi";
 import { identityIds, loadIds } from "./libraryIds";
 import { openLibrary } from "./openLibrary";
 
-export function useLibrary({ enabled, me, knownWord = () => true }) {
+//   enabled  start once the course has loaded      me  the player's id
+//   knownWord(key)  is this word in the game (local mode: what may be added)
+//   people   local mode only: { areFriends(a, b), nameOf(id) }, who the player's friends are
+//            (the library does not import the friends module; the app passes it in)
+export function useLibrary({ enabled, me, knownWord = () => true, people = null }) {
   const [state, setState] = useState({ status: "loading" });
   // Words added after the app started aren't in the id map yet; this reloads it.
   // Local mode has nothing to reload (a key is its own id).
@@ -23,7 +26,7 @@ export function useLibrary({ enabled, me, knownWord = () => true }) {
     if (!enabled) return undefined;
     let alive = true;
     const storage = isLocalMode ? window.localStorage : null;
-    const local = isLocalMode ? { storage, me: () => me, canSee: knownWord, areFriends: (a, b) => localAreFriends(storage, a, b), nameOf: (id) => localNameOf(storage, id) } : null;
+    const local = isLocalMode ? { storage, me: () => me, canSee: knownWord, areFriends: people?.areFriends, nameOf: people?.nameOf } : null;
     openLibrary({ local, client: supabase }).then((next) => { if (alive) setState(next); });
     return () => { alive = false; };
   }, [enabled, me]); // eslint-disable-line react-hooks/exhaustive-deps
