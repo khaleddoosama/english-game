@@ -11,88 +11,28 @@
 // the other.
 import { supabase } from "./supabase";
 import { idb } from "./idb";
-import { V2 } from "../engine/v2";
-import { isWordKey } from "../engine/data";
-import { mergeMastery, mergeMasteryRecord, mergeSection } from "./progressMerge";
+import { mergeMasteryRecord, mergeSection } from "./progressMerge";
+import { contentFromCache, emptyContent, hasContent, planContentSave } from "./repo/contentPlan";
+import { fetchAll } from "./repo/fetchAll";
+import { CONTENT_FIELDS, hasServerRows, masteryDiff, profileSummary, splitSections, weekStart } from "./repo/progressShape";
+import { reconcileReports } from "./repo/reportsMerge";
+import { createStatusHub } from "./repo/status";
+import { mergeUnsynced } from "./repo/unsyncedMerge";
 
-export const CONTENT_KINDS = ["words", "grammar", "challenges", "stories", "combos"];
-const keyOf = (kind, item) => (kind === "words" ? item?.word : item?.id);
-// Fields of a full backup that are content, never progress.
-const CONTENT_FIELDS = new Set(["words", "combos", "stories", "grammar", "puns", "challenges", "levelOrder", "kind", "note", "contentSchemaVersion"]);
-const SECTION_OF = {
-  activeSession: "session", pools: "pools", seenSentences: "seen", confusions: "confusions",
-  sessionLogs: "history", completedSessions: "history", solvedStories: "history", dailyHistory: "history",
-  reports: "reports", levelStats: "levels", levelsCleared: "levels",
-};
-const PAGE = 1000, UPSERT_BATCH = 250, POSITION_GAP = 1000, RETRY_MS = 15000;
+export { CONTENT_KINDS } from "./repo/contentPlan";
+export { weekStart } from "./repo/progressShape";
+const UPSERT_BATCH = 250, RETRY_MS = 15000;
 const newDraftId = () => (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID()
   : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => (c ^ (Math.random() * 16 >> (c / 4))).toString(16)));
 
 export { stableJson } from "./stableJson";
 import { stableJson } from "./stableJson";
 
-const emptyContent = () => ({ words: [], grammar: [], challenges: [], stories: [], combos: [], levelOrder: [], note: "" });
-const hasContent = (c) => !!c && CONTENT_KINDS.some((k) => (c[k] || []).length);
-
-// Progress object -> { section: {field: value} }, content fields dropped.
-function splitSections(data) {
-  const out = {};
-  for (const [field, value] of Object.entries(data || {})) {
-    if (field === "mastery" || CONTENT_FIELDS.has(field) || value === undefined) continue;
-    const section = SECTION_OF[field] || "core";
-    (out[section] ||= {})[field] = value;
-  }
-  return out;
-}
-
-// Monday of this week, local time, as YYYY-MM-DD.
-export function weekStart(now = new Date()) {
-  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-// Leaderboard numbers the server can't work out itself (score, streaks and
-// this week's points come from the saved progress).
-const profileSummary = (data) => ({ mastered_count: masteredCount(data.mastery), week_start: weekStart() });
-
-const hasServerRows = (sections, masteryRows) => sections.length > 0 || masteryRows.length > 0;
-
-function masteredCount(mastery) {
-  let n = 0;
-  for (const [key, stats] of Object.entries(mastery || {})) if (isWordKey(key) && V2.stage(stats) === "Mastered") n++;
-  return n;
-}
-
-// Status listeners: the header shows saving / offline / error.
-function statusHub() {
-  const subs = new Set();
-  let current = "idle";
-  return {
-    get: () => current,
-    set(next) { if (next === current) return; current = next; subs.forEach((fn) => fn(next)); },
-    subscribe(fn) { subs.add(fn); fn(current); return () => subs.delete(fn); },
-  };
-}
-
-// Diff tracker for mastery: reference check first (records are replaced, not
-// mutated), JSON compare only for records whose reference changed.
-function masteryDiff(prevRefs, prevJson, next) {
-  const upserts = {}, removes = [];
-  for (const [key, stats] of Object.entries(next || {})) {
-    if (prevRefs.get(key) === stats) continue;
-    const json = stableJson(stats);
-    if (prevJson.get(key) !== json) upserts[key] = stats;
-  }
-  for (const key of prevJson.keys()) if (!next || !(key in next)) removes.push(key);
-  return { upserts, removes };
-}
-
 /* ------------------------------------------------------------ Supabase */
 
 export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
   const sb = client;
-  const status = statusHub();
+  const status = createStatusHub();
   const snapshotKey = `progress:${userId}`;
   // Last state known to be on the server.
   let savedSections = new Map();            // section -> json
@@ -111,24 +51,6 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
   let contentMeta = { levelOrder: "[]", note: "" };
   let contentVersion = null;                // content_meta.version this device last saw
 
-  async function fetchAll(build) {
-    const rows = [];
-    for (let from = 0; ; from += PAGE) {
-      const { data, error } = await build().range(from, from + PAGE - 1);
-      if (error) throw error;
-      rows.push(...data);
-      if (data.length < PAGE) return rows;
-    }
-  }
-
-  function contentFromCache(cache) {
-    const out = emptyContent();
-    const rows = Object.values(cache.items).sort((a, b) => a.position - b.position || (a.key < b.key ? -1 : 1));
-    for (const row of rows) out[row.kind].push(row.data);
-    out.levelOrder = cache.levelOrder || [];
-    out.note = cache.note || "";
-    return out;
-  }
   function rememberContent(cache) {
     contentRows = new Map(Object.entries(cache.items).map(([id, row]) => [id, { kind: row.kind, key: row.key, json: stableJson(row.data), position: row.position }]));
     contentMeta = { levelOrder: stableJson(cache.levelOrder || []), note: cache.note || "" };
@@ -173,39 +95,7 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
   // player's progress in the same transaction (content_save_v2).
   async function saveContent(content, { renames = [] } = {}) {
     if (!isAdmin) return;
-    const upserts = [], seen = new Set();
-    for (const kind of CONTENT_KINDS) {
-      const list = content[kind] || [];
-      const ids = list.map((item) => { const key = keyOf(kind, item); return key === undefined || key === null || key === "" ? null : `${kind}\u0000${key}`; });
-      // Stored position of the next already-saved item, for slotting new items between neighbours.
-      const nextStored = new Array(list.length).fill(null);
-      for (let i = list.length - 2; i >= 0; i--) { const r = ids[i + 1] && contentRows.get(ids[i + 1]); nextStored[i] = r ? r.position : nextStored[i + 1]; }
-      let prevPos = -Infinity;
-      list.forEach((item, i) => {
-        const id = ids[i];
-        if (!id || seen.has(id)) return;
-        seen.add(id);
-        const prev = contentRows.get(id);
-        let position;
-        if (prev && prev.position > prevPos) position = prev.position;
-        else {
-          const next = nextStored[i];
-          if (next === null || next <= prevPos) position = prevPos === -Infinity ? 0 : Math.floor(prevPos / POSITION_GAP) * POSITION_GAP + POSITION_GAP;
-          else {
-            const low = prevPos === -Infinity ? next - 2 * POSITION_GAP : prevPos;
-            position = low + Math.floor((next - low) / 2);
-          }
-          if (position <= prevPos) position = prevPos + 1;
-        }
-        prevPos = position;
-        const json = stableJson(item);
-        if (!prev || prev.json !== json || prev.position !== position) upserts.push({ kind, key: String(keyOf(kind, item)), data: item, position, json });
-      });
-    }
-    const removes = [...contentRows.entries()].filter(([id]) => !seen.has(id)).map(([, row]) => ({ kind: row.kind, key: row.key }));
-    const levelOrder = content.levelOrder || [];
-    const note = content.note || "";
-    const metaChanged = stableJson(levelOrder) !== contentMeta.levelOrder || note !== contentMeta.note;
+    const { upserts, removes, levelOrder, note, metaChanged } = planContentSave(content, contentRows, contentMeta);
     if (!upserts.length && !removes.length && !metaChanged && !renames.length) return;
     // One call when it fits; otherwise the batches go into a draft and the
     // last call publishes everything at once, so players never see half.
@@ -279,55 +169,24 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
     // Play from this device that never reached the server: merge it with
     // whatever other devices saved meanwhile; the next save sends it.
     if (snapshot?.dirty && snapshot.data) {
-      const merged = mergeUnsynced(snapshot, serverSections, mastery);
-      merged.reports = [...reconcileReports((merged.reports || []).filter((r) => !r?._remote), sectionReports, ownReportRows), ...remote];
+      const merged = mergeUnsynced(snapshot, serverSections, mastery, savedRevs);
+      merged.reports = [...reconcile((merged.reports || []).filter((r) => !r?._remote), sectionReports, ownReportRows), ...remote];
       lastLocal = merged;
       return merged;
     }
-    if (data.reports) data.reports = reconcileReports(data.reports, sectionReports, ownReportRows);
+    if (data.reports) data.reports = reconcile(data.reports, sectionReports, ownReportRows);
     if (remote.length) data.reports = [...(data.reports || []), ...remote];
     const out = hasServer || remote.length ? data : null;
     lastLocal = out;
     return out;
   }
 
-  // A dirty snapshot against the server's current progress. Sections the
-  // server hasn't changed since the snapshot's base keep this device's
-  // values; changed ones are merged field by field.
-  function mergeUnsynced(snapshot, serverSections, serverMastery) {
-    const local = snapshot.data;
-    const base = snapshot.base || { revs: {}, sections: {} };
-    const localSections = splitSections(local);
-    const out = { ...local };
-    for (const [name, server] of Object.entries(serverSections)) {
-      if (base.revs?.[name] != null && base.revs[name] === savedRevs.get(name)) continue;
-      const baseSection = base.sections?.[name] ? JSON.parse(base.sections[name]) : null;
-      Object.assign(out, mergeSection(baseSection, localSections[name], server));
-    }
-    out.mastery = mergeMastery(null, local.mastery, serverMastery);
-    return out;
-  }
-
-  // The player's own reports: the reports table has the admin's decisions
-  // (resolved, deleted, notes added); this device has what it changed since
-  // its last save. A report the server's progress lists but the table
-  // doesn't have was deleted; one only this device has wasn't sent yet.
-  // Reports filed on another device arrive with that device's progress.
-  function reconcileReports(local, sectionReports, rows) {
-    const table = new Map(rows.map((row) => [row.id, row]));
-    const sent = new Map(sectionReports.filter((r) => r?.id).map((r) => [r.id, stableJson(r)]));
-    const out = [];
-    for (const r of local) {
-      if (!r?.id) { out.push(r); continue; }
-      const row = table.get(r.id);
-      if (!row) { if (!sent.has(r.id)) out.push(r); continue; }
-      const resolvedAt = row.resolved_at ? Date.parse(row.resolved_at) : null;
-      const fromTable = { ...row.data, resolvedAt };
-      savedReports.set(r.id, stableJson(fromTable));
-      const changedHere = sent.has(r.id) && sent.get(r.id) !== stableJson(r);
-      out.push(!changedHere ? fromTable : isAdmin ? r : { ...r, resolvedAt });
-    }
-    return out;
+  // The player's own reports against the reports table (src/lib/repo/reportsMerge.js);
+  // what the table holds is remembered here, in the repo's one copy of that state.
+  function reconcile(local, sectionReports, rows) {
+    const { reports, saved } = reconcileReports({ local, sectionReports, rows, isAdmin });
+    for (const [id, json] of saved) savedReports.set(id, json);
+    return reports;
   }
 
   async function syncReports(own, remote) {
@@ -533,7 +392,7 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
 /* --------------------------------------------------------------- local */
 
 export function createLocalRepo() {
-  const status = statusHub();
+  const status = createStatusHub();
   return {
     mode: "local",
     status,
