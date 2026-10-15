@@ -288,4 +288,6 @@ supabase/tests/      SQL tests (run inside a rolled-back transaction)
 tests/               Vitest unit and component tests
 e2e/                 browser specs (Playwright) and their runner
 legacy/              the original single-file Claude artifact, for reference
+docs/                architecture/modules.md (how the code is divided, with the plan), modules/ (one document per module),
+                     work-tracking/ (what was done, checked and is left), integration-tests.md
 ```

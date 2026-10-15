@@ -19,10 +19,11 @@ In the module (`src/features/library/`, `src/styles/library.css`):
 
 | Part | Files |
 | --- | --- |
-| Screens | `LibraryPage.jsx` (`/library`), `CatalogPage.jsx` (`/catalog`), `JoinPage.jsx` (`/join/<token>`), `components/MyViewsHome.jsx` (the "My views" area of Home) |
+| Front door | `index.js` |
+| Screens | `LibraryPage.jsx` (`/library`), `CatalogPage.jsx` (`/catalog`), `JoinPage.jsx` (`/join/<token>`), `LibraryRoutes.jsx` (places them), `components/MyViewsHome.jsx` (the "My views" area of Home) |
 | Screen pieces | `components/*` (view tree, view panel, word/rule pickers, share panel and inbox, create views) |
-| State hooks | `useLibrary.js` (is the library on, the API, the id maps), `useViews.js` (tree, open view, contents, "run a change"), `useViewScope.js` (`useMyViews`, `useViewScope`, for other modules) |
-| Pure logic | `libraryRules.js` (limits, messages, `senseFromCard`), `libraryTree.js` (tree, search, pasted lists), `scope.js` (a view as `{ words, rules }`), `libraryIds.js` (game key <-> server id), `libraryErrors.js` |
+| Orchestration | `useLibrary.js` + `openLibrary.js` (is the library on, the API, the id maps), `useLibraryHome.js` (offers, keys, biggest views), `useViews.js` (tree, open view, contents, "run a change"), `useViewScope.js`, `viewRound.js`, `ownWords.js`, `libraryActions.js` (the page's changes and their sentences) |
+| Rules (pure) | `libraryRules.js` (limits, messages, `senseFromCard`), `libraryTree.js` (tree, search, pasted lists), `libraryHome.js` (Home's keys, roots, limits), `scope.js` (a view as `{ words, rules }`), `libraryIds.js` (game key <-> server id), `libraryErrors.js` |
 | The one interface | `libraryApi.js` with two implementations: `onlineLibraryApi.js` (Supabase functions) and `local/*` (localStorage mirror, for local mode and tests) |
 | Database | migrations `0026`-`0038` (library, sync, sharing, links, catalog, rules, rename, delete) and `supabase/tests/*.sql` |
 
@@ -32,19 +33,27 @@ editors), the practice engine (`src/engine/v2.js`), progress saving
 
 ## Public surface (what other modules may use)
 
-| Who | Imports | For |
-| --- | --- | --- |
-| `app/WordHunter.jsx` | `useLibrary`, `scopeFromContents`, `scopeIsEmpty`; lazily `LibraryPage`, `JoinPage`, `CatalogPage`, `components/MyViewsHome` | wiring: routes, starting a round from a view, Home tabs |
-| `features/live/LiveChallenge.jsx` | `useMyViews`, `useViewScope` | take a challenge's words from a view |
+Everything comes from `src/features/library/index.js`. Nothing else in the
+folder may be imported from outside (`tests/library-boundary.test.js`).
 
-`tests/library-boundary.test.js` keeps this list closed: a new outside import
-of the module's files fails the test until this table is updated.
+| Export | What it is | Used by |
+| --- | --- | --- |
+| `useLibrary({ enabled, me, knownWord, people })` | the library for this player: `{ status, api, ids, refreshIds }`; `people` = `{ areFriends, nameOf }` for local mode | shell |
+| `useLibraryHome({ library, screen })` | offers waiting, the player's keys and biggest views, for Home and Profile | shell |
+| `homeLimits({ status, isAdmin, keys })` | is Home cut down to the player's library, or waiting for it | shell |
+| `scopeOfView(library, viewId, deep)`, `scopeIsEmpty(scope)` | a view as the scope of a practice round | shell |
+| `keepInLibrary(library, card)` | a new word also goes into the library (best effort) | shell |
+| `LibraryRoutes` | the `/join`, `/catalog` and `/library` screens, with their fallbacks | shell |
+| `MyViewsHome` (lazy) | the "My views" tabs on Home | shell |
+| `useMyViews(library)`, `useViewScope(library, viewId)` | my views, and what one holds | Live challenges |
+
+Pattern and layers: `docs/architecture/modules.md`.
 
 The module depends on (outward): `lib/router`, `lib/supabase`, `engine/v2`
-(`V2.norm`, `V2.headword`), `features/social/friendsApi` (local friends, for
-the mirror), `features/home/StageCard` and `homeState` (only
-`MyViewsHome`, which draws Home cards). These are the shared contracts it
-relies on; none was changed by this work.
+(`V2.norm`, `V2.headword`), `features/home/StageCard` and `homeState` (only
+`MyViewsHome`, which draws Home cards). No dependency on the friends module: the
+app passes who the local friends are. The module is in no import loop
+(`tests/architecture.test.js`).
 
 ## The API contract (`libraryApi.js`)
 
@@ -106,11 +115,11 @@ Behaviour worth knowing:
 | Rules, tree, search, pasted lists, scope, local mirror, sharing mirror | `tests/library*.test.js`, `tests/view-scope*.test.*`, `tests/home-state.test.js` | `npm test` |
 | Screens | `tests/library-page.test.jsx`, `catalog-page`, `join-page`, `my-views-home`, `word-picker`, `view-scope-hooks` | `npm test` |
 | Rounds from a view (options, scope, grading, mastery) | `tests/library-round-*.test.js` | `npm test` |
-| Hooks and boundary | `tests/library-hooks.test.jsx`, `tests/library-boundary.test.js` | `npm test` |
+| Hooks, glue and boundary | `tests/library-hooks.test.jsx`, `tests/library-orchestration.test.jsx`, `tests/library-boundary.test.js`, `tests/architecture.test.js` | `npm test` |
 | The SQL functions | `supabase/tests/*.sql` | `supabase/ci/run-tests.sh` |
 | App API against the SQL functions | `tests/library-contract.test.js`, `library-differential.test.js` | needs `PGURL` |
 | App code against PostgreSQL as anon / authenticated | `tests/integration/*` | `supabase/ci/run-integration.sh` (`docs/integration-tests.md`) |
-| Browser | `e2e/specs/lib*.cjs`, `library.cjs`, `grammar-lib.cjs`, `homeviews.cjs` | `npm run e2e` |
+| Browser | `e2e/specs/lib*.cjs` (incl. `libshell.cjs`, the shell's use of the library), `library.cjs`, `grammar-lib.cjs`, `homeviews.cjs`, `catalog*.cjs`, `nested.cjs`, `sweep.cjs` | `npx vite build && npm run e2e` |
 
 Rule-by-rule list: `docs/library-unit-test-matrix.md`.
 
