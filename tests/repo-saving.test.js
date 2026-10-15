@@ -69,7 +69,7 @@ describe("the network fails", () => {
     expect(snapshot()).toMatchObject({ dirty: false, data: { score: 10 } });
   });
 
-  it("while it keeps failing it keeps trying, every 15 seconds, with the newest state only", async () => {
+  it("while it keeps failing it keeps trying, every 15 seconds, with the save that has no answer yet (same id)", async () => {
     vi.useFakeTimers();
     const fake = createFakeSupabase();
     const repo = open(fake);
@@ -81,7 +81,11 @@ describe("the network fails", () => {
     await vi.advanceTimersByTimeAsync(15_100);
     await vi.advanceTimersByTimeAsync(15_100);
     expect(saveCalls(fake).length).toBe(before + 2);
-    expect(saveCalls(fake).at(-1).args.p_sections.core.score).toBe(20);
+    // No answer came, so the first save (10) may have arrived: it is asked about again, with its id, before the
+    // newest state (20) is sent. Once it is answered the newest follows (tests/repo-save-ops.test.js).
+    const first = saveCalls(fake)[before - 2], last = saveCalls(fake).at(-1);
+    expect(last.args).toEqual(first.args);
+    expect(last.args.p_sections.core.score).toBe(10);
     expect(repo.status.get()).toBe("error");
   });
 

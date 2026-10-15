@@ -43,9 +43,10 @@ async function lostAnswerThenOtherDevice() {
   const lost = loseAnswers(fake);
   await phone.saveProgress(state(150));
   expect(core(fake).score).toBe(150);
+  const phoneSnapshot = structuredClone(snapshot());            // the devices share one fake IndexedDB; this is what the phone kept
   await tablet.saveProgress(state(130));
   expect(core(fake).score).toBe(180);
-  return { fake, phone, tablet, lost };
+  return { fake, phone, tablet, lost, phoneSnapshot };
 }
 
 describe("a save whose answer was lost", () => {
@@ -103,9 +104,10 @@ describe("a save whose answer was lost", () => {
   });
 
   it("is resolved first when the page is opened again, before anything is merged", async () => {
-    const { fake, phone, tablet } = await lostAnswerThenOtherDevice();
+    const { fake, phone, tablet, phoneSnapshot } = await lostAnswerThenOtherDevice();
     phone.dispose(); tablet.dispose();
-    const sent = saves(fake).at(-3).args.p_op;                     // the phone's lost save (the tablet's came after it)
+    cache.set("progress:u1", phoneSnapshot);
+    const sent = saves(fake).at(-1).args.p_op;                     // the phone's lost save (the tablet has its own call list)
     const again = createFakeSupabase({ tables: fake.tables });
     const reopened = open(again);
     const loaded = await reopened.loadProgress();
@@ -143,6 +145,50 @@ describe("a save whose answer was lost", () => {
   });
 });
 
+describe("an unanswered save and a newer state", () => {
+  const failWith = (fake, error) => {
+    const original = fake.rpc.bind(fake);
+    const mode = { error };
+    fake.rpc = async (name, args) => (name === "save_progress_v2" && mode.error ? (fake.calls.push({ rpc: name, args: structuredClone(args) }), { data: null, error: mode.error }) : original(name, args));
+    return mode;
+  };
+
+  it("with no answer at all (offline) the retry is the unanswered save; the newest state follows once it is answered", async () => {
+    vi.useFakeTimers();
+    const fake = createFakeSupabase();
+    const phone = open(fake);
+    await phone.loadProgress(); await phone.saveProgress(state(100));
+    const mode = failWith(fake, { message: "TypeError: Failed to fetch" });
+    await phone.saveProgress(state(110));
+    await phone.saveProgress(state(120));
+    const sent = saves(fake).at(-1).args;
+    await vi.advanceTimersByTimeAsync(15_100);
+    expect(saves(fake).at(-1).args).toEqual(sent);                 // the same save, the same id: it may have arrived
+    mode.error = null;
+    await vi.advanceTimersByTimeAsync(15_100);
+    expect(core(fake)).toMatchObject({ score: 120, attempted: 12 });
+    expect(snapshot()).toMatchObject({ dirty: false });
+  });
+
+  it("when the database answered with an error, the save is known not to have been applied: the newest state is sent as a new save", async () => {
+    vi.useFakeTimers();
+    const fake = createFakeSupabase();
+    const phone = open(fake);
+    await phone.loadProgress(); await phone.saveProgress(state(100));
+    const mode = failWith(fake, { code: "57014", message: "canceling statement due to statement timeout" });
+    await phone.saveProgress(state(110));
+    await phone.saveProgress(state(120));
+    const first = saves(fake).at(-1).args;
+    await vi.advanceTimersByTimeAsync(15_100);
+    const retry = saves(fake).at(-1).args;
+    expect(retry.p_sections.core.score).toBe(120);
+    expect(retry.p_op).not.toBe(first.p_op);
+    mode.error = null;
+    await vi.advanceTimersByTimeAsync(15_100);
+    expect(core(fake)).toMatchObject({ score: 120, attempted: 12 });
+  });
+});
+
 describe("a database that does not know operation ids yet (migration 0042 not applied)", () => {
   const oldServer = (fake) => {
     const original = fake.rpc.bind(fake);
@@ -167,13 +213,13 @@ describe("a database that does not know operation ids yet (migration 0042 not ap
     expect(snapshot().inflight).toBeUndefined();
   });
 
-  it("other errors are not taken for a missing function: they are retried with the same id", async () => {
+  it("a network error is not taken for a missing function: the save is retried with the same id", async () => {
     const fake = createFakeSupabase();
     const phone = open(fake);
     await phone.loadProgress(); await phone.saveProgress(state(100));
     const original = fake.rpc.bind(fake);
     let failing = true;
-    fake.rpc = async (name, args) => (name === "save_progress_v2" && failing ? (fake.calls.push({ rpc: name, args: structuredClone(args) }), { data: null, error: { code: "57014", message: "canceling statement due to statement timeout" } }) : original(name, args));
+    fake.rpc = async (name, args) => (name === "save_progress_v2" && failing ? (fake.calls.push({ rpc: name, args: structuredClone(args) }), { data: null, error: { message: "TypeError: Failed to fetch" } }) : original(name, args));
     await phone.saveProgress(state(150));
     failing = false;
     await phone.saveProgress(state(150));

@@ -17,6 +17,7 @@ import { createContentStore } from "./repo/contentStore";
 import { fetchAll } from "./repo/fetchAll";
 import { hasServerRows, masteryDiff, profileSummary, splitSections, weekStart } from "./repo/progressShape";
 import { createReportsSync } from "./repo/reportsSync";
+import { baseAfter, inflightOf, lacksOpSupport, newOpId, wasNotApplied } from "./repo/saveOps";
 import { createStatusHub } from "./repo/status";
 import { mergeUnsynced } from "./repo/unsyncedMerge";
 
@@ -40,6 +41,10 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
   let savedRevs = new Map();                // section -> revision on the server
   let masterySince = "";                    // newest mastery updated_at seen
   let lastLocal = null;                     // the app's newest progress
+  // A save that was sent and not answered yet: { op, args }. Kept in the snapshot, so a closed page
+  // can ask the database about it again. Resolved before anything newer is sent or merged (saveOps.js).
+  let inflight = null;
+  let opsSupported = true;                  // false once the database said it does not know operation ids
   const mergedSubs = new Set();             // told when another device's changes were merged in
   const notifyMerged = (data) => { for (const fn of mergedSubs) { try { fn(data); } catch (e) { console.error(e); } } };
   // Reports: what the reports table is known to hold lives in this store.
@@ -47,8 +52,53 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
   // Content: its own state (what the server holds, its version) lives in the store.
   const content = createContentStore({ sb, isAdmin });
 
+  // One call of save_progress_v2. With an operation id; against a database that does not know ids it is
+  // sent without one (and no more ids are sent), as the version before migration 0042 worked.
+  async function callSave(args, op) {
+    if (opsSupported) {
+      const res = await sb.rpc("save_progress_v2", { ...args, p_op: op });
+      if (!lacksOpSupport(res.error)) return res;
+      opsSupported = false;
+    }
+    return sb.rpc("save_progress_v2", args);
+  }
+  // The server now holds a save this device sent: it becomes the base for the next diff and merge.
+  function markSaved(args, result) {
+    for (const [name, value] of Object.entries(args.p_sections || {})) savedSections.set(name, stableJson(value));
+    for (const [name, rev] of Object.entries(result?.revs || {})) savedRevs.set(name, Number(rev));
+    for (const [key, stats] of Object.entries(args.p_mastery || {})) savedMasteryJson.set(key, stableJson(stats));
+    for (const key of args.p_mastery_removes || []) savedMasteryJson.delete(key);
+    if (args.p_profile) savedProfile = stableJson(args.p_profile);
+  }
+  // Send the unanswered save again (same id). Applied now, or already applied: it is on the server.
+  // Refused for a stale revision: it never was, and the normal merge deals with it.
+  async function resolveInflight() {
+    if (!inflight) return;
+    const { op, args } = inflight;
+    const { data: result, error } = await callSave(args, op);
+    if (error) { if (wasNotApplied(error)) inflight = null; throw error; }
+    if (!result?.conflict) markSaved(args, result);
+    inflight = null;
+  }
+  async function resolveSnapshotInflight(snapshot) {
+    const { op, args } = snapshot.inflight;
+    const { data: result, error } = await callSave(args, op);
+    if (error) throw error;
+    inflight = null;
+    const { inflight: _gone, ...rest } = snapshot;
+    return result?.conflict ? rest : { ...rest, base: baseAfter(snapshot.base, args, result?.revs) };
+  }
+
   async function loadProgress() {
-    const snapshot = await idb.get(snapshotKey);
+    let snapshot = await idb.get(snapshotKey);
+    if (snapshot?.inflight) {
+      // The last save of the previous page may or may not have reached the database. Ask about it first:
+      // if it did, it is part of the server's copy and must not be merged in again.
+      try { snapshot = await resolveSnapshotInflight(snapshot); } catch (e) {
+        if (snapshot.data) { inflight = snapshot.inflight; status.set("offline"); lastLocal = snapshot.data; return snapshot.data; }
+        throw e;
+      }
+    }
     let sections, masteryRows, ownReportRows, reportRows = [];
     try {
       [sections, masteryRows, ownReportRows] = await Promise.all([
@@ -103,6 +153,7 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
   // saved (merged, if it had to be).
   async function pushProgress(input, replace = false) {
     let data = input;
+    await resolveInflight();
     for (let attempt = 0; attempt < 4; attempt++) {
       const reports = Array.isArray(data.reports) ? data.reports : [];
       const own = reports.filter((r) => !r?._remote), remote = reports.filter((r) => r?._remote);
@@ -120,11 +171,13 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
       // server before the report itself (see reconcileReports).
       if (reportsChanged) await reportsSync.sync(own, remote);
       const expected = Object.fromEntries(Object.keys(changedSections).map((name) => [name, savedRevs.get(name) ?? null]));
-      const { data: result, error } = await sb.rpc("save_progress_v2", {
-        p_sections: changedSections, p_expected: expected, p_mastery: upserts, p_mastery_removes: removes, p_profile: profile, p_replace: !!replace,
-      });
-      if (error) throw error;
+      const args = { p_sections: changedSections, p_expected: expected, p_mastery: upserts, p_mastery_removes: removes, p_profile: profile, p_replace: !!replace };
+      // Written down before it is sent: if the answer is lost, or the page closes, the next try is this same save.
+      if (opsSupported) { inflight = inflightOf(newOpId(), args); await writeSnapshot(dirtySnapshot(lastLocal || data, localRev)); }
+      const { data: result, error } = await callSave(args, inflight?.op);
+      if (error) { if (wasNotApplied(error)) inflight = null; throw error; }
       if (result?.conflict) {
+        inflight = null;
         // Another device saved first: take its copy as the new base and
         // merge this device's changes into it.
         const merged = { ...data };
@@ -142,12 +195,9 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
         notifyMerged(merged);
         continue;
       }
-      for (const [name, value] of Object.entries(changedSections)) savedSections.set(name, stableJson(value));
-      for (const [name, rev] of Object.entries(result?.revs || {})) savedRevs.set(name, Number(rev));
-      for (const [key, stats] of Object.entries(upserts)) savedMasteryJson.set(key, stableJson(stats));
-      for (const key of removes) savedMasteryJson.delete(key);
+      inflight = null;
+      markSaved(args, result);
       savedMasteryRefs = new Map(Object.entries(data.mastery || {}));
-      savedProfile = profileJson;
       return data;
     }
     throw new Error("Progress kept changing on another device; will try again.");
@@ -208,6 +258,7 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
     return ok;
   }));
   const baseForSnapshot = () => ({ revs: Object.fromEntries(savedRevs), sections: Object.fromEntries(savedSections) });
+  const dirtySnapshot = (data, rev) => ({ data, dirty: true, rev, at: Date.now(), base: baseForSnapshot(), ...(inflight ? { inflight } : {}) });
   async function flush() {
     if (running) return running;
     running = (async () => {
@@ -220,7 +271,7 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
           status.set(latest ? "saving" : "saved");
         } catch (e) {
           if (!latest) latest = item;
-          await writeSnapshot({ data: latest.data, dirty: true, rev: latest.rev, at: Date.now(), base: baseForSnapshot() });
+          await writeSnapshot(dirtySnapshot(latest.data, latest.rev));
           status.set(typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "error");
           console.error("Progress save failed; will retry", e);
           clearTimeout(retryTimer);
@@ -245,13 +296,13 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
       const rev = ++localRev;
       lastLocal = data;
       latest = { data, rev, replace: replace || !!latest?.replace };
-      await writeSnapshot({ data, dirty: true, rev, at: Date.now(), base: baseForSnapshot() });
+      await writeSnapshot(dirtySnapshot(data, rev));
       return flush();
     },
     refreshProgress,
     onMerged(fn) { mergedSubs.add(fn); return () => mergedSubs.delete(fn); },
     async resetProgress() {
-      latest = null; localRev++;
+      latest = null; localRev++; inflight = null;
       if (running) await running.catch(() => {});
       const { error } = await sb.rpc("reset_my_progress");
       if (error) throw error;
