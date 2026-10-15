@@ -252,3 +252,59 @@ describe("a reset", () => {
     expect(fake.tables.progress.find((r) => r.section === "core").data.score).toBe(5);
   });
 });
+
+describe("the connection is lost after the server has already saved", () => {
+  // The save reaches the database and the page closes (or the answer never
+  // comes back) before the device knows. The next visit still has the unsent
+  // copy; it must not count the same play twice.
+  const lostAnswer = (fake) => {
+    const original = fake.rpc.bind(fake);
+    fake.rpc = async (name, args) => { const out = await original(name, args); if (name === "save_progress_v2") throw new Error("connection lost after the server saved it"); return out; };
+    return () => { fake.rpc = original; };
+  };
+
+  it("the score and the counters are not added twice when the device comes back", async () => {
+    const fake = createFakeSupabase();
+    const repo = open(fake);
+    await repo.loadProgress();
+    await repo.saveProgress(state(100));
+    lostAnswer(fake);
+    await repo.saveProgress(state(150));
+    repo.dispose();
+    expect(fake.tables.progress.find((r) => r.section === "core").data.score).toBe(150);   // the server did get it
+    const again = createFakeSupabase({ tables: fake.tables });
+    const reopened = open(again);
+    const loaded = await reopened.loadProgress();
+    expect(loaded.score).toBe(150);
+    expect(loaded.attempted).toBe(15);
+    await reopened.saveProgress(loaded);
+    expect(fake.tables.progress.find((r) => r.section === "core").data.score).toBe(150);
+  });
+
+  it("rounds in the history are not duplicated either", async () => {
+    const fake = createFakeSupabase();
+    const repo = open(fake);
+    await repo.loadProgress();
+    await repo.saveProgress(state(100, { sessionLogs: [{ id: "r1", at: 1 }] }));
+    lostAnswer(fake);
+    await repo.saveProgress(state(150, { sessionLogs: [{ id: "r2", at: 2 }, { id: "r1", at: 1 }] }));
+    repo.dispose();
+    const reopened = open(createFakeSupabase({ tables: fake.tables }));
+    expect((await reopened.loadProgress()).sessionLogs.map((r) => r.id).sort()).toEqual(["r1", "r2"]);
+  });
+
+  it("a copy that really was never sent is still merged with what another device did meanwhile", async () => {
+    const fake = createFakeSupabase();
+    const phone = open(fake);
+    await phone.loadProgress(); await phone.saveProgress(state(100));
+    const tablet = open(fake);
+    await tablet.loadProgress();
+    await tablet.saveProgress(state(150));                                  // saved by the other device
+    fake.rpc = () => new Promise(() => {});                                   // the phone's save never gets out
+    void phone.saveProgress(state(130));
+    await vi.waitFor(() => expect(snapshot()).toMatchObject({ dirty: true, data: { score: 130 } }));
+    phone.dispose();
+    const reopened = open(createFakeSupabase({ tables: fake.tables }));
+    expect((await reopened.loadProgress()).score).toBe(180);                  // 100 + 50 from the tablet + 30 from the phone
+  });
+});
