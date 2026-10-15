@@ -12,10 +12,10 @@
 import { supabase } from "./supabase";
 import { idb } from "./idb";
 import { mergeMasteryRecord, mergeSection } from "./progressMerge";
-import { emptyContent, hasContent } from "./repo/contentPlan";
+import { emptyContent } from "./repo/contentPlan";
 import { createContentStore } from "./repo/contentStore";
 import { fetchAll } from "./repo/fetchAll";
-import { CONTENT_FIELDS, hasServerRows, masteryDiff, profileSummary, splitSections, weekStart } from "./repo/progressShape";
+import { hasServerRows, masteryDiff, profileSummary, splitSections, weekStart } from "./repo/progressShape";
 import { createReportsSync } from "./repo/reportsSync";
 import { createStatusHub } from "./repo/status";
 import { mergeUnsynced } from "./repo/unsyncedMerge";
@@ -263,27 +263,7 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
   };
 }
 
-/* --------------------------------------------------------------- local */
-
-export function createLocalRepo() {
-  const status = createStatusHub();
-  return {
-    mode: "local",
-    status,
-    async loadContent() { const c = await idb.get("local:content"); return hasContent(c) ? c : null; },
-    async saveContent(content) { if (!(await idb.set("local:content", { ...emptyContent(), ...content }))) throw new Error("This browser didn't let the game store its content (storage full or blocked)."); },
-    async loadProgress() { return (await idb.get("local:progress")) || null; },
-    async saveProgress(data) {
-      status.set("saving");
-      const clean = {};
-      for (const [k, v] of Object.entries(data)) if (!CONTENT_FIELDS.has(k)) clean[k] = v;
-      status.set((await idb.set("local:progress", clean)) ? "saved" : "error");
-    },
-    async resetProgress() { await idb.del("local:progress"); },
-    async wipeContent() { await idb.del("local:content"); },
-    dispose() {},
-  };
-}
-
 // Exposed for tests.
+export { createLocalRepo } from "./repo/localRepo";
+
 export const _internals = { splitSections, weekStart, masteryDiff };
