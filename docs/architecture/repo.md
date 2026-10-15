@@ -62,10 +62,12 @@ Two quirks kept as they were (they are behaviour, not part of the split):
 | two devices, merge rules, F01/F02/F03/F07/F08 of the review | `tests/review-audit.test.js` |
 | the pure parts | `tests/repo-parts.test.js` |
 | the two stores | `tests/repo-stores.test.js` |
-| the same against real PostgreSQL | `tests/integration/progress-devices.test.js`, `content-rename.test.js` |
+| operation ids: kept across retries and a closed page, fallback for a database without them | `tests/repo-save-ops.test.js` |
+| the same against real PostgreSQL | `tests/integration/progress-devices.test.js`, `progress-ops.test.js`, `content-rename.test.js` |
+| a real Chromium tab closed during a save (real IndexedDB, repo bundled) | `e2e/specs/saveclose.cjs` (needs `PGURL`) |
+| supabase-js, GoTrue, PostgREST | `tests/realstack/batch.test.js` |
 
-Not tested: a real browser closing a tab mid-request (simulated by a request that never answers
-and by an answer that is lost), `navigator.onLine` in a real browser, storage-full on IndexedDB
+Not tested: `navigator.onLine` in a real browser, storage-full on IndexedDB
 beyond what `repo.test.js` and `review-audit.test.js` cover, and two tabs of one device sharing one
 IndexedDB (each repo here has its own mock store).
 
@@ -75,5 +77,15 @@ A save that the database received but whose answer never came back (connection l
 was added a second time when the device came back: the unsent copy was merged as if the server did
 not have it, so counters (score, attempted, daily totals) went up twice (150 became 200). Fixed in
 `unsyncedMerge.js`: a section the server already holds exactly as the device copy has it is kept as is.
-Limit: if another device saved on top of it before the return, the counters can still be added twice, because a
-save has no idempotency key; closing that needs a change in the save function (a per-save id) and a migration.
+That guard covered only the case where nobody else saved meanwhile. The general case (another device saved on
+top before the resend) is closed by operation ids (migration 0042):
+
+- `src/lib/repo/saveOps.js` (pure): `newOpId`, `lacksOpSupport` (`PGRST202` / `42883`: the database does not know ids),
+  `wasNotApplied` (an error with a database code means rolled back), `baseAfter`.
+- State in `repo.js` (kept together with the rest of the engine): `inflight` = `{op, args}` of the unanswered save, `opsSupported`.
+  `pushProgress` first resolves `inflight` (same args, same id), then diffs and sends a new save with a new id,
+  writing the snapshot (with `inflight`) **before** sending. `loadProgress` resolves the snapshot's `inflight` first and rewrites the
+  snapshot base as if that save had been applied, so `mergeUnsynced` adds nothing twice.
+- Snapshot shape: `{data, dirty, rev, at, base, inflight?}`; `inflight` is absent when nothing is unanswered.
+- Behaviour change: while a save has no answer, the 15-second retry is that same save; the newest state follows it.
+  Limits and compatibility: `docs/migrations/review-0037-0042.md`, "0042".

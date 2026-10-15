@@ -48,10 +48,11 @@ clock), and cleanup.
 | `content-rename.test.js` | a rename keeps mastery, pools, mix-ups, the library entry and the view membership; an offline device with the old name; edits keep the id and the player's own wording; concurrent admins are refused; a removed word comes back with its library entry |
 | `progress-devices.test.js` | two devices save, the later one merges; nothing lost; revisions refuse stale writes; restore replaces; reset touches only the owner |
 | `sharing.test.js` | share to a friend, by link, through the catalog: copies are independent, own words stay private, non-friends and strangers are refused, links expire and can be taken back |
+| `progress-ops.test.js` | a save with an operation id is applied once (two devices, a lost answer, a closed page, concurrent deliveries, other players, a refused write records nothing, old clients) |
 | `isolation.test.js` | every table has RLS; anon reads nothing; no player reads or writes another's rows through tables or functions |
 | `admin-denied.test.js` | every `admin_*` and admin-checking function refuses players and visitors; no way to become admin; the admin's own actions work, are audited, and delete a player who used the library |
 
-## Defects these tests found (fixed in migrations 0037 and 0038; later decisions in 0039 and 0040: `docs/migrations/review-0037-0040.md`)
+## Defects these tests found (fixed in migrations 0037 and 0038; later decisions in 0039 and 0040: `docs/migrations/review-0037-0042.md`)
 
 - A renamed word lost its place in players' libraries and views (the sync made
   a new word and deleted the old one). Fixed by `0037_rename_keeps_sense.sql`.
@@ -97,3 +98,26 @@ To close the gap, run the same suite against a Supabase local stack
 (`supabase start`) by pointing `PGURL` at its database; the harness still
 simulates PostgREST there, so a final check through the real API
 (`supabase-js` with real sign-in) remains manual.
+
+## Real stack (GoTrue + PostgREST + supabase-js)
+
+`tests/realstack/` runs the changes of 0039-0042 and the save path through Supabase's own images, which the
+harness above does not do: players sign in through **GoTrue** (users made by `register_player`, as the app does),
+**PostgREST** turns the JWT into a role and answers with its own status and error codes, the database is
+**Supabase's Postgres 15.8** with its own roles and auth schema, and the client is **supabase-js**.
+
+```bash
+tests/realstack/up.sh                      # docker: supabase/postgres, gotrue, postgrest from Docker Hub (db 54331)
+node tests/realstack/proxy.cjs &           # the gateway on 54330 (/auth/v1, /rest/v1)
+REALSTACK_URL=http://127.0.0.1:54330 REALSTACK_PGURL=postgres://supabase_admin:postgres@127.0.0.1:54331/postgres \
+REALSTACK_JWT_SECRET=super-secret-jwt-token-with-at-least-32-characters-long \
+  npx vitest run tests/realstack --no-file-parallelism
+```
+
+Without the variables the tests are skipped. The last test rolls 0037-0042 back and forward on that database.
+Not in the stack: Realtime, Storage, Studio, the Vercel functions, the app's screens. The migrations need two things from
+Realtime and Storage (`realtime.messages`, the `buckets` columns): `up.sh` creates them by hand. This is still not a
+real project: see `docs/migrations/review-0037-0042.md`, "Not verified".
+
+The browser spec `e2e/specs/saveclose.cjs` (real Chromium tab closed during a save, the repo bundled for the browser, real
+IndexedDB, PostgreSQL behind the harness) needs `PGURL` and is skipped without it; CI runs it in the `database` job.

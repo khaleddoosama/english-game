@@ -125,7 +125,7 @@ Rule-by-rule list: `docs/library-unit-test-matrix.md`.
 
 ## Decisions taken (owner, this branch) and what is still open
 
-Taken, implemented and tested (details and evidence: `docs/migrations/review-0037-0040.md`,
+Taken, implemented and tested (details and evidence: `docs/migrations/review-0037-0042.md`,
 `docs/work-tracking/my-library.md`):
 
 1. **Offers after a friendship ends** leave the inbox and the badge and do not return with a new friendship;

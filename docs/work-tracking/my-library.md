@@ -94,41 +94,64 @@ Owner's decisions: fix loop (a); split `repo.js` gradually; four behaviour decis
 | Decision D (one new word) | "Test (red)…", "Engine: a round whose only candidate is the word just introduced asks it once…" | test, fix |
 | Decision B (not-mine view) | "Tests: removing a view that is not mine…" | tests only (behaviour already right) |
 | Decision A (offers after the friendship) | "Test (red)…", "Migration 0040…" | tests, migration, local mirror |
-| Migration review and rollback | "Upgrade check for migrations 0037-0040…", `docs/migrations/review-0037-0040.md`, `supabase/rollback/0037_0040_down.sql` | docs, scripts |
+| Migration review and rollback | "Upgrade check for migrations 0037-0040…", `docs/migrations/review-0037-0042.md`, `supabase/rollback/0037_0042_down.sql` | docs, scripts |
 
-### Verified (branch head)
+### Verified (step 3, kept for history)
+
+Superseded by step 4 below (tested commit `d04e2e9`).
+
+## Step 4 (fourth conversation): idempotent saves, rename step closed, browser tests, upgrade check in CI, real stack
+
+| Request | What was done | Evidence |
+| --- | --- | --- |
+| 1 Save applied once | Red tests first (`tests/integration/progress-ops.test.js`: 230 instead of 180), migration 0042 (`progress_ops`, `p_op`), client keeps the id until answered and across a closed page, fallback for a database without ids, fake database extended; `tests/repo-save-ops.test.js` | integration 92 pass; unit 730 pass; real stack 11 pass; real-tab spec fails on the old repo (mutation) |
+| 2 `apply_item_renames` | Privileges inspected: executable by `authenticated`, an admin could bypass 0039. Red test, migration 0041 (revoke). Direct tests as admin, player, visitor, and through PostgREST | `content-rename.test.js`, `tests/realstack` |
+| 3 Browser tests | `e2e/specs/libsolo.cjs` (one new word: introduce, one valid question, saved, not Mastered, same after closing the tab), `wordrename.cjs` (refusal, nothing changed, control rename), `saveclose.cjs` (real tab close, real IndexedDB, repo bundled for the browser, real PostgreSQL) | `npm run e2e`; what each proves and does not: the specs' header comments and the review |
+| 4 Friendship removed then restored before the inbox | Server test (already right: `friend_remove` ends the offers) and a **local mirror fix**: an offer carries a friendship stamp; one made before the stamp stays valid while friends (found by `libshare.cjs`) | `tests/library.test.js`, `tests/integration/sharing.test.js` |
+| 5 Upgrade check in CI | `check-upgrade.sh` runs in the `database` job; it now covers 0037-0042 and compares the **whole schema** (functions with source hash and execute privileges, tables with RLS and privileges, columns, constraints, indexes, policies, triggers) before vs after rollback, and after rolling forward again. Rollback file is `0037_0042_down.sql`. Read-only `preflight-compare.sh` for a real database | local run passes; a rollback missing one grant is caught; the CI result is in the final report |
+| 6 Real stack | Supabase's Postgres 15.8 + GoTrue + PostgREST (Docker Hub images; the CLI could not pull its own), supabase-js, sign-in through GoTrue. `tests/realstack/` | 11 pass; real PostgREST confirmed `PGRST202` for an unknown argument and 409 for `23505` |
+
+Found on the way: the migrations need `realtime.messages` and storage bucket columns that the Realtime and
+Storage services create (stood in by hand in `tests/realstack/up.sh`); in local mode a successful word rename
+does not move the word inside the player's views (online it does, 0037) - a known gap of the local mirror, not changed;
+`nextReviewAt` 0 becomes null when progress is loaded (same meaning).
+
+### Verified (tested commit `d04e2e9`)
 
 | Check | Result |
 | --- | --- |
 | `npm run lint` | clean |
-| `npx vitest run` | 63 files passed, 9 skipped; 715 tests passed, 84 skipped (need `PGURL`) |
-| `npx vite build` + `npm run e2e` (all) | 14 of 14 browser specs, on a rebuilt `dist/` |
-| `supabase/ci/run-tests.sh` (all 26 SQL test files, migrations 0001-0040) | all ok |
-| `supabase/ci/run-integration.sh` | 75 passed |
-| `library-contract`, `library-differential` with `PGURL` | 9 passed |
-| `supabase/ci/check-upgrade.sh` (0036 + made-up data -> 0040, checks, rollback) | passed |
-| previous app (`e4f9c97`) database tests against the migrated database | 47 passed; its SQL tests: 1 differs on purpose (`view_shares.sql`) |
+| `npx vitest run` | 64 files passed, 11 skipped; 730 tests passed, 112 skipped |
+| `supabase/ci/run-tests.sh` (26 SQL test files) | all ok |
+| `supabase/ci/run-integration.sh` | 92 passed |
+| `supabase/ci/check-upgrade.sh` | passed (data checks, whole-schema rollback identity, forward again) |
+| `npx vite build` + `npm run e2e` with `PGURL` | all specs ok (see the final report for the count) |
+| `tests/realstack` on the local real stack | 11 passed |
 
 ### Not tested
 
-- Any real Supabase project, production data or volumes, the CI job on GitHub (the new `check-upgrade.sh` is not in CI).
-- In a real browser: a view with one new word (covered by unit tests and the engine only); the refused rename (the app's
-  guard shows a toast, covered only by the pure rule's tests); closing a real tab during a save.
-- `apply_item_renames` called alone; renames made before 0037 (not repaired).
-- The progress engine inside `repo.js` was not split (reason in `docs/architecture/repo.md`).
+- Any real Supabase project or production data (none was touched). `preflight-compare.sh` was never run on one.
+- The app's screens against the real stack (only the repo and the SQL functions were).
+- Realtime and Storage; the Vercel routes.
+- Two tabs of one profile saving at once; an operation older than 90 days.
+- The progress engine inside `repo.js` is still one piece (`docs/architecture/repo.md`).
 
-### Migrations 0037-0040: nothing applied anywhere
+### Migrations 0037-0042: nothing applied anywhere
 
-Read `docs/migrations/review-0037-0040.md` first. Order, effects, compatibility, rollback and what was not verified are there.
+Read `docs/migrations/review-0037-0042.md` first. Order, effects, compatibility (old and new clients), rollback, the
+comparison to run on the real database first, and what was not verified are there.
+Deferred on purpose: the repair of old renamed words (`docs/migrations/diagnosis-renamed-words.md`, diagnosis and plan
+only), the two remaining module cycles, and new modules.
 
 ### To continue
 
 1. Read `CLAUDE.md`, `docs/architecture/modules.md`, `docs/architecture/repo.md`, `docs/modules/my-library.md`, this file.
 2. `git status` clean, `npm run lint && npx vitest run`. Database tests need any PostgreSQL 15+:
    `PGADMIN=<url> supabase/ci/run-integration.sh`, `PGURL=<empty db> supabase/ci/run-tests.sh`, `PGADMIN=<url> supabase/ci/check-upgrade.sh`.
-3. Open items, in the owner's hands: review and apply (or not) the four migrations; the loops `engine/media/lib` and `social/live`;
-   the repair of old renames; a per-save id to close the lost-answer limit; merging two words (a feature with a preview);
-   the next modules in the plan (question reports, content administration…).
+   The real stack: `tests/realstack/up.sh` then the commands in `docs/integration-tests.md`.
+3. Open items, in the owner's hands: review and apply (or not) the six migrations, after running `preflight-compare.sh`
+   on the real database; the module cycles `engine/media/lib` and `social/live`; the repair of old renames; merging two
+   words (a feature with a preview); the next modules in the plan (question reports, content administration…).
 
 ## Not done / left on purpose
 

@@ -128,7 +128,19 @@ Order is by how self-contained the cluster is and how well it is covered.
 | 6 | Progress state | Everything reads it; do after 1 | after `repo/progress` is split |
 | 7 | Session/practice flow | Largest, most coupled | last, one answer type at a time |
 
-Known debts the guards list (outside My Library):
+### File import cycles and module dependency cycles are different things
+
+- A **file import cycle** is `a.js` importing `b.js` which imports `a.js` (through any chain). It can break
+  loading order and makes the files impossible to move apart. `tests/architecture.test.js` finds them
+  over the real imports. **Today: none.** (The only one, `engine/ai` <-> `engine/questions`, was removed by moving
+  `normalizeAnswerText` to `engine/text.js`.)
+- A **module dependency cycle** is about folders: module A has a file that imports a file of module B, and B has a
+  file that imports a file of A, with no file loop at all. Nothing fails at run time, but A and B can no longer be
+  understood or changed one without the other. **Today: two**, listed below. My Library is in none of them.
+
+So "0 file cycles" does not mean "no cycles between modules": the second kind is what the remaining work is about.
+
+Known debts the guards list (outside My Library; module cycles, not file cycles):
 
 - ~~loop `engine/ai` <-> `engine/questions`~~ fixed: `normalizeAnswerText` moved to `engine/text.js`
 - loop `engine` <-> `features/media` <-> `lib` (the engine imports the media feature, and `lib` imports the engine)
@@ -136,5 +148,5 @@ Known debts the guards list (outside My Library):
 
 ## What was not verified
 
-- Browser behaviour against the real Supabase stack; only local mode (specs) and a throwaway PostgreSQL (integration) were run.
+- A real Supabase project. Local mode (browser specs), a throwaway PostgreSQL (integration) and a local stack of Supabase's own images (GoTrue, PostgREST, Postgres 15; `tests/realstack`) were run; the app's screens were not run against that stack.
 - Bundle behaviour in production beyond `vite build` chunk sizes.

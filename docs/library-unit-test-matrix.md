@@ -70,10 +70,10 @@ Note: there are no review dates (`nextReviewAt` is always 0). Words come back by
 | View names, nesting (4 levels), moves, 200 views, per-player libraries | `library`, `library-tree`, `library-local-views` (existing) |
 | 200 words per call; 5000 words in a library; removing one makes room | `library-content-input` › how many words a library holds |
 | A word of own: 1 to 120 characters after trimming, nothing added when refused | `library-regressions` › a word of my own |
-| An offer ends with the friendship, is not brought back, the accept still checks it, copies stay | `supabase/tests/view_shares_friendship.sql`, `tests/integration/sharing.test.js`, `tests/library.test.js` |
+| An offer ends with the friendship, is not brought back (also when the friendship returns before the inbox is opened), the accept still checks it, copies stay | `supabase/tests/view_shares_friendship.sql`, `tests/integration/sharing.test.js`, `tests/library.test.js`, `tests/realstack/batch.test.js` |
 | Removing a view that is not mine: same quiet answer as for one that does not exist, nothing changes | `tests/integration/isolation.test.js`, `tests/library-remove-errors.test.js` |
-| A rename into a name another word has is refused and changes nothing | `tests/word-rename.test.js`, `supabase/tests/rename_conflict.sql`, `tests/integration/content-rename.test.js` |
-| A view with one new word is introduced and asked once | `tests/round-single-new-word.test.js` |
+| A rename into a name another word has is refused and changes nothing | `tests/word-rename.test.js`, `supabase/tests/rename_conflict.sql`, `tests/integration/content-rename.test.js`, `e2e/specs/wordrename.cjs` (browser) |
+| A view with one new word is introduced and asked once, saved without early mastery, kept after the tab is closed | `tests/round-single-new-word.test.js`, `e2e/specs/libsolo.cjs` |
 | The local mirror and the SQL functions agree | `library-contract`, `library-differential` (need `PGURL`) |
 
 ## Pasted lists, content and import
