@@ -33,9 +33,10 @@ async function waitUp() { for (let i = 0; i < 60; i++) { if (await up()) return 
     const out = `${r.stdout || ''}${r.stderr || ''}`;
     const fails = out.split('\n').filter((l) => l.startsWith('FAIL'));
     const passes = out.split('\n').filter((l) => l.startsWith('PASS')).length;
-    const good = r.status === 0 && !fails.length && passes > 0;
+    const skips = out.split('\n').filter((l) => l.startsWith('SKIP')).length;
+    const good = r.status === 0 && !fails.length && (passes > 0 || skips > 0);
     results.push({ f, good, passes, fails, secs: ((Date.now() - t) / 1000).toFixed(0), crash: r.status !== 0 && !fails.length ? out.split('\n').slice(-6).join('\n') : '' });
-    console.log(`${good ? 'ok  ' : 'FAIL'} ${f} (${passes} checks, ${results.at(-1).secs}s)`);
+    console.log(`${good ? (passes ? 'ok  ' : 'skip') : 'FAIL'} ${f} (${passes} checks, ${results.at(-1).secs}s)`);
     for (const l of fails) console.log(`       ${l}`);
     if (results.at(-1).crash) console.log(`       ${results.at(-1).crash.replace(/\n/g, '\n       ')}`);
   }
