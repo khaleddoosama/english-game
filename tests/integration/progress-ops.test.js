@@ -81,7 +81,7 @@ describe.skipIf(!PGURL)("saving the same progress twice", () => {
   });
 
   describe("at the database", () => {
-    const call = (user, score, op, expected = null) => user.client.rpc("save_progress_v2", { p_sections: { core: { score, attempted: score / 10 } }, p_expected: expected, p_mastery: {}, p_mastery_removes: [], p_profile: null, ...(op ? { p_op: op } : {}) });
+    const call = (user, score, op, expected = null) => user.client.rpc("save_progress_v2", { p_sections: { core: { score, attempted: score / 10 } }, p_expected: expected, p_mastery: {}, p_mastery_removes: [], p_profile: { week_start: "2026-03-02" }, ...(op ? { p_op: op } : {}) });
     const uuid = () => crypto.randomUUID();
     let dan, eve;
     beforeAll(async () => { dan = await signUp(`${tag}dan`); eve = await signUp(`${tag}eve`); });
