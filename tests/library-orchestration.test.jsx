@@ -225,7 +225,8 @@ describe("LibraryRoutes", () => {
     globalThis.IS_REACT_ACT_ENVIRONMENT = true;
     host = document.createElement("div"); document.body.append(host); root = createRoot(host);
     await act(async () => root.render(<LibraryRoutes fallback={<p>skeleton</p>} route={{ token: "tok" }} words={[]} grammar={[]} levels={[]} {...props} />));
-    await settle(); await settle();
+    for (let i = 0; i < 40 && host.textContent.includes("skeleton"); i++) await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
+    await settle();
     return host.textContent;
   }
   afterEach(async () => { await act(async () => root?.unmount()); host?.remove(); });
@@ -264,6 +265,6 @@ describe("LibraryRoutes", () => {
 
 describe("the public surface of the module", () => {
   it("is small and listed", () => {
-    expect(Object.keys(publicApi).sort()).toEqual(["LibraryRoutes", "MyViewsHome", "keepInLibrary", "scopeIsEmpty", "scopeOfView", "useLibrary", "useLibraryHome", "useMyViews", "useViewScope"]);
+    expect(Object.keys(publicApi).sort()).toEqual(["LibraryRoutes", "MyViewsHome", "homeLimits", "keepInLibrary", "scopeIsEmpty", "scopeOfView", "useLibrary", "useLibraryHome", "useMyViews", "useViewScope"]);
   });
 });

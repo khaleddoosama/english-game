@@ -21,6 +21,7 @@ const importsOf = (file) => {
 // "../features/library/scope" -> "features/library/scope" (no extension), relative to src
 const target = (file, spec) => relative(SRC, resolve(dirname(file), spec)).replace(/\.(jsx?|css)$/, "");
 const inLibrary = (rel) => rel === "features/library" || rel.startsWith("features/library/");
+// "../library" resolves to the folder: its index.js
 
 describe("who imports the module", () => {
   const outside = walk(SRC).filter((f) => !inLibrary(relative(SRC, f)));
@@ -30,14 +31,10 @@ describe("who imports the module", () => {
     if (inLibrary(t)) (found[relative(SRC, f)] ||= []).push(t);
   }
 
-  it("only the app wiring and Live challenges, and only these files", () => {
-    for (const list of Object.values(found)) list.sort();
+  it("only the app shell and Live challenges, and only through the module's index", () => {
     expect(found).toEqual({
-      "app/WordHunter.jsx": [
-        "features/library/CatalogPage", "features/library/JoinPage", "features/library/LibraryPage",
-        "features/library/components/MyViewsHome", "features/library/scope", "features/library/useLibrary",
-      ],
-      "features/live/LiveChallenge.jsx": ["features/library/useViewScope"],
+      "app/WordHunter.jsx": ["features/library"],
+      "features/live/LiveChallenge.jsx": ["features/library"],
     });
   });
 });

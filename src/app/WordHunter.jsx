@@ -1,5 +1,5 @@
 import { cancelAiTasks } from "../lib/aiOperations.js";
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Award, BarChart3, LogOut, Settings as SettingsIcon, Wrench, CheckCircle2, Flag, Flame, HelpCircle, Lock, Play, Search, Target, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
 import { V2 } from "../engine/v2";
 import { PronunciationModal, imageLinkOk } from "../features/media/media";
@@ -15,8 +15,7 @@ import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsi
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
 import { getFriendsApi } from "../features/social/friendsApi";
-import { useLibrary } from "../features/library/useLibrary";
-import { scopeFromContents, scopeIsEmpty } from "../features/library/scope";
+import { LibraryRoutes, MyViewsHome, homeLimits, keepInLibrary, scopeIsEmpty, scopeOfView, useLibrary, useLibraryHome } from "../features/library";
 import { useSocialCounts } from "../features/social/useSocialCounts";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
 import { importModeError, inspectImport, wordsCsv } from "../features/data/transfer";
@@ -48,10 +47,6 @@ const LiveChallenge = lazy(() => import("../features/live/LiveChallenge").then((
 const Leaderboard = lazy(() => import("../features/social/Leaderboard"));
 const ProfilePage = lazy(() => import("../features/social/ProfilePage"));
 const FriendsPage = lazy(() => import("../features/social/FriendsPage"));
-const LibraryPage = lazy(() => import("../features/library/LibraryPage"));
-const JoinPage = lazy(() => import("../features/library/JoinPage"));
-const MyViewsHome = lazy(() => import("../features/library/components/MyViewsHome"));
-const CatalogPage = lazy(() => import("../features/library/CatalogPage"));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage"));
 const ImportExport = lazy(() => import("../features/data/ImportExport"));
 const StudyDashboard = lazy(() => import("../features/stats/StudyDashboard"));
@@ -190,33 +185,11 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const progressExtrasRef = useRef({});
   const contentNoteRef = useRef("");
   function liveContent() { return { words: WORDS, grammar: GRAMMAR, challenges: CHALLENGES, combos: customCombos, stories: customStories, note: contentNoteRef.current }; }
-  const [libraryInbox, setLibraryInbox] = useState(0);
-  const refreshLibraryInbox = useCallback(() => {
-    if (library.status !== "ready") return;
-    library.api.inbox().then((list) => setLibraryInbox(list.length), () => {});
-  }, [library]);
-  useEffect(() => { refreshLibraryInbox(); }, [refreshLibraryInbox, screen]);
   // Home shows one view at a time; My views needs the library, so without it Gateway shows.
   // A player (not the admin) sees only the words and rules in their own library on Home;
-  // the whole course is the admin's. The library's keys are read again whenever Home opens.
-  const [libraryKeys, setLibraryKeys] = useState(null);
-  useEffect(() => {
-    if (library.status !== "ready" || screen !== "levels") return;
-    let alive = true;
-    library.api.libraryList().then((l) => alive && setLibraryKeys({ words: new Set(l.words.map((w) => library.ids.keyOfSense(w.id)).filter(Boolean)), rules: new Set(l.rules.map((r) => library.ids.keyOfRule(r.id)).filter(Boolean)) }), () => {});
-    return () => { alive = false; };
-  }, [library, screen]);
-  // The player's biggest views (Gateway, Unit …): each is a tab on Home, in place of "My views".
-  const [libraryRoots, setLibraryRoots] = useState(null);
-  useEffect(() => {
-    if (library.status !== "ready" || screen !== "levels") return;
-    let alive = true;
-    library.api.tree().then((rows) => alive && setLibraryRoots(rows.filter((v) => !v.parent).sort((a, b) => (a.position ?? 0) - (b.position ?? 0)).map((v) => ({ id: v.id, name: v.name }))), () => {});
-    return () => { alive = false; };
-  }, [library, screen, libraryInbox]);
-  const limitHome = library.status === "ready" && !isAdmin && !!libraryKeys;
-  // A player's library is still being read: don't show the whole course for a moment before cutting it down.
-  const waitingForLibrary = library.status === "ready" && !isAdmin && !libraryKeys;
+  // the whole course is the admin's.
+  const { inbox: libraryInbox, refreshInbox: refreshLibraryInbox, keys: libraryKeys, roots: libraryRoots } = useLibraryHome({ library, screen });
+  const { limit: limitHome, waiting: waitingForLibrary } = homeLimits({ status: library.status, isAdmin, keys: libraryKeys });
   const homeLevels = limitHome ? limitLessons(LEVELS, libraryKeys) : LEVELS;
   function startItemsPractice(title, items) {
     const scope = itemsScope(items);
@@ -633,7 +606,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     setAskAiResult(previous=>({...previous,alreadyInCollection:true}));
     setToast({kind:"import",text:`${entry.word} added to your collection`});
     // Keep it in my library too (best effort), so it can go in views and be shared.
-    if(library.status==="ready")library.api.createWord(entry).then(()=>library.refreshIds(),()=>{});
+    keepInLibrary(library,entry);
   }
 
   // Speed Round — a timed review of mastered words. It plays in the normal
@@ -1061,8 +1034,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   async function startViewPractice(viewId, deep = true, name = "My view") {
     if (library.status !== "ready") return;
     try {
-      const rows = await library.api.contents(viewId, deep);
-      const scope = scopeFromContents(rows, { resolveKey: library.ids.keyOfSense, resolveRule: library.ids.keyOfRule });
+      const scope = await scopeOfView(library, viewId, deep);
       if (scopeIsEmpty(scope)) { setToast({ text: "This view is empty. Add some words first." }); return; }
       setCurrentLevelIndex(null);
       startPractice(name, null, { title: name, scope }, (w) => scope.words.has(w.word));
@@ -2138,13 +2110,11 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} isAdmin={isAdmin} /></Suspense>}
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} friendsApi={friendsApi} hiddenForPlayers={isAdmin && !app.leaderboard} /></Suspense>}
         {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage social={social} libraryOn={library.status === "ready"} libraryInbox={libraryInbox} onSignOut={onSignOut ? logOut : null} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
-        {screen === "join" && (library.status === "ready"
-          ? <Suspense fallback={<ScreenSkeleton />}><JoinPage api={library.api} token={route.token} onTaken={(out, open) => { refreshLibraryInbox(); if (open) { setSettings((prev) => ({ ...prev, levelView: out?.view ? `view:${out.view}` : "lesson" })); navigate("/"); } }} /></Suspense>
-          : <section className="ui-page"><p className="ui-muted">{library.status === "loading" ? "Loading…" : "Shared views aren’t available yet."}</p></section>)}
-        {screen === "catalog" && (library.status === "ready"
-          ? <Suspense fallback={<ScreenSkeleton />}><CatalogPage api={library.api} isAdmin={isAdmin} onTaken={refreshLibraryInbox} /></Suspense>
-          : <section className="ui-page"><p className="ui-muted">{library.status === "loading" ? "Loading…" : "The catalog isn’t available yet."}</p></section>)}
-        {screen === "library" && library.status === "ready" && <Suspense fallback={<ScreenSkeleton />}><LibraryPage isAdmin={isAdmin} api={library.api} ids={library.ids} words={WORDS} grammar={GRAMMAR} levels={courseLevelGroups().levels} friendsApi={friendsApi} onPractice={startViewPractice} onInboxChanged={refreshLibraryInbox} onAskWord={openAskAi} onRefreshIds={library.refreshIds} /></Suspense>}
+        {(screen === "join" || screen === "catalog" || screen === "library") && (
+          <LibraryRoutes screen={screen} library={library} route={route} fallback={<ScreenSkeleton />} isAdmin={isAdmin} words={WORDS} grammar={GRAMMAR}
+            levels={screen === "library" ? courseLevelGroups().levels : []} friendsApi={friendsApi} onPractice={startViewPractice} onAskWord={openAskAi} onInboxChanged={refreshLibraryInbox}
+            onJoined={(out, open) => { refreshLibraryInbox(); if (open) { setSettings((prev) => ({ ...prev, levelView: out?.view ? `view:${out.view}` : "lesson" })); navigate("/"); } }} />
+        )}
         {screen === "friends" && <Suspense fallback={<ScreenSkeleton />}><FriendsPage api={friendsApi} onChanged={refreshSocial} local={friendsApi.mode === "local"} /></Suspense>}
 
         {screen === "speedResults" && <SpeedResults score={speedScore} correct={speedCorrect} answered={speedAnswered} bestCombo={speedBestCombo} best={bestSpeedScore} onAgain={startSpeedRound} onBack={backToLevels} />}

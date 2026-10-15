@@ -6,6 +6,7 @@ import { lazy } from "react";
 export { useLibrary } from "./useLibrary";                    // the library for this player: { status, api, ids, refreshIds }
 export { useLibraryHome } from "./useLibraryHome";            // offers, keys and biggest views, for Home and Profile
 export { useMyViews, useViewScope } from "./useViewScope";    // my views, and what one holds, for Live challenges
+export { homeLimits } from "./libraryHome";                   // is Home cut down to the player's library, or waiting for it
 export { scopeOfView } from "./viewRound";                    // a view as the scope of a practice round
 export { scopeIsEmpty } from "./scope";
 export { keepInLibrary } from "./ownWords";                   // a new word also goes into the library
