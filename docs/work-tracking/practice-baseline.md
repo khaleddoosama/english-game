@@ -4,13 +4,41 @@ Date: 2026-10-16
 
 Branch: `test/practice-selection-baseline`
 
+Final code/test commit: `7104306dded8f2dd732325544383a9fa87b05a64`
+(`test(practice): characterize question selection before refactor`). Local only.
+
 Base: `cb2fb571caf518922c3fdb2a0ab727a350b8ddc9` from
 `ccr-29322d12-v8wkmd`. This does not incorporate the divergent `master`
 commit `2a7da81`. The Library branch was not changed.
 
+Implementation guide: [Practice question selection](../architecture/modules.md#practice-question-selection-current-code).
+It lives in the existing architecture document; this file remains the execution
+and handover record, not a second copy of the API guide.
+
+## Completed and remaining
+
+| Status | Work |
+| --- | --- |
+| Complete | Compared branch histories; isolated this work from Library at the base above. |
+| Complete at `7104306` | Ran the existing baseline; added nine characterization cases; ran the relevant suite and focused lint. |
+| Complete in this documentation revision | Documented current responsibilities, files, API, request flow, state, change entry points, tests and boundaries in the existing architecture guide. |
+| Proposed, NOT started | Extract the word-question selection loop inside `v2.js`, keeping generation, grammar insertion, RNG usage and session shapes unchanged. |
+| Remaining for that refactor | Perform the limited extraction, rerun the same behavior checks, and record its own commit/results. No new layers or UI changes are proposed. |
+| Separate review | Decide whether PRACTICE-OBS-01 is a defect or an intentional tradeoff; no behavior fix is authorized by the characterization work. |
+
+No confirmed new bug was established in this slice. The observation below is
+kept separate from the proposed refactor. Neither has been implemented.
+
+To identify the final documentation commit for this record without a
+self-referential commit hash, run:
+
+```sh
+git log -1 --format='%H %s' -- docs/work-tracking/practice-baseline.md
+```
+
 ## Scope
 
-Tests only, plus this record. No application code, data shapes, dependencies,
+Tests and documentation only. No application code, data shapes, dependencies,
 learning rules, UI wiring, migrations, or production access changed.
 The proposed extraction of the word-question selection loop has NOT begun.
 
@@ -59,6 +87,11 @@ Result: **9 files, 106 tests passed**, exit 0 (1.25 seconds).
 After adding tests, the same command with
 `tests/practice-selection.test.js` appended passed: **10 files, 115 tests**,
 exit 0 (1.14 seconds). The new file also passed alone: **9 tests**, exit 0.
+
+These are the actual results from the characterization stage recorded at
+`7104306`, not a new test run during documentation. The documentation-only
+follow-up checks relative links, names against the source, and the Git diff;
+it does not rerun unchanged application tests.
 
 `./node_modules/.bin/eslint tests/practice-selection.test.js` passed, exit 0.
 `git diff --check` passed. Application source, `package.json`, and
