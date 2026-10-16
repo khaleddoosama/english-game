@@ -10,10 +10,10 @@ import { SessionView } from "../features/session/SessionView";
 import { Splash } from "../features/auth/LoginPage";
 import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTERY_STAGE_RANK, PRODUCTION_MODES, RECENT_RESULT_LIMIT, WORDS, confusionCount, getMasteryStage, getStarsForAccuracy, isWordKey, courseLevelGroups, levelItemKey, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setLastChallengeId, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildEntryQuestion, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, entryFileMeta, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, uniqueStrings, v2SessionFromEntries } from "../engine/questions";
-import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, locateReportSource, reviewReportedQuestion, spellingDistanceInfo } from "../engine/ai";
+import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, spellingDistanceInfo } from "../engine/ai";
 import { normalizeAnswerText } from "../engine/text";
 import { renameProblem } from "../engine/wordIdentity";
-import { buildReport, followRenames, mapReport, quarantineOf, withReport, withoutReport } from "../features/reports/reportRules";
+import { useQuestionReports } from "../features/reports";
 import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
@@ -149,8 +149,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [activeSession, setActiveSession] = useState(null);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   useEffect(() => { setRuntimeDisabledModes(new Set(settings.enablePairModes ? [] : ["twopeople", "selecttwo"])); }, [settings.enablePairModes]);
-  const [questionReports,setQuestionReports]=useState([]);
-  const reportQuarantine = useMemo(() => quarantineOf(questionReports), [questionReports]);
   const [solvedStories,setSolvedStories]=useState([]);
   const [sessionLogs,setSessionLogs]=useState([]);
   const [dailyProgress,setDailyProgress]=useState(null);
@@ -386,30 +384,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       setScreen("finalReport");
     }
   }
-  // A report carries everything needed to judge it later without the
-  function reportSessionQuestion(q, session, reason, learnerAnswer, details, prior = null) {
-    markSentencesSeen(q);
-    const report=buildReport(q,session,reason,learnerAnswer,details,prior,profile);
-    const reports=withReport(progressExtrasRef.current.reports,report);
-    progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);
-    return report;
-  }
-  // AI triage for one report. Stores the review on the report (so Admin sees
-  // the verdict and any drafted fix) and returns it for the learner's view.
-  async function reviewQuestionReport(report, options = {}){
-    const review=await reviewReportedQuestion(report,locateReportSource(liveContent(),report), options);
-    const reports=mapReport(progressExtrasRef.current.reports,report,item=>({...item,aiReview:review}));
-    progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);
-    return review;
-  }
-  function deleteQuestionReport(report){
-    const reports=withoutReport(progressExtrasRef.current.reports,report);
-    progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);
-  }
-  function resolveQuestionReport(report){
-    const reports=mapReport(progressExtrasRef.current.reports,report,item=>({...item,resolvedAt:Date.now()}));
-    progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);setActiveSession(session=>session?{...session}:session);
-  }
   // Renaming a word: stories, combos, challenges and other words that
   // point at it follow, and every player's progress moves with it (sent
   // with the next content save; see migrateRenamedProgress).
@@ -422,18 +396,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     mergeCustomData(linked.words,customGrammar,linked.challenges,LEVEL_ORDER);
     setCustomWords(linked.words);setCustomCombos(linked.combos);setCustomStories(linked.stories);setCustomChallenges(linked.challenges);
     migrateRenamedProgress(renames);setDataVersion(v=>v+1);
-  }
-  function reopenQuestionReport(report){
-    const reports=mapReport(progressExtrasRef.current.reports,report,item=>({...item,resolvedAt:null}));
-    progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);
-  }
-  function retireReportedVariant(report){
-    const wordObj=V2.findWord(WORDS,report.targetWords?.[0]);
-    if(!wordObj||!report.poolType||!report.poolItemId){resolveQuestionReport(report);return;}
-    const snapshot=poolsRef.current, wordPools=getWordPools(snapshot,wordObj);
-    const items=wordPools[report.poolType].map(item=>item.id===report.poolItemId?{...item,flagged:true,lockedUntil:Date.now()+100*365*86400000}:item);
-    const nextWordPools={...wordPools,[report.poolType]:items},nextPools={...snapshot,[wordObj.word]:nextWordPools};
-    poolsRef.current=nextPools;setPools(nextPools);triggerGeneration([{word:wordObj.word,poolType:report.poolType}],nextPools);resolveQuestionReport(report);
   }
   function updateWordFields(wordName, patch) {
     const next = customWords.map((w) => (V2.norm(w.word) === V2.norm(wordName) ? { ...w, ...patch } : w));
@@ -458,8 +420,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       const p=moveKeys(poolsRef.current);poolsRef.current=p;setPools(p);
       const c={};for(const [key,val] of Object.entries(confusionsRef.current||{})){const [a,b]=key.split("|");c[`${wmap.get(a)||a}|${wmap.get(b)||b}`]=val;}
       confusionsRef.current=c;setConfusions(c);
-      const reports=followRenames(progressExtrasRef.current.reports,wmap);
-      progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);
+      questionReportsApi.followRename(wmap);
     }
     if(renames.categories.length){
       const cmap=new Map(renames.categories.map(r=>[`cat-${r.from}`,`cat-${r.to}`]));
@@ -624,6 +585,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const seenBadgesRef = useRef(null);
   const pendingGenRef = useRef(new Set());
   const poolsRef = useRef(pools);
+  const questionReportsApi = useQuestionReports({ progressExtrasRef, profile, liveContent, markSentencesSeen, touchSession: () => setActiveSession((session) => (session ? { ...session } : session)), poolsRef, setPools, triggerGeneration });
+  const { reports: questionReports, quarantine: reportQuarantine } = questionReportsApi;
   const masteryRef = useRef(mastery);
   const confusionsRef = useRef(confusions);
   const roundCorrectRef = useRef(0);
@@ -783,7 +746,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   // Puts a progress object into the game's state (on start, and when
   // another device's changes were merged in).
   function applyProgressData(data) {
-    progressExtrasRef.current = data; setActiveSession(data.activeSession || null);setDailyProgress(data.dailyProgress||null);setQuestionReports(Array.isArray(data.reports)?data.reports:[]);setSolvedStories(Array.isArray(data.solvedStories)?data.solvedStories:[]);setSessionLogs(Array.isArray(data.sessionLogs)?data.sessionLogs:[]);
+    progressExtrasRef.current = data; setActiveSession(data.activeSession || null);setDailyProgress(data.dailyProgress||null);questionReportsApi.load(data.reports);setSolvedStories(Array.isArray(data.solvedStories)?data.solvedStories:[]);setSessionLogs(Array.isArray(data.sessionLogs)?data.sessionLogs:[]);
     setScore(data.score); setStreak(data.streak); setBestStreak(data.bestStreak); setAttempted(data.attempted);
     setMastery(data.mastery); masteryRef.current = data.mastery;
     setLevelsCleared(data.levelsCleared); setLevelStats(data.levelStats); setPools(data.pools); poolsRef.current = data.pools;
@@ -1572,7 +1535,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       studyRef.current = { studyStreak: restored.studyStreak, bestStudyStreak: restored.bestStudyStreak, lastStudyDate: restored.lastStudyDate };
       setPools(restored.pools); poolsRef.current = restored.pools; setBestSpeedScore(restored.bestSpeedScore); setBestSpeedCombo(restored.bestSpeedCombo);
       setConfusions(restored.confusions); confusionsRef.current = restored.confusions; setSolvedStories(restored.solvedStories || []); setSessionLogs(restored.sessionLogs || []);
-      setQuestionReports(Array.isArray(restored.reports) ? restored.reports : []); setSettings(normalizeSettings(restored.settings));
+      questionReportsApi.load(restored.reports); setSettings(normalizeSettings(restored.settings));
     }
     setDataVersion((v) => v + 1);
     setShowFreshCopyPrompt(false);
@@ -1691,7 +1654,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
             </article>}
           </aside>
         </div>}
-        {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} onSignOut={onSignOut ? logOut : null} loggingOut={loggingOut} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onRenameWord={renameWord} onResolveReport={resolveQuestionReport} onReopenReport={reopenQuestionReport} onReviewReport={reviewQuestionReport} onRetireVariant={retireReportedVariant} onDeleteReport={deleteQuestionReport} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} dataTools={dataTools}/></Suspense>}
+        {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} onSignOut={onSignOut ? logOut : null} loggingOut={loggingOut} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onRenameWord={renameWord} onResolveReport={questionReportsApi.resolve} onReopenReport={questionReportsApi.reopen} onReviewReport={questionReportsApi.review} onRetireVariant={questionReportsApi.retire} onDeleteReport={questionReportsApi.remove} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} dataTools={dataTools}/></Suspense>}
         {confirmAction && <ResetConfirm action={confirmAction} onConfirm={confirmAction === "reset" ? handleReset : handleWipeEverything} onClose={() => setConfirmAction(null)} />}
         {deleteCategoryTarget && <DeleteCategoryConfirm level={deleteCategoryTarget} onConfirm={deleteLevelCategory} onClose={() => setDeleteCategoryTarget(null)} />}
 
@@ -1752,7 +1715,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
             </div>}
             {!customStories.length&&<p>No authored stories loaded. Import a Content v2 file to add them.</p>}{[...customStories].sort((a,b)=>a.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length-b.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length).map(story=>{const fresh=story.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length;const record=solvedStories.find(e=>e.id===story.id);return <article className="wh-v2-learn" key={story.id}><strong>{story.title}{record&&<span className="wh-story-solved-flag"><CheckCircle2 size={13}/> Solved · {record.correct}/{record.total}</span>}</strong><p>{story.questions.length}{story.grammarQuestions?.length?` + ${story.grammarQuestions.length} grammar`:""} questions · {fresh?`${fresh} new words: preview first`:"Ready for review"}</p><button className="wh-level-btn" onClick={()=>launchStory(story)}>{record?"Play again":"Open story"}</button></article>;})}</div>}
         </>}
-        {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={reportSessionQuestion} onReviewReport={reviewQuestionReport} onWithdrawReport={deleteQuestionReport} onUpdateWord={isAdmin?updateWordFields:undefined} sound={settings.sound} prefs={{ autoAdvanceMs: settings.autoAdvanceMs, hints: settings.hints, speakWord: settings.speakWord }} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onResult={recordSessionResult} onAskWord={openAskAi}/>}
+        {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={questionReportsApi.report} onReviewReport={questionReportsApi.review} onWithdrawReport={questionReportsApi.remove} onUpdateWord={isAdmin?updateWordFields:undefined} sound={settings.sound} prefs={{ autoAdvanceMs: settings.autoAdvanceMs, hints: settings.hints, speakWord: settings.speakWord }} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onResult={recordSessionResult} onAskWord={openAskAi}/>}
 
 
         {screen === "levels" && section === "practice" && (

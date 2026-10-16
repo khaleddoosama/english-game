@@ -12,7 +12,7 @@ export const sameReport = (a, b) => a === b || (!!a?.id && a.id === b?.id);
 // What the player answered, as one line of text (a list becomes "a + b", a picked set "x + y").
 export const answerTextOf = (learnerAnswer) => (learnerAnswer == null ? null : Array.isArray(learnerAnswer) ? learnerAnswer.join(" + ") : typeof learnerAnswer === "object" ? (learnerAnswer.text ?? (learnerAnswer.selected || []).join(" + ")) : String(learnerAnswer));
 
-// One report: the full question (prompt, options, right answers), what the player answered and whether it was
+// One report. It carries everything needed to judge it later without the round: the full question (prompt, options, right answers), what the player answered and whether it was
 // marked right, the reason and note, the round it came from, who sent it and when. The server also records the
 // sender and time itself (reports.user_id / created_at). reporter: the signed-in profile, or null in local mode.
 export function buildReport(q, session, reason, learnerAnswer, details, prior, reporter, now = Date.now(), random = Math.random) {
