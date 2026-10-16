@@ -121,7 +121,7 @@ Order is by how self-contained the cluster is and how well it is covered.
 | # | Module | Why this order | First step |
 | --- | --- | --- | --- |
 | 1 | `repo` split into content / progress / reports (**done** except the progress engine, see `repo.md`) | Biggest single file under the shell, best test net (unit + real database) | extract the pure parts of `progress` and `reports`, keep the same exported repo object |
-| 2 | Question reports | Self-contained handlers, one data shape | pin with `tests/` on `sameReport`, `reconcileReports`; move handlers to `features/reports` |
+| 2 | Question reports (**done**: `docs/modules/question-reports.md`) | Self-contained handlers, one data shape | `features/reports`: pure rules + `useQuestionReports`; the shell passes the same props to Admin and the round |
 | 3 | Content administration | Touches content and mastery; has the rename path now covered by integration tests | move `renameWord`, `migrateRenamedProgress`, `mergeCategories`... behind a `useContentAdmin` hook |
 | 4 | Import / export orchestration | `features/data` already has `transfer.js` (pure) | move `applyImport`, `exportFile`, backup handlers next to it |
 | 5 | AI helpers | Many epochs/refs; needs care with cancellation | pin with the existing `ai-*` tests, then one hook per helper |
