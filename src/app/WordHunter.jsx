@@ -13,6 +13,7 @@ import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildEntryQuestion, buildQu
 import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, locateReportSource, reviewReportedQuestion, spellingDistanceInfo } from "../engine/ai";
 import { normalizeAnswerText } from "../engine/text";
 import { renameProblem } from "../engine/wordIdentity";
+import { buildReport, followRenames, mapReport, quarantineOf, withReport, withoutReport } from "../features/reports/reportRules";
 import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
@@ -149,18 +150,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   useEffect(() => { setRuntimeDisabledModes(new Set(settings.enablePairModes ? [] : ["twopeople", "selecttwo"])); }, [settings.enablePairModes]);
   const [questionReports,setQuestionReports]=useState([]);
-  // Reported (word, mode) pairs are quarantined — excluded from being
-  // picked again by the adaptive question generators — until an admin
-  // resolves or retires the report. Keyed as `word|mode` (lowercased).
-  const reportQuarantine = useMemo(() => {
-    const set = new Set();
-    for (const r of questionReports) {
-      if (r.resolvedAt) continue;
-      const words = r.targetWords?.length ? r.targetWords : [null];
-      for (const w of words) if (w) set.add(`${String(w).trim().toLowerCase()}|${r.mode}`);
-    }
-    return set;
-  }, [questionReports]);
+  const reportQuarantine = useMemo(() => quarantineOf(questionReports), [questionReports]);
   const [solvedStories,setSolvedStories]=useState([]);
   const [sessionLogs,setSessionLogs]=useState([]);
   const [dailyProgress,setDailyProgress]=useState(null);
@@ -397,46 +387,27 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     }
   }
   // A report carries everything needed to judge it later without the
-  // round: the full question (prompt, options, right answers), what the
-  // player answered and whether it was marked right, the reason and note,
-  // the round it came from, who sent it and when. The server also records
-  // the sender and time itself (reports.user_id / created_at).
   function reportSessionQuestion(q, session, reason, learnerAnswer, details, prior = null) {
     markSentencesSeen(q);
-    const now = Date.now();
-    const answerText = learnerAnswer == null ? null : Array.isArray(learnerAnswer) ? learnerAnswer.join(" + ") : typeof learnerAnswer === "object" ? (learnerAnswer.text ?? (learnerAnswer.selected || []).join(" + ")) : String(learnerAnswer);
-    const report={id:`rep-${now}-${Math.random().toString(36).slice(2,8)}`,questionId:q.id,sessionId:session.id,prompt:q.prompt,targetWords:q.targets||[],mode:q.mode,type:q.type||null,options:q.options||null,answers:q.answers||null,poolType:q.poolType||null,poolItemId:q.poolItemId||null,reason:reason||null,details:details||null,learnerAnswer:learnerAnswer??null,learnerAnswerText:answerText||null,wasCorrect:prior&&typeof prior.correct==="boolean"&&!prior.reported?prior.correct:null,answerSubmitted:!!prior,at:now,reportedAt:new Date(now).toISOString(),
-      question:{id:q.id,mode:q.mode,type:q.type||null,prompt:q.prompt,options:q.options||null,answers:q.answers||null,targets:q.targets||[],explanation:q.explanation||null,sentences:V2.questionSentences(q),hasPicture:!!(q.picture||q.photo),poolType:q.poolType||null,poolItemId:q.poolItemId||null},
-      session:{id:session.id,title:session.title||null,kind:session.kind||null,index:session.index??null,total:session.queue?.length??null},
-      reporter:{id:profile?.id||"local",username:profile?.username||"local"},
-      timeZone:(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone;}catch{return null;}})()};
-    const merged=[...(progressExtrasRef.current.reports||[]),report];
-    // Unbounded growth here was pushing the saved payload toward the
-    // storage size limit over months of testing. Keep every unresolved
-    // report (still needs action) plus the most recent 150 resolved ones;
-    // older resolved history isn't actionable and doesn't need to persist.
-    const unresolved=merged.filter(r=>!r.resolvedAt);
-    const resolved=merged.filter(r=>r.resolvedAt).slice(-150);
-    const reports=[...resolved,...unresolved];
+    const report=buildReport(q,session,reason,learnerAnswer,details,prior,profile);
+    const reports=withReport(progressExtrasRef.current.reports,report);
     progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);
     return report;
   }
-  // Older saved reports have no id, so object identity stays the fallback.
-  function sameReport(a,b){return a===b||(!!a?.id&&a.id===b?.id);}
   // AI triage for one report. Stores the review on the report (so Admin sees
   // the verdict and any drafted fix) and returns it for the learner's view.
   async function reviewQuestionReport(report, options = {}){
     const review=await reviewReportedQuestion(report,locateReportSource(liveContent(),report), options);
-    const reports=(progressExtrasRef.current.reports||[]).map(item=>sameReport(item,report)?{...item,aiReview:review}:item);
+    const reports=mapReport(progressExtrasRef.current.reports,report,item=>({...item,aiReview:review}));
     progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);
     return review;
   }
   function deleteQuestionReport(report){
-    const reports=(progressExtrasRef.current.reports||[]).filter(item=>!sameReport(item,report));
+    const reports=withoutReport(progressExtrasRef.current.reports,report);
     progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);
   }
   function resolveQuestionReport(report){
-    const reports=(progressExtrasRef.current.reports||[]).map(item=>sameReport(item,report)?{...item,resolvedAt:Date.now()}:item);
+    const reports=mapReport(progressExtrasRef.current.reports,report,item=>({...item,resolvedAt:Date.now()}));
     progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);setActiveSession(session=>session?{...session}:session);
   }
   // Renaming a word: stories, combos, challenges and other words that
@@ -453,7 +424,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     migrateRenamedProgress(renames);setDataVersion(v=>v+1);
   }
   function reopenQuestionReport(report){
-    const reports=(progressExtrasRef.current.reports||[]).map(item=>sameReport(item,report)?{...item,resolvedAt:null}:item);
+    const reports=mapReport(progressExtrasRef.current.reports,report,item=>({...item,resolvedAt:null}));
     progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);
   }
   function retireReportedVariant(report){
@@ -487,7 +458,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       const p=moveKeys(poolsRef.current);poolsRef.current=p;setPools(p);
       const c={};for(const [key,val] of Object.entries(confusionsRef.current||{})){const [a,b]=key.split("|");c[`${wmap.get(a)||a}|${wmap.get(b)||b}`]=val;}
       confusionsRef.current=c;setConfusions(c);
-      const reports=(progressExtrasRef.current.reports||[]).map(r=>({...r,targetWords:(r.targetWords||[]).map(t=>wmap.get(t)||t)}));
+      const reports=followRenames(progressExtrasRef.current.reports,wmap);
       progressExtrasRef.current={...progressExtrasRef.current,reports};setQuestionReports(reports);
     }
     if(renames.categories.length){
