@@ -5,8 +5,8 @@ The rest of the app follows the plan at the end. Written from the code on branch
 `ccr-29322d12-v8wkmd`; the numbers are from that day.
 
 Practice selection now has a [current-code guide](#practice-question-selection-current-code)
-and a [behavior baseline](../work-tracking/practice-baseline.md). Only tests
-and documentation are complete for that slice; no Practice extraction has happened.
+and a [work record](../work-tracking/practice-baseline.md). Its word-question
+selection loop is now a private helper inside `v2.js`; the public API is unchanged.
 
 ## The problem this solves
 
@@ -123,14 +123,15 @@ content and reports stores are out (556 -> 289 lines); the progress engine staye
 This slice builds an offline Practice session: eligible words, question forms,
 safe options, question order, grammar slots, and unused questions for later
 reinforcement. The current entry point is `V2.practice`, not a new feature module.
-Code described here is the `cb2fb57` base; characterization finished at `7104306`.
+Characterization finished at `7104306`; the private selection extraction starts
+from the documented baseline `2da4133`.
 
 ### Files and responsibilities
 
 | File | Role in this path |
 | --- | --- |
 | `src/app/WordHunter.jsx` | `startPractice` gathers inputs and adjusts new-word intake from the previous round. `buildPracticeExtra` supplies extra styles; `launchSession` sends the result to the UI. |
-| `src/engine/v2.js` | `practice` chooses and arranges candidates; `makeQuestion` builds basic word questions, `optionWords` chooses distractors, grammar builders produce rule questions. `reinforcement` consumes reserves later. |
+| `src/engine/v2.js` | `practice` builds candidates, filters stale sentences, inserts grammar and returns the session. Private `selectPracticeQuestions` orders word candidates. `makeQuestion` builds basic word questions, `optionWords` chooses distractors, grammar builders produce rule questions. `reinforcement` consumes reserves later. |
 | `src/engine/questions.js` | Extra-style factories such as Who Am I, Opposites and paired questions; `legacyQuestionToV2` adapts their output to the session contract. `buildRound`/`buildAdaptiveRound` are not called by the current Practice start path. |
 | `src/engine/data.js` | Mutable shared content (`WORDS`, `GRAMMAR`, `CHALLENGES`), level groups and mode metadata used by the shell and older factories. |
 | `src/engine/text.js` | Text normalization used by extra-question safety checks; no imports. |
@@ -191,9 +192,10 @@ not a promise that every item can be appended.
 3. The engine filters content, picks new/known words, chooses modes and builds
    candidates. Extra styles go through the callback and, where needed, the
    factories/adaptor in `questions.js`. Grammar candidates are built separately.
-4. The selection loop rejects stale/repeated candidates, prioritizes unused
-   targets, balances modes, and leaves unselected candidates in `reserves`.
-   Grammar is then inserted and the complete session is returned.
+4. `practice` removes stale candidates, then calls `selectPracticeQuestions`.
+   The helper excludes repeated sentences/recent targets, prioritizes unused
+   targets and balances modes. It leaves unselected candidates in `reserves`.
+   Back in `practice`, grammar is inserted and the complete session is returned.
 5. `launchSession` sets `activeSession` and the session screen. `SessionView`
    advances its index through that prebuilt queue; it does not generate a fresh
    question on each Continue.
@@ -203,6 +205,24 @@ local to the call, but candidate arrays are spliced and an opening candidate
 can receive `initialTraining`. Do not assume deep cloning of callback questions
 or content objects. `v2.js` also has a shared normalization cache and reads
 `Date.now()` for freshness, locks and IDs. Tests must fix both time and RNG.
+
+The private boundary is `selectPracticeQuestions(candidates, wordSlots, lastIntro)`:
+
+- `candidates`: the ordered, already-built word/activity questions remaining
+  after freshness filtering. The helper removes selected items **in place**;
+  the same array becomes session `reserves`, preserving the remaining order.
+- `wordSlots`: requested length minus the grammar candidates already built.
+- `lastIntro`: the last introduced word text, or `undefined`. It is avoided as
+  the first target unless the existing opening fallback is needed.
+- Returns a new ordered `queue` array containing the original question objects.
+  The fallback can set `initialTraining` on its selected question.
+
+Mode counts/weights, used targets/sentences and per-word usage live only in this
+helper call. It uses the existing `questionSentences` helper and has no RNG,
+clock or callback calls. Candidate generation, `extraQuestion` calls, stale
+filtering, grammar insertion and session-ID creation stay in `practice` in
+their existing order. Selection still stops if nothing is eligible; it does
+not relax repetition constraints or fill unused slots with invented questions.
 
 The shell owns learner state in React state/refs; older factories read mutable
 `data.js` exports and some use ambient `Math.random`. `buildPracticeExtra`
@@ -221,11 +241,12 @@ and answer side effects remain outside this slice and behind existing interfaces
 | --- | --- |
 | Basic word question wording/shape or distractors | `makeQuestion` / `optionWords` in `v2.js` |
 | Extra question style | `buildPracticeExtra` in the shell, then its factory in `questions.js` or `v2.js`; preserve the adapted question shape |
-| Word/mode eligibility, ordering, repetition or short-round behavior | `practice` in `v2.js`; the proposed first extraction is only its word-question selection loop |
+| Candidate word/mode eligibility or freshness | Generation and stale-filter blocks in `practice` in `v2.js` |
+| Word-question ordering, repetition, opening fallback or short-round behavior | Private `selectPracticeQuestions` in `v2.js` |
 | Grammar question form / selection | `grammarQuestion` / the grammar selection block in `practice` |
 | Follow-up questions after mistakes | `reinforcement` and the reserves contract |
 
-Changing a learning rule is a separate behavior change, not part of the planned
+Changing a learning rule is a separate behavior change, not part of this
 extraction. Scoring, mastery, persistence and UI wiring are unchanged. The known
 single-style short-round observation is tracked as **PRACTICE-OBS-01** in the
 [work record](../work-tracking/practice-baseline.md#observed-edge-requiring-separate-review);

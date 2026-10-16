@@ -1,11 +1,18 @@
-# Practice selection characterization
+# Practice selection work record
 
 Date: 2026-10-16
 
-Branch: `test/practice-selection-baseline`
+Current branch: `refactor/practice-question-selection` (local only).
 
-Final code/test commit: `7104306dded8f2dd732325544383a9fa87b05a64`
-(`test(practice): characterize question selection before refactor`). Local only.
+Refactor starting point: `2da4133736f0a305f31448491f44eae3c642d81b`.
+Final application-code commit: `846da731eeb2fb6508647ad211b06a6ab8f63e45`
+(`refactor(practice): extract word question selection loop`). Documentation
+closure follows in its own commit; use the command below for that final revision.
+
+Preserved baseline branch: `test/practice-selection-baseline`, still at
+`2da4133`. Its test commit is `7104306dded8f2dd732325544383a9fa87b05a64`.
+The extraction uses a separate worktree, `english-game-practice-refactor`,
+independent of the baseline worktree and question-reports work.
 
 Base: `cb2fb571caf518922c3fdb2a0ab727a350b8ddc9` from
 `ccr-29322d12-v8wkmd`. This does not incorporate the divergent `master`
@@ -21,13 +28,14 @@ and handover record, not a second copy of the API guide.
 | --- | --- |
 | Complete | Compared branch histories; isolated this work from Library at the base above. |
 | Complete at `7104306` | Ran the existing baseline; added nine characterization cases; ran the relevant suite and focused lint. |
-| Complete in this documentation revision | Documented current responsibilities, files, API, request flow, state, change entry points, tests and boundaries in the existing architecture guide. |
-| Proposed, NOT started | Extract the word-question selection loop inside `v2.js`, keeping generation, grammar insertion, RNG usage and session shapes unchanged. |
-| Remaining for that refactor | Perform the limited extraction, rerun the same behavior checks, and record its own commit/results. No new layers or UI changes are proposed. |
+| Complete at `2da4133`, updated after extraction | Documented current responsibilities, files, API, request flow, state, change entry points, tests and boundaries in the existing architecture guide. |
+| Complete at `846da73` | Extracted private `selectPracticeQuestions` inside `v2.js`, keeping generation, grammar insertion, RNG usage and session shapes unchanged. |
+| Complete | Reran the existing 115 relevant tests, repository lint and build; reviewed the diff and compared public outputs/event traces with `2da4133`. |
+| Remaining for this batch | None. No further refactor is started or included. |
 | Separate review | Decide whether PRACTICE-OBS-01 is a defect or an intentional tradeoff; no behavior fix is authorized by the characterization work. |
 
 No confirmed new bug was established in this slice. The observation below is
-kept separate from the proposed refactor. Neither has been implemented.
+kept separate from the completed refactor; its behavior has not been changed.
 
 To identify the final documentation commit for this record without a
 self-referential commit hash, run:
@@ -38,9 +46,12 @@ git log -1 --format='%H %s' -- docs/work-tracking/practice-baseline.md
 
 ## Scope
 
-Tests and documentation only. No application code, data shapes, dependencies,
-learning rules, UI wiring, migrations, or production access changed.
-The proposed extraction of the word-question selection loop has NOT begun.
+The original baseline changed tests and documentation only. The current batch
+extracts only the word-question selection loop into a private function in
+`src/engine/v2.js` and updates these existing docs. No public exports, new files,
+data shapes, dependencies, learning rules or UI wiring changed. `WordHunter.jsx`,
+reports, persistence and database code are untouched; no production access,
+migration, merge, push or deployment was performed.
 
 `tests/practice-selection.test.js` adds nine cases through the existing
 `V2.practice` and `V2.reinforcement` interfaces. Synthetic words reuse
@@ -76,6 +87,8 @@ characterize this base version; they do not assert that its ordering is optimal.
 
 Node: `v24.19.0`. Vitest: `5.0.3`.
 
+### Characterization stage (before extraction)
+
 Before adding tests, the clean worktree ran:
 
 ```sh
@@ -106,6 +119,42 @@ and dependency deprecation warnings; these did not fail the test runs.
 Not run: the whole repository suite, UI/E2E tests, build, database integration,
 or production checks. They are outside this test-only selection baseline.
 
+### Refactor verification at `846da73`
+
+```sh
+npm test -- tests/engine.test.js tests/library-round-scope.test.js tests/library-round-options.test.js tests/round-single-new-word.test.js tests/grammar-repeat.test.js tests/grammar-variants.test.js tests/senses.test.js tests/course-levels.test.js tests/library-round-grading.test.js tests/practice-selection.test.js
+npm run lint
+npm run build
+git diff 2da4133 --check
+```
+
+- Relevant tests: **10 files, 115 tests passed**, exit 0 (1.73 seconds).
+  All tests and expected results are unchanged; no extraction-specific gap
+  required another permanent test or a private-function export.
+- Repository lint and Vite/PWA build: both passed, exit 0. Build emitted the
+  existing `advancedChunks` deprecation warning; build configuration was not
+  changed. No build output is tracked.
+- One-off public-API comparison against `2da4133`: **21 comparisons passed**
+  (seeds 1, 7, 23 across familiar, single-new-word, single-style, mixed grammar,
+  grammar-only, empty and seen-sentence cases). Full sessions, RNG draws, clock
+  reads, callback start/end order, callback-question reference positions, and
+  input state matched. Synthetic content, fixed time and an ambient-random
+  guard were used; this diagnostic is not an added repository test.
+- Static review: extracted loop tokens and mode weights match the original;
+  reversing only the extraction reproduces the original file exactly.
+  No imports/exports changed, so no new dependency edge or cycle is introduced.
+  Queue/reserve order, fallback mutation, stop conditions and public V2 keys
+  are preserved. `git diff --check` passed.
+- Dependency setup: offline `npm ci` hit the same cache miss recorded above;
+  normal `npm ci --ignore-scripts --no-audit --no-fund --fetch-retries=0
+  --fetch-timeout=20000` succeeded. The manifest and lockfile are unchanged.
+
+Not run in this batch: the full repository test suite, UI/E2E, database
+integration and production checks. The shell callback was represented by a
+synthetic callback for the comparison; real AI/media behavior remains outside
+this extraction. No UI wiring changed. Documentation was checked against the
+code after verification; the final docs-only commit does not change tested code.
+
 ## Observed edge requiring separate review
 
 **PRACTICE-OBS-01 — a round with only one available style stops after two questions.**
@@ -121,9 +170,10 @@ It is an observed tradeoff, not a confirmed defect or an approved learning
 rule. The characterization test names it as such. Do not change it during
 the behavior-preserving refactor; any decision to relax the rule is separate.
 
-## Refactor readiness
+## Closure and remaining decisions
 
-No blocker found for the limited extraction at this base commit, provided the
-existing queue/reserve ordering, tie behavior, flags, and random consumption
-are preserved. This is not a claim of complete coverage of the engine or UI.
-No refactor, merge, push, or deployment is part of this stage.
+The limited extraction is complete with no blocker or introduced defect found.
+Selection state and constraints can now be read together without the candidate
+builders and grammar/session assembly. This is not a claim of complete engine
+or UI coverage. PRACTICE-OBS-01 remains a separate unresolved observation; no bug
+fix or further refactor is bundled with this work. The branch remains local.
