@@ -14,14 +14,15 @@ import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequir
 import { normalizeAnswerText } from "../engine/text";
 import { useQuestionReports } from "../features/reports";
 import { useContentAdmin } from "../features/content-admin";
-import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
+import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
 import { getFriendsApi, localAreFriends, localFriendSince, localNameOf } from "../features/social/friendsApi";
 import { LibraryRoutes, MyViewsHome, homeLimits, keepInLibrary, scopeIsEmpty, scopeOfView, useLibrary, useLibraryHome } from "../features/library";
 import { useSocialCounts } from "../features/social/useSocialCounts";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
-import { importModeError, inspectImport, wordsCsv } from "../features/data/transfer";
+import { importModeError, inspectImport } from "../features/data/transfer";
+import { contentImportPlan, exportFileOf, importDoneText, restoredProgressOf } from "../features/data/importPlan";
 import CourseLevelsView from "../features/home/CourseLevelsView";
 import HomeTabs from "../features/home/HomeTabs";
 import LessonsView from "../features/home/LessonsView";
@@ -1407,10 +1408,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   // Files: a full backup (progress + content), content only (admin), or
   // the words as a spreadsheet (admin).
   function exportFile(kind) {
-    const day = new Date().toISOString().slice(0, 10);
-    if (kind === "content") return { name: `word-hunter-content-${day}.json`, type: "application/json", text: JSON.stringify(V2.contentOnly(liveContent()), null, 2) };
-    if (kind === "wordsCsv") return { name: `word-hunter-words-${day}.csv`, type: "text/csv;charset=utf-8", text: wordsCsv(WORDS) };
-    return { name: `word-hunter-backup-${day}.json`, type: "application/json", text: JSON.stringify({ ...backupPayload(), exportedAt: new Date().toISOString(), exportedBy: profile?.username || "local" }) };
+    return exportFileOf(kind, { content: liveContent(), words: WORDS, backup: kind === "backup" ? backupPayload() : null, exportedBy: profile?.username || "local" });
   }
   // Step 1: read and check a file against the current content (throws
   // { message, issues } when it can't be used).
@@ -1423,21 +1421,14 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     const refused = importModeError(check, mode, isAdmin);
     if (refused) throw new Error(refused);
     if (mode !== "progress") {
-      const restoreProgress = mode === "full";
-      const issues = V2.validateContent(raw, restoreProgress ? {} : liveContent());
-      if (issues.length) throw new Error(issues[0]);
-      const prep = V2.prepareImport(raw, restoreProgress ? {} : liveContent()), data = prep.data;
-      const content = V2.mergeContent(prep.existing, data);
-      const catMap = new Map(prep.renames.categories.map((r) => [r.from, r.to]));
-      const baseOrder = [...new Set(LEVEL_ORDER.map((t) => catMap.get(t) || t))];
-      const order = restoreProgress && Array.isArray(raw.levelOrder) ? raw.levelOrder : insertLevelTitles(baseOrder, [...new Set([...(prep.levelOrder || []), ...[...content.words, ...content.grammar, ...content.challenges].map((x) => x.category).filter(Boolean)])]);
-      contentNoteRef.current = data.note || contentNoteRef.current;
+      const { content, order, note, renames } = contentImportPlan(raw, mode, liveContent(), LEVEL_ORDER);
+      contentNoteRef.current = note || contentNoteRef.current;
       mergeCustomData(content.words, content.grammar, content.challenges, order);
       setCustomWords(content.words); setCustomGrammar(content.grammar); setCustomChallenges(content.challenges); setCustomCombos(content.combos); setCustomStories(content.stories);
-      if (!restoreProgress) migrateRenamedProgress(prep.renames);
+      if (renames) migrateRenamedProgress(renames);
     }
     if (mode === "progress" || mode === "full") {
-      const restored = migrateProgressData(mode === "full" ? V2.prepareImport(raw, {}).data : raw);
+      const restored = restoredProgressOf(raw, mode);
       restoringRef.current = true;
       progressExtrasRef.current = restored; setActiveSession(restored.activeSession || null); setDailyProgress(restored.dailyProgress || null);
       setScore(restored.score); setStreak(restored.streak); setBestStreak(restored.bestStreak); setAttempted(restored.attempted);
@@ -1450,7 +1441,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     }
     setDataVersion((v) => v + 1);
     setShowFreshCopyPrompt(false);
-    const text = mode === "full" ? "Backup restored: content and progress" : mode === "progress" ? "Your progress was restored" : "Content imported; everyone's progress is kept";
+    const text = importDoneText(mode);
     setToast({ kind: "import", text });
     return text;
   }
