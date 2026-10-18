@@ -4,10 +4,12 @@
 --   psql "$URL" -X -q -A -t -f supabase/ci/schema-fingerprint.sql > fingerprint.txt
 -- Not included: data, the other schemas (auth, storage, ...), object owners (they differ per host).
 -- Names are printed with their schema whatever the session's search_path is (it differs per role on a real project).
+-- Function sources are hashed without carriage returns: a body created from a file with Windows line endings
+-- (as on the production project) is the same function.
 set search_path = pg_catalog;
 select line from (
   select 'function ' || p.oid::regprocedure::text
-         || ' src=' || md5(p.prosrc) || ' secdef=' || p.prosecdef || ' vol=' || p.provolatile::text
+         || ' src=' || md5(replace(p.prosrc, E'\r', '')) || ' secdef=' || p.prosecdef || ' vol=' || p.provolatile::text
          || ' cfg=' || coalesce(p.proconfig::text, '-')
          || ' acl=' || coalesce((select string_agg(coalesce(nullif(r.rolname, ''), 'PUBLIC') || ':' || x.privilege_type, ',' order by r.rolname, x.privilege_type)
                                   from aclexplode(p.proacl) x left join pg_roles r on r.oid = x.grantee), 'default') as line
