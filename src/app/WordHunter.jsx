@@ -2,7 +2,7 @@ import { cancelAiTasks } from "../lib/aiOperations.js";
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Award, BarChart3, LogOut, Settings as SettingsIcon, Wrench, CheckCircle2, Flag, Flame, HelpCircle, Lock, Play, Search, Target, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
 import { V2 } from "../engine/v2";
-import { PronunciationModal, imageLinkOk } from "../features/media/media";
+import { imageLinkOk } from "../features/media/media";
 import { unlockAudioOnFirstTouch } from "../lib/sound";
 unlockAudioOnFirstTouch(); // the first tap lets answer sounds play on phones
 import { isEmbeddedImage, storeEmbeddedImages } from "../lib/images";
@@ -10,7 +10,7 @@ import { SessionView } from "../features/session/SessionView";
 import { Splash } from "../features/auth/LoginPage";
 import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTERY_STAGE_RANK, PRODUCTION_MODES, RECENT_RESULT_LIMIT, WORDS, confusionCount, getMasteryStage, getStarsForAccuracy, isWordKey, courseLevelGroups, levelItemKey, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setLastChallengeId, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildEntryQuestion, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, entryFileMeta, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, uniqueStrings, v2SessionFromEntries } from "../engine/questions";
-import { askAiForWord, buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, spellingDistanceInfo } from "../engine/ai";
+import { buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, spellingDistanceInfo } from "../engine/ai";
 import { normalizeAnswerText } from "../engine/text";
 import { useQuestionReports } from "../features/reports";
 import { useContentAdmin } from "../features/content-admin";
@@ -22,6 +22,7 @@ import { LibraryRoutes, MyViewsHome, homeLimits, keepInLibrary, scopeIsEmpty, sc
 import { useSocialCounts } from "../features/social/useSocialCounts";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
 import { useDataTransfer } from "../features/data";
+import { AskAiDrawer, contextCategoryOf, useAskAi } from "../features/ai-helpers";
 import CourseLevelsView from "../features/home/CourseLevelsView";
 import HomeTabs from "../features/home/HomeTabs";
 import LessonsView from "../features/home/LessonsView";
@@ -76,13 +77,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const library = useLibrary({ enabled: loaded, me: livePlayer.id, knownWord: (k) => WORDS.some((w) => w.word === k), people: LOCAL_PEOPLE });
   const [customCombos, setCustomCombos] = useState([]);
   const [customStories, setCustomStories] = useState([]);
-  const [askAiOpen,setAskAiOpen]=useState(false);
-  const [askAiTerm,setAskAiTerm]=useState("");
-  const [listenTerm,setListenTerm]=useState(null);
-  const [askAiResult,setAskAiResult]=useState(null);
-  const [askAiBusy,setAskAiBusy]=useState(false);
-  const [askAiError,setAskAiError]=useState(null);
-  const aiViewEpoch=useRef(0), askAiEpoch=useRef(0), storyAiEpoch=useRef(0);
+  const aiViewEpoch=useRef(0), storyAiEpoch=useRef(0);
   const [selectedStoryCategories,setSelectedStoryCategories]=useState([]);
   const [storyGenError,setStoryGenError]=useState("");
   const [storyGenState, setStoryGenState] = useState(null); // null | 'loading' | 'error' | {title,text,targetWords,questions}
@@ -161,7 +156,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const lastSectionRef = useRef("practice");
   const screen = route.screen === "play" ? playScreen : route.screen === "notFound" ? "levels" : route.screen;
   useEffect(() => () => { aiViewEpoch.current++; storyAiEpoch.current++; cancelAiTasks(); setAiBusy(false); setStoryGenState(current=>current==="loading"?null:current); }, [screen, location.path]);
-  useEffect(() => { if (!askAiOpen) { askAiEpoch.current++; cancelAiTasks(["Ask AI about a word"]); setAskAiBusy(false); } }, [askAiOpen]);
   const section = route.screen === "levels" ? route.section : lastSectionRef.current;
   if (route.screen === "levels") lastSectionRef.current = route.section;
   function setScreen(next) {
@@ -411,44 +405,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [finalRecallSummary, setFinalRecallSummary] = useState(null);
   const [finalCaseResult, setFinalCaseResult] = useState(null);
 
-  async function openAskAi(term="") {
-    const clean=String(term||"").trim().replace(/\s+/g," ").slice(0,80);
-    setAskAiOpen(true);setAskAiError(null);setAskAiResult(null);
-    if(clean){setAskAiTerm(clean);await runAskAi(clean);}
-  }
-
-  async function runAskAi(term=askAiTerm) {
-    const clean=String(term||"").trim();if(!clean)return;
-    const epoch=++askAiEpoch.current;
-    cancelAiTasks(["Ask AI about a word"]);
-    setAskAiBusy(true);setAskAiError(null);setAskAiResult(null);
-    try{
-      const existing=V2.findWord(WORDS,clean);
-      const result=await askAiForWord(clean,existing);
-      if(epoch!==askAiEpoch.current)return;
-      setAskAiResult({...result,alreadyInCollection:!!(existing||V2.findWord(WORDS,result.word))});
-    }catch(error){if(epoch!==askAiEpoch.current)return;console.error("Ask AI failed",error);setAskAiError(error.message||"AI explanation is unavailable. Try again.");}
-    finally{if(epoch===askAiEpoch.current)setAskAiBusy(false);}
-  }
-
-  function addAiWord() {
-    if(!askAiResult||askAiResult.alreadyInCollection)return;
-    // Prefer the category the player is currently standing on (the level
-    // they're playing, or a practice session's category) over whatever
-    // category the AI guessed — keeps newly-added words in context.
-    const contextCategory=currentLevel?.title||(activeSession?.kind==='practice'?activeSession.title:null);
-    const entry={word:askAiResult.word,type:askAiResult.type,...(askAiResult.partsOfSpeech?.length?{partsOfSpeech:askAiResult.partsOfSpeech}:{}),category:contextCategory||askAiResult.category||"AI Discoveries",meaning:askAiResult.meaning,situation:askAiResult.situation,gap:askAiResult.gap,hints:askAiResult.hints||[],_aiAdded:true,...(askAiResult.commonMistake?{commonMistake:askAiResult.commonMistake}:{})};
-    if(/[\u0600-\u06FF]/.test(JSON.stringify(entry))){setAskAiError("The generated card contains non-English text. Regenerate it before adding.");return;}
-    const errors=V2.validateContent({schemaVersion:2,kind:"content",words:[entry]},liveContent());
-    if(errors.length){setAskAiError(`Cannot add this card: ${errors[0]}`);return;}
-    const next=[...customWords,entry];
-    mergeCustomData(next,customGrammar,customChallenges,LEVEL_ORDER);
-    setCustomWords(next);setDataVersion(value=>value+1);
-    setAskAiResult(previous=>({...previous,alreadyInCollection:true}));
-    setToast({kind:"import",text:`${entry.word} added to your collection`});
-    // Keep it in my library too (best effort), so it can go in views and be shared.
-    keepInLibrary(library,entry);
-  }
 
   // Speed Round — a timed review of mastered words. It plays in the normal
   // question box (SessionView, kind "speed"); these hold the last result.
@@ -515,6 +471,11 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const masteredOnlyWords = useMemo(() => WORDS.filter((w) => getMasteryStage(mastery[w.word], { kind: "word", obj: w }) === MASTERY_STAGE.MASTERED), [mastery, dataVersion]);
   const learningInsights = useMemo(() => deriveLearningInsights(WORDS, mastery, confusions), [mastery, confusions, dataVersion]);
   const currentLevel = currentLevelIndex !== null ? LEVELS[currentLevelIndex] : null;
+  const askAi = useAskAi({
+    isAdmin, liveContent, content: { customWords, customGrammar, customChallenges }, set: { setCustomWords, setDataVersion, setToast },
+    contextCategory: contextCategoryOf(currentLevel, activeSession), onWordAdded: (entry) => keepInLibrary(library, entry),
+  });
+  const openAskAi = askAi.openAskAi;
   const currentEntry = roundQueue[roundIndex] || null;
   // Built once per case, not per pools update — otherwise answering (which
   // updates pools) would reshuffle this very question's own options.
@@ -843,7 +804,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     const t = setTimeout(() => setToast(null), 3600);
     return () => clearTimeout(t);
   }, [toast]);
-  useEffect(()=>{if(!askAiOpen)return;const close=event=>{if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();setAskAiOpen(false);}};window.addEventListener('keydown',close,true);return()=>window.removeEventListener('keydown',close,true);},[askAiOpen]);
 
   // group (optional): one subCategory of the lesson, from levelGroups().
   function startLevel(index, group = null) {
@@ -1474,27 +1434,12 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
             </button>
           </div>
           <div className="wh-ask-bar">
-            <input value={askAiTerm} onChange={event=>setAskAiTerm(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();openAskAi(askAiTerm);}}} placeholder="Look up a word…" aria-label="Ask AI about a word" enterKeyHint="search" />
-            <button className="wh-icon-btn" onClick={()=>openAskAi(askAiTerm)} title="Ask AI"><HelpCircle size={15}/><span className="ui-hide-narrow"> Ask AI</span></button>
-            <button className="wh-icon-btn" onClick={()=>{const term=askAiTerm.trim();if(term)setListenTerm(term);}} title="Hear it pronounced" aria-label="Listen"><Volume2 size={15}/></button>
+            <input value={askAi.term} onChange={event=>askAi.setTerm(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();openAskAi(askAi.term);}}} placeholder="Look up a word…" aria-label="Ask AI about a word" enterKeyHint="search" />
+            <button className="wh-icon-btn" onClick={()=>openAskAi(askAi.term)} title="Ask AI"><HelpCircle size={15}/><span className="ui-hide-narrow"> Ask AI</span></button>
+            <button className="wh-icon-btn" onClick={()=>{const term=askAi.term.trim();if(term)askAi.setListenTerm(term);}} title="Hear it pronounced" aria-label="Listen"><Volume2 size={15}/></button>
           </div>
         </header>
-        <PronunciationModal term={listenTerm} onClose={()=>setListenTerm(null)}/>
-        {askAiOpen&&<div className="wh-ai-drawer" role="dialog" aria-modal="true" aria-label="Ask AI about a word" onMouseDown={event=>{if(event.target===event.currentTarget)setAskAiOpen(false);}}>
-          <aside className="wh-ai-drawer-card">
-            <div className="wh-ai-drawer-head"><div><div className="wh-ai-meta">WORD HUNTER FIELD GUIDE</div><h2>Ask AI</h2></div><button className="wh-icon-btn" onClick={()=>setAskAiOpen(false)} aria-label="Close"><X size={18}/></button></div>
-            <div className="wh-type-form"><input autoFocus value={askAiTerm} onChange={event=>setAskAiTerm(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();runAskAi();}}} placeholder="Type a word or short phrase…"/><button className="wh-level-btn" disabled={askAiBusy||!askAiTerm.trim()} onClick={()=>runAskAi()}>{askAiBusy?'Investigating…':'Explain'}</button></div>
-            <p className="wh-ai-meta">Tip: select a word inside any question or story to open this panel automatically.</p>
-            {askAiError&&<div className="wh-import-error">{askAiError}</div>}
-            {askAiResult&&<article className="wh-ai-card">
-              <h2>{askAiResult.word}</h2><div className="wh-ai-meta">{askAiResult.partsOfSpeech?.length>0&&<b>{askAiResult.partsOfSpeech.join(" / ")}</b>}{askAiResult.partsOfSpeech?.length>0&&' · '}{askAiResult.type} · {askAiResult.category} · {askAiResult.pronunciation}</div>
-              <p><b>Meaning:</b> {askAiResult.meaning}</p><p><b>Example:</b> {askAiResult.situation}</p>
-              {!!askAiResult.nearWords?.length&&<><b>Close words:</b>{askAiResult.nearWords.map(item=><p key={item.word}><b>{item.word}:</b> {item.difference}</p>)}</>}
-              {askAiResult.commonMistake&&<p><b>Common mistake:</b> {askAiResult.commonMistake.sentence}<br/><b>Better:</b> {askAiResult.commonMistake.correction}<br/>{askAiResult.commonMistake.why}</p>}
-              <div className="wh-ai-actions"><button className="wh-back-btn" onClick={()=>setListenTerm(askAiResult.word)}><Volume2 size={13}/> Listen</button>{askAiResult.alreadyInCollection?<span className="wh-results-unlock">Already in your collection</span>:isAdmin?<button className="wh-level-btn" onClick={()=>addAiWord()}>Add to Collection</button>:null}</div>
-            </article>}
-          </aside>
-        </div>}
+        <AskAiDrawer ask={askAi} isAdmin={isAdmin} />
         {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} onSignOut={onSignOut ? logOut : null} loggingOut={loggingOut} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onRenameWord={renameWord} onResolveReport={questionReportsApi.resolve} onReopenReport={questionReportsApi.reopen} onReviewReport={questionReportsApi.review} onRetireVariant={questionReportsApi.retire} onDeleteReport={questionReportsApi.remove} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} dataTools={dataTools}/></Suspense>}
         {confirmAction && <ResetConfirm action={confirmAction} onConfirm={confirmAction === "reset" ? handleReset : wipeEverything} onClose={() => setConfirmAction(null)} />}
         {deleteCategoryTarget && <DeleteCategoryConfirm level={deleteCategoryTarget} onConfirm={deleteLevelCategory} onClose={() => setDeleteCategoryTarget(null)} />}
