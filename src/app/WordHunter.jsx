@@ -22,7 +22,7 @@ import { LibraryRoutes, MyViewsHome, homeLimits, keepInLibrary, scopeIsEmpty, sc
 import { useSocialCounts } from "../features/social/useSocialCounts";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
 import { useDataTransfer } from "../features/data";
-import { AskAiDrawer, StoryBuilder, contextCategoryOf, useAskAi, useStoryGeneration } from "../features/ai-helpers";
+import { AskAiDrawer, StoryBuilder, comboVariantFields, contextCategoryOf, grammarVariantAsk, grammarVariantFields, idOfKey, mayRetryVariant, useAskAi, useStoryGeneration, withGeneratedTexts, withVariantItem } from "../features/ai-helpers";
 import CourseLevelsView from "../features/home/CourseLevelsView";
 import HomeTabs from "../features/home/HomeTabs";
 import LessonsView from "../features/home/LessonsView";
@@ -424,24 +424,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     filtered.forEach((b) => pendingGenRef.current.add(`${b.word}::${b.poolType}`));
     try {
       const results = await generateContent(filtered, poolsSnapshot);
-      setPools((prev) => {
-        const next = { ...prev };
-        for (const item of results) {
-          const wordObj = WORDS.find((w) => w.word === item.word);
-          if (!wordObj || !item.text) continue;
-          const wp = getWordPools(next, wordObj);
-          const newItem = {
-            id: `gen-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-            text: item.text,
-            attempts: 0,
-            correctCount: 0,
-            lockedUntil: null,
-            flagged: false,
-          };
-          next[item.word] = { ...wp, [item.poolType]: [...wp[item.poolType], newItem] };
-        }
-        return next;
-      });
+      setPools((prev) => withGeneratedTexts(prev, results, WORDS));
     } catch (e) {
       console.error("Content generation failed:", e);
     } finally {
@@ -461,7 +444,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   function keepGrammarFresh(id) {
     const g = (liveContent().grammar || []).find((x) => x.id === id);
     if (!g || !V2.grammarNeedsVariant(g, poolsRef.current, progressExtrasRef.current.seenSentences || {})) return;
-    if (Date.now() - (variantFailedRef.current.get(id) || 0) < 600000) return;
+    if (!mayRetryVariant(variantFailedRef.current.get(id))) return;
     triggerVariantGeneration("grammar", `grammar:${id}`);
   }
   async function triggerVariantGeneration(poolType, key) {
@@ -469,36 +452,31 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     if (pendingGenRef.current.has(genKey)) return;
     pendingGenRef.current.add(genKey);
     try {
-      const id = key.slice(key.indexOf(":") + 1);
+      const id = idOfKey(key);
       const content = liveContent();
       if (poolType === "combo") {
         const combo = (content.combos || []).find((c) => c.id === id);
         if (!combo) return;
         const variant = await generateComboVariant(combo);
         setPools((prev) => {
-          const existing = prev[key]?.variant?.length ? prev[key].variant : [];
-          const newItem = { id: `gen-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, situation: variant.situation, prompt: variant.prompt, attempts: 0, correctCount: 0, lockedUntil: null, flagged: false };
-          const next = { ...prev, [key]: { ...prev[key], variant: [...existing, newItem] } };
+          const next = withVariantItem(prev, key, comboVariantFields(variant));
           poolsRef.current = next;
           return next;
         });
       } else if (poolType === "grammar") {
         const g = (content.grammar || []).find((x) => x.id === id);
         if (!g) return;
-        const base = V2.grammarVariantBase(g);
-        const used = [...V2.grammarQuestions(g).map((x) => x.prompt || x.sentence), ...(poolsRef.current[key]?.variant || []).map((x) => x.prompt)].filter(Boolean);
-        const variant = await generateGrammarVariant({ rule: g.rule, ruleExplanation: g.explanation, ...base }, used);
+        const { spec, used } = grammarVariantAsk(g, poolsRef.current, key);
+        const variant = await generateGrammarVariant(spec, used);
         setPools((prev) => {
-          const existing = prev[key]?.variant?.length ? prev[key].variant : [];
-          const newItem = { id: `gen-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, prompt: variant.prompt, options: variant.options, answer: variant.answer, explanation: variant.explanation, attempts: 0, correctCount: 0, lockedUntil: null, flagged: false };
-          const next = { ...prev, [key]: { ...prev[key], variant: [...existing, newItem] } };
+          const next = withVariantItem(prev, key, grammarVariantFields(variant));
           poolsRef.current = next;
           return next;
         });
       }
     } catch (e) {
       console.error("Variant generation failed:", e);
-      variantFailedRef.current.set(key.slice(key.indexOf(":") + 1), Date.now());
+      variantFailedRef.current.set(idOfKey(key), Date.now());
     } finally {
       pendingGenRef.current.delete(genKey);
     }

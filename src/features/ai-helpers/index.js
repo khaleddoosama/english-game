@@ -5,3 +5,4 @@ export { AskAiDrawer } from "./AskAiDrawer";
 export { contextCategoryOf } from "./askAiRules";
 export { useStoryGeneration } from "./useStoryGeneration";
 export { StoryBuilder } from "./StoryBuilder";
+export { comboVariantFields, grammarVariantAsk, grammarVariantFields, idOfKey, mayRetryVariant, withGeneratedTexts, withVariantItem } from "./generationRules";
