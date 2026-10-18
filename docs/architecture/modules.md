@@ -4,6 +4,10 @@ Status: pattern proven on one module, **My Library** (`docs/modules/library/READ
 The rest of the app follows the plan at the end. Written from the code on branch
 `ccr-29322d12-v8wkmd`; the numbers are from that day.
 
+Practice selection now has a [current-code guide](../modules/learning-engine/practice-selection.md)
+and a [work record](../work-tracking/practice-baseline.md). Its word-question
+selection loop is now a private helper inside `v2.js`; the public API is unchanged.
+
 ## The problem this solves
 
 `src/app/WordHunter.jsx` is one component of ~2100 lines with 78 `useState`,
@@ -113,6 +117,10 @@ Clusters found by function name (line numbers approximate, from the day of writi
 JS fake of the database) and `tests/integration/*` (real PostgreSQL). **Done in part**: the pure parts and the
 content and reports stores are out (556 -> 289 lines); the progress engine stayed together on purpose. See
 `docs/architecture/repo.md` for the state map and the reason.
+
+## Practice question selection
+
+Moved to the learning-engine module: [modules/learning-engine/practice-selection.md](../modules/learning-engine/practice-selection.md).
 
 ## Plan for the other modules
 
