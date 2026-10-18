@@ -75,7 +75,7 @@ Pure in, pure out. The caller passes the content lists, the mastery map and opti
 | Live question building | [tests/live-variety.test.js](../../../tests/live-variety.test.js) |
 | Study numbers | [tests/study-stats.test.js](../../../tests/study-stats.test.js) |
 
-**Gaps.** The two stage functions are not compared in a test, so their difference for grammar is unpinned (`LC-01`). The per-answer handler `recordSessionResult` and the session-end handler `completeSession` live in WordHunter and have no unit tests (`MT-04`). The old grading code in WordHunter (`registerResult`) is dead but still carries a second set of rules (`MT-03`).
+**Gaps.** The two stage functions are not compared in a test, so their difference for grammar is unpinned (`LC-01`). The per-answer handler `recordSessionResult` and the session-end handler `completeSession` live in WordHunter and have no unit tests (`MT-04`). The old grading code in WordHunter (`registerResult`), a second set of rules, was removed with the old round engine (`MT-03`, 2026-10-18).
 
 ## 8. Example journey
 
@@ -100,6 +100,5 @@ Mia (synthetic) practises the word "Reluctant" for the third time on three separ
 
 - `LC-01` two definitions of "mastered".
 - `LC-03` score and streaks change per answer, mastery per finished session.
-- `MT-03` dead round engine with duplicate rules in WordHunter.
 - `MT-04` the session handlers are untested.
 - `PRACTICE-OBS-01` (observation, not classified): a round with only one available question style stops after two questions, because the selector refuses a third question of the same mode in a row. Pinned as current behaviour in `tests/practice-selection.test.js`; whether it is a defect or intended is the owner's decision ([work record](../../work-tracking/practice-baseline.md#observed-edge-requiring-separate-review)).

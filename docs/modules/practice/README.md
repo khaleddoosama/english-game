@@ -124,14 +124,13 @@ Omar (synthetic player) opens the game, taps "Practise" on the card for his view
 
 - Phase 0: tests for the session lifecycle.
 - Phase 2: one definition of "mastered"; a rule for unreviewed AI sentences.
-- Phase 4: remove the unreachable old round engine; extract the session lifecycle from WordHunter into this module.
+- Phase 4: extract the session lifecycle from WordHunter into this module (the unreachable old round engine was removed on 2026-10-18, `MT-03`).
 
 **Known Issues**
 
 - `LC-01` grammar items use a simpler "mastered" rule than words.
 - `LC-02` AI-written practice sentences can reach a pool without a review when the quality check is unavailable.
 - `LC-03` score and streak change per answer; mastery per finished round.
-- `MT-03` an unreachable `playing` screen and its handlers remain in WordHunter.
 - `MT-04` the session lifecycle is untested at unit level.
 - `DP-02` words cannot be added by a player; "Add to Collection" in Ask AI is admin-only.
 - Reports (found when the reports code was moved, not fixed): after "Reset progress" the reports list in memory is not cleared until a reload; `retire` on a report whose `poolType` is not a known pool would throw (Admin only offers it for reports with a pool). Details: [question-reports.md](question-reports.md#old-problems-found-not-fixed-here).

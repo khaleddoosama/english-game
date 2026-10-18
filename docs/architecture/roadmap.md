@@ -28,9 +28,9 @@ Ranked by impact on, in this order: **L** learning correctness, **D** data savin
 | 8 | `PE-02` | A player can write their own `progress` and `mastery` rows directly, bypassing revision checks. | Low | Low | Low | - | Confirmed (on the local stub; re-check on the real project) |
 | 9 | `PE-04` | `/api/ai` forwards any prompt text within the task's size limit, so a signed-in player can use the AI as a general chat within the daily quota. | - | - | Low | - | By reading |
 | 10 | `DP-05` | Question reports live in two places (a progress section and the `reports` table) and are reconciled on load. | Low | Med | - | Med | By reading |
-| 11 | `MT-01` | [WordHunter.jsx](../../src/app/WordHunter.jsx) is one component of about 2,150 lines with about 90 state hooks. | Med | Low | - | High | Measured; 1,778 lines on 2026-10-18 after the question-reports, content-admin, import/export, Ask AI and story moves |
+| 11 | `MT-01` | [WordHunter.jsx](../../src/app/WordHunter.jsx) is one component of about 2,150 lines with about 90 state hooks. | Med | Low | - | High | Measured; 1,115 lines on 2026-10-18 after the question-reports, content-admin, import/export, Ask AI and story moves and the removal of the old round engine (`MT-03`) |
 | 12 | `MT-02` | Content is held in mutable module variables (`WORDS`, `GRAMMAR`, `LEVELS`...) replaced at run time. | Low | - | - | High | By reading |
-| 13 | `MT-03` | The old round engine in WordHunter (the `playing` screen, about 260 lines of screen code, and the answer handlers only it uses, such as `registerResult` and `handleSelect`) is unreachable and holds a second copy of grading and mastery rules. The exact set of dead functions needs a check; some neighbours (final report, speed results) are still used. | Med | - | - | High | By reading (static) |
+| 13 | `MT-03` | The old round engine in WordHunter (the `playing` screen, about 260 lines of screen code, and the answer handlers only it uses, such as `registerResult` and `handleSelect`) is unreachable and holds a second copy of grading and mastery rules. The exact set of dead functions needs a check; some neighbours (final report, speed results) are still used. | Med | - | - | High | Confirmed (no writer of `roundQueue`; a parser reachability check of the component); fixed on 2026-10-18: removed with the `results` and `reviewResults` screens that only it opened (WordHunter 1,778 → 1,115 lines); the Final Case and speed results stay (`e2e/specs/finalcase.cjs`) |
 | 14 | `MT-04` | The session lifecycle and the save effects in WordHunter have no unit tests; sign-in and sign-up have no automated test; no browser spec runs against Supabase. | Med | Med | - | High | By reading |
 | 15 | `DP-06` | `sense_progress` and `rule_progress` exist but are not used; two progress models are implied. | - | Low | - | Med | Confirmed (no readers or writers in the repo) |
 | 16 | `PE-03` | Maintenance mode and the announcement are enforced only in the browser; the README says settings are "enforced in the database". | - | - | Low | - | By reading |
@@ -119,7 +119,7 @@ Targets: `MT-01`, `MT-02`, `MT-03`, `MT-04`, then the cycles in [module-map.md](
 
 Steps, each its own change:
 
-1. Delete the unreachable round engine (`MT-03`).
+1. Delete the unreachable round engine (`MT-03`). **Done** 2026-10-18.
 2. Extract the session lifecycle into `practice`.
 3. Split `content` and `progress` out of `repo.js` behind the same interface.
 4. Break the `live`/`social` and `engine`/`lib` cycles.
