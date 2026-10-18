@@ -131,7 +131,7 @@ Order is by how self-contained the cluster is and how well it is covered.
 | 1 | `repo` split into content / progress / reports (**done** except the progress engine, see `repo.md`) | Biggest single file under the shell, best test net (unit + real database) | extract the pure parts of `progress` and `reports`, keep the same exported repo object |
 | 2 | Question reports (**done**: `docs/modules/practice/question-reports.md`) | Self-contained handlers, one data shape | `features/reports`: pure rules + `useQuestionReports`; the shell passes the same props to Admin and the round |
 | 3 | Content administration (**done**: `docs/modules/admin/content-admin.md`) | Touches content and mastery; has the rename path now covered by integration tests | `features/content-admin`: pure rules + `useContentAdmin`; the shell passes the same props to Admin and the round |
-| 4 | Import / export orchestration | `features/data` already has `transfer.js` (pure) | move `applyImport`, `exportFile`, backup handlers next to it |
+| 4 | Import / export orchestration (**done**: `docs/modules/admin/import-export.md`) | `features/data` already had `transfer.js` (pure) | `features/data`: `importPlan.js` (pure) + `useDataTransfer`; the shell passes the same `dataTools` and Profile props |
 | 5 | AI helpers | Many epochs/refs; needs care with cancellation | pin with the existing `ai-*` tests, then one hook per helper |
 | 6 | Progress state | Everything reads it; do after 1 | after `repo/progress` is split |
 | 7 | Session/practice flow | Largest, most coupled | last, one answer type at a time |

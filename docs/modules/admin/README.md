@@ -44,6 +44,7 @@ The admin API ([adminApi.js](../../../src/features/admin/adminApi.js)); online e
 
 - Screens: [AdminPanel](../../../src/features/admin/AdminPanel.jsx), the sections in [sections/](../../../src/features/admin/sections), [ContentHealthPanel](../../../src/features/admin/ContentHealthPanel.jsx), editors for [words](../../../src/features/admin/editors/WordEditor.jsx) and [grammar](../../../src/features/admin/editors/GrammarEditor.jsx), shared parts ([DataTable](../../../src/features/admin/DataTable.jsx), [charts](../../../src/features/admin/charts.jsx), [diff](../../../src/features/admin/diff.jsx), [adminUi](../../../src/features/admin/adminUi.jsx)), [ImportExport](../../../src/features/data/ImportExport.jsx).
 - Content admin (rename a word, merge categories, the levels editor, the progress that follows a rename): [features/content-admin](../../../src/features/content-admin), guide [content-admin.md](content-admin.md).
+- Import, export and backups (make a file, check it, apply it in each mode, the Profile page's backups): [features/data](../../../src/features/data), guide [import-export.md](import-export.md).
 - Tables: `admin_audit`, `ai_calls`, `app_settings`, `reports`, plus reads of `profiles`, `progress`, `mastery`, `live_*`.
 - Schema `analytics`: views for data quality and word and category numbers (migrations 0010, 0011).
 - Functions: all `admin_*` functions, `require_admin`, `is_admin`, `audit_*` triggers and helpers, `jsonb_changes`, `session_log_rows`, `activity_day_rows`, `try_date`.
@@ -90,6 +91,8 @@ The admin API ([adminApi.js](../../../src/features/admin/adminApi.js)); online e
 | Panel opens with a course loaded, at two widths | [e2e/specs/sweep.cjs](../../../e2e/specs/sweep.cjs) |
 | Content admin rules and hook | [content-admin-rules.test.js](../../../tests/content-admin-rules.test.js), [content-admin-hook.test.jsx](../../../tests/content-admin-hook.test.jsx) |
 | Merge, delete and remove empty categories in a browser | [e2e/specs/catadmin.cjs](../../../e2e/specs/catadmin.cjs) |
+| Import and export rules and hook | [import-plan.test.js](../../../tests/import-plan.test.js), [data-transfer-hook.test.jsx](../../../tests/data-transfer-hook.test.jsx), [import-export.test.js](../../../tests/import-export.test.js) |
+| Export a backup and import it back in a browser | [e2e/specs/importexport.cjs](../../../e2e/specs/importexport.cjs) |
 
 **Gaps.** Refusal of a non-admin is tested in some SQL files, not for every `admin_*` function (the static check above is not a behavioural test). No test exercises the sections against real analytics data in the browser. Player management and the AI tools have no automated test.
 
@@ -112,11 +115,10 @@ The owner investigates a complaint that a question is wrong. (Synthetic data.)
 
 - Phase 1: the admin sees a visible failure when the dictionary copy does not update after a save.
 - Phase 3: server-side checks that make the leaderboard numbers trustworthy (Admin, Players shows them).
-- Phase 4: move the import, export and backup handlers out of WordHunter (the content editing handlers moved: [content-admin.md](content-admin.md)).
 
 **Known Issues**
 
 - `PE-03` maintenance and announcement are enforced in the browser only.
 - `DP-03` a failed dictionary copy is invisible to the admin.
 - `DP-05` reports are stored in two places.
-- `MT-01` (for this module, partly fixed) the content operations moved to `features/content-admin`; import, export and backups are still inside WordHunter.
+- `MT-01` (for this module, fixed for content tools and import/export) the content operations moved to `features/content-admin`, and import, export and backups to `features/data`; WordHunter keeps only the progress parts they need (`backupPayload`, `applyRestoredProgress`).

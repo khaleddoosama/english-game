@@ -39,6 +39,14 @@ describe("no new loops between modules", () => {
     expect(outside.map(([file]) => file)).toEqual([]);
   });
 
+  it("import & export is in no loop and uses only the engine and styles; the rest of the app reaches it through its index or its screen", () => {
+    expect(cycles(modules).flat()).not.toContain("features/data");
+    expect(modules["features/data"]).toEqual(["engine", "styles"]);
+    const doors = ["features/data/index", "features/data/ImportExport"];
+    const outside = Object.entries(graph).filter(([file, tos]) => !file.startsWith("features/data/") && tos.some((t) => t.startsWith("features/data/") && !doors.includes(t)));
+    expect(outside.map(([file]) => file)).toEqual([]);
+  });
+
   it("the engine is below the features: its one import of a feature is the known debt (engine/ai uses media)", () => {
     expect(modules.engine).toEqual(["features/media", "lib"]);
   });
