@@ -14,7 +14,8 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 url="${1:?give the connection URL of the database to look at}"
 export PGOPTIONS="-c default_transaction_read_only=on"
-touched='^function (dictionary_sync|dictionary_follow_renames|word_key_norm|admin_delete_player|content_save_v2|apply_item_renames|friend_remove|view_shares_inbox|save_progress_v2)\(|progress_ops|collection_shares|^function [a-z_]*\) '
+# The fingerprint names functions with their schema ("function public.friend_remove(uuid) ...").
+touched='^function public\.(dictionary_sync|dictionary_follow_renames|word_key_norm|admin_delete_player|content_save_v2|apply_item_renames|friend_remove|view_shares_inbox|save_progress_v2)\(|progress_ops|collection_shares'
 work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
 psql "$url" -X -q -A -t -f supabase/ci/schema-fingerprint.sql > "$work/now"
 if psql "$url" -X -q -A -t -c "select to_regclass('supabase_migrations.schema_migrations') is not null" 2>/dev/null | grep -qx t; then
@@ -25,6 +26,9 @@ pick() { grep -E "$touched" "$1" | sort; }
 pick "$work/now" > "$work/now.touched"
 pick supabase/ci/expected/schema-before-0037.txt > "$work/before.touched"
 pick supabase/ci/expected/schema-after-0042.txt > "$work/after.touched"
+# A pattern that matches no function would compare only the table and still give a verdict.
+[ "$(grep -c '^function ' "$work/before.touched")" -ge 7 ] && [ "$(grep -c '^function ' "$work/after.touched")" -ge 9 ] \
+  || { echo "the touched-object pattern does not match the functions of the expected fingerprints; fix it before trusting a verdict"; exit 3; }
 echo "objects looked at: $(wc -l < "$work/now.touched") (of $(wc -l < "$work/now") in schema public)"
 if diff -q "$work/now.touched" "$work/before.touched" >/dev/null; then echo "VERDICT: BEFORE - as the migrations expect (0001-0036). They can be applied; the rollback script does not apply yet."
 elif diff -q "$work/now.touched" "$work/after.touched" >/dev/null; then echo "VERDICT: AFTER - migrations 0037-0042 are applied as in this repository. The rollback script fits."

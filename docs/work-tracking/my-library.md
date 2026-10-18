@@ -150,8 +150,8 @@ only), the two remaining module cycles, and new modules.
 2. `git status` clean, `npm run lint && npx vitest run`. Database tests need any PostgreSQL 15+:
    `PGADMIN=<url> supabase/ci/run-integration.sh`, `PGURL=<empty db> supabase/ci/run-tests.sh`, `PGADMIN=<url> supabase/ci/check-upgrade.sh`.
    The real stack: `tests/realstack/up.sh` then the commands in `docs/integration-tests.md`.
-3. Open items, in the owner's hands (the six migrations are applied, 2026-10-18; `preflight-compare.sh` needs its
-   function pattern fixed, see the review): the module cycles `engine/media/lib` and `social/live`; the repair of old renames; merging two
+3. Open items, in the owner's hands (the six migrations are applied, 2026-10-18; `preflight-compare.sh` was fixed
+   afterwards to compare the functions, see the review): the module cycles `engine/media/lib` and `social/live`; the repair of old renames; merging two
    words (a feature with a preview); the next modules in the plan (question reports, content administration…).
 
 ## Not done / left on purpose
