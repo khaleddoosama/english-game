@@ -94,7 +94,7 @@ The shared course that every player plays from: words, grammar rules, challenges
 | Word editor | [tests/word-editor.test.js](../../../tests/word-editor.test.js) |
 | Admin-side audit entries for content | [supabase/tests/audit_and_reports.sql](../../../supabase/tests/audit_and_reports.sql) |
 
-**Gaps.** What a rename does to a player's library and views is tested on the database (`dictionary_rename.sql`, `rename_conflict.sql`, migrations 0037 and 0039) but those migrations are not in production yet (`DP-01`). No test makes `dictionary_sync` fail after a save. The repo tests use the committed backup file as their data, which holds real account progress (`DP-07`).
+**Gaps.** What a rename does to a player's library and views is tested on the database (`dictionary_rename.sql`, `rename_conflict.sql`, migrations 0037 and 0039) applied to production on 2026-10-18 (`DP-01`). No test makes `dictionary_sync` fail after a save. The repo tests use the committed backup file as their data, which holds real account progress (`DP-07`).
 
 ## 8. Example journey
 
@@ -112,13 +112,13 @@ The admin renames the word "Chilly" to "Chilly (cold)" in Admin, Words. (Synthet
 
 **Planned** (roadmap)
 
-- Phase 1: `dictionary_sync` becomes part of the publish or reports its failure; a safe repair for past renames ([diagnosis-renamed-words.md](../../migrations/diagnosis-renamed-words.md)). A rename carrying library entries and views is done in code (0037), pending production.
+- Phase 1: `dictionary_sync` becomes part of the publish or reports its failure; a safe repair for past renames ([diagnosis-renamed-words.md](../../migrations/diagnosis-renamed-words.md)). A rename carrying library entries and views is done (0037, in production since 2026-10-18).
 - Phase 4: replace the module variables with an object passed down. (The content store is already split out of `repo.js`.)
 - Phase 5: a synthetic fixture instead of the committed backup.
 
 **Known Issues**
 
-- `DP-01` rename breaks library links (Confirmed). Fixed in code by 0037 for new renames, pending production; old renames not repaired.
+- `DP-01` rename breaks library links (Confirmed). Fixed by 0037 for new renames (in production since 2026-10-18); old renames not repaired.
 - `DP-02` `sense_create` has one caller; private words cannot be played.
 - `DP-03` best-effort dictionary copy.
 - `DP-07` the committed backup holds real account progress and doubles as a test fixture.

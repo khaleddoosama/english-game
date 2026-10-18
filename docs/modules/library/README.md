@@ -147,9 +147,9 @@ Omar (synthetic) makes a view and shares it. Dana (synthetic) takes it.
 
 **Implemented.** Everything above except where marked below.
 
-**Implemented in code, database changes not applied to production yet**
+**Database changes in production**
 
-- Migrations 0037-0042 are tested on throwaway databases and in CI only. Applying them to production is a separate step that needs the owner's approval; order, compatibility with old and new clients, and rollback are in [review-0037-0042.md](../../migrations/review-0037-0042.md). Until then, production keeps the old rename behaviour (`DP-01`).
+- Migrations 0037-0042 were applied to production on 2026-10-18, after a backup and a read-only comparison; the checks after match the expected schema. Record, rollback and what was found: [review-0037-0042.md](../../migrations/review-0037-0042.md#production-application-2026-10-18).
 
 **Implemented in the database, not reachable from a screen**
 
@@ -165,11 +165,11 @@ Omar (synthetic) makes a view and shares it. Dana (synthetic) takes it.
 
 **Known Issues**
 
-- `DP-01` a rename drops the word from players' libraries and views. Fixed in code for new renames by 0037 (pending production); old renames are not repaired.
+- `DP-01` a rename drops the word from players' libraries and views. Fixed for new renames by 0037 (in production since 2026-10-18); old renames are not repaired (2 entries in production).
 - `DP-02` player-owned words and patches have no player UI and are not played.
 - `DP-03` the dictionary copy is refreshed on a best-effort call.
 - `DP-06` `sense_progress` and `rule_progress` are unused.
 - `MT-05` two implementations to keep equal (guarded by the differential and contract tests). In local mode a word rename does not move the word inside the player's views (online it does, 0037).
-- `apply_item_renames` could be called directly by an admin and merge progress without the 0039 check. Fixed in code by 0041, which leaves it callable only from `content_save_v2` (pending production).
+- `apply_item_renames` could be called directly by an admin and merge progress without the 0039 check. Fixed by 0041 (in production since 2026-10-18), which leaves it callable only from `content_save_v2`.
 - `view_contents` returns deleted senses; the app drops ids it cannot map to a key.
 - The library is hidden (`off`) when the first connection fails once, not only when the tables are missing.

@@ -136,9 +136,10 @@ does not move the word inside the player's views (online it does, 0037) - a know
 - Two tabs of one profile saving at once; an operation older than 90 days.
 - The progress engine inside `repo.js` is still one piece (`docs/architecture/repo.md`).
 
-### Migrations 0037-0042: nothing applied anywhere
+### Migrations 0037-0042: applied to production on 2026-10-18
 
-Read `docs/migrations/review-0037-0042.md` first. Order, effects, compatibility (old and new clients), rollback, the
+The record (backup, comparison, checks after, what was found) is the last section of
+`docs/migrations/review-0037-0042.md`. Read that document first. Order, effects, compatibility (old and new clients), rollback, the
 comparison to run on the real database first, and what was not verified are there.
 Deferred on purpose: the repair of old renamed words (`docs/migrations/diagnosis-renamed-words.md`, diagnosis and plan
 only), the two remaining module cycles, and new modules.
@@ -149,8 +150,8 @@ only), the two remaining module cycles, and new modules.
 2. `git status` clean, `npm run lint && npx vitest run`. Database tests need any PostgreSQL 15+:
    `PGADMIN=<url> supabase/ci/run-integration.sh`, `PGURL=<empty db> supabase/ci/run-tests.sh`, `PGADMIN=<url> supabase/ci/check-upgrade.sh`.
    The real stack: `tests/realstack/up.sh` then the commands in `docs/integration-tests.md`.
-3. Open items, in the owner's hands: review and apply (or not) the six migrations, after running `preflight-compare.sh`
-   on the real database; the module cycles `engine/media/lib` and `social/live`; the repair of old renames; merging two
+3. Open items, in the owner's hands (the six migrations are applied, 2026-10-18; `preflight-compare.sh` needs its
+   function pattern fixed, see the review): the module cycles `engine/media/lib` and `social/live`; the repair of old renames; merging two
    words (a feature with a preview); the next modules in the plan (question reports, content administration…).
 
 ## Not done / left on purpose
@@ -167,8 +168,8 @@ only), the two remaining module cycles, and new modules.
   production data. See `docs/integration-tests.md`.
 - **Not tested directly as units:** the presentational pieces in `components/`
   (covered through `LibraryPage`, `MyViewsHome` and the browser specs).
-- **Migrations 0037 and 0038** are written and tested on throwaway databases only;
-  they need your review before any deployment.
+- **Migrations 0037 and 0038** were tested on throwaway databases only when this was written;
+  they are now applied to production (2026-10-18, see the review document).
 
 ## To continue in a new conversation
 
