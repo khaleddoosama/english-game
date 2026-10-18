@@ -23,6 +23,12 @@ trap 'admin -c "drop database if exists $db with (force)" >/dev/null || true; rm
 q() { psql "$PGURL" -X -v ON_ERROR_STOP=1 -q -A -t "$@"; }
 apply() { psql "$PGURL" -X -v ON_ERROR_STOP=1 -q -1 -f "$1" >/dev/null; }
 fingerprint() { q -f supabase/ci/schema-fingerprint.sql > "$1"; }
+# The read-only comparison meant for a real project must give the right verdict at each stage here too.
+verdict() { # verdict <BEFORE|AFTER|OTHER> <what>
+  local rc=0; supabase/ci/preflight-compare.sh "$PGURL" > "$work/preflight" 2>&1 || rc=$?
+  if grep -q "^VERDICT: $1" "$work/preflight"; then echo "preflight: $1 $2"; else echo "preflight: expected $1 $2, got:"; cat "$work/preflight"; exit 1; fi
+  if [ "$1" = OTHER ] && [ "$rc" -ne 2 ]; then echo "preflight: OTHER must exit 2, exited $rc"; exit 1; fi
+}
 
 psql "$PGURL" -X -v ON_ERROR_STOP=1 -q -f supabase/ci/supabase-stub.sql
 for f in supabase/migrations/00[0-2]*.sql supabase/migrations/003[0-6]*.sql; do apply "$f"; done
@@ -36,6 +42,7 @@ expect() { # expect <actual> <committed>
   if [ "${WRITE_EXPECTED:-}" = 1 ]; then cp "$1" "$2"; echo "wrote $2"; elif ! diff -q "$1" "$2" >/dev/null; then echo "$2 is out of date (run with WRITE_EXPECTED=1):"; diff "$2" "$1" | head -20; exit 1; fi
 }
 expect "$work/schema_before" supabase/ci/expected/schema-before-0037.txt
+verdict BEFORE "at 0036"
 
 snapshot() { q -c "select jsonb_build_object(
     'profiles', (select count(*) from public.profiles), 'mastery', (select count(*) from public.mastery), 'progress', (select count(*) from public.progress),
@@ -51,6 +58,7 @@ fingerprint "$work/schema_after"
 changed=$(diff "$work/schema_before" "$work/schema_after" | grep -c '^[<>]' || true)
 [ "$changed" -gt 0 ] || { echo "the fingerprint did not see the migrations (it would not see a failed rollback either)"; exit 1; }
 expect "$work/schema_after" supabase/ci/expected/schema-after-0042.txt
+verdict AFTER "after 0037-0042"
 echo "after: the fingerprint sees $changed changed lines (functions, a table, a constraint, privileges)"
 
 psql "$PGURL" -X -v ON_ERROR_STOP=1 -q -f supabase/ci/upgrade-check.sql
@@ -69,8 +77,17 @@ else
   echo "rollback: the schema is DIFFERENT from before:"; diff "$work/schema_before" "$work/schema_down" | head -40; exit 1
 fi
 q -c "select count(*) from public.collection_shares where status not in ('pending','accepted','dismissed')" | grep -qx 0 && echo "rollback: no row breaks the old status check"
+verdict BEFORE "after the rollback"
 
 # and forward again: a rolled-back database takes the migrations as a fresh one does
 forward >/dev/null
 fingerprint "$work/schema_again"
 if diff -q "$work/schema_after" "$work/schema_again" >/dev/null; then echo "again: migrations after a rollback give the same schema as the first time"; else echo "again: DIFFERENT"; diff "$work/schema_after" "$work/schema_again" | head -20; exit 1; fi
+
+# The comparison looks at the functions, not only at the table: Windows line endings in a body are the same
+# function (production had them), and a body changed by hand is not.
+q -c "do \$\$ begin execute replace(pg_get_functiondef('public.friend_remove(uuid)'::regprocedure), E'\\n', E'\\r\\n'); end \$\$" >/dev/null
+q -c "select count(*) from pg_proc where proname = 'friend_remove' and prosrc like E'%\\r%'" | grep -qx 1 || { echo "preflight: the line-ending case was not set up"; exit 1; }
+verdict AFTER "with Windows line endings in friend_remove"
+q -c "do \$\$ begin execute regexp_replace(pg_get_functiondef('public.friend_remove(uuid)'::regprocedure), 'begin', E'begin\\n  -- changed by hand'); end \$\$" >/dev/null
+verdict OTHER "with friend_remove changed by hand"
