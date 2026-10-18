@@ -44,7 +44,8 @@ The admin API ([adminApi.js](../../../src/features/admin/adminApi.js)); online e
 
 - Screens: [AdminPanel](../../../src/features/admin/AdminPanel.jsx), the sections in [sections/](../../../src/features/admin/sections), [ContentHealthPanel](../../../src/features/admin/ContentHealthPanel.jsx), editors for [words](../../../src/features/admin/editors/WordEditor.jsx) and [grammar](../../../src/features/admin/editors/GrammarEditor.jsx), shared parts ([DataTable](../../../src/features/admin/DataTable.jsx), [charts](../../../src/features/admin/charts.jsx), [diff](../../../src/features/admin/diff.jsx), [adminUi](../../../src/features/admin/adminUi.jsx)), [ImportExport](../../../src/features/data/ImportExport.jsx).
 - Content admin (rename a word, merge categories, the levels editor, the progress that follows a rename): [features/content-admin](../../../src/features/content-admin), guide [content-admin.md](content-admin.md).
-- Import, export and backups (make a file, check it, apply it in each mode, the Profile page's backups): [features/data](../../../src/features/data), guide [import-export.md](import-export.md).
+- Import, export and backups (make a file, check it, apply it in each mode, the Profile page's backups, Delete everything): [features/data](../../../src/features/data), guide [import-export.md](import-export.md).
+- Depends on: `engine` (`v2`, `data`, `ai`), `features/data` (the Import & export screen), `features/media` (pictures in the word editor), `lib` (router, app settings, AI operations, images, supabase), `styles`. The app shell reaches the panel only through `AdminPanel` (lazily loaded); `tests/architecture.test.js` checks both.
 - Tables: `admin_audit`, `ai_calls`, `app_settings`, `reports`, plus reads of `profiles`, `progress`, `mastery`, `live_*`.
 - Schema `analytics`: views for data quality and word and category numbers (migrations 0010, 0011).
 - Functions: all `admin_*` functions, `require_admin`, `is_admin`, `audit_*` triggers and helpers, `jsonb_changes`, `session_log_rows`, `activity_day_rows`, `try_date`.
@@ -93,6 +94,8 @@ The admin API ([adminApi.js](../../../src/features/admin/adminApi.js)); online e
 | Merge, delete and remove empty categories in a browser | [e2e/specs/catadmin.cjs](../../../e2e/specs/catadmin.cjs) |
 | Import and export rules and hook | [import-plan.test.js](../../../tests/import-plan.test.js), [data-transfer-hook.test.jsx](../../../tests/data-transfer-hook.test.jsx), [import-export.test.js](../../../tests/import-export.test.js) |
 | Export a backup and import it back in a browser | [e2e/specs/importexport.cjs](../../../e2e/specs/importexport.cjs) |
+| Reset progress and Delete everything in a browser | [e2e/specs/startover.cjs](../../../e2e/specs/startover.cjs) |
+| Who imports the panel, what it imports, no loop | [tests/architecture.test.js](../../../tests/architecture.test.js) |
 
 **Gaps.** Refusal of a non-admin is tested in some SQL files, not for every `admin_*` function (the static check above is not a behavioural test). No test exercises the sections against real analytics data in the browser. Player management and the AI tools have no automated test.
 
@@ -109,6 +112,11 @@ The owner investigates a complaint that a question is wrong. (Synthetic data.)
 
 **Implemented.** Everything above.
 
+**Moved out of the app shell (done, 2026-10-18):** the content tools ([content-admin.md](content-admin.md)), import, export,
+backups and Delete everything ([import-export.md](import-export.md)); the report decisions were already in
+`features/reports` ([question-reports.md](../practice/question-reports.md)), and analytics, players and settings were
+already in `features/admin`. What the shell still holds for this module is the props it passes to `AdminPanel`.
+
 **Decided:** merging a category into one that already has level stats keeps only the target's stats on this device (`CA-OBS-01`, the owner decided to keep this on 2026-10-18; [content-admin.md](content-admin.md#decisions)).
 
 **Planned**
@@ -121,4 +129,4 @@ The owner investigates a complaint that a question is wrong. (Synthetic data.)
 - `PE-03` maintenance and announcement are enforced in the browser only.
 - `DP-03` a failed dictionary copy is invisible to the admin.
 - `DP-05` reports are stored in two places.
-- `MT-01` (for this module, fixed for content tools and import/export) the content operations moved to `features/content-admin`, and import, export and backups to `features/data`; WordHunter keeps only the progress parts they need (`backupPayload`, `applyRestoredProgress`).
+- `MT-01` (for this module, fixed for content tools and import/export) the content operations moved to `features/content-admin`, and import, export and backups to `features/data`; WordHunter keeps only the progress parts they need (`backupPayload`, `applyRestoredProgress`, `handleReset`). Reset progress itself belongs to the progress module.
