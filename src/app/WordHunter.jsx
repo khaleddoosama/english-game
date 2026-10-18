@@ -12,9 +12,8 @@ import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTER
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildEntryQuestion, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, entryFileMeta, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, uniqueStrings, v2SessionFromEntries } from "../engine/questions";
 import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, spellingDistanceInfo } from "../engine/ai";
 import { normalizeAnswerText } from "../engine/text";
-import { renameProblem } from "../engine/wordIdentity";
 import { useQuestionReports } from "../features/reports";
-import { editedLevels, hasRenames, levelIdMap, levelListWithout, mergedCategories, movedKeys, pendingOf, renamedClearedLevels, renamedConfusions, renamedWord, withWordFields, withoutEmptyLevels } from "../features/content-admin/contentAdminRules";
+import { useContentAdmin } from "../features/content-admin";
 import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
@@ -385,90 +384,10 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       setScreen("finalReport");
     }
   }
-  const adminContent=()=>({words:customWords,grammar:customGrammar,challenges:customChallenges,combos:customCombos,stories:customStories});
-  // Renaming a word: stories, combos, challenges and other words that
-  // point at it follow, and every player's progress moves with it (sent
-  // with the next content save; see migrateRenamedProgress).
-  function renameWord(from, nextWord){
-    const problem = renameProblem(customWords, from, nextWord.word);
-    if (problem) { setToast({ text: problem }); return; }
-    const {linked,renames}=renamedWord(adminContent(),from,nextWord);
-    mergeCustomData(linked.words,customGrammar,linked.challenges,LEVEL_ORDER);
-    setCustomWords(linked.words);setCustomCombos(linked.combos);setCustomStories(linked.stories);setCustomChallenges(linked.challenges);
-    migrateRenamedProgress(renames);setDataVersion(v=>v+1);
-  }
-  function updateWordFields(wordName, patch) {
-    const next = withWordFields(customWords, wordName, patch);
-    mergeCustomData(next, customGrammar, customChallenges, LEVEL_ORDER);
-    setCustomWords(next);
-    setDataVersion((v) => v + 1);
-  }
-  // A v3 import can rename a word (same id, new spelling) or a category
-  // (same id, new title). Progress is keyed by those names, so move it:
-  // mastery, content pools, confusion pairs and report targets for words;
-  // level stats and cleared levels for categories.
-  // Renames waiting to go to the server with the next content save, where
-  // they move every player's progress (content_save_v2).
-  const pendingRenamesRef=useRef([]);
-  function migrateRenamedProgress(renames){
-    if(!hasRenames(renames))return;
-    if(isAdmin)pendingRenamesRef.current.push(...pendingOf(renames));
-    const wmap=new Map(renames.words.map(r=>[r.from,r.to]));
-    if(wmap.size){
-      const m=movedKeys(masteryRef.current,wmap);masteryRef.current=m;setMastery(m);
-      const p=movedKeys(poolsRef.current,wmap);poolsRef.current=p;setPools(p);
-      const c=renamedConfusions(confusionsRef.current,wmap);
-      confusionsRef.current=c;setConfusions(c);
-      questionReportsApi.followRename(wmap);
-    }
-    if(renames.categories.length){
-      const cmap=levelIdMap(renames.categories);
-      setLevelStats(prev=>movedKeys(prev,cmap));
-      setLevelsCleared(prev=>renamedClearedLevels(prev,cmap));
-    }
-  }
-  // Merge category names in one pass over every content list and the level
-  // order, so no empty duplicate level is left behind (the old per-list
-  // merge moved the items but kept the old level).
-  function mergeCategories(canonical, duplicates){
-    const merged=mergedCategories(adminContent(),LEVEL_ORDER,canonical,duplicates);
-    if(!merged)return;
-    setCustomWords(merged.words);setCustomGrammar(merged.grammar);setCustomChallenges(merged.challenges);setCustomCombos(merged.combos);setCustomStories(merged.stories);
-    mergeCustomData(merged.words,merged.grammar,merged.challenges,merged.order);
-    migrateRenamedProgress(merged.renames);setDataVersion(value=>value+1);
-  }
-  function removeEmptyLevels(){
-    const {order,removed}=withoutEmptyLevels(adminContent(),LEVEL_ORDER);
-    if(removed){mergeCustomData(customWords,customGrammar,customChallenges,order);setDataVersion(value=>value+1);}
-    return removed;
-  }
-  function updateAdminContent(field,nextList){
-    if(field==="levels"){
-      const edited=editedLevels(adminContent(),LEVEL_ORDER,nextList);
-      setCustomWords(edited.words);setCustomGrammar(edited.grammar);setCustomChallenges(edited.challenges);setCustomCombos(edited.combos);setCustomStories(edited.stories);
-      mergeCustomData(edited.words,edited.grammar,edited.challenges,edited.order);
-      if(edited.renames)migrateRenamedProgress(edited.renames);
-      setDataVersion(value=>value+1);return;
-    }
-    const nextWords=field==="words"?nextList:customWords;
-    const nextGrammar=field==="grammar"?nextList:customGrammar;
-    const nextChallenges=field==="challenges"?nextList:customChallenges;
-    if(field==="words")setCustomWords(nextList);
-    if(field==="grammar")setCustomGrammar(nextList);
-    if(field==="challenges")setCustomChallenges(nextList);
-    if(field==="combos")setCustomCombos(nextList);
-    if(field==="stories")setCustomStories(nextList);
-    mergeCustomData(nextWords,nextGrammar,nextChallenges,LEVEL_ORDER);
-    setDataVersion(value=>value+1);
-  }
-
   const [dataVersion, setDataVersion] = useState(0); // bumped whenever WORDS/GRAMMAR/LEVELS change
   const [confirmAction, setConfirmAction] = useState(null); // null | 'reset' | 'wipe'
   const [deleteCategoryTarget, setDeleteCategoryTarget] = useState(null); // null | level object
 
-  function deleteLevelCategory(level) {
-    updateAdminContent("levels", levelListWithout(LEVEL_ORDER, level.title));
-  }
   const [customWords, setCustomWords] = useState([]);
   const [customGrammar, setCustomGrammar] = useState([]);
   const [customChallenges, setCustomChallenges] = useState([]);
@@ -573,6 +492,14 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const { reports: questionReports, quarantine: reportQuarantine } = questionReportsApi;
   const masteryRef = useRef(mastery);
   const confusionsRef = useRef(confusions);
+  // The admin's content changes (rename a word, merge categories, the levels editor...) and the progress that follows a rename.
+  const { renameWord, updateWordFields, migrateRenamedProgress, mergeCategories, removeEmptyLevels, updateAdminContent, deleteLevelCategory, takePendingRenames, returnPendingRenames } = useContentAdmin({
+    isAdmin,
+    content: { customWords, customGrammar, customChallenges, customCombos, customStories },
+    set: { setCustomWords, setCustomGrammar, setCustomChallenges, setCustomCombos, setCustomStories, setDataVersion, setToast },
+    progress: { masteryRef, setMastery, poolsRef, setPools, confusionsRef, setConfusions, setLevelStats, setLevelsCleared },
+    followReportRename: questionReportsApi.followRename,
+  });
   const roundCorrectRef = useRef(0);
   const roundTotalRef = useRef(0);
   const roundStartStagesRef = useRef({});
@@ -865,10 +792,10 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     const settle = () => { if (counted) { counted = false; contentWritesRef.current--; } };
     const cancel = debouncedSave("content", () => {
       const content = { note: contentNoteRef.current, combos: customCombos, stories: customStories, words: customWords, grammar: customGrammar, challenges: customChallenges, levelOrder: LEVEL_ORDER };
-      const renames = pendingRenamesRef.current.splice(0);
+      const renames = takePendingRenames();
       return contentSavingRef.current = contentSavingRef.current.then(() => repo.saveContent(content, { renames })).catch((e) => {
         console.error("Could not save content:", e);
-        pendingRenamesRef.current.unshift(...renames);
+        returnPendingRenames(renames);
         setStorageWarning(e?.conflict ? e.message : "Content could not be saved to the server. Check your connection; your last change will be saved with the next edit. Take a Full Backup if this keeps happening.");
       }).finally(settle);
     }, 150);
