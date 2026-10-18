@@ -1,0 +1,77 @@
+# Word Hunter documentation
+
+Working documentation for the Word Hunter code base. The top-level [README](../README.md) explains what the game is and how to run, test and deploy it. These pages explain how the code is organised and what to watch out for when changing it.
+
+## Index
+
+### Architecture
+
+| Page | What it is for |
+| --- | --- |
+| [architecture/current-state.md](architecture/current-state.md) | Entry points, screens, state, API routes, data layer, main user journeys, source of truth per entity, what was verified |
+| [architecture/module-map.md](architecture/module-map.md) | Proposed module boundaries and dependency rules |
+| [architecture/roadmap.md](architecture/roadmap.md) | Ranked problem register and a phased plan with acceptance criteria |
+| [adr/](adr/README.md) | Architecture decision records: what was decided, why, alternatives |
+| [ai-usage-inventory.md](ai-usage-inventory.md) | Where the app uses AI (written earlier, in Arabic) |
+
+### Modules
+
+One folder per module under [modules](modules). Each page has the same sections: purpose and scope, public operations, files and database objects, rules and permissions, data flow, failure and offline behaviour, tests and gaps, an example journey, and a status section.
+
+| Module | Summary |
+| --- | --- |
+| [app-shell](modules/app-shell/README.md) | Start-up, routing, layout, player preferences, wiring |
+| [accounts](modules/accounts/README.md) | Sign-in, sign-up, roles, profile |
+| [content](modules/content/README.md) | The shared course: loading, caching, saving, import and export, renames |
+| [learning-engine](modules/learning-engine/README.md) | Pure rules: questions, grading, mastery, session evidence |
+| [practice](modules/practice/README.md) | Home, sessions, results, stories, speed, stats, question reports |
+| [progress](modules/progress/README.md) | A player's saved state, offline snapshot, merge, leaderboard numbers |
+| [library](modules/library/README.md) | Personal library, views, sharing, links, catalog |
+| [live](modules/live/README.md) | Live Challenge |
+| [social](modules/social/README.md) | Friends, leaderboard, profile, counts |
+| [ai-media](modules/ai-media/README.md) | Gemini calls, quota gate, pronunciation, pictures |
+| [admin](modules/admin/README.md) | Analytics, players, content tools, reports, audit, settings |
+
+## Status words
+
+Every module page separates three kinds of statements. Do not mix them.
+
+| Word | Meaning |
+| --- | --- |
+| **Implemented** | It exists in the code today and was checked by reading it, by a test, or by a run. The page says which. |
+| **Planned** | A proposal that is not in the code. It is never described as if it were done. The source is [roadmap.md](architecture/roadmap.md) or an accepted ADR. |
+| **Known Issue** | A confirmed or suspected problem, with an ID from the [problem register](architecture/roadmap.md#problem-register) and the evidence level (Confirmed, By reading, Suspected). |
+
+The architecture pages also use **Current**, **Confirmed defect**, **Defect (by reading)**, **Assumption** and **Not verified** (see the top of [current-state.md](architecture/current-state.md)).
+
+## Documentation rules
+
+The goal is documentation that stays true, not documentation of everything.
+
+**Update the docs in the same change when you:**
+
+1. change observable behaviour (what a player, the admin or another module sees or can do);
+2. change a public contract: a database function's arguments or result, a table's meaning, an API route, the saved progress format, an import or export file format, a module's interface listed in [module-map.md](architecture/module-map.md#4-public-contracts-to-keep-stable), or a limit or rule shown in the UI;
+3. add, remove or move a module, a screen or a route;
+4. fix or discover a problem listed in the register, or change its evidence or severity;
+5. make a decision that is hard to reverse or affects more than one module (add or supersede an ADR).
+
+**What to update:** the module page(s) that own the change; the register and plan if a problem or phase is affected; [current-state.md](architecture/current-state.md) only when a journey, route, table or source of truth changes; the top-level README if setup, environment variables or user-facing features change.
+
+**Not required:**
+
+- A comment or a doc entry for every function. Document purposes, contracts, rules and flows.
+- Doc updates for refactors that keep behaviour and contracts, bug fixes that restore documented behaviour, styling, copy edits, or test-only changes.
+- Copying code into the docs. Link to the file instead; describe what it does and why.
+
+**Style:**
+
+- Write in English. Keep sentences short and concrete.
+- Link to files with relative paths. Name functions and tables; do not paste their bodies.
+- Mark each statement as Implemented, Planned or Known Issue. Never write a proposal as if it were built.
+- Use synthetic data only. Do not put real usernames, passwords, keys, tokens or player progress in the docs.
+- Name tests by what they check. Counts of tests or coverage are not evidence of quality.
+
+**Review check (pull requests):** if the change touches a contract above, the description says which doc was updated, or why none was needed.
+
+**Keeping it honest:** the verification table in [current-state.md](architecture/current-state.md#9-verification-performed-for-this-document) records the date and result of the checks behind the architecture pages. Re-run the checks and update the table when you change those pages materially.
