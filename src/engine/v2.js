@@ -638,6 +638,47 @@ function normalizeLevel(value){if(typeof value!=='string'&&typeof value!=='numbe
 // for course levels, A1.2 < A1.3 < A2.1. Unknown sits in the middle.
 function difficultyRank(item){const v=String(item?.level||'').trim().toUpperCase();const m=COURSE_LEVEL.exec(v);if(m)return BANDS.indexOf(m[1].toUpperCase())+Number(m[2])/10;const i=BANDS.indexOf(v);return i<0?2.5:i;}
 
+// Order already-built, fresh word candidates for the available word slots.
+// Removes selected questions from candidates in place; the remainder becomes
+// session.reserves in its original order. Keeps question references and may
+// mark the opening fallback initialTraining. All usage state is local here.
+function selectPracticeQuestions(candidates,wordSlots,lastIntro){
+  const queue=[],counts={}, weights={meaning:3,reverse:3,gap:3,gapTyping:3,situation:2,typing:3,order:2,transform:2,multi:1,grammarCourt:1,whoami:2,opposite:2,antonym:2,collocation:2,family:2,picture:3,twopeople:2,selecttwo:2,idiomDetective:2,story:2};
+  const usedSentences=new Set();
+  const usedWords=new Set();
+  // A word shows up at most twice per round; a small category ends the
+  // round early instead of cycling the same few words over and over.
+  const wordUses={};
+  while(queue.length<wordSlots&&candidates.length){
+    const pickable=allowIntro=>candidates.map((q,i)=>({q,i})).filter(({q})=>
+      (allowIntro||!(queue.length===0&&q.targets.includes(lastIntro))) &&
+      !questionSentences(q).some(t=>usedSentences.has(t)) &&
+      !q.targets.some(t=>(wordUses[t]||0)>=2) &&
+      !queue.slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))) &&
+      !(queue.length>=2&&queue.slice(-2).every(p=>p.mode===q.mode))
+    );
+    let eligible=pickable(false),firstPractice=false;
+    // Nothing else can open the round (a view with one new word): the word just introduced is asked after all,
+    // once, as its first practice. Only a question that could be built is used; none is made up.
+    if(!eligible.length&&queue.length===0){eligible=pickable(true);firstPractice=eligible.length>0;}
+    if(!eligible.length)break;
+    eligible.sort((a,b)=>{
+      const aFresh=a.q.targets.some(t=>!usedWords.has(t))?0:1;
+      const bFresh=b.q.targets.some(t=>!usedWords.has(t))?0:1;
+      if(aFresh!==bFresh)return aFresh-bFresh;
+      return ((counts[a.q.mode]||0)/(weights[a.q.mode]||1))-((counts[b.q.mode]||0)/(weights[b.q.mode]||1));
+    });
+    const {q,i}=eligible[0];
+    if(firstPractice&&q.targets.includes(lastIntro))q.initialTraining=true;
+    queue.push(q);
+    questionSentences(q).forEach(t=>usedSentences.add(t));
+    counts[q.mode]=(counts[q.mode]||0)+1;
+    q.targets.forEach(t=>{usedWords.add(t);wordUses[t]=(wordUses[t]||0)+1;});
+    candidates.splice(i,1);
+  }
+  return queue;
+}
+
 function practice(content,mastery={},category=null,rng=Math.random,quarantine=null,opts={}){
   const isQuarantined=(word,mode)=>!!quarantine&&quarantine.has(`${String(word).trim().toLowerCase()}|${mode}`);
   const pools=opts.pools||{};
@@ -756,7 +797,6 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
     }
     return null;
   }).filter(Boolean);
-  const queue=[],counts={}, weights={meaning:3,reverse:3,gap:3,gapTyping:3,situation:2,typing:3,order:2,transform:2,multi:1,grammarCourt:1,whoami:2,opposite:2,antonym:2,collocation:2,family:2,picture:3,twopeople:2,selecttwo:2,idiomDetective:2,story:2};
   const wordSlots=questionsPerRound-grammarQueue.length;
   // Don't show a sentence the learner read in the last SEEN_FRESH_HOURS;
   // Two People / Select Two only ever use sentences never shown before.
@@ -764,28 +804,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   const seen=opts.seen||{};const nowTs=Date.now();
   const stale=q=>questionSentences(q).some(t=>seenRecently(seen,t,PAIR_MODES.has(q.mode)?Infinity:SEEN_FRESH_HOURS,nowTs));
   for(let i=candidates.length-1;i>=0;i--)if(stale(candidates[i]))candidates.splice(i,1);
-  const usedSentences=new Set();
-  // Introductions are separate cards. Last introduced word is never the first test.
-  const lastIntro=fresh.at(-1)?.word;
-  const usedWords=new Set();
-  // A word shows up at most twice per round; a small category ends the
-  // round early instead of cycling the same few words over and over.
-  const wordUses={};
-  while(queue.length<wordSlots&&candidates.length){
-    const pickable=allowIntro=>candidates.map((q,i)=>({q,i})).filter(({q})=>(allowIntro||!(queue.length===0&&q.targets.includes(lastIntro))) && !questionSentences(q).some(t=>usedSentences.has(t)) && !q.targets.some(t=>(wordUses[t]||0)>=2) && !queue.slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))) && !(queue.length>=2&&queue.slice(-2).every(p=>p.mode===q.mode)));
-    let eligible=pickable(false),firstPractice=false;
-    // Nothing else can open the round (a view with one new word): the word just introduced is asked after all,
-    // once, as its first practice. Only a question that could be built is used; none is made up.
-    if(!eligible.length&&queue.length===0){eligible=pickable(true);firstPractice=eligible.length>0;}
-    if(!eligible.length)break;
-    eligible.sort((a,b)=>{
-      const aFresh=a.q.targets.some(t=>!usedWords.has(t))?0:1;
-      const bFresh=b.q.targets.some(t=>!usedWords.has(t))?0:1;
-      if(aFresh!==bFresh)return aFresh-bFresh;
-      return ((counts[a.q.mode]||0)/(weights[a.q.mode]||1))-((counts[b.q.mode]||0)/(weights[b.q.mode]||1));
-    });
-    const {q,i}=eligible[0];if(firstPractice&&q.targets.includes(lastIntro))q.initialTraining=true;queue.push(q);questionSentences(q).forEach(t=>usedSentences.add(t));counts[q.mode]=(counts[q.mode]||0)+1;q.targets.forEach(t=>{usedWords.add(t);wordUses[t]=(wordUses[t]||0)+1;});candidates.splice(i,1);
-  }
+  const queue=selectPracticeQuestions(candidates,wordSlots,fresh.at(-1)?.word);
   // At most one grammar question per 4 word questions, so a short round
   // (e.g. the very first one) stays about the words. Spread the rest
   // through the round (never first), e.g. at 1/3 and 2/3.
