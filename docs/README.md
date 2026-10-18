@@ -42,7 +42,7 @@ One folder per module under [modules](modules). Each page has the same sections:
 | [live](modules/live/README.md) | Live Challenge |
 | [social](modules/social/README.md) | Friends, leaderboard, profile, counts |
 | [ai-media](modules/ai-media/README.md) | Gemini calls, quota gate, pronunciation, pictures |
-| [admin](modules/admin/README.md) | Analytics, players, content tools, reports, audit, settings |
+| [admin](modules/admin/README.md) | Analytics, players, content tools, reports, audit, settings (guide: [content admin](modules/admin/content-admin.md)) |
 
 ## Status words
 

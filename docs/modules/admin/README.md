@@ -43,6 +43,7 @@ The admin API ([adminApi.js](../../../src/features/admin/adminApi.js)); online e
 ## 3. Files, screens and database objects
 
 - Screens: [AdminPanel](../../../src/features/admin/AdminPanel.jsx), the sections in [sections/](../../../src/features/admin/sections), [ContentHealthPanel](../../../src/features/admin/ContentHealthPanel.jsx), editors for [words](../../../src/features/admin/editors/WordEditor.jsx) and [grammar](../../../src/features/admin/editors/GrammarEditor.jsx), shared parts ([DataTable](../../../src/features/admin/DataTable.jsx), [charts](../../../src/features/admin/charts.jsx), [diff](../../../src/features/admin/diff.jsx), [adminUi](../../../src/features/admin/adminUi.jsx)), [ImportExport](../../../src/features/data/ImportExport.jsx).
+- Content admin (rename a word, merge categories, the levels editor, the progress that follows a rename): [features/content-admin](../../../src/features/content-admin), guide [content-admin.md](content-admin.md).
 - Tables: `admin_audit`, `ai_calls`, `app_settings`, `reports`, plus reads of `profiles`, `progress`, `mastery`, `live_*`.
 - Schema `analytics`: views for data quality and word and category numbers (migrations 0010, 0011).
 - Functions: all `admin_*` functions, `require_admin`, `is_admin`, `audit_*` triggers and helpers, `jsonb_changes`, `session_log_rows`, `activity_day_rows`, `try_date`.
@@ -87,6 +88,8 @@ The admin API ([adminApi.js](../../../src/features/admin/adminApi.js)); online e
 | Settings, sign-up limits, rank visibility | [supabase/tests/app_settings.sql](../../../supabase/tests/app_settings.sql), [signup_limits.sql](../../../supabase/tests/signup_limits.sql), [ranks.sql](../../../supabase/tests/ranks.sql) |
 | Daily history behind the charts | [supabase/tests/daily_history.sql](../../../supabase/tests/daily_history.sql) |
 | Panel opens with a course loaded, at two widths | [e2e/specs/sweep.cjs](../../../e2e/specs/sweep.cjs) |
+| Content admin rules and hook | [content-admin-rules.test.js](../../../tests/content-admin-rules.test.js), [content-admin-hook.test.jsx](../../../tests/content-admin-hook.test.jsx) |
+| Merge, delete and remove empty categories in a browser | [e2e/specs/catadmin.cjs](../../../e2e/specs/catadmin.cjs) |
 
 **Gaps.** Refusal of a non-admin is tested in some SQL files, not for every `admin_*` function (the static check above is not a behavioural test). No test exercises the sections against real analytics data in the browser. Player management and the AI tools have no automated test.
 
@@ -107,11 +110,12 @@ The owner investigates a complaint that a question is wrong. (Synthetic data.)
 
 - Phase 1: the admin sees a visible failure when the dictionary copy does not update after a save.
 - Phase 3: server-side checks that make the leaderboard numbers trustworthy (Admin, Players shows them).
-- Phase 4: move content editing handlers out of WordHunter.
+- Phase 4: move the import, export and backup handlers out of WordHunter (the content editing handlers moved: [content-admin.md](content-admin.md)).
 
 **Known Issues**
 
 - `PE-03` maintenance and announcement are enforced in the browser only.
 - `DP-03` a failed dictionary copy is invisible to the admin.
 - `DP-05` reports are stored in two places.
-- `MT-01` the admin's content operations (rename, merge, delete category, update fields) are functions inside WordHunter.
+- `MT-01` (for this module, partly fixed) the content operations moved to `features/content-admin`; import, export and backups are still inside WordHunter.
+- `CA-OBS-01` merging a category into one that already has level stats drops the merged category's stats on this device ([content-admin.md](content-admin.md#known-issues-found-while-moving-not-changed)).
