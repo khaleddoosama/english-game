@@ -61,7 +61,7 @@ Notes on the split:
 
 - `content` and `progress` are the two halves of [repo.js](../../src/lib/repo.js). They share one factory today; the proposal separates them because they change for different reasons and have different writers (admin vs player).
 - `learning-engine` is the pure part of the engine. [engine/ai.js](../../src/engine/ai.js) and the media import belong to `ai-media` and would leave it.
-- `practice` is not a folder today. Its session logic sits inside WordHunter (handlers for starting, answering and finishing rounds, plus a second, unreachable copy of the old round engine, see `MT-03`).
+- `practice` is not a folder today. Its session logic sits inside WordHunter (handlers for starting, answering and finishing rounds; the second, unreachable copy of the old round engine was removed on 2026-10-18, `MT-03`).
 - `accounts` and `app-shell` are small on purpose.
 
 ## 3. Proposed dependency direction

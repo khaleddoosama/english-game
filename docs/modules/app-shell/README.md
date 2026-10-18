@@ -93,5 +93,4 @@ A player has the game open on a phone, switches to another app for ten minutes, 
 
 - `MT-01` one component of about 2,150 lines with about 90 state hooks.
 - `MT-02` content held in mutable module variables.
-- `MT-03` unreachable old round engine inside the component.
 - `PE-03` maintenance mode and announcement enforced in the browser only; the top-level README says app settings are "enforced in the database" (`MT-06`).

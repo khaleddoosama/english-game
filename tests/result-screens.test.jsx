@@ -3,7 +3,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { FinalReport, FinalResults, ReviewResults, RoundResults, SpeedResults } from "../src/features/results/ResultScreens.jsx";
+import { FinalReport, FinalResults, SpeedResults } from "../src/features/results/ResultScreens.jsx";
 import { DeleteCategoryConfirm, ResetConfirm } from "../src/features/shell/ConfirmDialogs.jsx";
 
 let root, host;
@@ -15,38 +15,8 @@ const $$ = (s) => [...host.querySelectorAll(s)];
 const btn = (text) => $$("button").find((b) => b.textContent === text);
 const click = async (el) => { await act(async () => { el.dispatchEvent(new MouseEvent("click", { bubbles: true })); }); };
 const level = { title: "Personality" };
-const summary = { accuracy: 90, correct: 9, total: 10, earnedStars: 2, improved: 3, masteredGained: 1, passed: true, weakCount: 2 };
 
-describe("RoundResults", () => {
-  const base = { level, summary, topConfusion: null, canFinalCase: true, hasNext: true, onRetry: vi.fn(), onFinalCase: vi.fn(), onNext: vi.fn(), onBack: vi.fn() };
-  it("shows the numbers and every button when the round was passed", async () => {
-    await render(<RoundResults {...base} topConfusion={{ pair: ["Brand", "Campaign"] }} />);
-    expect($(".wh-results-stamp").textContent).toBe("CASE CLOSED");
-    expect($(".wh-results-score").textContent).toContain("9/10 correct");
-    expect($(".wh-results-learning").textContent).toContain("3 improved");
-    expect($(".wh-results-note").textContent).toContain("Brand and Campaign");
-    expect($$(".wh-results-actions button").map((b) => b.textContent)).toEqual(["Retry case", "Final Case", "Next Case →", "Back to levels"]);
-    await click(btn("Next Case →")); expect(base.onNext).toHaveBeenCalled();
-    await click(btn("Retry case")); expect(base.onRetry).toHaveBeenCalled();
-  });
-  it("a failed round offers only Retry and Back; no Final Case without words", async () => {
-    await render(<RoundResults {...base} summary={{ ...summary, passed: false }} />);
-    expect($$(".wh-results-actions button").map((b) => b.textContent)).toEqual(["Retry case", "Back to levels"]);
-    await act(async () => root.unmount()); host.remove();
-    await render(<RoundResults {...base} canFinalCase={false} hasNext={false} />);
-    expect($$(".wh-results-actions button").map((b) => b.textContent)).toEqual(["Retry case", "Back to levels"]);
-  });
-});
-
-describe("ReviewResults and SpeedResults", () => {
-  it("Review More only when there are weak words left", async () => {
-    await render(<ReviewResults summary={summary} canReviewMore onReviewMore={() => {}} onBack={() => {}} />);
-    expect(btn("Review More")).toBeTruthy();
-    expect($(".wh-results-learning").textContent).toContain("2 still need review");
-    await act(async () => root.unmount()); host.remove();
-    await render(<ReviewResults summary={summary} canReviewMore={false} onReviewMore={() => {}} onBack={() => {}} />);
-    expect(btn("Review More")).toBeUndefined();
-  });
+describe("SpeedResults", () => {
   it("a new best score is announced only when it beats the old one", async () => {
     const props = { score: 120, correct: 8, answered: 10, bestCombo: 5, onAgain: vi.fn(), onBack: vi.fn() };
     await render(<SpeedResults {...props} best={100} />);

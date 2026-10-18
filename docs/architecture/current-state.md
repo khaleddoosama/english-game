@@ -235,7 +235,7 @@ sequenceDiagram
 
 | Item | Detail |
 | --- | --- |
-| Screen | `SessionView` (the old `playing` screen is unreachable, `MT-03`) |
+| Screen | `SessionView` (the old, unreachable `playing` screen was removed on 2026-10-18, `MT-03`) |
 | Grading | In the browser. `V2.grade` compares normalised text, detects a one-letter typo as "spelling", and marks free-writing questions `unverified`. A wrong typed answer is re-judged by AI as a possible valid alternative before the player is told it is wrong ("Check another word in a gap"). Free-writing questions are judged by AI ("Check a written answer"). A failed AI call sets `aiFailed`; such answers are left out of the evidence. A hint marks an answer `assisted`; a round with an assisted answer to a word counts as a miss for that word. A "Report" action files a report and excludes the answer. |
 | Per answer | `recordSessionResult` in WordHunter updates attempts, answer streak and score (+10 for an independent correct answer), today's progress, the sentence pool counters (`lockedUntil` after two correct answers), and confusion pairs on wrong multiple-choice answers. It runs at most once per question. |
 | Per session | Mastery changes only when the session is finished (`completeSession`, from "Save results & review" or Back on the summary): `V2.sessionEvidence` adds one piece of evidence per word per session, skips sessions already applied, and never applies a round twice. |

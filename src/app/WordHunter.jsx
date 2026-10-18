@@ -1,6 +1,6 @@
 import { cancelAiTasks } from "../lib/aiOperations.js";
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Award, BarChart3, LogOut, Settings as SettingsIcon, Wrench, CheckCircle2, Flag, Flame, HelpCircle, Lock, Play, Search, Target, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
+import { Award, BarChart3, LogOut, Settings as SettingsIcon, Wrench, CheckCircle2, Flame, HelpCircle, Lock, Play, Target, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
 import { V2 } from "../engine/v2";
 import { imageLinkOk } from "../features/media/media";
 import { unlockAudioOnFirstTouch } from "../lib/sound";
@@ -8,13 +8,13 @@ unlockAudioOnFirstTouch(); // the first tap lets answer sounds play on phones
 import { isEmbeddedImage, storeEmbeddedImages } from "../lib/images";
 import { SessionView } from "../features/session/SessionView";
 import { Splash } from "../features/auth/LoginPage";
-import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTERY_STAGE_RANK, PRODUCTION_MODES, RECENT_RESULT_LIMIT, WORDS, confusionCount, getMasteryStage, getStarsForAccuracy, isWordKey, courseLevelGroups, levelItemKey, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setLastChallengeId, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
-import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildEntryQuestion, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, entryFileMeta, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, uniqueStrings, v2SessionFromEntries } from "../engine/questions";
-import { buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, spellingDistanceInfo } from "../engine/ai";
+import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, RECENT_RESULT_LIMIT, WORDS, confusionCount, getMasteryStage, isWordKey, courseLevelGroups, levelItemKey, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
+import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, v2SessionFromEntries } from "../engine/questions";
+import { evaluateFinalReport, generateComboVariant, generateContent, generateGrammarVariant } from "../engine/ai";
 import { normalizeAnswerText } from "../engine/text";
 import { useQuestionReports } from "../features/reports";
 import { useContentAdmin } from "../features/content-admin";
-import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
+import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, emptyProgressData, getBadgeProgress, getWeakWordCandidates, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
 import { getFriendsApi, localAreFriends, localFriendSince, localNameOf } from "../features/social/friendsApi";
@@ -27,7 +27,7 @@ import CourseLevelsView from "../features/home/CourseLevelsView";
 import HomeTabs from "../features/home/HomeTabs";
 import LessonsView from "../features/home/LessonsView";
 import { homeTabs, itemsScope, limitLessons, resolveHomeView } from "../features/home/homeState";
-import { FinalReport, FinalResults, ReviewResults, RoundResults, SpeedResults } from "../features/results/ResultScreens";
+import { FinalReport, FinalResults, SpeedResults } from "../features/results/ResultScreens";
 import { DeleteCategoryConfirm, ResetConfirm } from "../features/shell/ConfirmDialogs";
 // Screens most players open rarely load on demand, keeping the first
 // download small: Admin (and all its tools), Live, Leaderboard, Profile.
@@ -45,7 +45,7 @@ function localTabPlayer() {
 // The Admin tab reopens the admin page (and filters) used last.
 const lastAdminPath = () => { try { const p = localStorage.getItem("wh-admin-path"); return p && p.startsWith("/admin") ? p : "/admin"; } catch { return "/admin"; } };
 const masteredCountFor = (m) => Object.entries(m || {}).filter(([k, v]) => isWordKey(k) && V2.stage(v) === "Mastered").length;
-const PLAY_SCREENS = new Set(["session", "playing", "results", "reviewResults", "finalReport", "finalResults", "speed", "speedResults"]);
+const PLAY_SCREENS = new Set(["session", "finalReport", "finalResults", "speed", "speedResults"]);
 // Who the player's friends are in local mode, for the library's sharing (the library does not import the friends module).
 const LOCAL_PEOPLE = { areFriends: (a, b) => localAreFriends(window.localStorage, a, b), friendSince: (a, b) => localFriendSince(window.localStorage, a, b), nameOf: (id) => localNameOf(window.localStorage, id) };
 const AdminPanel = lazy(() => import("../features/admin/AdminPanel").then((m) => ({ default: m.AdminPanel })));
@@ -325,19 +325,12 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [customChallenges, setCustomChallenges] = useState([]);
   const [, setQuickBackupCopied] = useState(false);
   const [showFreshCopyPrompt, setShowFreshCopyPrompt] = useState(false);
-  const [sessionType, setSessionType] = useState("level");
   const [levelsCleared, setLevelsCleared] = useState([]);
   const [levelStats, setLevelStats] = useState({});
   const [studyStreak, setStudyStreak] = useState(0);
   const [bestStudyStreak, setBestStudyStreak] = useState(0);
   const [lastStudyDate, setLastStudyDate] = useState(null);
   const [currentLevelIndex, setCurrentLevelIndex] = useState(null);
-  const [roundQueue] = useState([]);
-  const [roundIndex, setRoundIndex] = useState(0);
-  const [, setRoundCorrect] = useState(0);
-  const [, setRoundTotal] = useState(0);
-  const [, setJustCleared] = useState(false);
-  const [lastRoundSummary, setLastRoundSummary] = useState(null);
   const [finalCaseWords, setFinalCaseWords] = useState([]);
   const [finalReportText, setFinalReportText] = useState("");
   const [finalRecallSummary, setFinalRecallSummary] = useState(null);
@@ -353,21 +346,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [bestSpeedScore, setBestSpeedScore] = useState(0);
   const [bestSpeedCombo, setBestSpeedCombo] = useState(0);
 
-  const [selected, setSelected] = useState(null);
-  const [selectedMulti, setSelectedMulti] = useState([]);
-  const [typed, setTyped] = useState("");
-  const [status, setStatus] = useState(null);
-  const [availableTokens, setAvailableTokens] = useState([]);
-  const [orderedTokens, setOrderedTokens] = useState([]);
-  const [challengeStepIndex, setChallengeStepIndex] = useState(0);
-  const [challengeStepResults, setChallengeStepResults] = useState([]);
-  const [stepAnswer, setStepAnswer] = useState("");
-  const [stepFeedback, setStepFeedback] = useState(null);
-  const [feedbackDetail, setFeedbackDetail] = useState(null);
-  const [aiEvaluation, setAiEvaluation] = useState(null);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState(null);
-  const [grammarCorrectionResult, setGrammarCorrectionResult] = useState(null);
 
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -395,11 +375,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     progress: { masteryRef, setMastery, poolsRef, setPools, confusionsRef, setConfusions, setLevelStats, setLevelsCleared },
     followReportRename: questionReportsApi.followRename,
   });
-  const roundCorrectRef = useRef(0);
-  const roundTotalRef = useRef(0);
-  const roundStartStagesRef = useRef({});
   const studyRef = useRef({ studyStreak: 0, bestStudyStreak: 0, lastStudyDate: null });
-  const feedbackRequestIdRef = useRef(0);
   useEffect(() => { poolsRef.current = pools; }, [pools]);
   useEffect(() => { masteryRef.current = mastery; }, [mastery]);
   useEffect(() => { confusionsRef.current = confusions; }, [confusions]);
@@ -408,34 +384,13 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const clearedSet = useMemo(() => new Set(levelsCleared), [levelsCleared]);
   const weakCandidates = useMemo(() => getWeakWordCandidates(WORDS, mastery, confusions), [mastery, confusions, dataVersion]);
   const masteredOnlyWords = useMemo(() => WORDS.filter((w) => getMasteryStage(mastery[w.word], { kind: "word", obj: w }) === MASTERY_STAGE.MASTERED), [mastery, dataVersion]);
-  const learningInsights = useMemo(() => deriveLearningInsights(WORDS, mastery, confusions), [mastery, confusions, dataVersion]);
   const currentLevel = currentLevelIndex !== null ? LEVELS[currentLevelIndex] : null;
   const askAi = useAskAi({
     isAdmin, liveContent, content: { customWords, customGrammar, customChallenges }, set: { setCustomWords, setDataVersion, setToast },
     contextCategory: contextCategoryOf(currentLevel, activeSession), onWordAdded: (entry) => keepInLibrary(library, entry),
   });
   const openAskAi = askAi.openAskAi;
-  const currentEntry = roundQueue[roundIndex] || null;
-  // Built once per case, not per pools update — otherwise answering (which
-  // updates pools) would reshuffle this very question's own options.
-  const question = useMemo(
-    () => (currentEntry ? buildEntryQuestion(currentEntry, poolsRef.current) : null),
-    [currentEntry]
-  );
-  useEffect(() => () => { aiViewEpoch.current++; cancelAiTasks(["Check a written answer", "Check another word in a gap", "Grammar court", "Check a final case report"]); setAiBusy(false); }, [question]);
 
-  useEffect(() => {
-    setAvailableTokens(
-      question?.type === "wordOrder"
-        ? shuffle(question.tokens || []).map((text, index) => ({ id: `${index}-${text}`, text }))
-        : []
-    );
-    setOrderedTokens([]);
-    setChallengeStepIndex(0);
-    setChallengeStepResults([]);
-    setStepAnswer("");
-    setStepFeedback(null);
-  }, [question]);
 
   function getLevelStars(levelId) {
     return Math.max(Number(levelStats[levelId]?.stars || 0), clearedSet.has(levelId) ? 1 : 0);
@@ -459,11 +414,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     setLastStudyDate(next.lastStudyDate);
   }
 
-  function snapshotStages(items) {
-    const snapshot = {};
-    items.forEach((item) => { const key = levelItemKey(item); snapshot[key] = getMasteryStage(masteryRef.current[key], item); });
-    return snapshot;
-  }
 
   // Fires a background content-generation request for the given
   // (word, poolType) pairs and merges the results into the pools once ready.
@@ -804,7 +754,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       return entry;
     }).filter((entry, i, arr) => i === 0 || entry.wordObj.word !== arr[i - 1].wordObj.word);
     setCurrentLevelIndex(null);
-    roundStartStagesRef.current = snapshotStages(queue.map((entry) => ({ kind: "word", obj: entry.wordObj })));
     setPoolsSnapshotForSession(poolsRef.current);
     launchSession(v2SessionFromEntries(queue,{kind:"weak",title:"Weak Evidence",idPrefix:"weak"}));
   }
@@ -826,27 +775,12 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     setFinalReportText("");
     setFinalRecallSummary(null);
     setFinalCaseResult(null);
-    roundStartStagesRef.current = snapshotStages(selectedItems);
     setPoolsSnapshotForSession(poolsRef.current);
     launchSession(v2SessionFromEntries(selectedWords.map((wordObj)=>({kind:"word",wordObj,mode:"gapTyping",difficulty:4})),{kind:"finalRecall",title:`Final Case — ${level.title}`,idPrefix:"final"}));
   }
 
-  function retryLevel() { if (currentLevelIndex !== null) startLevel(currentLevelIndex); }
-  function backToLevels() { setScreen("levels"); setCurrentLevelIndex(null); setSessionType("level"); }
+  function backToLevels() { setScreen("levels"); setCurrentLevelIndex(null); }
 
-  function learningDelta(items) {
-    let improved = 0;
-    let masteredGained = 0;
-    items.filter((item) => item.kind === "word").forEach((item) => {
-      const key = levelItemKey(item);
-      const before = roundStartStagesRef.current[key] || MASTERY_STAGE.NEW;
-      const after = getMasteryStage(masteryRef.current[key], item);
-      if (MASTERY_STAGE_RANK[after] > MASTERY_STAGE_RANK[before]) improved += 1;
-      if (after === MASTERY_STAGE.MASTERED && before !== MASTERY_STAGE.MASTERED) masteredGained += 1;
-    });
-    const weakCount = getWeakWordCandidates(items.filter((x) => x.kind === "word").map((x) => x.obj), masteryRef.current, confusionsRef.current).length;
-    return { improved, masteredGained, weakCount };
-  }
 
   function trackConfusion(targetWord, selectedValue) {
     const selectedWord = findWordByLabel(selectedValue);
@@ -859,332 +793,21 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     setConfusions(next);
   }
 
-  function registerResult(correct, meta = {}) {
-    if (!question) return;
-    const now = Date.now();
-    const key = question.target.key;
-    const modeId = question.modeId || question.poolType || (question.type === "typing" ? "typing" : "unknown");
-    const isChallenge = String(key).startsWith("challenge:");
-    const isWord = !String(key).startsWith("grammar:") && !String(key).startsWith("pun:") && !isChallenge;
-    const roundCorrect = meta.roundCorrect !== undefined ? meta.roundCorrect : correct;
-    const masteryCorrect = !question.hint && (meta.masteryCorrect !== undefined ? meta.masteryCorrect : correct);
 
-    setAttempted((n) => n + 1);
-    roundTotalRef.current += 1; setRoundTotal(roundTotalRef.current);
-    if (roundCorrect) { roundCorrectRef.current += 1; setRoundCorrect(roundCorrectRef.current); }
-    setStreak((s) => { const next = roundCorrect ? s + 1 : 0; setBestStreak((best) => Math.max(best, next)); return next; });
-    setScore((scoreValue) => roundCorrect ? scoreValue + 10 : scoreValue);
 
-    const prevMastery = masteryRef.current;
-    let progressionEligible = meta.skipProgression !== true;
-    if (progressionEligible && isWord && question.poolType && question.poolItemId) {
-      const displayedVariant = getWordPools(poolsRef.current, question.target)[question.poolType]?.find((it) => it.id === question.poolItemId);
-      progressionEligible = !(displayedVariant?.lockedUntil && displayedVariant.lockedUntil > now);
-    }
 
-    if (progressionEligible) {
-      const prev = normalizeMasteryRecord(prevMastery[key]);
-      const prevMode = normalizeModeStats(prev.modes[modeId]);
-      const productionAttempt = isWord && PRODUCTION_MODES.has(modeId);
-      const genuineProduction = productionAttempt && masteryCorrect && meta.productionSuccess !== false;
-      const streak = isWord ? updateReviewStreak(prev, masteryCorrect, now, { productionNow: genuineProduction }) : { lastReviewedAt: now };
-      const sentenceAttempt = modeId === "finalReport";
-      const regressionStrikes = prev.everMastered
-        ? (masteryCorrect ? Math.max(0, prev.regressionStrikes - 1) : prev.regressionStrikes + 1)
-        : prev.regressionStrikes;
-      let nextRecord = {
-        ...prev,
-        assistedAttempts: Number(prev.assistedAttempts || 0) + (question.hint ? 1 : 0),
-        correct: prev.correct + (masteryCorrect ? 1 : 0),
-        total: prev.total + 1,
-        modes: { ...prev.modes, [modeId]: { ...prevMode, correct: prevMode.correct + (masteryCorrect ? 1 : 0), total: prevMode.total + 1, spellingMisses: prevMode.spellingMisses + (meta.spellingIssue ? 1 : 0), lastResult: masteryCorrect ? "correct" : meta.spellingIssue ? "spelling" : "wrong", lastDifficulty: Number(question.difficulty || 1) } },
-        productionCorrect: prev.productionCorrect + (genuineProduction ? 1 : 0),
-        productionAttempts: prev.productionAttempts + (productionAttempt ? 1 : 0),
-        spellingMisses: prev.spellingMisses + (meta.spellingIssue ? 1 : 0),
-        sentenceAttempts: prev.sentenceAttempts + (sentenceAttempt ? 1 : 0),
-        sentenceSuccesses: prev.sentenceSuccesses + (sentenceAttempt && genuineProduction ? 1 : 0),
-        aiEvaluatedAttempts: prev.aiEvaluatedAttempts + (meta.aiEvaluated ? 1 : 0),
-        lastResult: masteryCorrect ? "correct" : meta.spellingIssue ? "spelling" : "wrong",
-        regressionStrikes,
-        recentResults: [...prev.recentResults, { correct: masteryCorrect, modeId, difficulty: Number(question.difficulty || 1), at: now, spelling: !!meta.spellingIssue }].slice(-RECENT_RESULT_LIMIT),
-        ...streak,
-      };
-      if (getMasteryStage(nextRecord, { kind: isWord ? "word" : "grammar", obj: question.target }) === MASTERY_STAGE.MASTERED) nextRecord.everMastered = true;
-      let nextMastery = { ...prevMastery, [key]: nextRecord };
-      if (isChallenge && Array.isArray(question.linkedWords)) {
-        question.linkedWords.filter(label => [question.answer, ...(question.correctAnswers || [])].some(answer => V2.norm(answer) === V2.norm(label))).forEach((linkedWord) => {
-          const wordObj = WORDS.find((word) => word.word === linkedWord);
-          if (!wordObj) return;
-          const linkedPrev = normalizeMasteryRecord(nextMastery[linkedWord]);
-          const linkedMode = normalizeModeStats(linkedPrev.modes[modeId]);
-          const linkedProductionAttempt = PRODUCTION_MODES.has(modeId);
-          const linkedProductionSuccess = linkedProductionAttempt && masteryCorrect && meta.productionSuccess !== false;
-          let linkedRecord = {
-            ...linkedPrev,
-            correct: linkedPrev.correct + (masteryCorrect ? 1 : 0),
-            total: linkedPrev.total + 1,
-            modes: {
-              ...linkedPrev.modes,
-              [modeId]: {
-                ...linkedMode,
-                correct: linkedMode.correct + (masteryCorrect ? 1 : 0),
-                total: linkedMode.total + 1,
-                lastResult: masteryCorrect ? "correct" : "wrong",
-                lastDifficulty: Number(question.difficulty || 1),
-              },
-            },
-            productionCorrect: linkedPrev.productionCorrect + (linkedProductionSuccess ? 1 : 0),
-            productionAttempts: linkedPrev.productionAttempts + (linkedProductionAttempt ? 1 : 0),
-            sentenceAttempts: linkedPrev.sentenceAttempts,
-            sentenceSuccesses: linkedPrev.sentenceSuccesses,
-            lastResult: masteryCorrect ? "correct" : "wrong",
-            recentResults: [...linkedPrev.recentResults, { correct: masteryCorrect, modeId, difficulty: Number(question.difficulty || 1), at: now }].slice(-RECENT_RESULT_LIMIT),
-            ...updateReviewStreak(linkedPrev, masteryCorrect, now),
-          };
-          if (getMasteryStage(linkedRecord, { kind: "word", obj: wordObj }) === MASTERY_STAGE.MASTERED) linkedRecord.everMastered = true;
-          nextMastery[linkedWord] = linkedRecord;
-        });
-      }
-      masteryRef.current = nextMastery;
-      setMastery(nextMastery);
-    }
 
-    if (question.poolType && question.poolItemId && isWord) {
-      const wordObj = question.target;
-      const poolsSnapshot = poolsRef.current;
-      const wordPools = getWordPools(poolsSnapshot, wordObj);
-      const arr = wordPools[question.poolType].map((it) => {
-        if (it.id !== question.poolItemId) return it;
-        const attempts = it.attempts + 1;
-        const correctCount = it.correctCount + (masteryCorrect ? 1 : 0);
-        const lockedUntil = correctCount >= 2 ? now + LOCK_DAYS * 24 * 60 * 60 * 1000 : it.lockedUntil;
-        return { ...it, attempts, correctCount, lockedUntil };
-      });
-      const nextWordPools = { ...wordPools, [question.poolType]: arr };
-      const nextPools = { ...poolsSnapshot, [wordObj.word]: nextWordPools };
-      poolsRef.current = nextPools; setPools(nextPools);
-      if (poolNeedsGeneration(nextWordPools, question.poolType)) triggerGeneration([{ word: wordObj.word, poolType: question.poolType }], nextPools);
-    }
-    if (isChallenge) setLastChallengeId(question.challengeId);
-  }
 
-  function handleSelect(opt) {
-    if (status) return;
-    setSelected(opt);
-    const correct = normalizeAnswerText(opt) === normalizeAnswerText(question.answer);
-    const detail = correct ? null : buildContrastiveFeedback(question, opt);
-    setFeedbackDetail(detail);
-    const confusionTarget = findWordByLabel(question.answer);
-    if (!correct && confusionTarget && findWordByLabel(opt)) trackConfusion(confusionTarget, opt);
-    setStatus(correct ? "correct" : "wrong");
-    registerResult(correct);
 
-    // Ask the AI for a sharper, situation-grounded explanation in the
-    // background and swap it in once ready; the static line above stays
-    // visible in the meantime so feedback is never empty.
-    if (detail) {
-      const requestId = ++feedbackRequestIdRef.current;
-      const chosenWord = findWordByLabel(opt);
-      const correctWord = findWordByLabel(question.answer) || question.target;
-      if (chosenWord && correctWord) {
-        setFeedbackDetail((prev) => (prev ? { ...prev, aiLoading: true } : prev));
-        explainWrongLead(question, chosenWord, correctWord)
-          .then((text) => {
-            if (feedbackRequestIdRef.current !== requestId) return; // a newer question took over
-            setFeedbackDetail((prev) => (prev ? { ...prev, aiLoading: false, ...(text ? { keyDifference: text } : {}) } : prev));
-          })
-          .catch(() => {
-            if (feedbackRequestIdRef.current !== requestId) return;
-            setFeedbackDetail((prev) => (prev ? { ...prev, aiLoading: false } : prev));
-          });
-      }
-    }
-  }
 
-  function toggleMultiOption(opt) { if (!status) setSelectedMulti((prev) => prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]); }
-  function submitMulti() {
-    if (status || selectedMulti.length === 0) return;
-    const want = question.correctAnswers.map(normalizeAnswerText).sort(), got = selectedMulti.map(normalizeAnswerText).sort();
-    const correct = want.length === got.length && want.every((w, i) => w === got[i]);
-    setStatus(correct ? "correct" : "wrong"); registerResult(correct);
-  }
 
-  function acceptedAnswerMatches(value, accepted = []) {
-    const normalized = normalizeAnswerText(value).replace(/[.!?]+$/, "").trim();
-    return uniqueStrings(accepted).some((answer) => normalizeAnswerText(answer).replace(/[.!?]+$/, "").trim() === normalized);
-  }
 
-  function moveTokenToAnswer(token) {
-    if (status) return;
-    setAvailableTokens((prev) => prev.filter((item) => item.id !== token.id));
-    setOrderedTokens((prev) => [...prev, token]);
-  }
 
-  function moveTokenBack(token) {
-    if (status) return;
-    setOrderedTokens((prev) => prev.filter((item) => item.id !== token.id));
-    setAvailableTokens((prev) => [...prev, token]);
-  }
 
-  function submitWordOrder() {
-    if (status || availableTokens.length || !orderedTokens.length) return;
-    const built = orderedTokens.map((token) => token.text).join(" ");
-    setTyped(built);
-    const accepted = question.acceptedAnswers?.length ? question.acceptedAnswers : [question.answer];
-    const correct = accepted.some(answer=>V2.sentence(answer)===V2.sentence(built));
-    setStatus(correct ? "correct" : "wrong");
-    registerResult(correct, { productionSuccess: correct });
-  }
 
-  function submitSelfCheck() {
-    if (status || !typed.trim()) return;
-    const missing = (question.requiredWords || []).filter((word) => !containsRequiredTerm(typed, word));
-    if (missing.length) {
-      setStepFeedback({ correct: false, explanation: `Still missing: ${missing.join(", ")}. Revise your sentence and check again.` });
-      return;
-    }
-    setStepFeedback({
-      correct: true,
-      explanation: "Required words found. This is an objective inclusion check only; compare your sentence with the model example for a self-check.",
-    });
-    setStatus("correct");
-    registerResult(true, { productionSuccess: false, skipProgression: true });
-  }
 
-  function submitChallengeStep() {
-    if (status || stepFeedback || !question?.steps?.[challengeStepIndex]) return;
-    const step = question.steps[challengeStepIndex];
-    if (!stepAnswer.trim()) return;
-    const correct = acceptedAnswerMatches(stepAnswer, step.acceptedAnswers);
-    setStepFeedback({ correct, explanation: step.explanation || (correct ? "Correct." : `Accepted answer: ${step.acceptedAnswers[0] || "—"}`) });
-  }
 
-  function advanceChallengeStep() {
-    if (!stepFeedback || !question?.steps?.length) return;
-    const results = [...challengeStepResults, stepFeedback.correct];
-    if (challengeStepIndex + 1 < question.steps.length) {
-      setChallengeStepResults(results);
-      setChallengeStepIndex((index) => index + 1);
-      setStepAnswer("");
-      setStepFeedback(null);
-      return;
-    }
-    const correct = results.every(Boolean);
-    setChallengeStepResults(results);
-    setStatus(correct ? "correct" : "wrong");
-    registerResult(correct, { productionSuccess: correct });
-  }
 
-  async function submitTyped() {
-    const epoch=aiViewEpoch.current;
-    if (status || aiBusy || !typed.trim()) return;
-    const guess = typed.trim();
-    const accepted = question.acceptedAnswers?.length ? question.acceptedAnswers : [question.answer];
-    if (acceptedAnswerMatches(guess, accepted)) { setStatus("correct"); setAiEvaluation(null); registerResult(true, { productionSuccess: PRODUCTION_MODES.has(question.modeId || "") }); return; }
-    if(question.modelOnly) {
-      setAiBusy(true); setAiError(null);
-      try {
-        const evaluation = await evaluateFreeForm(question, guess);
-      if(epoch!==aiViewEpoch.current)return;
-        setAiEvaluation(evaluation);
-        const genuine = evaluation.correct && evaluation.targetWordUsed && evaluation.semanticUse === "correct";
-        if (genuine) {
-          setStatus("correct");
-          registerResult(true, { productionSuccess: PRODUCTION_MODES.has(question.modeId || ""), aiEvaluated: true });
-        } else if (evaluation.semanticUse === "partly_correct" && evaluation.naturalness !== "nonsense") {
-          setStatus("close");
-          registerResult(false, { productionSuccess: false, aiEvaluated: true });
-        } else {
-          setStatus("wrong");
-          registerResult(false, { aiEvaluated: true });
-        }
-      } catch (e) { if(epoch!==aiViewEpoch.current)return;
-        setAiError("AI evaluation is unavailable. Retry, or continue without recording this answer.");
-        setStatus("aiError");
-      } finally {
-        if(epoch===aiViewEpoch.current)setAiBusy(false);
-      }
-      return;
-    }
-    const spell = spellingDistanceInfo(guess, question.answer);
-    if (spell.close) { setStatus("close"); setAiEvaluation(null); registerResult(false, { spellingIssue: true, masteryCorrect: false, productionSuccess: false }); return; }
-    if (question.allowAlternativeGap) {
-      setAiBusy(true); setAiError(null);
-      try {
-        const evaluation = await evaluateAlternativeGap(question, guess);
-      if(epoch!==aiViewEpoch.current)return;
-        setAiEvaluation(evaluation);
-        if (evaluation.correct) {
-          setStatus("correctAlternative");
-          registerResult(false, { roundCorrect: true, masteryCorrect: false, productionSuccess: false, aiEvaluated: true });
-        } else { setStatus("wrong"); registerResult(false, { aiEvaluated: true }); }
-      } catch (e) { if(epoch!==aiViewEpoch.current)return; setAiError("AI evaluation is unavailable. Retry, or continue without recording this answer."); setStatus("aiError"); }
-      finally { if(epoch===aiViewEpoch.current)setAiBusy(false); }
-      return;
-    }
-    setStatus("wrong"); registerResult(false);
-  }
-
-  async function submitGrammarCorrection() {
-    const epoch=aiViewEpoch.current;
-    if (!question?.court || aiBusy || !typed.trim()) return;
-    setAiBusy(true); setAiError(null);
-    try {
-      const result = await evaluateGrammarCorrection(question, typed.trim());
-      if(epoch!==aiViewEpoch.current)return;
-      setGrammarCorrectionResult(result);
-    } catch (e) { if(epoch!==aiViewEpoch.current)return;
-      console.error("Grammar correction evaluation failed:", e);
-      setGrammarCorrectionResult({ correct: false, confidence: "low", feedback: "The judge is unavailable right now. Your original answer record was not changed.", suggestedCorrection: "" });
-    } finally { if(epoch===aiViewEpoch.current)setAiBusy(false); }
-  }
-
-  async function submitFreeForm() {
-    const epoch=aiViewEpoch.current;
-    if (status || aiBusy || !typed.trim()) return;
-    setAiBusy(true); setAiError(null);
-    try {
-      const evaluation = await evaluateFreeForm(question, typed.trim());
-      if(epoch!==aiViewEpoch.current)return;
-      setAiEvaluation(evaluation);
-      const genuine = evaluation.correct && (question.freeformKind === "idiomMeaning" || evaluation.targetWordUsed) && evaluation.semanticUse === "correct";
-      if (evaluation.correct) {
-        setStatus(genuine ? "correct" : "close");
-        registerResult(genuine, { roundCorrect: true, masteryCorrect: genuine, productionSuccess: genuine, aiEvaluated: true });
-      } else if (evaluation.semanticUse === "partly_correct" && evaluation.naturalness !== "nonsense") {
-        setStatus("close"); registerResult(false, { productionSuccess: false, aiEvaluated: true });
-      } else { setStatus("wrong"); registerResult(false, { productionSuccess: false, aiEvaluated: true }); }
-    } catch (e) { if(epoch!==aiViewEpoch.current)return; console.error("AI evaluation failed:", e); setAiError("AI evaluation is unavailable. Retry, or continue without recording this answer."); setStatus("aiError"); }
-    finally { if(epoch===aiViewEpoch.current)setAiBusy(false); }
-  }
-
-  function continueAfterAiFailure() { setStatus("skipped"); setAiError(null); }
-
-  function finishCurrentRound() {
-    const total = roundTotalRef.current, correct = roundCorrectRef.current;
-    const accuracy = total > 0 ? (correct / total) * 100 : 0;
-    if (sessionType === "level" && currentLevel) {
-      const previousStars = getLevelStars(currentLevel.id), earnedStars = getStarsForAccuracy(accuracy), passed = accuracy >= 70;
-      const delta = learningDelta(currentLevel.items);
-      setLevelStats((prev) => ({ ...prev, [currentLevel.id]: updateLevelStat(prev[currentLevel.id], accuracy, previousStars) }));
-      if (passed) setLevelsCleared((prev) => prev.includes(currentLevel.id) ? prev : [...prev, currentLevel.id]);
-      setJustCleared(passed && previousStars === 0);
-      setLastRoundSummary({ accuracy, correct, total, earnedStars, passed, previousStars, ...delta });
-      recordStudyDay(); setScreen("results"); return;
-    }
-    if (sessionType === "weak") {
-      const reviewItems = roundQueue.map((entry) => ({ kind: "word", obj: entry.wordObj }));
-      setLastRoundSummary({ accuracy, correct, total, ...learningDelta(reviewItems) }); recordStudyDay(); setScreen("reviewResults"); return;
-    }
-    if (sessionType === "challenge") { recordStudyDay();setToast({text:`Challenge complete: ${correct}/${total}`});setScreen("levels");return; }
-    if (sessionType === "final") { setFinalRecallSummary({ accuracy, correct, total }); setScreen("finalReport"); }
-  }
-
-  function nextQuestion() {
-    const isLast = roundIndex + 1 >= roundQueue.length;
-    if (isLast) { finishCurrentRound(); return; }
-    setRoundIndex((i) => i + 1); setSelected(null); setSelectedMulti([]); setTyped(""); setStatus(null); setAvailableTokens([]); setOrderedTokens([]); setChallengeStepIndex(0); setChallengeStepResults([]); setStepAnswer(""); setStepFeedback(null); feedbackRequestIdRef.current++; setFeedbackDetail(null); setAiEvaluation(null); setAiError(null); setGrammarCorrectionResult(null);
-  }
 
   async function finishFinalCaseReport() {
     const epoch=aiViewEpoch.current;
@@ -1213,24 +836,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     finally { if(epoch===aiViewEpoch.current)setAiBusy(false); }
   }
 
-  // Reports the current variant as bad: retires it permanently, queues a
-  // replacement in the background, and skips to the next case without
-  // counting against the player.
-  function handleFlag() {
-    if (!question || !question.poolType || !question.poolItemId) return;
-    const wordObj = question.target;
-    const wordPools = getWordPools(pools, wordObj);
-    const arr = wordPools[question.poolType].map((it) =>
-      it.id === question.poolItemId
-        ? { ...it, flagged: true, lockedUntil: Date.now() + 100 * 365 * 24 * 60 * 60 * 1000 }
-        : it
-    );
-    const nextWordPools = { ...wordPools, [question.poolType]: arr };
-    const nextPools = { ...pools, [wordObj.word]: nextWordPools };
-    setPools(nextPools);
-    triggerGeneration([{ word: wordObj.word, poolType: question.poolType }], nextPools);
-    nextQuestion();
-  }
 
   // --- Speed Round ---------------------------------------------------------
 
@@ -1294,14 +899,10 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
   const earnedBadgesCount = BADGES.filter((b) => getBadgeProgress(b, { mastery, bestStreak }).earned).length;
   const totalLevelsCleared = levelsCleared.length;
-  const nextLevelIndex = currentLevelIndex !== null ? currentLevelIndex + 1 : null;
-  const hasNextLevel = nextLevelIndex !== null && nextLevelIndex < LEVELS.length;
   const finalEvidenceUsed = finalCaseWords.filter((word) => { const n = normalizeAnswerText(finalReportText); return n.includes(normalizeAnswerText(word.word)); }).length;
-  const fileMeta = currentEntry ? entryFileMeta(currentEntry) : null;
-  const FileIcon = fileMeta ? fileMeta.icon : Search;
 
   const masteredWordCount = Object.entries(mastery).filter(([key, stats]) => isWordKey(key) && V2.stage(stats) === "Mastered").length;
-  const showNav = !["session", "playing", "finalReport", "speed", "admin"].includes(screen);
+  const showNav = !["session", "finalReport", "speed", "admin"].includes(screen);
 
   // Addresses that can't be shown go home (replacing, so Back still works):
   // unknown paths, admin pages for players, and /play with nothing to play.
@@ -1488,271 +1089,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
             onOpenLibrary={() => navigate("/library")} onOpenCatalog={() => navigate("/catalog")} />
         )}
 
-        {screen === "playing" && question && (
-          <>
-            <div className="wh-round-top">
-              <button className="wh-back-btn wh-nav-btn" onClick={backToLevels}>
-                <ArrowLeft size={14} /> Levels
-              </button>
-              <div className="wh-round-progress">
-                Case {roundIndex + 1}/{roundQueue.length} — {sessionType === "weak" ? "Weak Evidence" : sessionType === "final" ? "Final Case" : currentLevel?.title || "Investigation"}
-              </div>
-            </div>
 
-            <div className="wh-card">
-              {status && (
-                <div className={`wh-stamp ${status}`}>
-                  {status === "correct" ? "EVIDENCE SECURED" : status === "correctAlternative" ? "VALID ALTERNATIVE" : status === "close" ? "ALMOST" : status === "aiError" ? "CHECK PAUSED" : status === "skipped" ? "SKIPPED" : "WRONG LEAD"}
-                </div>
-              )}
-
-              <div className="wh-file-row">
-                <div className="wh-file-label"><FileIcon size={13} /> {fileMeta.label}</div>
-                <div className="wh-file-row-right">
-                  <div className="wh-category-badge">{question.target.category}</div>
-                  {question.poolType && (
-                    <button className="wh-flag-btn" onClick={handleFlag} title="Report this question — swap it for a new one">
-                      <Flag size={12} />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="wh-sentence">{question.prompt}</div>
-              {question.hint && !status && <div className="wh-hint">Hint: {question.hint}</div>}
-
-              {question.type === "unavailable" && <button className="wh-level-btn" onClick={()=>{setStatus("skipped");}}>Skip invalid question</button>}
-              {question.type === "mcq" && (
-                <div className="wh-options">
-                  {question.options.map((opt) => {
-                    let cls = "wh-option";
-                    if (status && opt === question.answer) cls += " reveal";
-                    if (status && opt === selected && opt !== question.answer) cls += " wrong";
-                    return (
-                      <button key={opt} className={cls} disabled={!!status} onClick={() => handleSelect(opt)}>
-                        {opt}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {question.type === "typing" && (
-                <div className="wh-type-form">
-                  <input
-                    className="wh-type-input"
-                    value={typed}
-                    onChange={(e) => setTyped(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        submitTyped();
-                      }
-                    }}
-                    placeholder="Type the word…"
-                    disabled={!!status || aiBusy}
-                    autoFocus
-                  />
-                  <button
-                    className="wh-type-submit"
-                    type="button"
-                    onClick={submitTyped}
-                    disabled={!!status || aiBusy || !typed.trim()}
-                  >
-                    {aiBusy ? "Checking…" : "Submit"}
-                  </button>
-                </div>
-              )}
-
-              {question.type === "freeform" && (
-                <div className="wh-type-form" style={{ display: "grid" }}>
-                  <textarea
-                    className="wh-freeform"
-                    value={typed}
-                    onChange={(e) => setTyped(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); if (typed.trim() && !status && !aiBusy) submitFreeForm(); } }}
-                    placeholder={question.freeformKind === "sentence" ? `Write a natural sentence using ${question.target.word}…` : "Write your answer…"}
-                    disabled={!!status || aiBusy}
-                    autoFocus
-                  />
-                  <button className="wh-type-submit" type="button" onClick={submitFreeForm} disabled={!!status || aiBusy || !typed.trim()}>
-                    {aiBusy ? "Examining evidence…" : "Submit Evidence"}
-                  </button>
-                </div>
-              )}
-
-              {question.type === "selfCheck" && (
-                <div className="wh-type-form" style={{ display: "grid" }}>
-                  <textarea
-                    className="wh-freeform"
-                    value={typed}
-                    onChange={(e) => { setTyped(e.target.value); setStepFeedback(null); }}
-                    placeholder={`Use: ${(question.requiredWords || []).join(" + ")}`}
-                    disabled={!!status}
-                    autoFocus
-                  />
-                  <button className="wh-type-submit" type="button" onClick={submitSelfCheck} disabled={!!status || !typed.trim()}>
-                    Check Requirements
-                  </button>
-                  {stepFeedback && (
-                    <div className={`wh-step-feedback ${stepFeedback.correct ? "" : "wrong"}`}>
-                      {stepFeedback.explanation}
-                      {stepFeedback.correct && question.exampleAnswer && <div className="wh-model-answer">Model example: {question.exampleAnswer}</div>}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {question.type === "wordOrder" && (
-                <div className="wh-token-area">
-                  <div className="wh-token-label">Your sentence</div>
-                  <div className="wh-token-answer" aria-label="Ordered sentence">
-                    {orderedTokens.map((token) => (
-                      <button key={token.id} type="button" className="wh-token" onClick={() => moveTokenBack(token)} disabled={!!status} aria-label={`Remove ${token.text} from sentence`}>
-                        {token.text}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="wh-token-label">Word bank</div>
-                  <div className="wh-token-bank" aria-label="Available words">
-                    {availableTokens.map((token) => (
-                      <button key={token.id} type="button" className="wh-token" onClick={() => moveTokenToAnswer(token)} disabled={!!status} aria-label={`Add ${token.text} to sentence`}>
-                        {token.text}
-                      </button>
-                    ))}
-                  </div>
-                  {!status && <button className="wh-type-submit" type="button" onClick={submitWordOrder} disabled={availableTokens.length > 0 || orderedTokens.length === 0}>Submit Sentence</button>}
-                </div>
-              )}
-
-              {question.type === "multiStage" && question.steps[challengeStepIndex] && (
-                <div>
-                  <div className="wh-stage-head">
-                    <span>{fileMeta.label}</span>
-                    <span>Stage {challengeStepIndex + 1}/{question.steps.length}</span>
-                  </div>
-                  <div className="wh-sentence" style={{ fontSize: 16 }}>{question.steps[challengeStepIndex].prompt}</div>
-                  {question.steps[challengeStepIndex].type === "mcq" ? (
-                    <div className="wh-options">
-                      {question.steps[challengeStepIndex].options.map((opt) => {
-                        let cls = "wh-option";
-                        if (!stepFeedback && normalizeAnswerText(stepAnswer) === normalizeAnswerText(opt)) cls += " picked";
-                        if (status && acceptedAnswerMatches(opt, question.steps[challengeStepIndex].acceptedAnswers)) cls += " reveal";
-                        if (status && normalizeAnswerText(stepAnswer) === normalizeAnswerText(opt) && !acceptedAnswerMatches(opt, question.steps[challengeStepIndex].acceptedAnswers)) cls += " wrong";
-                        return <button key={opt} type="button" className={cls} disabled={!!stepFeedback || !!status} onClick={() => setStepAnswer(opt)}>{opt}</button>;
-                      })}
-                    </div>
-                  ) : (
-                    <div className="wh-type-form">
-                      <input className="wh-type-input" value={stepAnswer} onChange={(e) => setStepAnswer(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submitChallengeStep(); } }} placeholder="Type the correction…" disabled={!!stepFeedback || !!status} autoFocus />
-                    </div>
-                  )}
-                  {stepFeedback && <div className="wh-step-feedback">Answer saved. Review after all steps.</div>}
-                  {status && question.steps.map((step,i)=><p key={step.id}>{i+1}. {step.acceptedAnswers.join(" / ")} — {step.explanation}</p>)}
-                  {!status && (
-                    <div className="wh-next">
-                      {!stepFeedback
-                        ? <button type="button" onClick={submitChallengeStep} disabled={!stepAnswer.trim()}>Submit Stage</button>
-                        : <button type="button" onClick={advanceChallengeStep}>{challengeStepIndex + 1 < question.steps.length ? "Next stage →" : "Final verdict →"}</button>}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {question.type === "multi" && (
-                <>
-                  <div className="wh-options">
-                    {question.options.map((opt) => {
-                      let cls = "wh-option wh-option-multi";
-                      const isPicked = selectedMulti.includes(opt);
-                      const isCorrectAnswer = question.correctAnswers.includes(opt);
-                      if (!status && isPicked) cls += " picked";
-                      if (status && isCorrectAnswer) cls += " reveal";
-                      if (status && isPicked && !isCorrectAnswer) cls += " wrong";
-                      return (
-                        <button key={opt} className={cls} disabled={!!status} onClick={() => toggleMultiOption(opt)}>
-                          <span className="wh-option-check">{isPicked ? "✓" : ""}</span>
-                          {opt}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {!status && (
-                    <div className="wh-next">
-                      <button onClick={submitMulti} disabled={selectedMulti.length === 0}>
-                        Submit ({selectedMulti.length} picked)
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {status && status !== "aiError" && (
-                <div className={`wh-feedback ${status}`}>
-                  {status === "correct" && <>EVIDENCE SECURED. {aiEvaluation?.grade && <><b>{aiEvaluation.grade}</b> — </>}<b>{question.target.label}</b> — {aiEvaluation?.feedback || question.target.explanation}</>}
-                  {status === "correctAlternative" && <>Accepted as a valid English answer for this gap. It does not count as recall of <b>{question.target.label}</b>. {aiEvaluation?.feedback}</>}
-                  {status === "wrong" && question.type === "multi" && <>Correct evidence: <b>{question.correctAnswers.join(" & ")}</b> — {question.target.explanation}</>}
-                  {status === "wrong" && question.type === "multiStage" && <>The case was not fully cleared. {question.target.explanation}</>}
-                  {status === "wrong" && question.type !== "multi" && question.type !== "multiStage" && <>Correct evidence: <b>{question.answer}</b> — {aiEvaluation?.feedback || question.target.explanation}</>}
-                  {status === "close" && <>{aiEvaluation ? <>ALMOST. {aiEvaluation.feedback}{aiEvaluation.suggestedCorrection ? <> Suggested: <b>{aiEvaluation.suggestedCorrection}</b></> : null}</> : <>You found the right word. Spelling: <b>{typed}</b> ❌ <b>{question.answer}</b> ✅</>}</>}
-                  {feedbackDetail && (
-                    <div className="wh-feedback-card">
-                      <div className="lead">Wrong Lead</div>
-                      <div className="wh-feedback-pair">
-                        <span>You chose: <b>{feedbackDetail.chosen}</b> — {feedbackDetail.chosenMeaning}</span>
-                        <span>Correct evidence: <b>{feedbackDetail.correct}</b> — {feedbackDetail.correctMeaning}</span>
-                        <span><b>Key difference:</b> {feedbackDetail.keyDifference}{feedbackDetail.aiLoading && <i style={{ opacity: 0.6 }}> (sharpening…)</i>}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-              {status === "wrong" && question.court && question.type !== "multiStage" && (
-                <div className="wh-feedback-card">
-                  <div className="lead">Grammar Court — Guilty</div>
-                  <div>Correct or rewrite the evidence. Alternative correct corrections are accepted.</div>
-                  <textarea className="wh-freeform" style={{ marginTop: 8, minHeight: 78 }} value={typed} onChange={(e) => setTyped(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); if (typed.trim() && !aiBusy) submitGrammarCorrection(); } }} placeholder="Write a corrected version…" disabled={aiBusy} />
-                  <div className="wh-adaptive-actions" style={{ marginTop: 8, marginBottom: 0 }}>
-                    <button className="primary" onClick={submitGrammarCorrection} disabled={aiBusy || !typed.trim()}>{aiBusy ? "Judging…" : "Submit Correction"}</button>
-                  </div>
-                  {grammarCorrectionResult && <div style={{ marginTop: 8 }}><b>{grammarCorrectionResult.correct ? "Not Guilty ✅" : "Needs another correction"}</b> — {grammarCorrectionResult.feedback}{grammarCorrectionResult.suggestedCorrection ? <> Suggested: <b>{grammarCorrectionResult.suggestedCorrection}</b></> : null}</div>}
-                </div>
-              )}
-
-              {status === "aiError" && (
-                <div className="wh-feedback-card">
-                  <div className="lead">Evaluation unavailable</div>
-                  <div>{aiError}</div>
-                  <div className="wh-adaptive-actions" style={{ marginTop: 10, marginBottom: 0 }}>
-                    <button className="primary" onClick={question.type === "freeform" ? submitFreeForm : submitTyped}>Retry AI Check</button>
-                    <button onClick={continueAfterAiFailure}>Continue — don’t record mastery</button>
-                  </div>
-                </div>
-              )}
-
-              {status && status !== "aiError" && (
-                <div className="wh-next">
-                  <button onClick={nextQuestion}>
-                    {roundIndex + 1 >= roundQueue.length ? "Finish case →" : "Next case →"}
-                  </button>
-                </div>
-              )}
-
-              <div className="wh-round-progress-track">
-                <div
-                  className="wh-round-progress-fill"
-                  style={{ width: `${((roundIndex + (status ? 1 : 0)) / roundQueue.length) * 100}%` }}
-                />
-              </div>
-            </div>
-          </>
-        )}
-
-        {screen === "results" && currentLevel && lastRoundSummary && (
-          <RoundResults level={currentLevel} summary={lastRoundSummary} topConfusion={learningInsights.topConfusion} canFinalCase={currentLevel.items.some((item) => item.kind === "word")} hasNext={hasNextLevel}
-            onRetry={retryLevel} onFinalCase={() => startFinalCase(currentLevelIndex)} onNext={() => startLevel(nextLevelIndex)} onBack={backToLevels} />
-        )}
-        {screen === "reviewResults" && lastRoundSummary && <ReviewResults summary={lastRoundSummary} canReviewMore={weakCandidates.length > 0} onReviewMore={startWeakReview} onBack={backToLevels} />}
         {screen === "finalReport" && currentLevel && finalRecallSummary && (
           <FinalReport level={currentLevel} recall={finalRecallSummary} words={finalCaseWords} text={finalReportText} onText={setFinalReportText} evidenceUsed={finalEvidenceUsed} busy={aiBusy} error={aiError} onSubmit={finishFinalCaseReport} onBack={backToLevels} />
         )}
