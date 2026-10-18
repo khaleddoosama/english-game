@@ -1,0 +1,544 @@
+{
+  "schemaVersion": 3,
+  "kind": "content",
+  "note": "Pet Peeves part 2, content v3 (8 items). Course level B1.1 (Gateway level 9), unit Pet Peeves.",
+  "categories": [
+    {
+      "id": "pet-peeves",
+      "title": "Pet Peeves",
+      "subCategories": [
+        {
+          "id": "annoying-people",
+          "title": "Annoying people"
+        },
+        {
+          "id": "bad-moods",
+          "title": "Bad moods"
+        },
+        {
+          "id": "expressions",
+          "title": "Expressions"
+        },
+        {
+          "id": "hygiene",
+          "title": "Hygiene"
+        },
+        {
+          "id": "society",
+          "title": "Society"
+        }
+      ]
+    }
+  ],
+  "words": [
+    {
+      "id": "hot-tempered",
+      "word": "Hot-tempered",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "bad-moods",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "Describes a person whose anger explodes strongly — they shout, slam doors or start fights when angry.",
+      "situations": [
+        "When the referee gave a yellow card, the player threw his shirt on the ground and screamed at him.",
+        "My uncle once punched the wall because the TV remote wasn't working."
+      ],
+      "gaps": [
+        "He's so ______ that he once threw his phone across the room.",
+        "Her ______ brother often gets into fights at football matches.",
+        "Don't argue with him — he's ______ and starts shouting fast."
+      ],
+      "hints": [
+        "Anger that explodes strongly, like fire.",
+        "Two words with a hyphen: a word for 'very warm' + a word for mood."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He is very hot-temper.",
+          "correction": "He is very hot-tempered.",
+          "why": "The adjective ends in '-ed': hot-tempered."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "temper",
+          "pos": "noun"
+        },
+        {
+          "word": "hothead",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "hot-tempered man",
+        "hot-tempered argument"
+      ],
+      "synonyms": [
+        "hot-headed",
+        "fiery",
+        "volatile"
+      ],
+      "antonyms": [
+        "calm",
+        "easy-going",
+        "even-tempered"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "hygiene",
+      "word": "Hygiene",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "hygiene",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "The things you do to keep your body and your surroundings clean so you stay healthy.",
+      "situations": [
+        "The nurse taught the children to wash their hands for 20 seconds and brush their teeth twice a day.",
+        "The restaurant was closed because the kitchen was dirty and full of insects."
+      ],
+      "gaps": [
+        "Good personal ______ means showering and brushing your teeth every day.",
+        "The inspectors checked the kitchen's food ______.",
+        "Poor ______ can spread illness quickly in schools."
+      ],
+      "hints": [
+        "The noun: staying clean to stay healthy.",
+        "Starts with 'hyg-'; the adjective ends in '-ienic'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He has a bad hygienic.",
+          "correction": "He has bad hygiene.",
+          "why": "'Hygiene' is the noun; 'hygienic' is the adjective."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "hygienic",
+          "pos": "adjective"
+        },
+        {
+          "word": "unhygienic",
+          "pos": "adjective"
+        },
+        {
+          "word": "hygienically",
+          "pos": "adverb"
+        }
+      ],
+      "collocations": [
+        "personal hygiene",
+        "food hygiene",
+        "poor hygiene",
+        "dental hygiene"
+      ],
+      "synonyms": [
+        "cleanliness",
+        "sanitation"
+      ],
+      "antonyms": [
+        "dirtiness"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "hygienic"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "hygienic",
+      "word": "Hygienic",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "hygiene",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "Clean enough to be safe and not spread germs — used for places, food and habits.",
+      "situations": [
+        "The new clinic is spotless: the floors are disinfected every hour and everything is wrapped in plastic.",
+        "Each customer gets a fresh, sealed spoon instead of one from a shared jar."
+      ],
+      "gaps": [
+        "Using your own towel at the gym is more ______.",
+        "The new kitchen is modern and very ______.",
+        "Sharing toothbrushes isn't ______."
+      ],
+      "hints": [
+        "The adjective: clean and safe from germs.",
+        "Starts with 'hyg-' and ends with '-ic'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The kitchen is very hygiene.",
+          "correction": "The kitchen is very hygienic.",
+          "why": "After 'very', use the adjective 'hygienic'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "hygiene",
+          "pos": "noun"
+        },
+        {
+          "word": "hygienically",
+          "pos": "adverb"
+        },
+        {
+          "word": "unhygienic",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "hygienic conditions",
+        "more hygienic"
+      ],
+      "synonyms": [
+        "clean",
+        "sanitary"
+      ],
+      "antonyms": [
+        "unhygienic",
+        "dirty"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "hygiene"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "snap-at",
+      "word": "Snap at",
+      "type": "phrasal",
+      "partsOfSpeech": [
+        "phrasal verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "bad-moods",
+      "level": "B1.1",
+      "register": "informal",
+      "meaning": "To suddenly say something short and angry to someone, often without a good reason.",
+      "situations": [
+        "When her son asked for a snack, the tired mum shouted 'Not now!' and then felt bad.",
+        "I only asked my colleague a quick question, and she barked 'I'm busy!' at me."
+      ],
+      "gaps": [
+        "I'm sorry I ______ you — I'm just really tired.",
+        "Don't ______ the kids; they didn't do anything wrong.",
+        "He tends to ______ people when he's hungry."
+      ],
+      "hints": [
+        "Speak to someone suddenly in a short, angry way.",
+        "A phrasal verb: the verb in 'snappy' + 'at'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She snapped to me.",
+          "correction": "She snapped at me.",
+          "why": "The preposition is 'at': snap at someone."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "snap",
+          "pos": "verb"
+        },
+        {
+          "word": "snappy",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "snap at someone"
+      ],
+      "synonyms": [
+        "bark at",
+        "bite someone's head off"
+      ],
+      "antonyms": [
+        "speak kindly to"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "cranky",
+      "word": "Cranky",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "bad-moods",
+      "level": "B1.1",
+      "register": "informal",
+      "meaning": "Easily annoyed and complaining because you are tired, hungry or unwell — often said about kids.",
+      "situations": [
+        "The baby missed her nap, so she cried and pushed away every toy we gave her.",
+        "After the 12-hour flight with no sleep, Omar complained about everything at the hotel."
+      ],
+      "gaps": [
+        "The kids get ______ if they don't eat lunch on time.",
+        "I'm always ______ when I don't get enough sleep.",
+        "Sorry, I'm a bit ______ — I've had a headache all day."
+      ],
+      "hints": [
+        "Annoyed and complaining because you're tired or hungry.",
+        "Rhymes with 'lanky'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I feel crankily today.",
+          "correction": "I feel cranky today.",
+          "why": "After 'feel', use the adjective 'cranky'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "crankiness",
+          "pos": "noun"
+        },
+        {
+          "word": "crankily",
+          "pos": "adverb"
+        }
+      ],
+      "collocations": [
+        "cranky baby",
+        "get cranky",
+        "feel cranky"
+      ],
+      "synonyms": [
+        "irritable",
+        "fussy",
+        "crabby"
+      ],
+      "antonyms": [
+        "cheerful",
+        "content"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "narcissist",
+      "word": "Narcissist",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "annoying-people",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "A person who thinks they are more important than everyone else and always needs others to admire them.",
+      "situations": [
+        "My cousin posts 20 selfies a day and turns every conversation back to himself.",
+        "Our team leader takes credit for everyone's work and gets angry if he isn't praised."
+      ],
+      "gaps": [
+        "He only talks about himself — he's a real ______.",
+        "A ______ needs constant praise and attention.",
+        "It's hard to work with a ______ who never listens to others."
+      ],
+      "hints": [
+        "Someone who loves and admires themself too much.",
+        "Starts with 'narc-' and ends with '-ist'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She is very narcissist.",
+          "correction": "She is very narcissistic. / She is a narcissist.",
+          "why": "'Narcissist' is a noun (a person); the adjective is 'narcissistic'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "narcissism",
+          "pos": "noun"
+        },
+        {
+          "word": "narcissistic",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "total narcissist",
+        "narcissistic behaviour"
+      ],
+      "synonyms": [
+        "egotist",
+        "show-off"
+      ],
+      "antonyms": [
+        "modest person",
+        "humble person"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "feminism",
+      "word": "Feminism",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "society",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "The belief that women should have the same rights and opportunities as men.",
+      "situations": [
+        "In the 1900s, many women protested in the streets until they won the right to vote.",
+        "The company changed its rules so that men and women in the same job get the same pay."
+      ],
+      "gaps": [
+        "______ helped women win the right to vote.",
+        "She wrote her essay about the history of ______.",
+        "Many people support ______ because they believe in equal pay."
+      ],
+      "hints": [
+        "The belief in equal rights for women and men.",
+        "Starts with 'femin-' and ends with '-ism'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She is a feminism.",
+          "correction": "She is a feminist.",
+          "why": "'Feminism' is the belief; a person who supports it is a 'feminist'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "feminist",
+          "pos": "noun"
+        },
+        {
+          "word": "feminist",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "support feminism",
+        "modern feminism"
+      ],
+      "synonyms": [
+        "women's rights",
+        "gender equality"
+      ],
+      "antonyms": [
+        "sexism"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "pain-in-the-neck",
+      "word": "Pain in the neck",
+      "type": "idiom",
+      "partsOfSpeech": [
+        "phrase"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "expressions",
+      "level": "B1.1",
+      "register": "informal",
+      "meaning": "A person or thing that is very annoying.",
+      "situations": [
+        "The people behind me in the cinema talked through the whole film, and I couldn't hear anything.",
+        "Filling in the same tax form every year takes me hours and drives me crazy."
+      ],
+      "gaps": [
+        "Movie talkers are a real ______.",
+        "My little brother can be a ______ when he keeps asking questions.",
+        "Doing the dishes every night is such a ______."
+      ],
+      "hints": [
+        "Something or someone that annoys you a lot.",
+        "An idiom about a body part: 'a ___ in the ___'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He's a pain in the nick.",
+          "correction": "He's a pain in the neck.",
+          "why": "The idiom uses 'neck'."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "a real pain in the neck",
+        "be a pain in the neck"
+      ],
+      "synonyms": [
+        "nuisance",
+        "headache"
+      ],
+      "antonyms": [
+        "joy",
+        "pleasure"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    }
+  ]
+}
