@@ -1,7 +1,7 @@
 {
   "schemaVersion": 3,
   "kind": "content",
-  "note": "Pet Peeves, content v3 (10 words). Course level B1.1 (Gateway level 9), unit Pet Peeves, from the Anki Pet-Peeves export.",
+  "note": "Pet Peeves, content v3 (25 words, 2 grammar rules). Course level B1.1 (Gateway level 9), unit Pet Peeves, from the Anki Pet-Peeves export.",
   "categories": [
     {
       "id": "pet-peeves",
@@ -20,8 +20,20 @@
           "title": "Bad moods"
         },
         {
+          "id": "expressions",
+          "title": "Expressions"
+        },
+        {
           "id": "hygiene",
           "title": "Hygiene"
+        },
+        {
+          "id": "noise",
+          "title": "Noise"
+        },
+        {
+          "id": "queues",
+          "title": "Queues"
         },
         {
           "id": "unfair-business",
@@ -274,7 +286,10 @@
       ],
       "links": {
         "opposite": null,
-        "confusableWith": [],
+        "confusableWith": [
+          "chewing-loudly",
+          "slurping"
+        ],
         "excludeWith": []
       },
       "units": [
@@ -660,6 +675,1069 @@
       },
       "units": [
         "Pet Peeves"
+      ]
+    },
+    {
+      "id": "temper-tantrums",
+      "word": "Temper tantrums",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "bad-moods",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "Sudden, uncontrolled outbursts of anger with crying, screaming or kicking — especially by young children.",
+      "situations": [
+        "In the supermarket, a little boy lay on the floor, screaming and kicking because his mum said no to sweets.",
+        "My two-year-old niece cries and bangs her fists on the floor every time we turn off the TV."
+      ],
+      "gaps": [
+        "Toddlers often have ______ when they're tired or hungry.",
+        "His ______ in the toy shop embarrassed his parents.",
+        "Parents need patience to deal with a child's ______."
+      ],
+      "hints": [
+        "The noun: a child's screaming, kicking outbursts.",
+        "Two words: 'temper' + a word starting with 't'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The child did a temper tantrum.",
+          "correction": "The child threw / had a temper tantrum.",
+          "why": "We 'throw' or 'have' a tantrum, not 'do' one."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "temper tantrum",
+          "pos": "noun"
+        },
+        {
+          "word": "tantrum",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "have temper tantrums",
+        "throw a temper tantrum"
+      ],
+      "synonyms": [
+        "outbursts",
+        "meltdowns",
+        "fits"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "throw-a-tantrum"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "blaring-speakers",
+      "word": "Blaring speakers",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "noise",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "Speakers playing music or sound extremely loudly, in an unpleasant way.",
+      "situations": [
+        "The neighbours played music so loud last night that my windows were shaking until 3 a.m.",
+        "On the beach, a group of teenagers turned their music up so high that nobody could talk."
+      ],
+      "gaps": [
+        "The neighbour's ______ kept me awake until 3 a.m.",
+        "I can't study with those ______ next door.",
+        "The café had ______, so we couldn't hear each other."
+      ],
+      "hints": [
+        "Very loud speakers that annoy everyone.",
+        "Two words: an adjective meaning 'very loud' + 'speakers'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The speakers were blaming all night.",
+          "correction": "The speakers were blaring all night.",
+          "why": "The verb is 'blare' (be very loud), not 'blame'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "blare",
+          "pos": "verb"
+        },
+        {
+          "word": "blaring",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "blaring music",
+        "blaring speakers"
+      ],
+      "synonyms": [
+        "loud speakers",
+        "booming speakers"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "provoke",
+      "word": "Provoke",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "annoying-people",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "To say or do something on purpose to make someone angry or get a strong reaction.",
+      "situations": [
+        "My little brother kept poking me and saying 'you can't catch me' just to make me lose my temper.",
+        "Some online commenters write insulting things on purpose so people will argue with them."
+      ],
+      "gaps": [
+        "Don't ______ him — you know he gets angry easily.",
+        "She said it just to ______ a reaction.",
+        "The player was sent off for trying to ______ the other team."
+      ],
+      "hints": [
+        "Annoy someone on purpose to get a reaction.",
+        "Starts with 'pro-' and rhymes with 'joke'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He provoked me to angry.",
+          "correction": "He provoked me. / He made me angry.",
+          "why": "'Provoke someone' — don't add 'to angry'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "provocation",
+          "pos": "noun"
+        },
+        {
+          "word": "provocative",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "provoke someone",
+        "provoke a reaction",
+        "provoke anger"
+      ],
+      "synonyms": [
+        "wind up",
+        "goad",
+        "bait"
+      ],
+      "antonyms": [
+        "calm",
+        "soothe"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "piss-someone-off"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "irritated",
+      "word": "Irritated",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "bad-moods",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "Feeling annoyed, usually because something small keeps happening again and again.",
+      "situations": [
+        "The man next to me on the plane kept tapping his pen, and after an hour I was ready to scream.",
+        "The phone kept buzzing with ads all morning, and Sara was getting more and more annoyed."
+      ],
+      "gaps": [
+        "She was ______ by the constant noise from the building site.",
+        "I get ______ when people don't reply to my messages.",
+        "He looked ______ when his phone rang for the fifth time."
+      ],
+      "hints": [
+        "How you feel when small things keep annoying you.",
+        "The '-ed' adjective from 'irritate'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I'm very irritating by the noise.",
+          "correction": "I'm very irritated by the noise.",
+          "why": "Use '-ed' for how you feel (irritated); '-ing' for the thing that causes it (irritating)."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "irritate",
+          "pos": "verb"
+        },
+        {
+          "word": "irritating",
+          "pos": "adjective"
+        },
+        {
+          "word": "irritation",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "irritated by",
+        "feel irritated",
+        "get irritated"
+      ],
+      "synonyms": [
+        "annoyed",
+        "bothered"
+      ],
+      "antonyms": [
+        "calm",
+        "pleased"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "grumpy",
+          "snappy"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "throw-a-tantrum",
+      "word": "Throw a tantrum",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "bad-moods",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "To suddenly start screaming, crying or kicking because you're angry and can't get what you want.",
+      "situations": [
+        "When the shop assistant said the toy was sold out, the boy started screaming and kicking the shelves.",
+        "My manager slammed his laptop shut and shouted when the meeting didn't go his way."
+      ],
+      "gaps": [
+        "The child began to ______ because he wanted a toy.",
+        "Don't ______ just because you lost the game!",
+        "My little sister will ______ if we don't let her come."
+      ],
+      "hints": [
+        "The verb phrase: start an angry outburst like a child.",
+        "Three words: '___ a tantrum'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He made a tantrum in the shop.",
+          "correction": "He threw a tantrum in the shop.",
+          "why": "The verb that goes with 'tantrum' is 'throw'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "tantrum",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "throw a tantrum",
+        "throw a temper tantrum"
+      ],
+      "synonyms": [
+        "have a meltdown",
+        "lose it"
+      ],
+      "antonyms": [
+        "stay calm",
+        "keep your cool"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "temper-tantrums"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "chewing-loudly",
+      "word": "Chewing loudly",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "bad-manners",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "Eating food in a way that makes loud, unpleasant chewing noises.",
+      "situations": [
+        "In the quiet office, my co-worker eats crisps and apples, and everyone can hear every crunch.",
+        "At the cinema, the man next to me ate his popcorn so noisily that I couldn't hear the film."
+      ],
+      "gaps": [
+        "His ______ at the dinner table really bothers me.",
+        "______ in a quiet office is so annoying.",
+        "My biggest pet peeve is ______ — I can hear every bite."
+      ],
+      "hints": [
+        "A noisy eating habit you hear, not see.",
+        "Two words: an '-ing' eating verb + an adverb."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He chews loud.",
+          "correction": "He chews loudly.",
+          "why": "Use the adverb 'loudly' to describe how he chews."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "chew",
+          "pos": "verb"
+        }
+      ],
+      "collocations": [
+        "chew loudly",
+        "noisy eater"
+      ],
+      "synonyms": [
+        "noisy chewing",
+        "munching"
+      ],
+      "antonyms": [
+        "eating quietly"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "chewing-with-mouth-open",
+          "slurping"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "slurping",
+      "word": "Slurping",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun",
+        "verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "bad-manners",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "Making a loud sucking noise while drinking or eating something wet, like soup or tea.",
+      "situations": [
+        "My uncle drinks his hot tea with a long, loud 'sssp' sound from the cup.",
+        "At the noodle bar, the man next to me sucked up his soup so noisily that people turned around."
+      ],
+      "gaps": [
+        "His ______ while drinking soup is one of my biggest pet peeves.",
+        "Stop ______ your milkshake — it's so loud!",
+        "In some countries, ______ noodles is polite."
+      ],
+      "hints": [
+        "The noise of sucking up a drink or soup.",
+        "Starts with 'slur-' and ends in '-ing'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He slurped loud the soup.",
+          "correction": "He slurped his soup loudly.",
+          "why": "Put the object after 'slurp' and the adverb at the end."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "slurp",
+          "pos": "verb"
+        },
+        {
+          "word": "slurp",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "slurp soup",
+        "slurp a drink"
+      ],
+      "synonyms": [
+        "noisy drinking"
+      ],
+      "antonyms": [
+        "sipping quietly"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "chewing-loudly",
+          "chewing-with-mouth-open"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "cut-in-line",
+      "word": "Cut in line",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "queues",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "To go in front of people who are already waiting, without asking — often sneakily.",
+      "situations": [
+        "We'd waited 20 minutes for coffee when a woman walked past us and stood right at the front.",
+        "At the bus stop, a man quietly slipped in front of an old lady when the bus arrived."
+      ],
+      "gaps": [
+        "I hate it when people ______ at the grocery store.",
+        "Hey! Don't ______ — we've all been waiting!",
+        "He tried to ______ by pretending he knew someone at the front."
+      ],
+      "hints": [
+        "Go in front of people waiting, without pushing.",
+        "Three words: '___ in line'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She cut the line in front of me.",
+          "correction": "She cut in line in front of me.",
+          "why": "The phrase is 'cut in line' (or 'jump the queue' in British English)."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "line-cutter",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "cut in line",
+        "jump the queue"
+      ],
+      "synonyms": [
+        "jump the queue",
+        "push in"
+      ],
+      "antonyms": [
+        "wait your turn"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "shove-in-line"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "shove-in-line",
+      "word": "Shove in line",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "queues",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "To push other people roughly with your body to get ahead of them in a queue.",
+      "situations": [
+        "When the shop doors opened, a big man used his elbows to push everyone and get to the front.",
+        "At the concert gate, people were pushing others so hard that a girl almost fell."
+      ],
+      "gaps": [
+        "When the doors opened, people started to ______ and someone fell.",
+        "Please don't ______ — there's enough food for everyone.",
+        "The kids began to ______ to be first on the bus."
+      ],
+      "hints": [
+        "Push people physically to get ahead in a queue.",
+        "Three words: a verb meaning 'push hard' + 'in line'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He shoved me in line to get first.",
+          "correction": "He shoved in line to get to the front.",
+          "why": "'Shove in line' means pushing ahead; 'shove someone' means pushing a person."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "shove",
+          "pos": "verb"
+        },
+        {
+          "word": "shove",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "shove someone",
+        "shove your way to the front"
+      ],
+      "synonyms": [
+        "push and shove",
+        "barge in"
+      ],
+      "antonyms": [
+        "wait your turn"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "cut-in-line"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "micromanagement",
+      "word": "Micromanagement",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "annoying-people",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "When a boss controls and checks every tiny detail of your work instead of trusting you to do it.",
+      "situations": [
+        "My boss checks every email I write before I send it and asks for updates every 30 minutes.",
+        "The manager told the designer exactly which font, colour and size to use for every single word."
+      ],
+      "gaps": [
+        "My boss's ______ makes it hard for me to work on my own.",
+        "Good managers avoid ______ and trust their team.",
+        "Constant ______ makes employees feel stressed and useless."
+      ],
+      "hints": [
+        "A boss controlling every small detail.",
+        "Starts with 'micro-' and ends with '-ment'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "My boss micromanagements everything.",
+          "correction": "My boss micromanages everything.",
+          "why": "The verb is 'micromanage'; 'micromanagement' is the noun."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "micromanage",
+          "pos": "verb"
+        },
+        {
+          "word": "micromanager",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "avoid micromanagement",
+        "hate micromanagement"
+      ],
+      "synonyms": [
+        "over-control",
+        "nitpicking"
+      ],
+      "antonyms": [
+        "delegation",
+        "trust"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "step-aside",
+      "word": "Step aside",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "queues",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "To move to one side so someone can pass; also, to leave your job or position so someone else can take it.",
+      "situations": [
+        "Two people stood chatting in the middle of the narrow shop aisle, and I had to ask them to move so I could get past.",
+        "After 20 years, the old manager left his position so a younger person could lead the company."
+      ],
+      "gaps": [
+        "I wish people would ______ instead of blocking the whole aisle.",
+        "Could you ______, please? I need to get through.",
+        "The CEO decided to ______ and let her deputy take over."
+      ],
+      "hints": [
+        "Move out of the way — or give your job to someone else.",
+        "Two words: 'step' + a word meaning 'to one side'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Please step aside of the door.",
+          "correction": "Please step aside from the door. / Please step aside.",
+          "why": "Use 'step aside' alone, or 'step aside from' — not 'of'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "step",
+          "pos": "verb"
+        }
+      ],
+      "collocations": [
+        "step aside for someone",
+        "step aside as leader"
+      ],
+      "synonyms": [
+        "move over",
+        "make way",
+        "stand down (job)"
+      ],
+      "antonyms": [
+        "block",
+        "stay put"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "bite-the-bullet",
+      "word": "Bite the bullet",
+      "type": "idiom",
+      "partsOfSpeech": [
+        "phrase"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "expressions",
+      "level": "B1.1",
+      "register": "informal",
+      "meaning": "To make yourself do something unpleasant or difficult that you've been avoiding.",
+      "situations": [
+        "Omar was scared of the dentist for months, but today he finally booked an appointment.",
+        "Sara hated asking her boss for a raise, but she took a deep breath and knocked on his door."
+      ],
+      "gaps": [
+        "My tooth hurt so much that I had to ______ and go to the dentist.",
+        "I've been avoiding the exam, but it's time to ______ and start studying.",
+        "He decided to ______ and tell his parents the truth."
+      ],
+      "hints": [
+        "Finally do the hard thing you've been avoiding.",
+        "Idiom with a gun word: '___ the bullet'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I bit a bullet and called her.",
+          "correction": "I bit the bullet and called her.",
+          "why": "The fixed idiom is 'bite the bullet' — with 'the'."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "bite the bullet and do something"
+      ],
+      "synonyms": [
+        "face the music",
+        "grit your teeth"
+      ],
+      "antonyms": [
+        "put it off",
+        "avoid"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "ranting-and-raving",
+      "word": "Ranting and raving",
+      "type": "binomial",
+      "partsOfSpeech": [
+        "phrase"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "expressions",
+      "level": "B1.1",
+      "register": "informal",
+      "meaning": "Complaining angrily and loudly about something for a long time, usually without doing anything to fix it.",
+      "situations": [
+        "My uncle spent the whole family dinner complaining loudly about the government, but he's never voted.",
+        "For an hour, my roommate shouted about the noisy neighbours instead of just knocking on their door."
+      ],
+      "gaps": [
+        "Stop ______ about the problem and try to find a solution.",
+        "He was ______ about the bad service for the whole evening.",
+        "She came home ______ about her boss again."
+      ],
+      "hints": [
+        "Two '-ing' words joined by 'and' — angry, long complaining.",
+        "R___ing and r___ing."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He was raving and ranting.",
+          "correction": "He was ranting and raving.",
+          "why": "The fixed order is 'ranting and raving'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "rant",
+          "pos": "verb"
+        },
+        {
+          "word": "rave",
+          "pos": "verb"
+        }
+      ],
+      "collocations": [
+        "ranting and raving about something"
+      ],
+      "synonyms": [
+        "going on and on",
+        "moaning"
+      ],
+      "antonyms": [
+        "keeping calm"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "i-ve-seen-better-days",
+      "word": "I've seen better days",
+      "type": "fyi",
+      "partsOfSpeech": [
+        "phrase"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "expressions",
+      "level": "B1.1",
+      "register": "informal",
+      "meaning": "A casual way to say that you're not doing well, or that something is old and in bad condition.",
+      "situations": [
+        "When her friend asked how she was, Mona sighed and said things weren't great — she'd lost her job.",
+        "My grandad's old car is rusty, the door won't close and the radio doesn't work anymore."
+      ],
+      "gaps": [
+        "A: How are you doing? B: Honestly, ______.",
+        "This old sofa has ______ — look at the holes.",
+        "After the flu, I can only say ______."
+      ],
+      "hints": [
+        "A casual way to say 'I'm not okay'.",
+        "Starts with 'I've seen…'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I saw better days.",
+          "correction": "I've seen better days.",
+          "why": "The fixed expression uses the present perfect: I've seen."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "have seen better days"
+      ],
+      "synonyms": [
+        "I'm not great",
+        "not so good"
+      ],
+      "antonyms": [
+        "I'm doing great"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "go-off-on",
+      "word": "Go off on",
+      "type": "phrasal",
+      "partsOfSpeech": [
+        "phrasal verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "annoying-people",
+      "level": "B1.1",
+      "register": "informal",
+      "meaning": "To suddenly start shouting angrily at a particular person.",
+      "situations": [
+        "When I arrived five minutes late, my boss started shouting at me in front of everyone.",
+        "The customer suddenly began yelling at the young waiter because his food was cold."
+      ],
+      "gaps": [
+        "My boss started to ______ me for being five minutes late.",
+        "Don't ______ the waiter — it's not his fault.",
+        "She'll ______ you if you're late again."
+      ],
+      "hints": [
+        "Suddenly shout angrily at someone.",
+        "A three-word phrasal verb starting with 'go'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He went off at me.",
+          "correction": "He went off on me.",
+          "why": "The phrasal verb is 'go off on someone'."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "go off on someone"
+      ],
+      "synonyms": [
+        "lash out at",
+        "blow up at",
+        "snap at"
+      ],
+      "antonyms": [
+        "calm down"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "snappy"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    }
+  ],
+  "grammar": [
+    {
+      "id": "grammar-either-or-neither-nor-not-only-but-also-pa-b9c4a056",
+      "rule": "Either/Or, Neither/Nor, Not only/But also Paired conjunctions",
+      "category": "pet-peeves",
+      "level": "B1.1",
+      "units": [
+        "Pet Peeves"
+      ],
+      "explanation": "Either…or = a choice between two things. Neither…nor = not this and not that (the verb is positive). Not only…but also = adds more; at the start of a sentence, 'not only' is followed by question order (Not only was she…).",
+      "examples": [
+        "You can either eat pasta or pizza.",
+        "I like neither coffee nor tea.",
+        "Not only was the girl smart, but she was also beautiful."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I don't like neither coffee nor tea.",
+          "correction": "I like neither coffee nor tea.",
+          "why": "'Neither…nor' is already negative — don't add 'don't'."
+        },
+        {
+          "sentence": "Not only she was smart, but she was also kind.",
+          "correction": "Not only was she smart, but she was also kind.",
+          "why": "After 'Not only' at the start, use question order: was she."
+        }
+      ],
+      "questions": [
+        {
+          "type": "choose",
+          "prompt": "I like ______ coffee nor tea.",
+          "options": [
+            "neither",
+            "either",
+            "not only"
+          ],
+          "answer": "neither",
+          "explanation": "'Nor' goes with 'neither'."
+        },
+        {
+          "type": "choose",
+          "prompt": "You can ______ stay at home or come with us.",
+          "options": [
+            "either",
+            "neither",
+            "not only"
+          ],
+          "answer": "either",
+          "explanation": "'Or' goes with 'either' for a choice."
+        },
+        {
+          "type": "choose",
+          "prompt": "Which sentence is correct?",
+          "options": [
+            "Not only was he rude, but he was also late.",
+            "Not only he was rude, but he was also late."
+          ],
+          "answer": "Not only was he rude, but he was also late.",
+          "explanation": "After 'Not only' at the start of a sentence, use question order."
+        },
+        {
+          "type": "judge",
+          "sentence": "I don't want neither pizza nor pasta.",
+          "correct": false,
+          "fix": "I want neither pizza nor pasta.",
+          "explanation": "'Neither…nor' is already negative."
+        },
+        {
+          "type": "fix",
+          "sentence": "She is not only smart but also she is kind.",
+          "answer": "She is not only smart but also kind.",
+          "explanation": "Put the same kind of word after 'not only' and 'but also' (smart / kind)."
+        }
+      ]
+    },
+    {
+      "id": "grammar-what-for-asking-for-a-reason-pet-peeves-f1c6c6be",
+      "rule": "What...for? Asking for a reason",
+      "category": "pet-peeves",
+      "level": "B1.1",
+      "units": [
+        "Pet Peeves"
+      ],
+      "explanation": "'What … for?' asks why someone did something. It's casual; 'why' is more neutral. Put 'what' at the start and 'for' at the very end.",
+      "examples": [
+        "What did you call him for? (= Why did you call him?)",
+        "What did you go there alone for?",
+        "What are you shouting for?"
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "What for did you call him?",
+          "correction": "What did you call him for?",
+          "why": "'For' goes at the end of the question."
+        },
+        {
+          "sentence": "What you called him for?",
+          "correction": "What did you call him for?",
+          "why": "Use question order with an auxiliary: did you call."
+        }
+      ],
+      "questions": [
+        {
+          "type": "choose",
+          "prompt": "Which question means 'Why did you buy that?'",
+          "options": [
+            "What did you buy that for?",
+            "What for did you buy that?",
+            "What did you buy for that?"
+          ],
+          "answer": "What did you buy that for?",
+          "explanation": "What + question + for at the end."
+        },
+        {
+          "type": "choose",
+          "prompt": "______ are you shouting for?",
+          "options": [
+            "What",
+            "Why",
+            "How"
+          ],
+          "answer": "What",
+          "explanation": "'… for?' at the end pairs with 'What' at the start."
+        },
+        {
+          "type": "judge",
+          "sentence": "What did you go there alone for?",
+          "correct": true,
+          "alternative": "What you went there alone for?",
+          "explanation": "Correct: question order + 'for' at the end."
+        },
+        {
+          "type": "judge",
+          "sentence": "What for are you laughing?",
+          "correct": false,
+          "fix": "What are you laughing for?",
+          "explanation": "'For' goes at the end."
+        },
+        {
+          "type": "fix",
+          "sentence": "What you called her for?",
+          "answer": "What did you call her for?",
+          "explanation": "Use question order: did you call."
+        }
       ]
     }
   ]
