@@ -1,6 +1,6 @@
 // The public surface of the My Library module. Other modules import from here
 // and from nowhere else in this folder (tests/library-boundary.test.js).
-// Docs: docs/modules/my-library.md.
+// Docs: docs/modules/library/README.md.
 import { lazy } from "react";
 
 export { useLibrary } from "./useLibrary";                    // the library for this player: { status, api, ids, refreshIds }

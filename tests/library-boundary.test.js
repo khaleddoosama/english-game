@@ -1,4 +1,4 @@
-// The edges of the My Library module (docs/modules/my-library.md): who may
+// The edges of the My Library module (docs/modules/library/README.md): who may
 // import its files, what it may import from the rest of the app, and that its
 // two implementations offer the same calls. A change that crosses an edge has
 // to change this list, and so the document next to it.

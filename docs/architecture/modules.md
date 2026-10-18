@@ -1,6 +1,6 @@
 # How Word Hunter is divided into modules
 
-Status: pattern proven on one module, **My Library** (`docs/modules/my-library.md`).
+Status: pattern proven on one module, **My Library** (`docs/modules/library/README.md`).
 The rest of the app follows the plan at the end. Written from the code on branch
 `ccr-29322d12-v8wkmd`; the numbers are from that day.
 

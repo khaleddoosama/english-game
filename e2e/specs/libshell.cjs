@@ -1,5 +1,5 @@
 // How the app shell uses the library, before and after it was moved into the
-// module's own pieces (docs/modules/my-library.md): the offers banner on Home,
+// module's own pieces (docs/modules/library/README.md): the offers banner on Home,
 // the Home tabs and their cards, a round started from a Home card, the page for
 // a link that doesn't work, and the Profile entry. Local mode, one player.
 const { APP, ok, launch, run, SP, COURSE_BACKUP } = require('../helpers.cjs');

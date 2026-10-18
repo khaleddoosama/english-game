@@ -20,7 +20,7 @@ Scope: `src/features/library/`, its tests and docs, and the library part of
 
 | # | Commit | What | Result |
 | --- | --- | --- | --- |
-| 1 | `0f77ea8` | `docs/modules/my-library.md` and this file. No module document or architecture document existed (only `README.md`); no prompt files exist in the repository, so the work follows the written request | docs only |
+| 1 | `0f77ea8` | `docs/modules/my-library.md` (now `docs/modules/library/README.md`) and this file. No module document or architecture document existed (only `README.md`); no prompt files exist in the repository, so the work follows the written request | docs only |
 | 2 | test commit, then fix commit (`git log --oneline`, subjects "Test: edges of the My Library module…" and "Local library API: stop exposing the internal edit helper") | `tests/library-boundary.test.js`: who imports the module, what it imports, the two API implementations offer the same calls. It found the local mirror leaking an internal `edit` helper; removed (not part of the documented API, unused) | test red before the fix, green after |
 | 3 | "Test: hooks of the My Library module…" | `tests/library-hooks.test.jsx`: `useLibrary` (not enabled, online ready/off in four ways, refreshIds, local mode, one library per player) and `useViews` (tree, open view, key mapping, `act` success/failure, load failures). 17 tests; 4 deliberate breakages of the hooks were each caught | green |
 | 4 | `48b70e2` | tracking and module doc updated with the checks below | docs |
@@ -145,7 +145,7 @@ only), the two remaining module cycles, and new modules.
 
 ### To continue
 
-1. Read `CLAUDE.md`, `docs/architecture/modules.md`, `docs/architecture/repo.md`, `docs/modules/my-library.md`, this file.
+1. Read `CLAUDE.md`, `docs/architecture/modules.md`, `docs/architecture/repo.md`, `docs/modules/library/README.md`, this file.
 2. `git status` clean, `npm run lint && npx vitest run`. Database tests need any PostgreSQL 15+:
    `PGADMIN=<url> supabase/ci/run-integration.sh`, `PGURL=<empty db> supabase/ci/run-tests.sh`, `PGADMIN=<url> supabase/ci/check-upgrade.sh`.
    The real stack: `tests/realstack/up.sh` then the commands in `docs/integration-tests.md`.
@@ -172,7 +172,7 @@ only), the two remaining module cycles, and new modules.
 
 ## To continue in a new conversation
 
-1. Read `CLAUDE.md`, `docs/modules/my-library.md`, this file.
+1. Read `CLAUDE.md`, `docs/modules/library/README.md`, this file.
 2. `git log --oneline -15` on `ccr-29322d12-v8wkmd`; `git status` must be clean.
 3. Run `npm run lint && npx vitest run`. For the database tests start any
    PostgreSQL 15+ and run `PGADMIN=<url> supabase/ci/run-integration.sh`
