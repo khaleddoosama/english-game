@@ -1,4 +1,7 @@
-# Question reports
+# Question reports (practice)
+
+Part of the [practice](README.md) module; the admin's side is in [admin](../admin/README.md). Status: **Implemented** (current code). Moved here from `docs/modules/question-reports.md`.
+
 
 A player can report a question that looks wrong. The report is kept with the progress, the admin reviews it
 (optionally with the AI), resolves, reopens, deletes it, or retires the sentence it came from. While a report is

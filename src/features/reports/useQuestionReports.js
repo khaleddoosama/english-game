@@ -1,6 +1,6 @@
 // Question reports: the list the player and the admin see, and what can be done with a report. The pure rules are
 // in reportRules.js. The list also lives in progressExtrasRef.current.reports, which is what is saved with the
-// progress; every change writes both, the ref first (as the shell always did). Docs: docs/modules/question-reports.md.
+// progress; every change writes both, the ref first (as the shell always did). Docs: docs/modules/practice/question-reports.md.
 import { useMemo, useState } from "react";
 import { WORDS } from "../../engine/data";
 import { locateReportSource, reviewReportedQuestion } from "../../engine/ai";

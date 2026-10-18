@@ -1,5 +1,5 @@
 // Question reports, the pure rules (src/features/reports/reportRules.js), moved unchanged out of the app shell.
-// Before the move they were compared with the original code on many inputs (see docs/modules/question-reports.md).
+// Before the move they were compared with the original code on many inputs (see docs/modules/practice/question-reports.md).
 import { describe, expect, it } from "vitest";
 import { KEEP_RESOLVED, answerTextOf, buildReport, followRenames, mapReport, quarantineOf, sameReport, withReport, withoutReport } from "../src/features/reports/reportRules";
 

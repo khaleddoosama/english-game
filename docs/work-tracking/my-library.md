@@ -193,7 +193,7 @@ their wiring in `WordHunter.jsx` only (no engine, no repo, no migration, no prod
 | tests (rules, hook, boundary) | "Tests: question reports…" |
 | browser test | "Browser test: file a report in a round…" |
 
-Documentation: `docs/modules/question-reports.md` (responsibility, interface, dependencies, tests, old problems).
+Documentation: `docs/modules/practice/question-reports.md` (responsibility, interface, dependencies, tests, old problems).
 `WordHunter.jsx`: 2131 -> 2065 lines. Old problems found are listed in the module document, not fixed.
 
 ### Verification of the question-reports batch (tested commit `9d3e557`)

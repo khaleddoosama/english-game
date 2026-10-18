@@ -1,6 +1,6 @@
 // Question reports, the pure rules: what a report holds, which report is which, how many are kept, which
 // (word, mode) pairs are held back, and how a renamed word is followed. No state, no I/O, no React.
-// Moved unchanged out of the app shell (src/app/WordHunter.jsx); see docs/modules/question-reports.md.
+// Moved unchanged out of the app shell (src/app/WordHunter.jsx); see docs/modules/practice/question-reports.md.
 import { V2 } from "../../engine/v2";
 
 // Resolved reports are history, not work: keep every unresolved one and only the newest 150 resolved ones.
