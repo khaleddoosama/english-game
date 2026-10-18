@@ -1,41 +1,9 @@
-import { formatAccuracy, formatStars } from "../../engine/data";
 import { normalizeAnswerText } from "../../engine/text";
 
 // The screens after a round, each one a card with a stamp, a title, the
 // numbers and the buttons. They only show what they are given.
 const TITLE = { fontFamily: "'Special Elite', monospace", fontSize: 20 };
 const Card = ({ stamp, children }) => <div className="wh-results-card"><div className="wh-results-stamp">{stamp}</div>{children}</div>;
-
-// After a lesson round.
-export function RoundResults({ level, summary, topConfusion, canFinalCase, hasNext, onRetry, onFinalCase, onNext, onBack }) {
-  return (
-    <Card stamp="CASE CLOSED">
-      <div style={TITLE}>{level.title}</div>
-      <div className="wh-results-score"><b>{formatAccuracy(summary.accuracy)}%</b> accuracy — {summary.correct}/{summary.total} correct · {formatStars(summary.earnedStars)}</div>
-      <div className="wh-results-learning"><span>{summary.improved} improved</span><span>{summary.masteredGained} mastered</span></div>
-      {topConfusion && <div className="wh-results-note">Investigation note: watch the difference between {topConfusion.pair[0]} and {topConfusion.pair[1]}.</div>}
-      <div className="wh-results-actions">
-        <button className="secondary" onClick={onRetry}>Retry case</button>
-        {summary.passed && canFinalCase && <button className="secondary" onClick={onFinalCase}>Final Case</button>}
-        {summary.passed && hasNext && <button className="primary" onClick={onNext}>Next Case →</button>}
-        <button className="secondary" onClick={onBack}>Back to levels</button>
-      </div>
-    </Card>
-  );
-}
-
-// After a weak-words review.
-export function ReviewResults({ summary, canReviewMore, onReviewMore, onBack }) {
-  return (
-    <Card stamp="EVIDENCE REVIEWED">
-      <div style={TITLE}>Weak Evidence</div>
-      <div className="wh-results-score"><b>{formatAccuracy(summary.accuracy)}%</b> accuracy — {summary.correct}/{summary.total} correct</div>
-      <div className="wh-results-learning"><span>{summary.improved} improved</span><span>{summary.masteredGained} mastered</span><span>{summary.weakCount} still need review</span></div>
-      <div className="wh-results-note">Review timing and weak-mode signals were updated from today’s evidence.</div>
-      <div className="wh-results-actions">{canReviewMore && <button className="primary" onClick={onReviewMore}>Review More</button>}<button className="secondary" onClick={onBack}>Back to levels</button></div>
-    </Card>
-  );
-}
 
 // The Final Case: write a short report using the evidence words.
 export function FinalReport({ level, recall, words, text, onText, evidenceUsed, busy, error, onSubmit, onBack }) {
