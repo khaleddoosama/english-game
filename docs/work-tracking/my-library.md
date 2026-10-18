@@ -180,3 +180,32 @@ only), the two remaining module cycles, and new modules.
    (details: `docs/integration-tests.md`).
 4. Pick from "Not done". Anything that changes a shared contract
    (`libraryApi.js` calls, a migration, `homeState`, `repo.js`) needs the owner's say first.
+
+## Refactor batch: question reports (branch `refactor/question-reports`, from `cb2fb57`)
+
+Separate branch and worktree from the work above; nothing of the earlier branch was changed. Scope: question reports and
+their wiring in `WordHunter.jsx` only (no engine, no repo, no migration, no product rule).
+
+| Step | Commit (subject) |
+| --- | --- |
+| pure rules moved unchanged | "Reports: the pure rules move out of the app shell unchanged…" |
+| state and operations into the hook, shell wired | "Reports: the report state and operations move into useQuestionReports…" |
+| tests (rules, hook, boundary) | "Tests: question reports…" |
+| browser test | "Browser test: file a report in a round…" |
+
+Documentation: `docs/modules/question-reports.md` (responsibility, interface, dependencies, tests, old problems).
+`WordHunter.jsx`: 2131 -> 2065 lines. Old problems found are listed in the module document, not fixed.
+
+### Verification of the question-reports batch (tested commit `9d3e557`)
+
+CI run: https://github.com/khaleddoosama/english-game/actions/runs/38926062071 (branch `refactor/question-reports`): jobs `app`, `e2e`, `database` all succeeded.
+
+| Check | Passed | Skipped | Failed |
+| --- | --- | --- | --- |
+| `npx vitest run` (local) | 758 tests, 66 files | 112 tests, 11 files (need a database or a browser) | 0 |
+| Browser specs, local | 17 specs | 1 (`saveclose.cjs`: needs `PGURL`) | 0 |
+| Browser specs, CI job `e2e` | 17 specs | 1 (`saveclose.cjs`, same reason) | 0 |
+| CI job `database` | step `saveclose.cjs` ran with `PGURL` and exited 0; I did not read its 9 check lines | none | 0 |
+
+`saveclose.cjs` was **not run locally** in this batch and is not counted as passed there; its result is the CI step above (and from the earlier batch, 9 checks on commit `d04e2e9`).
+Unit-test counts in CI were not read (the `app` job succeeded); the counts above are the local ones.
