@@ -10,7 +10,7 @@ import { SessionView } from "../features/session/SessionView";
 import { Splash } from "../features/auth/LoginPage";
 import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTERY_STAGE_RANK, PRODUCTION_MODES, RECENT_RESULT_LIMIT, WORDS, confusionCount, getMasteryStage, getStarsForAccuracy, isWordKey, courseLevelGroups, levelItemKey, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setLastChallengeId, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildEntryQuestion, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, entryFileMeta, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, uniqueStrings, v2SessionFromEntries } from "../engine/questions";
-import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, spellingDistanceInfo } from "../engine/ai";
+import { askAiForWord, buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, spellingDistanceInfo } from "../engine/ai";
 import { normalizeAnswerText } from "../engine/text";
 import { useQuestionReports } from "../features/reports";
 import { useContentAdmin } from "../features/content-admin";
@@ -21,8 +21,7 @@ import { getFriendsApi, localAreFriends, localFriendSince, localNameOf } from ".
 import { LibraryRoutes, MyViewsHome, homeLimits, keepInLibrary, scopeIsEmpty, scopeOfView, useLibrary, useLibraryHome } from "../features/library";
 import { useSocialCounts } from "../features/social/useSocialCounts";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
-import { importModeError, inspectImport } from "../features/data/transfer";
-import { contentImportPlan, exportFileOf, importDoneText, restoredProgressOf } from "../features/data/importPlan";
+import { useDataTransfer } from "../features/data";
 import CourseLevelsView from "../features/home/CourseLevelsView";
 import HomeTabs from "../features/home/HomeTabs";
 import LessonsView from "../features/home/LessonsView";
@@ -1385,72 +1384,24 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       activeSession, levelOrder: LEVEL_ORDER, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings,
     };
   }
-  function downloadBackup() {
-    const file = exportFile("backup");
-    const url = URL.createObjectURL(new Blob([file.text], { type: file.type }));
-    const a = document.createElement("a");
-    a.href = url; a.download = file.name;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  // A restored backup replaces the progress (saved as a replacement, not merged; see restoringRef).
+  function applyRestoredProgress(restored) {
+    restoringRef.current = true;
+    progressExtrasRef.current = restored; setActiveSession(restored.activeSession || null); setDailyProgress(restored.dailyProgress || null);
+    setScore(restored.score); setStreak(restored.streak); setBestStreak(restored.bestStreak); setAttempted(restored.attempted);
+    setMastery(restored.mastery); masteryRef.current = restored.mastery; setLevelsCleared(restored.levelsCleared); setLevelStats(restored.levelStats);
+    setStudyStreak(restored.studyStreak); setBestStudyStreak(restored.bestStudyStreak); setLastStudyDate(restored.lastStudyDate);
+    studyRef.current = { studyStreak: restored.studyStreak, bestStudyStreak: restored.bestStudyStreak, lastStudyDate: restored.lastStudyDate };
+    setPools(restored.pools); poolsRef.current = restored.pools; setBestSpeedScore(restored.bestSpeedScore); setBestSpeedCombo(restored.bestSpeedCombo);
+    setConfusions(restored.confusions); confusionsRef.current = restored.confusions; setSolvedStories(restored.solvedStories || []); setSessionLogs(restored.sessionLogs || []);
+    questionReportsApi.load(restored.reports); setSettings(normalizeSettings(restored.settings));
   }
-  async function handleQuickBackup() {
-    try {
-      await navigator.clipboard.writeText(exportFile("backup").text);
-      setQuickBackupCopied(true);
-      setToast({ kind: "import", text: "Full backup copied. Paste it into Import & export to restore it." });
-      setTimeout(() => setQuickBackupCopied(false), 2500);
-    } catch (e) {
-      console.error("Quick backup copy failed:", e);
-      setToast({ text: "Couldn't copy to the clipboard. Use Download backup instead." });
-    }
-  }
-  // ---- Import & export (/data, and Admin -> Data & backup) -------------
-  // Files: a full backup (progress + content), content only (admin), or
-  // the words as a spreadsheet (admin).
-  function exportFile(kind) {
-    return exportFileOf(kind, { content: liveContent(), words: WORDS, backup: kind === "backup" ? backupPayload() : null, exportedBy: profile?.username || "local" });
-  }
-  // Step 1: read and check a file against the current content (throws
-  // { message, issues } when it can't be used).
-  function checkImport(text) { return inspectImport(text, liveContent()); }
-  // Step 2: apply. mode: "content" (merge content, keep progress), "full"
-  // (content and progress from a backup), "progress" (a player's own
-  // progress from a backup; content stays as it is).
-  function applyImport(check, mode) {
-    const raw = check.raw;
-    const refused = importModeError(check, mode, isAdmin);
-    if (refused) throw new Error(refused);
-    if (mode !== "progress") {
-      const { content, order, note, renames } = contentImportPlan(raw, mode, liveContent(), LEVEL_ORDER);
-      contentNoteRef.current = note || contentNoteRef.current;
-      mergeCustomData(content.words, content.grammar, content.challenges, order);
-      setCustomWords(content.words); setCustomGrammar(content.grammar); setCustomChallenges(content.challenges); setCustomCombos(content.combos); setCustomStories(content.stories);
-      if (renames) migrateRenamedProgress(renames);
-    }
-    if (mode === "progress" || mode === "full") {
-      const restored = restoredProgressOf(raw, mode);
-      restoringRef.current = true;
-      progressExtrasRef.current = restored; setActiveSession(restored.activeSession || null); setDailyProgress(restored.dailyProgress || null);
-      setScore(restored.score); setStreak(restored.streak); setBestStreak(restored.bestStreak); setAttempted(restored.attempted);
-      setMastery(restored.mastery); masteryRef.current = restored.mastery; setLevelsCleared(restored.levelsCleared); setLevelStats(restored.levelStats);
-      setStudyStreak(restored.studyStreak); setBestStudyStreak(restored.bestStudyStreak); setLastStudyDate(restored.lastStudyDate);
-      studyRef.current = { studyStreak: restored.studyStreak, bestStudyStreak: restored.bestStudyStreak, lastStudyDate: restored.lastStudyDate };
-      setPools(restored.pools); poolsRef.current = restored.pools; setBestSpeedScore(restored.bestSpeedScore); setBestSpeedCombo(restored.bestSpeedCombo);
-      setConfusions(restored.confusions); confusionsRef.current = restored.confusions; setSolvedStories(restored.solvedStories || []); setSessionLogs(restored.sessionLogs || []);
-      questionReportsApi.load(restored.reports); setSettings(normalizeSettings(restored.settings));
-    }
-    setDataVersion((v) => v + 1);
-    setShowFreshCopyPrompt(false);
-    const text = importDoneText(mode);
-    setToast({ kind: "import", text });
-    return text;
-  }
-  // A file that fails the checks can go to AI for a repair; the result is
-  // checked again before anything is applied.
-  async function aiFixImport(text, issues) {
-    const result = await aiFixImportJson(text, issues.join("\n"));
-    return { text: JSON.stringify(result.fixed, null, 2), changes: result.changes.length ? result.changes : ["AI adjusted the file to pass the checks."] };
-  }
+  // ---- Import & export (/data, and Admin -> Data & backup), and the Profile page's backups -------------
+  const { exportFile, checkImport, applyImport, aiFixImport, downloadBackup, handleQuickBackup } = useDataTransfer({
+    isAdmin, exportedBy: profile?.username || "local", liveContent, backupPayload, contentNoteRef,
+    setContent: (c) => { setCustomWords(c.words); setCustomGrammar(c.grammar); setCustomChallenges(c.challenges); setCustomCombos(c.combos); setCustomStories(c.stories); },
+    migrateRenamedProgress, applyRestoredProgress, set: { setDataVersion, setShowFreshCopyPrompt, setToast, setQuickBackupCopied },
+  });
   const contentCounts = { words: WORDS.length, grammar: GRAMMAR.length, challenges: CHALLENGES.length, stories: customStories.length, combos: customCombos.length, categories: LEVEL_ORDER.length };
   const dataTools = { exportFile, checkImport, applyImport, aiFixImport, contentCounts, progressCounts: { score, words: Object.keys(mastery).filter(isWordKey).length, mastered: masteredCountFor(mastery), sessions: sessionLogs.length }, onResetProgress: () => setConfirmAction("reset"), onWipeEverything: () => setConfirmAction("wipe") };
 
