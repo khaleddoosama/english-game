@@ -39,7 +39,7 @@ The task list ([tasks.js](../../../api/_lib/tasks.js)) is the contract between b
 
 ## 3. Files, screens and database objects
 
-- Screens: the AI progress panel ([AiProgress](../../../src/features/media/AiProgress.jsx)), pronunciation window, Ask AI drawer ([features/ai-helpers](../../../src/features/ai-helpers), guide [ask-ai.md](ask-ai.md)), AI parts of the session view, Import (AI repair), admin content tools, Admin, AI usage.
+- Screens: the AI progress panel ([AiProgress](../../../src/features/media/AiProgress.jsx)), pronunciation window, Ask AI drawer ([features/ai-helpers](../../../src/features/ai-helpers), guide [ask-ai.md](ask-ai.md)), the Stories page's story builder (same folder, guide [story-generation.md](story-generation.md)), AI parts of the session view, Import (AI repair), admin content tools, Admin, AI usage.
 - Tables: `ai_usage` (calls per player per day), `ai_calls` (one row per call: who, when, kind, task, admin-only, status, reason, model, time, sizes, tokens, a 300-character preview). Buckets: `word-images` (admin writes), `tts` (only the server key writes).
 - Functions: `ai_gate`, `ai_call_finish`, `app_setting`; admin side `admin_ai_usage`, `admin_ai_summary`.
 - Server settings: `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_FALLBACK_MODELS`, `GEMINI_TTS_MODEL`, `GEMINI_TTS_FALLBACK_MODELS`, `GEMINI_TTS_VOICE`, `PLAYER_DAILY_AI_CALLS`, `SUPABASE_SECRET_KEY`, `CRON_SECRET` (see the top-level README).
@@ -83,6 +83,7 @@ The task list ([tasks.js](../../../api/_lib/tasks.js)) is the contract between b
 | Gate, quota, switches, log, finishing a row | [supabase/tests/ai_calls.sql](../../../supabase/tests/ai_calls.sql), [app_settings.sql](../../../supabase/tests/app_settings.sql) |
 | Job registry, timeouts, cancellation, progress panel | [tests/ai-operations.test.js](../../../tests/ai-operations.test.js), [ai-timeout.test.js](../../../tests/ai-timeout.test.js), [ai-progress.test.jsx](../../../tests/ai-progress.test.jsx) |
 | Pictures | [tests/images.test.js](../../../tests/images.test.js) |
+| Story generation | [tests/story-rules.test.js](../../../tests/story-rules.test.js), [tests/story-generation-hook.test.jsx](../../../tests/story-generation-hook.test.jsx), [e2e/specs/storygen.cjs](../../../e2e/specs/storygen.cjs) |
 | Ask AI about a word | [tests/ask-ai-rules.test.js](../../../tests/ask-ai-rules.test.js), [tests/ask-ai-hook.test.jsx](../../../tests/ask-ai-hook.test.jsx), [e2e/specs/askai.cjs](../../../e2e/specs/askai.cjs) |
 | Pronunciation | [tests/pronunciation.test.js](../../../tests/pronunciation.test.js), [tests/listening-background.test.jsx](../../../tests/listening-background.test.jsx) |
 | AI log screen | [tests/ai-log.test.js](../../../tests/ai-log.test.js) |
