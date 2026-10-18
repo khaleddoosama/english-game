@@ -1,12 +1,30 @@
 # Import, export and backups (administration)
 
 The Import & Export screen (`/data` for everyone, and Admin → Data & backup): export files, check a file, and apply
-it. Part of the [admin](README.md) module. The checks with no state (`inspectImport`, `importModeError`,
-`importModes`, `wordsCsv`) are in [transfer.js](../../../src/features/data/transfer.js); the screen is
-[ImportExport.jsx](../../../src/features/data/ImportExport.jsx).
+it. Part of the [admin](README.md) module.
 
-Status: **Implemented** (current code). This page describes the behaviour as it is; the operations below live in
-`src/app/WordHunter.jsx` and reach the screen as `dataTools`.
+Status: **Implemented** (current code). The behaviour below was written down before the code moved out of
+`src/app/WordHunter.jsx`; the move kept it (see Tests).
+
+## Files and interface
+
+- [transfer.js](../../../src/features/data/transfer.js): checking a file, with no state (`inspectImport`,
+  `importModeError`, `importModes`, `wordsCsv` and the warnings).
+- [importPlan.js](../../../src/features/data/importPlan.js): the other steps with no state: `exportFileOf` (the file an
+  export makes), `contentImportPlan` (the content and level order after applying a file), `restoredProgressOf` (the
+  progress a backup brings back), `importDoneText` (what the player is told).
+- [useDataTransfer.js](../../../src/features/data/useDataTransfer.js): applies them to the shell's state. Reached
+  through [index.js](../../../src/features/data/index.js); the screen
+  [ImportExport.jsx](../../../src/features/data/ImportExport.jsx) is imported on its own so it stays a lazily loaded
+  file (`tests/architecture.test.js`).
+
+`useDataTransfer({ isAdmin, exportedBy, liveContent, backupPayload, contentNoteRef, setContent, migrateRenamedProgress,
+applyRestoredProgress, set })` returns `{ exportFile, checkImport, applyImport, aiFixImport, downloadBackup,
+handleQuickBackup }`. The shell keeps `backupPayload()` (it reads every progress field) and
+`applyRestoredProgress(restored)` (it sets every progress field and `restoringRef`); `migrateRenamedProgress` comes from
+[content admin](content-admin.md). The shell passes the first four to the screen as `dataTools`, and the last two to
+Profile, exactly as before. Depends on the engine only (`data`: `LEVEL_ORDER`, `WORDS`, `mergeCustomData`; `ai`:
+`aiFixImportJson`; `v2`; `progress`).
 
 ## Export (`exportFile(kind)`)
 
@@ -31,7 +49,8 @@ Status: **Implemented** (current code). This page describes the behaviour as it 
      progress is kept.
    - **`full`** (admin): the content comes from the file alone (not merged with the live content), the level order is
      the file's when it has one, renames are not moved over progress, and the progress is replaced by the file's
-     (`migrateProgressData`).
+     (`migrateProgressData`). The whole restored object is kept with the progress (`progressExtrasRef`), so in this
+     mode fields the game no longer has (`puns`, a word's `example`, `sentenceBuild`) are dropped from it first.
    - **`progress`** (anyone, a backup only): the progress is replaced by the file's; the content stays as it is.
    - After any mode: `dataVersion` is bumped (the content save follows), the "fresh copy" banner is closed, and a toast
      says what happened (the same text is returned to the screen).
@@ -45,11 +64,19 @@ A restored progress is saved as a replacement (`restoringRef`), not merged with 
 | What | Where |
 | --- | --- |
 | Checking a file: refused files, accepted files, what would change; modes per role; the words spreadsheet | `tests/import-export.test.js` |
+| The steps with no state: the exported files, each mode's content and level order, v3 renames, the restored progress | `tests/import-plan.test.js` |
+| The hook: each mode on real React state, a player's refusal, the files, Download and Copy backup, AI repair | `tests/data-transfer-hook.test.jsx` |
+| Export a backup and the content, then import the backup back in "My progress only" and "Content and my progress", saved and after a reload (made-up content) | `e2e/specs/importexport.cjs` |
+| Only through the index or the screen, engine only, no loop | `tests/architecture.test.js` |
 | Pictures inside imported content | `tests/image-import.test.js` |
 | Importing the course in a browser (used to set up many specs) | `e2e/specs/*.cjs` |
 
-**Gaps (before this slice):** what `applyImport` does to the content, the level order and the progress in each mode,
-and what the exported files hold, have no unit tests; no browser test exports and imports a file back.
+How the behaviour was kept: the steps with no state were moved first, unchanged, and compared with the old shell code
+on random synthetic files (one-off, not kept); `importexport.cjs` passes on the build before the hook move and after
+it. Deliberate breaks of `importPlan.js` (5) and of the hook (7) each make a test fail.
+
+**Gaps.** The AI repair is tested with the AI call mocked; the real repair is not. The words spreadsheet export and
+the paste box are not covered in a browser. `applyRestoredProgress` (in the shell) is covered only by the browser test.
 
 ## Backups from the Profile page
 
