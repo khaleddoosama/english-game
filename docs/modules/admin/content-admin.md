@@ -68,9 +68,9 @@ random synthetic cases (one-off, not kept); `catadmin.cjs` passes on the build b
 **Gaps.** `updateAdminContent` for a single list (words, grammar...) is tested only for stories. A category deleted
 on one device leaves that device's mastery of its words in place (the words are gone, the records stay).
 
-## Known Issues (found while moving, not changed)
+## Decisions
 
-- `CA-OBS-01` on this device, merging a category into one that already has level stats keeps only the target's stats;
-  the merged category's stats are dropped (the same rule as for words: a key is never moved over an existing one).
-  What the server does with the same category rename was not checked here. Whether the two should be combined is a
-  product decision.
+- `CA-OBS-01` (decided by the owner on 2026-10-18: **keep as is**). On this device, merging a category into one that
+  already has level stats keeps only the target's stats; the merged category's stats are dropped (the same rule as for
+  words: a key is never moved over an existing one). Pinned by `tests/content-admin-rules.test.js` ("category renames
+  move level stats by level id"). What the server does with the same category rename was not checked here.

@@ -106,6 +106,8 @@ The owner investigates a complaint that a question is wrong. (Synthetic data.)
 
 **Implemented.** Everything above.
 
+**Decided:** merging a category into one that already has level stats keeps only the target's stats on this device (`CA-OBS-01`, the owner decided to keep this on 2026-10-18; [content-admin.md](content-admin.md#decisions)).
+
 **Planned**
 
 - Phase 1: the admin sees a visible failure when the dictionary copy does not update after a save.
@@ -118,4 +120,3 @@ The owner investigates a complaint that a question is wrong. (Synthetic data.)
 - `DP-03` a failed dictionary copy is invisible to the admin.
 - `DP-05` reports are stored in two places.
 - `MT-01` (for this module, partly fixed) the content operations moved to `features/content-admin`; import, export and backups are still inside WordHunter.
-- `CA-OBS-01` merging a category into one that already has level stats drops the merged category's stats on this device ([content-admin.md](content-admin.md#known-issues-found-while-moving-not-changed)).
