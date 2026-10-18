@@ -22,6 +22,7 @@ import { LibraryRoutes, MyViewsHome, homeLimits, keepInLibrary, scopeIsEmpty, sc
 import { useSocialCounts } from "../features/social/useSocialCounts";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
 import { useDataTransfer } from "../features/data";
+import { aiWordEntry, aiWordProblem, askTerm, contextCategoryOf } from "../features/ai-helpers/askAiRules";
 import CourseLevelsView from "../features/home/CourseLevelsView";
 import HomeTabs from "../features/home/HomeTabs";
 import LessonsView from "../features/home/LessonsView";
@@ -412,7 +413,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [finalCaseResult, setFinalCaseResult] = useState(null);
 
   async function openAskAi(term="") {
-    const clean=String(term||"").trim().replace(/\s+/g," ").slice(0,80);
+    const clean=askTerm(term);
     setAskAiOpen(true);setAskAiError(null);setAskAiResult(null);
     if(clean){setAskAiTerm(clean);await runAskAi(clean);}
   }
@@ -436,11 +437,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     // Prefer the category the player is currently standing on (the level
     // they're playing, or a practice session's category) over whatever
     // category the AI guessed — keeps newly-added words in context.
-    const contextCategory=currentLevel?.title||(activeSession?.kind==='practice'?activeSession.title:null);
-    const entry={word:askAiResult.word,type:askAiResult.type,...(askAiResult.partsOfSpeech?.length?{partsOfSpeech:askAiResult.partsOfSpeech}:{}),category:contextCategory||askAiResult.category||"AI Discoveries",meaning:askAiResult.meaning,situation:askAiResult.situation,gap:askAiResult.gap,hints:askAiResult.hints||[],_aiAdded:true,...(askAiResult.commonMistake?{commonMistake:askAiResult.commonMistake}:{})};
-    if(/[\u0600-\u06FF]/.test(JSON.stringify(entry))){setAskAiError("The generated card contains non-English text. Regenerate it before adding.");return;}
-    const errors=V2.validateContent({schemaVersion:2,kind:"content",words:[entry]},liveContent());
-    if(errors.length){setAskAiError(`Cannot add this card: ${errors[0]}`);return;}
+    const entry=aiWordEntry(askAiResult,contextCategoryOf(currentLevel,activeSession));
+    const problem=aiWordProblem(entry,liveContent());
+    if(problem){setAskAiError(problem);return;}
     const next=[...customWords,entry];
     mergeCustomData(next,customGrammar,customChallenges,LEVEL_ORDER);
     setCustomWords(next);setDataVersion(value=>value+1);
