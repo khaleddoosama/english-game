@@ -54,7 +54,14 @@ describe("no new loops between modules", () => {
     expect(outside.map(([file]) => file)).toEqual([]);
   });
 
-  it("the engine is below the features: its one import of a feature is the known debt (engine/ai uses media)", () => {
+  it("the shell's AI helpers are in no loop, use only the engine, media and lib, and are reached through their index", () => {
+    expect(cycles(modules).flat()).not.toContain("features/ai-helpers");
+    expect(modules["features/ai-helpers"]).toEqual(["engine", "features/media", "lib"]);
+    const outside = Object.entries(graph).filter(([file, tos]) => !file.startsWith("features/ai-helpers/") && tos.some((t) => t.startsWith("features/ai-helpers/") && t !== "features/ai-helpers/index"));
+    expect(outside.map(([file]) => file)).toEqual([]);
+  });
+
+  it("the engine is below the features: its one import of a feature is the known debt (engine/data uses media's checkImageLinks)", () => {
     expect(modules.engine).toEqual(["features/media", "lib"]);
   });
 
