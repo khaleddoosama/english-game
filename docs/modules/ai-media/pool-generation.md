@@ -7,8 +7,21 @@ again: new sentences for a word's pools, and new variants of a combo or a gramma
 and `generateGrammarVariant` (checked before they are returned). Nothing here blocks a round: when a call fails, the
 game keeps using what it has.
 
-Status: **Implemented** (current code). This page describes the behaviour as it is; the state and handlers live in
-`src/app/WordHunter.jsx`.
+Status: **Implemented** (current code). The behaviour below was written down before the code moved out of
+`src/app/WordHunter.jsx`; the move kept it (see Tests).
+
+## Files and interface
+
+- [generationRules.js](../../../src/features/ai-helpers/generationRules.js): the steps with no state:
+  `withGeneratedTexts`, `withVariantItem` (with `comboVariantFields` / `grammarVariantFields`), `grammarVariantAsk`,
+  `mayRetryVariant` (`VARIANT_RETRY_MS` = 10 minutes), `idOfKey`, `newItemId`.
+- [useAiGeneration.js](../../../src/features/ai-helpers/useAiGeneration.js): what is pending, the failure times, and
+  the AI calls. Reached only through [index.js](../../../src/features/ai-helpers/index.js).
+
+`useAiGeneration({ liveContent, poolsRef, setPools, seenSentences })` returns `{ triggerGeneration,
+triggerVariantGeneration, keepGrammarFresh, clearPending }`. The shell keeps the calls where they were (after an answer,
+starting a practice round, Live Challenge), passes `triggerGeneration` to question reports as before, and Reset
+progress calls `clearPending()`.
 
 ## Word pools (`triggerGeneration(batch, poolsSnapshot)`)
 
@@ -56,9 +69,18 @@ Reset progress clears the pending requests, so a new request can start at once.
 
 | What | Where |
 | --- | --- |
+| The steps with no state: new pool items, variants, the grammar request, the 10-minute wait | `tests/generation-rules.test.js` |
+| The hook: sentences added, one request per pair or key, failures only logged, the wait for grammar, unknown ids, Reset | `tests/ai-generation-hook.test.jsx` |
+| In a browser: a correct answer asks for a new sentence; local mode's failure is only logged, the round goes on, nothing half-made is saved | `e2e/specs/poolgen.cjs` |
+| Only through the index, no loop | `tests/architecture.test.js` |
 | `generateContent` / variants check what the AI returns; they can be cancelled | `tests/grammar-variants.test.js`, `tests/ai-operations.test.js` |
 | `V2.grammarNeedsVariant`; the next round shows a new variant | `tests/grammar-variants.test.js` |
 | Question reports call `triggerGeneration` when a variant is retired | `tests/question-reports-hook.test.jsx` |
 
-**Gaps (before this slice):** nothing tests how new items are added to a pool, the one-request-per-key rule, or the
-10-minute wait after a failure.
+How the behaviour was kept: the steps with no state were moved first, unchanged except that the id maker became an
+argument, and compared with the old shell code on 2,000 random cases (one-off, not kept); `poolgen.cjs` passes on the
+build before the move and after it. Deliberate breaks of the rules (8) and of the hook (8) each make a test fail.
+
+**Gaps.** Local mode has no AI, so no browser test sees a new sentence arrive; that path is tested with the AI calls
+mocked. The callers (`recordSessionResult`, `startPractice`, `refreshLiveSentences`) stay in the shell and are covered
+only by browser tests (`MT-04`).
