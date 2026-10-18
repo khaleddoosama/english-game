@@ -194,7 +194,7 @@ sequenceDiagram
 | Ask AI, "Add to Collection" | Admin only (the button is hidden for players) | `addAiWord` validates the card, adds it to the content, and also calls `library.api.createWord` (`sense_create`) | content as above, plus a private `senses` row owned by the admin |
 | Add to my library | Player (and admin) | Library, Add words: pick from the dictionary or paste a list; keys map to ids; `library_add` | `library_entries` |
 
-Defects: renaming a word breaks library links (`DP-01`, confirmed; fixed in code by migration 0037, not in production yet); `sense_create` has one caller, so player-owned words have no UI and the admin's private copy is likely an orphan (`DP-02`); the dictionary copy is refreshed on a best-effort call (`DP-03`).
+Defects: renaming a word breaks library links (`DP-01`, confirmed; fixed by migration 0037, in production since 2026-10-18); `sense_create` has one caller, so player-owned words have no UI and the admin's private copy is likely an orphan (`DP-02`); the dictionary copy is refreshed on a best-effort call (`DP-03`).
 
 ### 7.3 Organise a library
 
@@ -294,7 +294,7 @@ Live results do not change mastery. Questions and answer keys come from the host
 | --- | --- | --- | --- |
 | Account | `auth.users` + `profiles` | `wh-profile:<id>` in localStorage | Cache for an offline start. Low risk. |
 | Words, grammar, challenges, stories, combos | `content_items` (admin writes) | IndexedDB `content-cache`; in-memory `WORDS`, `GRAMMAR`...; `senses` / `grammar_rules` / `collections` (official part) | The cache is refreshed when `content_meta.version` changes (incremental by `updated_at`). The new tables are refreshed by `dictionary_sync`, called by the admin's browser after a content save, ignoring failures (`DP-03`). |
-| Word identity | The word text (legacy key) | `senses.legacy_key`; the id map in the browser | A rename moves progress but not library links (`DP-01`; fixed in code by 0037, not in production yet). |
+| Word identity | The word text (legacy key) | `senses.legacy_key`; the id map in the browser | A rename moves progress but not library links (`DP-01`; fixed by 0037, in production since 2026-10-18). |
 | Personal library and views | `library_entries`, `library_rules`, `collections*` | Local mode: `library1:<user>` in localStorage | Two implementations behind one interface, checked by a differential test and by contract tests against the real SQL. |
 | Progress (counters, pools, history, settings) | `progress` sections | Browser state; IndexedDB snapshot `progress:<userId>`; `profiles` numbers | Revisioned sections with merge; the snapshot is an offline buffer. |
 | Word mastery | `mastery` rows keyed by word text or `grammar:<id>` and similar | Browser state; `profiles.mastered_count` | Client sends `mastered_count`; the server stores it as given. `sense_progress` and `rule_progress` are an unused second home (`DP-06`). |

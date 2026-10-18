@@ -18,7 +18,7 @@ Ranked by impact on, in this order: **L** learning correctness, **D** data savin
 
 | Rank | ID | Problem | L | D | P | M | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | `DP-01` | Renaming a word moves players' progress but not their library links. | Med | High | - | - | Confirmed; fixed in code for new renames by migration 0037 (not applied to production yet); old renames not repaired |
+| 1 | `DP-01` | Renaming a word moves players' progress but not their library links. | Med | High | - | - | Confirmed; fixed for new renames by migration 0037 (in production since 2026-10-18); old renames not repaired |
 | 2 | `LC-01` | Two definitions of "mastered": words use session evidence, grammar and challenge items use a simpler rule. | High | - | - | Med | By reading |
 | 3 | `LC-02` | AI-written practice sentences enter a player's pool without a review when the AI quality check is unavailable. | Med | Low | - | - | By reading |
 | 4 | `DP-02` | `sense_create` has one caller (admin "Add to Collection") and `library_patch` and notes have none; player-owned words and patches have no screen, and nothing feeds private words or patches into the playable content. | Low | Med | - | Med | By reading (orphan copy: Suspected) |
