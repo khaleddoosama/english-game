@@ -10,7 +10,7 @@ import { SessionView } from "../features/session/SessionView";
 import { Splash } from "../features/auth/LoginPage";
 import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, RECENT_RESULT_LIMIT, WORDS, confusionCount, getMasteryStage, isWordKey, courseLevelGroups, levelItemKey, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, v2SessionFromEntries } from "../engine/questions";
-import { evaluateFinalReport, generateComboVariant, generateContent, generateGrammarVariant } from "../engine/ai";
+import { evaluateFinalReport } from "../engine/ai";
 import { normalizeAnswerText } from "../engine/text";
 import { useQuestionReports } from "../features/reports";
 import { useContentAdmin } from "../features/content-admin";
@@ -22,7 +22,7 @@ import { LibraryRoutes, MyViewsHome, homeLimits, keepInLibrary, scopeIsEmpty, sc
 import { useSocialCounts } from "../features/social/useSocialCounts";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
 import { useDataTransfer } from "../features/data";
-import { AskAiDrawer, StoryBuilder, comboVariantFields, contextCategoryOf, grammarVariantAsk, grammarVariantFields, idOfKey, mayRetryVariant, useAskAi, useStoryGeneration, withGeneratedTexts, withVariantItem } from "../features/ai-helpers";
+import { AskAiDrawer, StoryBuilder, contextCategoryOf, useAiGeneration, useAskAi, useStoryGeneration } from "../features/ai-helpers";
 import CourseLevelsView from "../features/home/CourseLevelsView";
 import HomeTabs from "../features/home/HomeTabs";
 import LessonsView from "../features/home/LessonsView";
@@ -361,8 +361,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const badgesOpen = screen === "badges", dashboardOpen = screen === "stats";
   const [toast, setToast] = useState(null);
   const seenBadgesRef = useRef(null);
-  const pendingGenRef = useRef(new Set());
   const poolsRef = useRef(pools);
+  const { triggerGeneration, triggerVariantGeneration, keepGrammarFresh, clearPending: clearPendingGeneration } = useAiGeneration({ liveContent, poolsRef, setPools, seenSentences: () => progressExtrasRef.current.seenSentences || {} });
   const questionReportsApi = useQuestionReports({ progressExtrasRef, profile, liveContent, markSentencesSeen, touchSession: () => setActiveSession((session) => (session ? { ...session } : session)), poolsRef, setPools, triggerGeneration });
   const { reports: questionReports, quarantine: reportQuarantine } = questionReportsApi;
   const masteryRef = useRef(mastery);
@@ -415,72 +415,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   }
 
 
-  // Fires a background content-generation request for the given
-  // (word, poolType) pairs and merges the results into the pools once ready.
-  // Never blocks the UI — if it fails, the game just keeps reusing what it has.
-  async function triggerGeneration(batch, poolsSnapshot) {
-    const filtered = batch.filter((b) => !pendingGenRef.current.has(`${b.word}::${b.poolType}`));
-    if (!filtered.length) return;
-    filtered.forEach((b) => pendingGenRef.current.add(`${b.word}::${b.poolType}`));
-    try {
-      const results = await generateContent(filtered, poolsSnapshot);
-      setPools((prev) => withGeneratedTexts(prev, results, WORDS));
-    } catch (e) {
-      console.error("Content generation failed:", e);
-    } finally {
-      filtered.forEach((b) => pendingGenRef.current.delete(`${b.word}::${b.poolType}`));
-    }
-  }
-
-  // Same idea as triggerGeneration above, but for combo/grammar "variant"
-  // pools (progressKey-keyed, not word-keyed) — fires once a combo/grammar
-  // question's pool has no fresh (unlocked) item left, i.e. it's just been
-  // answered correctly twice.
-  // After a grammar question is asked: if nothing is ready for that rule next
-  // time, write a new one in the background, so the next round shows it
-  // instead of the same question again. A failed try (AI off, busy, over the
-  // day's limit) waits ten minutes before the next.
-  const variantFailedRef = useRef(new Map());
-  function keepGrammarFresh(id) {
-    const g = (liveContent().grammar || []).find((x) => x.id === id);
-    if (!g || !V2.grammarNeedsVariant(g, poolsRef.current, progressExtrasRef.current.seenSentences || {})) return;
-    if (!mayRetryVariant(variantFailedRef.current.get(id))) return;
-    triggerVariantGeneration("grammar", `grammar:${id}`);
-  }
-  async function triggerVariantGeneration(poolType, key) {
-    const genKey = `variant::${poolType}::${key}`;
-    if (pendingGenRef.current.has(genKey)) return;
-    pendingGenRef.current.add(genKey);
-    try {
-      const id = idOfKey(key);
-      const content = liveContent();
-      if (poolType === "combo") {
-        const combo = (content.combos || []).find((c) => c.id === id);
-        if (!combo) return;
-        const variant = await generateComboVariant(combo);
-        setPools((prev) => {
-          const next = withVariantItem(prev, key, comboVariantFields(variant));
-          poolsRef.current = next;
-          return next;
-        });
-      } else if (poolType === "grammar") {
-        const g = (content.grammar || []).find((x) => x.id === id);
-        if (!g) return;
-        const { spec, used } = grammarVariantAsk(g, poolsRef.current, key);
-        const variant = await generateGrammarVariant(spec, used);
-        setPools((prev) => {
-          const next = withVariantItem(prev, key, grammarVariantFields(variant));
-          poolsRef.current = next;
-          return next;
-        });
-      }
-    } catch (e) {
-      console.error("Variant generation failed:", e);
-      variantFailedRef.current.set(idOfKey(key), Date.now());
-    } finally {
-      pendingGenRef.current.delete(genKey);
-    }
-  }
 
   // Puts a progress object into the game's state (on start, and when
   // another device's changes were merged in).
@@ -842,7 +776,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     setLevelsCleared([]); setLevelStats({});
     setStudyStreak(0); setBestStudyStreak(0); setLastStudyDate(null); studyRef.current = { studyStreak: 0, bestStudyStreak: 0, lastStudyDate: null };
     setPools({}); poolsRef.current = {}; setConfusions({}); confusionsRef.current = {};
-    setBestSpeedScore(0); setBestSpeedCombo(0); pendingGenRef.current = new Set(); seenBadgesRef.current = new Set();
+    setBestSpeedScore(0); setBestSpeedCombo(0); clearPendingGeneration(); seenBadgesRef.current = new Set();
     setSolvedStories([]);setSessionLogs([]);
     setScreen("levels"); setCurrentLevelIndex(null);
     // Content is intentionally left alone here.
