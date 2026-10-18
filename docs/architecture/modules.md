@@ -132,7 +132,7 @@ Order is by how self-contained the cluster is and how well it is covered.
 | 2 | Question reports (**done**: `docs/modules/practice/question-reports.md`) | Self-contained handlers, one data shape | `features/reports`: pure rules + `useQuestionReports`; the shell passes the same props to Admin and the round |
 | 3 | Content administration (**done**: `docs/modules/admin/content-admin.md`) | Touches content and mastery; has the rename path now covered by integration tests | `features/content-admin`: pure rules + `useContentAdmin`; the shell passes the same props to Admin and the round |
 | 4 | Import / export orchestration (**done**: `docs/modules/admin/import-export.md`) | `features/data` already had `transfer.js` (pure) | `features/data`: `importPlan.js` (pure) + `useDataTransfer`; the shell passes the same `dataTools` and Profile props |
-| 5 | AI helpers (in progress: Ask AI **done**, `docs/modules/ai-media/ask-ai.md`; next: stories, then pools and variants) | Many epochs/refs; needs care with cancellation | `features/ai-helpers`: pure rules + one hook per helper; the shell passes the same props to the round and My Library |
+| 5 | AI helpers (in progress: Ask AI and stories **done**, `docs/modules/ai-media/ask-ai.md`, `story-generation.md`; next: remove the old round engine, then pools and variants) | Many epochs/refs; needs care with cancellation | `features/ai-helpers`: pure rules + one hook per helper; the shell passes the same props to the round and My Library |
 | 6 | Progress state | Everything reads it; do after 1 | after `repo/progress` is split |
 | 7 | Session/practice flow | Largest, most coupled | last, one answer type at a time |
 

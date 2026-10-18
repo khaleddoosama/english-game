@@ -6,8 +6,21 @@ short story that hides chosen words, preview it, then add it to the stories or d
 "Write a story", admin only on the server; it checks the story, retries when a target word leaks into the text, and
 checks each grammar question is really in the story).
 
-Status: **Implemented** (current code). This page describes the behaviour as it is; the state and handlers live in
-`src/app/WordHunter.jsx`.
+Status: **Implemented** (current code). The behaviour below was written down before the code moved out of
+`src/app/WordHunter.jsx`; the move kept it (see Tests).
+
+## Files and interface
+
+- [storyRules.js](../../../src/features/ai-helpers/storyRules.js): `storyPlan({ words, grammar, categories, stories,
+  mastery, confusions }, random)` returns `{ targets, grammarRules }` (the choice below), or throws the five-vocab
+  message.
+- [useStoryGeneration.js](../../../src/features/ai-helpers/useStoryGeneration.js): the chosen categories, the story
+  being written, the error, Add / Discard. [StoryBuilder.jsx](../../../src/features/ai-helpers/StoryBuilder.jsx): the
+  builder and the preview. Reached only through [index.js](../../../src/features/ai-helpers/index.js).
+
+`useStoryGeneration({ stories, setStories, mastery, confusions, viewKey })` returns `{ categories, error, state,
+generate, toggleCategory, add, discard }`. The shell passes `viewKey` = screen and address; its own screen-change
+cleanup still cancels every foreground AI task. The Stories list below the builder stays in the shell.
 
 ## The builder (admin only)
 
@@ -45,7 +58,15 @@ Status: **Implemented** (current code). This page describes the behaviour as it 
 
 | What | Where |
 | --- | --- |
+| The choice of targets: the five-vocab rule, how many, in turn, fresh and weak first, the other types, grammar rules | `tests/story-rules.test.js` |
+| The hook and builder: categories shown (admin only), messages, the call, loading, stale answers (newer request, category change, leaving the page), Add / Regenerate / Discard | `tests/story-generation-hook.test.jsx` |
+| The builder in a browser: categories and counts, Generate disabled, the five-vocab rule, the AI asked, a change clears the message | `e2e/specs/storygen.cjs` |
+| Only through the index, no loop | `tests/architecture.test.js` |
 | The AI call can be cancelled | `tests/ai-operations.test.js` |
-| `storyTextLeaksWord` and the story checks inside `generateStory` | `tests/ai-*.test.js` (partly) |
 
-**Gaps (before this slice):** nothing tests the choice of targets, the stale-answer rule, or Add / Discard.
+How the behaviour was kept: `storyPlan` was moved first, unchanged except that `Math.random` became an argument, and
+compared with the old shell code on 1,500 seeded random cases (one-off, not kept); `storygen.cjs` passes on the build
+before the move and after it. Deliberate breaks of the rules (8) and of the hook (7) each make a test fail.
+
+**Gaps.** Local mode has no AI, so no browser test sees a real story; that path is tested with the AI call mocked.
+The checks inside `generateStory` (leaks, retries, grammar questions) are not part of this slice.
