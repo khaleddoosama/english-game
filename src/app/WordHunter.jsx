@@ -10,7 +10,7 @@ import { SessionView } from "../features/session/SessionView";
 import { Splash } from "../features/auth/LoginPage";
 import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTERY_STAGE_RANK, PRODUCTION_MODES, RECENT_RESULT_LIMIT, WORDS, confusionCount, getMasteryStage, getStarsForAccuracy, isWordKey, courseLevelGroups, levelItemKey, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setLastChallengeId, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildEntryQuestion, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, entryFileMeta, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, uniqueStrings, v2SessionFromEntries } from "../engine/questions";
-import { buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, spellingDistanceInfo } from "../engine/ai";
+import { buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, spellingDistanceInfo } from "../engine/ai";
 import { normalizeAnswerText } from "../engine/text";
 import { useQuestionReports } from "../features/reports";
 import { useContentAdmin } from "../features/content-admin";
@@ -22,8 +22,7 @@ import { LibraryRoutes, MyViewsHome, homeLimits, keepInLibrary, scopeIsEmpty, sc
 import { useSocialCounts } from "../features/social/useSocialCounts";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
 import { useDataTransfer } from "../features/data";
-import { AskAiDrawer, contextCategoryOf, useAskAi } from "../features/ai-helpers";
-import { storyPlan } from "../features/ai-helpers/storyRules";
+import { AskAiDrawer, StoryBuilder, contextCategoryOf, useAskAi, useStoryGeneration } from "../features/ai-helpers";
 import CourseLevelsView from "../features/home/CourseLevelsView";
 import HomeTabs from "../features/home/HomeTabs";
 import LessonsView from "../features/home/LessonsView";
@@ -78,29 +77,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const library = useLibrary({ enabled: loaded, me: livePlayer.id, knownWord: (k) => WORDS.some((w) => w.word === k), people: LOCAL_PEOPLE });
   const [customCombos, setCustomCombos] = useState([]);
   const [customStories, setCustomStories] = useState([]);
-  const aiViewEpoch=useRef(0), storyAiEpoch=useRef(0);
-  const [selectedStoryCategories,setSelectedStoryCategories]=useState([]);
-  const [storyGenError,setStoryGenError]=useState("");
-  const [storyGenState, setStoryGenState] = useState(null); // null | 'loading' | 'error' | {title,text,targetWords,questions}
-  async function handleGenerateStory() {
-    if(!selectedStoryCategories.length){setStoryGenError("Choose at least one category first.");return;}
-    const epoch=++storyAiEpoch.current;
-    cancelAiTasks(["Write a story"]);
-    setStoryGenState("loading");
-    setStoryGenError("");
-    try {
-      const { targets, grammarRules } = storyPlan({ words: WORDS, grammar: GRAMMAR, categories: selectedStoryCategories, stories: customStories, mastery, confusions });
-      const story = await generateStory(targets,selectedStoryCategories,grammarRules);
-      if(epoch!==storyAiEpoch.current)return;
-      setStoryGenState(story);
-    } catch (e) {
-      if(epoch!==storyAiEpoch.current)return;
-      console.error("Word Hunter: story generation failed", e);
-      setStoryGenError(e.message||"Story generation failed.");
-      setStoryGenState("error");
-    }
-  }
-  function toggleStoryCategory(category){storyAiEpoch.current++;cancelAiTasks(["Write a story"]);setStoryGenState(null);setStoryGenError("");setSelectedStoryCategories(current=>current.includes(category)?current.filter(item=>item!==category):[...current,category]);}
+  const aiViewEpoch=useRef(0);
 
   const [activeSession, setActiveSession] = useState(null);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
@@ -116,7 +93,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [playScreen, setPlayScreen] = useState("session");
   const lastSectionRef = useRef("practice");
   const screen = route.screen === "play" ? playScreen : route.screen === "notFound" ? "levels" : route.screen;
-  useEffect(() => () => { aiViewEpoch.current++; storyAiEpoch.current++; cancelAiTasks(); setAiBusy(false); setStoryGenState(current=>current==="loading"?null:current); }, [screen, location.path]);
+  useEffect(() => () => { aiViewEpoch.current++; cancelAiTasks(); setAiBusy(false); }, [screen, location.path]);
   const section = route.screen === "levels" ? route.section : lastSectionRef.current;
   if (route.screen === "levels") lastSectionRef.current = route.section;
   function setScreen(next) {
@@ -399,6 +376,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [mastery, setMastery] = useState({});
   const [pools, setPools] = useState({});
   const [confusions, setConfusions] = useState({});
+  const storyApi = useStoryGeneration({ stories: customStories, setStories: setCustomStories, mastery, confusions, viewKey: `${screen} ${location.path}` });
 
   const badgesOpen = screen === "badges", dashboardOpen = screen === "stats";
   const [toast, setToast] = useState(null);
@@ -1447,19 +1425,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           {activeSession&&!activeSession.completed&&<button className="wh-level-btn" onClick={()=>setScreen("session")}>Resume {activeSession.title} ({Math.min(activeSession.index+1,activeSession.queue.length)}/{activeSession.queue.length})</button>}
           {section==="practice"&&(()=>{const day=todayProgress(dailyProgress);const goal=settings.dailyGoal;const done=day.answered>=goal;return <div className={`wh-daily-goal ${done?"done":""}`}><div className="wh-daily-goal-head"><b>{done?<><CheckCircle2 size={15}/> Daily goal reached</>:<><Target size={15}/> Today's goal</>}</b><span>{day.answered} / {goal} questions{day.answered?` · ${Math.round(day.correct/day.answered*100)}% correct`:""}</span></div><div className="wh-daily-goal-bar"><span style={{width:`${Math.min(100,day.answered/goal*100)}%`}}/></div>{done&&day.answered>goal&&<small>+{day.answered-goal} bonus questions today</small>}</div>;})()}
           {section==="stories"&&<div className="wh-panel"><h2>Stories</h2>
-            {isAdmin&&<div className="wh-story-builder"><h3>Generate a mixed-category story</h3><p className="wh-regen-meta">Choose one or more categories. Weak words are selected first and distributed across your choices.</p><div className="wh-category-multiselect">{LEVEL_ORDER.filter(category=>WORDS.some(word=>word.category===category)).map(category=><label key={category} className={`wh-category-choice ${selectedStoryCategories.includes(category)?"selected":""}`}><input type="checkbox" checked={selectedStoryCategories.includes(category)} onChange={()=>toggleStoryCategory(category)}/><span>{category}</span><small>{WORDS.filter(word=>word.category===category).length}</small></label>)}</div>{storyGenState!=="loading"&&<button className="wh-level-btn" disabled={!selectedStoryCategories.length} onClick={handleGenerateStory}>✨ Generate from {selectedStoryCategories.length||0} categor{selectedStoryCategories.length===1?"y":"ies"}</button>}{storyGenError&&storyGenState!=="loading"&&<p className="wh-regen-status error">{storyGenError}</p>}</div>}
-            {storyGenState==="loading"&&<p className="wh-regen-status">Writing and checking a new story…</p>}
-            {storyGenState&&typeof storyGenState==="object"&&<div className="wh-regen-preview">
-              <p className="wh-regen-label">New story — preview</p>
-              <p><strong>{storyGenState.title}</strong></p>
-              <p>{storyGenState.text}</p>
-              <p className="wh-regen-meta">Categories: {(storyGenState.sourceCategories||[]).join(" + ")} · Hidden targets: {storyGenState.targetWords.join(", ")} · {storyGenState.questions.length} questions{storyGenState.grammarQuestions?.length?` + ${storyGenState.grammarQuestions.length} grammar`:""}</p>
-              <div className="wh-regen-actions">
-                <button className="wh-level-btn" onClick={()=>{setCustomStories(prev=>[...prev,storyGenState]);setStoryGenState(null);}}>Add to My Stories</button>
-                <button className="wh-back-btn wh-nav-btn" onClick={handleGenerateStory}>Regenerate</button>
-                <button className="wh-back-btn wh-nav-btn" onClick={()=>setStoryGenState(null)}>Discard</button>
-              </div>
-            </div>}
+            <StoryBuilder story={storyApi} isAdmin={isAdmin} />
             {!customStories.length&&<p>No authored stories loaded. Import a Content v2 file to add them.</p>}{[...customStories].sort((a,b)=>a.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length-b.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length).map(story=>{const fresh=story.targetWords.filter(w=>!V2.known(mastery[V2.findWord(WORDS,w)?.word])).length;const record=solvedStories.find(e=>e.id===story.id);return <article className="wh-v2-learn" key={story.id}><strong>{story.title}{record&&<span className="wh-story-solved-flag"><CheckCircle2 size={13}/> Solved · {record.correct}/{record.total}</span>}</strong><p>{story.questions.length}{story.grammarQuestions?.length?` + ${story.grammarQuestions.length} grammar`:""} questions · {fresh?`${fresh} new words: preview first`:"Ready for review"}</p><button className="wh-level-btn" onClick={()=>launchStory(story)}>{record?"Play again":"Open story"}</button></article>;})}</div>}
         </>}
         {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={WORDS} onIntroduce={introduceWords} onReport={questionReportsApi.report} onReviewReport={questionReportsApi.review} onWithdrawReport={questionReportsApi.remove} onUpdateWord={isAdmin?updateWordFields:undefined} sound={settings.sound} prefs={{ autoAdvanceMs: settings.autoAdvanceMs, hints: settings.hints, speakWord: settings.speakWord }} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onResult={recordSessionResult} onAskWord={openAskAi}/>}
