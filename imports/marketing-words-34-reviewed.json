@@ -1,0 +1,3302 @@
+{
+  "schemaVersion": 2,
+  "kind": "content",
+  "words": [
+    {
+      "antonyms": [
+        "dissuade"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "convince",
+          "sentence": "The photos were enough to ______ the manager that the shop needed repairs.",
+          "wrong": [
+            "prove",
+            "convert",
+            "dissuade"
+          ]
+        }
+      ],
+      "collocations": [
+        "convince someone that",
+        "fully convinced",
+        "fail to convince",
+        "convince the public"
+      ],
+      "commonMistake": {
+        "sentence": "The results convinced to me that it works.",
+        "correction": "The results convinced me that it works.",
+        "why": "Use 'convince someone (that)…' — no 'to' before the person."
+      },
+      "commonMistakes": [
+        {
+          "sentence": "The results convinced to me that it works.",
+          "correction": "The results convinced me that it works.",
+          "why": "Use 'convince someone (that)…' — no 'to' before the person."
+        }
+      ],
+      "distractorGroup": "influence-and-persuasion",
+      "excludeFromSameOptionsWith": [
+        "Talk someone into"
+      ],
+      "gap": "The test results ______d me that the product was safe.",
+      "gaps": [
+        "The test results ______d me that the product was safe.",
+        "She showed her boss the sales numbers to ______ him that the idea was good.",
+        "Nothing can ______ my grandmother that online shopping is safe."
+      ],
+      "hints": [
+        "Change what someone believes is true.",
+        "Rhymes with 'prince'."
+      ],
+      "id": "convince",
+      "learningData": {
+        "cluster": "influence-and-persuasion",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "To make someone believe that something is true, usually by showing them facts or proof.",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "dissuade"
+        ],
+        "confusableWords": [
+          "Persuade"
+        ],
+        "synonyms": [
+          "assure",
+          "satisfy",
+          "win over"
+        ]
+      },
+      "situation": "At first I thought the cream was a scam, but the real test results made me believe it worked.",
+      "situations": [
+        "At first I thought the cream was a scam, but the real test results made me believe it worked.",
+        "The lawyer showed the video, and now the judge believes the man is innocent."
+      ],
+      "subCategory": "influence",
+      "subCategoryTitle": "Influence",
+      "synonyms": [
+        "assure",
+        "satisfy",
+        "win over"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Convince",
+      "wordFamily": [
+        {
+          "pos": "adjective",
+          "word": "convincing"
+        },
+        {
+          "pos": "adjective",
+          "word": "convinced"
+        },
+        {
+          "pos": "noun",
+          "word": "conviction"
+        }
+      ]
+    },
+    {
+      "antonyms": [
+        "unattractive",
+        "unappealing"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "attractive",
+          "sentence": "The company created an ______ package to win new customers.",
+          "wrong": [
+            "attracted",
+            "attracting",
+            "attraction"
+          ]
+        }
+      ],
+      "collocations": [
+        "attractive offer",
+        "attractive price",
+        "attractive package",
+        "attractive discount"
+      ],
+      "commonMistake": {
+        "correction": "The retailer offered a very attractive price discount.",
+        "sentence": "The retailer offered a very attracted price discount.",
+        "why": "The offer/price is 'attractive' (causes interest); the consumer is 'attracted' (feels the interest)."
+      },
+      "commonMistakes": [
+        {
+          "correction": "The retailer offered a very attractive price discount.",
+          "sentence": "The retailer offered a very attracted price discount.",
+          "why": "The offer/price is 'attractive' (causes interest); the consumer is 'attracted' (feels the interest)."
+        }
+      ],
+      "distractorGroup": "sales-and-trade",
+      "excludeFromSameOptionsWith": [
+        "Attraction",
+        "Attached to",
+        "Charming",
+        "Gorgeous",
+        "Soulmate",
+        "Attracted to"
+      ],
+      "gap": "The shop is offering an ______ 50% discount on all winter coats.",
+      "gaps": [
+        "The shop is offering an ______ 50% discount on all winter coats.",
+        "Low prices make the new phone very ______ to students.",
+        "They made me an ______ offer, so I took the job."
+      ],
+      "hints": [
+        "Appealing or inviting to buyers — like a great offer or price.",
+        "Ends in '-ive'; describes the thing itself (not attracted)."
+      ],
+      "id": "attractive",
+      "learningData": {
+        "cluster": "sales-and-trade",
+        "difficulty": "easy"
+      },
+      "level": "B1.1",
+      "meaning": "Interesting and good enough to make people want it — used for offers, prices and deals.",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "unattractive",
+          "unappealing"
+        ],
+        "confusableWords": [
+          "Catchy"
+        ],
+        "synonyms": [
+          "appealing",
+          "alluring",
+          "enticing",
+          "inviting"
+        ]
+      },
+      "situation": "The bank offered new savers a higher interest rate than any other bank, and thousands opened accounts.",
+      "situations": [
+        "The bank offered new savers a higher interest rate than any other bank, and thousands opened accounts.",
+        "With 50% off and free delivery, the deal was too good for shoppers to ignore."
+      ],
+      "subCategory": "sales-and-trade",
+      "subCategoryTitle": "Sales and trade",
+      "synonyms": [
+        "appealing",
+        "alluring",
+        "enticing",
+        "inviting"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Attractive",
+      "wordFamily": [
+        {
+          "pos": "verb",
+          "word": "attract"
+        },
+        {
+          "pos": "noun",
+          "word": "attraction"
+        },
+        {
+          "pos": "adverb",
+          "word": "attractively"
+        }
+      ]
+    },
+    {
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "launch",
+          "sentence": "The sportswear brand will ______ a big marketing campaign before the Olympics.",
+          "wrong": [
+            "throw",
+            "drop",
+            "fire"
+          ]
+        }
+      ],
+      "collocations": [
+        "marketing campaign",
+        "advertising campaign",
+        "launch a campaign",
+        "run a campaign"
+      ],
+      "commonMistake": {
+        "correction": "They started a new campaign on TV.",
+        "sentence": "They started a new campain on TV.",
+        "why": "The spelling has a silent 'g': campaign."
+      },
+      "commonMistakes": [
+        {
+          "correction": "They started a new campaign on TV.",
+          "sentence": "They started a new campain on TV.",
+          "why": "The spelling has a silent 'g': campaign."
+        }
+      ],
+      "distractorGroup": "influence-and-persuasion",
+      "gap": "The company's summer ______ on Instagram brought in 3,000 new followers.",
+      "gaps": [
+        "The company's summer ______ on Instagram brought in 3,000 new followers.",
+        "They spent a lot of money on an advertising ______ for the new phone.",
+        "Our online ______ will run from March to June."
+      ],
+      "hints": [
+        "A planned group of ads or actions with one goal.",
+        "Ends with a silent 'g': ca__aign."
+      ],
+      "id": "campaign",
+      "learningData": {
+        "cluster": "influence-and-persuasion",
+        "difficulty": "easy"
+      },
+      "level": "B1.1",
+      "meaning": "A planned series of ads and activities over a period of time to reach one business goal.",
+      "partsOfSpeech": [
+        "noun",
+        "verb"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [],
+        "confusableWords": [
+          "Commercial"
+        ],
+        "synonyms": [
+          "drive",
+          "promotion",
+          "crusade"
+        ]
+      },
+      "situation": "For two months, the juice company used TV ads, posters and online videos to sell its new flavour.",
+      "situations": [
+        "For two months, the juice company used TV ads, posters and online videos to sell its new flavour.",
+        "The city put up signs, ran radio ads and visited schools for a year to get more people recycling."
+      ],
+      "subCategory": "influence",
+      "subCategoryTitle": "Influence",
+      "synonyms": [
+        "drive",
+        "promotion",
+        "crusade"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Campaign",
+      "wordFamily": [
+        {
+          "pos": "noun",
+          "word": "campaigner"
+        },
+        {
+          "pos": "noun",
+          "word": "campaigning"
+        }
+      ]
+    },
+    {
+      "antonyms": [
+        "traditional",
+        "old-fashioned",
+        "conventional"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "innovative",
+          "sentence": "The startup got investors because of its highly ______ approach to solar energy.",
+          "wrong": [
+            "innovated",
+            "innovating",
+            "innovation"
+          ]
+        }
+      ],
+      "collocations": [
+        "innovative idea",
+        "innovative product",
+        "highly innovative",
+        "innovative approach"
+      ],
+      "commonMistake": {
+        "correction": "Their design is very innovative.",
+        "sentence": "Their design is very innovation.",
+        "why": "'Innovation' is a noun; use the adjective 'innovative' after 'very'."
+      },
+      "commonMistakes": [
+        {
+          "correction": "Their design is very innovative.",
+          "sentence": "Their design is very innovation.",
+          "why": "'Innovation' is a noun; use the adjective 'innovative' after 'very'."
+        }
+      ],
+      "distractorGroup": "influence-and-persuasion",
+      "gap": "The company is famous for its ______ products — it's always the first to try new ideas.",
+      "gaps": [
+        "The company is famous for its ______ products — it's always the first to try new ideas.",
+        "We need an ______ idea, not the same old poster.",
+        "Her ______ design used solar power in a way no one had tried."
+      ],
+      "hints": [
+        "Describes something new, original and creative.",
+        "Starts with 'inno-' and ends with '-ive'."
+      ],
+      "id": "innovative",
+      "learningData": {
+        "cluster": "influence-and-persuasion",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "Using new ideas or methods that nobody has used before.",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "traditional",
+          "old-fashioned",
+          "conventional"
+        ],
+        "confusableWords": [
+          "Catchy"
+        ],
+        "synonyms": [
+          "original",
+          "creative",
+          "groundbreaking",
+          "novel"
+        ]
+      },
+      "situation": "Instead of normal ads, the brand hid prizes inside a phone game — nobody had done that before.",
+      "situations": [
+        "Instead of normal ads, the brand hid prizes inside a phone game — nobody had done that before.",
+        "The small company made the first shoes from recycled coffee cups."
+      ],
+      "subCategory": "competition",
+      "subCategoryTitle": "Competition",
+      "synonyms": [
+        "original",
+        "creative",
+        "groundbreaking",
+        "novel"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Innovative",
+      "wordFamily": [
+        {
+          "pos": "verb",
+          "word": "innovate"
+        },
+        {
+          "pos": "noun",
+          "word": "innovation"
+        },
+        {
+          "pos": "noun",
+          "word": "innovator"
+        }
+      ]
+    },
+    {
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "ethics",
+          "sentence": "All new staff must sign the company's code of ______.",
+          "wrong": [
+            "ethic",
+            "ethical",
+            "morality"
+          ]
+        }
+      ],
+      "collocations": [
+        "business ethics",
+        "code of ethics",
+        "professional ethics",
+        "work ethics"
+      ],
+      "commonMistake": {
+        "correction": "He has no ethics at work.",
+        "sentence": "He has no ethic at work.",
+        "why": "'Ethics' (moral principles) is normally used in the plural form."
+      },
+      "commonMistakes": [
+        {
+          "correction": "He has no ethics at work.",
+          "sentence": "He has no ethic at work.",
+          "why": "'Ethics' (moral principles) is normally used in the plural form."
+        }
+      ],
+      "distractorGroup": "promises-and-values",
+      "gap": "Writing fake reviews goes against good business ______.",
+      "gaps": [
+        "Writing fake reviews goes against good business ______.",
+        "Many young people only buy from brands with strong ______.",
+        "Doctors must follow strict professional ______."
+      ],
+      "hints": [
+        "Moral principles about right and wrong.",
+        "Starts with 'eth-'; the adjective is 'ethical'."
+      ],
+      "id": "ethics",
+      "learningData": {
+        "cluster": "promises-and-values",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "The moral rules about what is right and wrong in how people or companies behave.",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "register": "formal",
+      "relations": {
+        "antonyms": [],
+        "confusableWords": [
+          "Wholesome"
+        ],
+        "synonyms": [
+          "morals",
+          "principles",
+          "standards of conduct"
+        ]
+      },
+      "situation": "The company refused to use child workers, even though it would have been cheaper.",
+      "situations": [
+        "The company refused to use child workers, even though it would have been cheaper.",
+        "Students at the business school take a course about honesty and fairness in business."
+      ],
+      "subCategory": "values",
+      "subCategoryTitle": "Values",
+      "synonyms": [
+        "morals",
+        "principles",
+        "standards of conduct"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Ethics",
+      "wordFamily": [
+        {
+          "pos": "adjective",
+          "word": "ethical"
+        },
+        {
+          "pos": "adverb",
+          "word": "ethically"
+        },
+        {
+          "pos": "adjective",
+          "word": "unethical"
+        }
+      ]
+    },
+    {
+      "antonyms": [
+        "non-profit"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "commercial",
+          "sentence": "The movie stopped twice for a five-minute ______ break.",
+          "wrong": [
+            "commerce",
+            "trading",
+            "business"
+          ]
+        }
+      ],
+      "collocations": [
+        "TV commercial",
+        "commercial break",
+        "commercial success",
+        "radio commercial"
+      ],
+      "commonMistake": {
+        "correction": "I saw a funny advert in the newspaper.",
+        "sentence": "I saw a funny commercial in the newspaper.",
+        "why": "A 'commercial' refers specifically to broadcast TV or radio ads; print ads are 'adverts' or 'advertisements'."
+      },
+      "commonMistakes": [
+        {
+          "correction": "I saw a funny advert in the newspaper.",
+          "sentence": "I saw a funny commercial in the newspaper.",
+          "why": "A 'commercial' refers specifically to broadcast TV or radio ads; print ads are 'adverts' or 'advertisements'."
+        }
+      ],
+      "distractorGroup": "sales-and-trade",
+      "gap": "I hate it when a movie stops for a long ______ break.",
+      "gaps": [
+        "I hate it when a movie stops for a long ______ break.",
+        "The film was a big ______ success — it made millions.",
+        "They paid a famous singer to appear in their TV ______."
+      ],
+      "hints": [
+        "A TV or radio ad — or anything about making money from selling.",
+        "Starts with 'comm-' and ends with '-ial'."
+      ],
+      "id": "commercial",
+      "learningData": {
+        "cluster": "sales-and-trade",
+        "difficulty": "easy"
+      },
+      "level": "B1.1",
+      "meaning": "An advertisement on TV or radio; also, connected with making money from business.",
+      "partsOfSpeech": [
+        "noun",
+        "adjective"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "non-profit"
+        ],
+        "confusableWords": [
+          "Campaign"
+        ],
+        "synonyms": [
+          "advert",
+          "advertisement",
+          "TV ad"
+        ]
+      },
+      "situation": "During the football match, a 30-second ad for a new car came on between the two halves.",
+      "situations": [
+        "During the football match, a 30-second ad for a new car came on between the two halves.",
+        "The film was not loved by critics, but it made millions of dollars at the cinema."
+      ],
+      "subCategory": "sales-and-trade",
+      "subCategoryTitle": "Sales and trade",
+      "synonyms": [
+        "advert",
+        "advertisement",
+        "TV ad"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Commercial",
+      "wordFamily": [
+        {
+          "pos": "noun",
+          "word": "commerce"
+        },
+        {
+          "pos": "adverb",
+          "word": "commercially"
+        },
+        {
+          "pos": "verb",
+          "word": "commercialise"
+        }
+      ]
+    },
+    {
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "guarantee",
+          "sentence": "The hotel offers a best-price ______: find it cheaper and we'll pay the difference.",
+          "wrong": [
+            "pledge",
+            "oath",
+            "token"
+          ]
+        }
+      ],
+      "collocations": [
+        "money-back guarantee",
+        "guarantee satisfaction",
+        "guarantee quality",
+        "under guarantee"
+      ],
+      "commonMistake": {
+        "correction": "I guarantee that you will like the phone.",
+        "sentence": "I guarantee you to like the phone.",
+        "why": "Use 'guarantee that + clause' rather than 'guarantee someone to do'."
+      },
+      "commonMistakes": [
+        {
+          "correction": "I guarantee that you will like the phone.",
+          "sentence": "I guarantee you to like the phone.",
+          "why": "Use 'guarantee that + clause' rather than 'guarantee someone to do'."
+        }
+      ],
+      "distractorGroup": "promises-and-values",
+      "gap": "They offer a money-back ______ if you're not happy.",
+      "gaps": [
+        "They offer a money-back ______ if you're not happy.",
+        "I can't ______ that the package will arrive tomorrow.",
+        "The online store gives a 30-day money-back ______ on all shoes."
+      ],
+      "hints": [
+        "A promise — often 'money-back'. Also a verb: to promise something will happen.",
+        "Starts with 'guar-' and ends with '-tee'."
+      ],
+      "id": "guarantee",
+      "learningData": {
+        "cluster": "promises-and-values",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "A firm promise from a seller that something will happen or work — often 'or you get your money back'.",
+      "partsOfSpeech": [
+        "noun",
+        "verb"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [],
+        "confusableWords": [
+          "Warranty"
+        ],
+        "synonyms": [
+          "promise",
+          "assurance",
+          "pledge",
+          "security"
+        ]
+      },
+      "situation": "The shop promised: 'If you don't like it in 30 days, we'll give you all your money back.'",
+      "situations": [
+        "The shop promised: 'If you don't like it in 30 days, we'll give you all your money back.'",
+        "The pizza place promises your order in 30 minutes, or it's free."
+      ],
+      "subCategory": "promises",
+      "subCategoryTitle": "Promises",
+      "synonyms": [
+        "promise",
+        "assurance",
+        "pledge",
+        "security"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Guarantee",
+      "wordFamily": [
+        {
+          "pos": "adjective",
+          "word": "guaranteed"
+        }
+      ]
+    },
+    {
+      "antonyms": [
+        "transparency",
+        "fair dealing",
+        "honesty"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "manipulation",
+          "sentence": "Honest marketers avoid emotional ______ to scare customers into buying.",
+          "wrong": [
+            "manipulate",
+            "manipulator",
+            "manipulative"
+          ]
+        }
+      ],
+      "collocations": [
+        "emotional manipulation",
+        "media manipulation",
+        "clever manipulation",
+        "subtle manipulation"
+      ],
+      "commonMistake": {
+        "correction": "He is skilled in manipulating people.",
+        "sentence": "He is skilled in manipulation people.",
+        "why": "'Manipulation' is a noun; after a preposition like 'in' or 'at', use the gerund 'manipulating'."
+      },
+      "commonMistakes": [
+        {
+          "correction": "He is skilled in manipulating people.",
+          "sentence": "He is skilled in manipulation people.",
+          "why": "'Manipulation' is a noun; after a preposition like 'in' or 'at', use the gerund 'manipulating'."
+        }
+      ],
+      "distractorGroup": "influence-and-persuasion",
+      "gap": "Using fear to sell a product is a kind of emotional ______.",
+      "gaps": [
+        "Using fear to sell a product is a kind of emotional ______.",
+        "Saying 'only two left!' when it isn't true is a form of ______.",
+        "The report showed clear ______ of the sales numbers."
+      ],
+      "hints": [
+        "The noun: the act of controlling people unfairly.",
+        "Ends in '-tion'."
+      ],
+      "id": "manipulation",
+      "learningData": {
+        "cluster": "influence-and-persuasion",
+        "difficulty": "hard"
+      },
+      "level": "B1.1",
+      "meaning": "The act of controlling what people do or believe in a secret, unfair way.",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "transparency",
+          "fair dealing",
+          "honesty"
+        ],
+        "confusableWords": [
+          "Manipulate",
+          "Manipulative"
+        ],
+        "synonyms": [
+          "exploitation",
+          "deception",
+          "maneuvering",
+          "distortion"
+        ]
+      },
+      "situation": "The ad showed sad children to make viewers feel guilty, so they would buy the toy.",
+      "situations": [
+        "The ad showed sad children to make viewers feel guilty, so they would buy the toy.",
+        "The manager secretly changed the sales numbers to make the results look better."
+      ],
+      "subCategory": "influence",
+      "subCategoryTitle": "Influence",
+      "synonyms": [
+        "exploitation",
+        "deception",
+        "maneuvering",
+        "distortion"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Manipulation",
+      "wordFamily": [
+        {
+          "pos": "verb",
+          "word": "manipulate"
+        },
+        {
+          "pos": "adjective",
+          "word": "manipulative"
+        },
+        {
+          "pos": "noun",
+          "word": "manipulator"
+        }
+      ]
+    },
+    {
+      "antonyms": [
+        "Wholesale"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "retail",
+          "sentence": "Shops often cut the recommended ______ price during holiday sales.",
+          "wrong": [
+            "retailed",
+            "retailer",
+            "retailing"
+          ]
+        }
+      ],
+      "collocations": [
+        "retail price",
+        "retail store",
+        "retail sector",
+        "work in retail"
+      ],
+      "commonMistake": {
+        "correction": "He has worked in retail for five years.",
+        "sentence": "He has worked in retailer for five years.",
+        "why": "'Retail' is the business sector; a 'retailer' is the store or company."
+      },
+      "commonMistakes": [
+        {
+          "correction": "He has worked in retail for five years.",
+          "sentence": "He has worked in retailer for five years.",
+          "why": "'Retail' is the business sector; a 'retailer' is the store or company."
+        }
+      ],
+      "distractorGroup": "sales-and-trade",
+      "gap": "She has worked in ______ for years — first in a bookshop, now in a phone store.",
+      "gaps": [
+        "She has worked in ______ for years — first in a bookshop, now in a phone store.",
+        "The ______ price of this TV is $500, but online it's cheaper.",
+        "Many ______ stores are closing because people shop online."
+      ],
+      "hints": [
+        "Selling to ordinary customers in shops — the opposite of selling in bulk.",
+        "Starts with 're-' and ends with '-tail'."
+      ],
+      "id": "retail",
+      "learningData": {
+        "cluster": "sales-and-trade",
+        "difficulty": "easy"
+      },
+      "level": "B1.1",
+      "meaning": "Selling goods in small amounts directly to ordinary people, in shops or online.",
+      "partsOfSpeech": [
+        "noun",
+        "adjective",
+        "verb"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "wholesale"
+        ],
+        "confusableWords": [
+          "Wholesale"
+        ],
+        "synonyms": [
+          "selling to the public"
+        ]
+      },
+      "situation": "She works in a clothes shop at the mall, helping people choose and pay for jeans.",
+      "situations": [
+        "She works in a clothes shop at the mall, helping people choose and pay for jeans.",
+        "The price on the label in the shop is higher than what the shop paid the supplier."
+      ],
+      "subCategory": "sales-and-trade",
+      "subCategoryTitle": "Sales and trade",
+      "synonyms": [
+        "selling to the public"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Retail",
+      "wordFamily": [
+        {
+          "pos": "noun",
+          "word": "retailer"
+        }
+      ],
+      "opposite": "Wholesale"
+    },
+    {
+      "antonyms": [
+        "uncompetitive"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "competitive",
+          "sentence": "Fast delivery gave the online store a ______ edge over normal shops.",
+          "wrong": [
+            "competition",
+            "competitor",
+            "competing"
+          ]
+        }
+      ],
+      "collocations": [
+        "competitive prices",
+        "competitive edge",
+        "competitive advantage",
+        "competitive market"
+      ],
+      "commonMistake": {
+        "correction": "They offer very competitive rates.",
+        "sentence": "They offer very competitor rates.",
+        "why": "'Competitor' is a noun; use the adjective 'competitive' to describe rates or prices."
+      },
+      "commonMistakes": [
+        {
+          "correction": "They offer very competitive rates.",
+          "sentence": "They offer very competitor rates.",
+          "why": "'Competitor' is a noun; use the adjective 'competitive' to describe rates or prices."
+        }
+      ],
+      "distractorGroup": "competition-and-strategy",
+      "gap": "The shop offers very ______ prices, so it's always busy.",
+      "gaps": [
+        "The shop offers very ______ prices, so it's always busy.",
+        "My brother is so ______ — he hates losing any game.",
+        "To survive, small shops must offer good quality at ______ prices."
+      ],
+      "hints": [
+        "Describes prices that can beat rivals, or a person who hates to lose.",
+        "The adjective from 'compete'."
+      ],
+      "id": "competitive",
+      "learningData": {
+        "cluster": "competition-and-strategy",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "Good enough to compete with others, especially with low prices; or wanting very much to win.",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "uncompetitive"
+        ],
+        "confusableWords": [
+          "Competitor"
+        ],
+        "synonyms": [
+          "low-priced",
+          "keenly priced",
+          "driven"
+        ]
+      },
+      "situation": "Their prices are a bit lower than every other shop in town, so people choose them.",
+      "situations": [
+        "Their prices are a bit lower than every other shop in town, so people choose them.",
+        "My brother gets angry and won't talk to anyone if he loses a board game."
+      ],
+      "subCategory": "competition",
+      "subCategoryTitle": "Competition",
+      "synonyms": [
+        "low-priced",
+        "keenly priced",
+        "driven"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Competitive",
+      "wordFamily": [
+        {
+          "pos": "verb",
+          "word": "compete"
+        },
+        {
+          "pos": "noun",
+          "word": "competition"
+        },
+        {
+          "pos": "noun",
+          "word": "competitor"
+        },
+        {
+          "pos": "adverb",
+          "word": "competitively"
+        }
+      ]
+    },
+    {
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "merchandiser",
+          "sentence": "The fashion brand hired a visual ______ to plan its shop layout.",
+          "wrong": [
+            "merchandise",
+            "merchant",
+            "merchandising"
+          ]
+        }
+      ],
+      "collocations": [
+        "visual merchandiser",
+        "retail merchandiser",
+        "fashion merchandiser"
+      ],
+      "commonMistake": {
+        "correction": "He works as a merchandiser in the boutique.",
+        "sentence": "He works as a merchandise in the boutique.",
+        "why": "'Merchandise' refers to goods/stock; the person organizing displays is a 'merchandiser'."
+      },
+      "commonMistakes": [
+        {
+          "correction": "He works as a merchandiser in the boutique.",
+          "sentence": "He works as a merchandise in the boutique.",
+          "why": "'Merchandise' refers to goods/stock; the person organizing displays is a 'merchandiser'."
+        }
+      ],
+      "distractorGroup": "sales-and-trade",
+      "gap": "The ______ put the summer clothes in the shop window to attract shoppers.",
+      "gaps": [
+        "The ______ put the summer clothes in the shop window to attract shoppers.",
+        "As a ______, she decides how products look on the shelves.",
+        "The store hired a visual ______ to make its displays more eye-catching."
+      ],
+      "hints": [
+        "The person who displays products in shops.",
+        "Comes from 'merchandise' + '-r'."
+      ],
+      "id": "merchandiser",
+      "learningData": {
+        "cluster": "sales-and-trade",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "A person whose job is to arrange and display products in a shop so people buy more.",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [],
+        "confusableWords": [
+          "Retail",
+          "Wholesaler"
+        ],
+        "synonyms": [
+          "display specialist",
+          "retail coordinator"
+        ]
+      },
+      "situation": "Every Monday, Omar moves the new chocolates to the shelf at eye level near the checkout.",
+      "situations": [
+        "Every Monday, Omar moves the new chocolates to the shelf at eye level near the checkout.",
+        "Before the holidays, Lina decorates the shop window and decides which products go at the front."
+      ],
+      "subCategory": "sales-and-trade",
+      "subCategoryTitle": "Sales and trade",
+      "synonyms": [
+        "display specialist",
+        "retail coordinator"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Merchandiser",
+      "wordFamily": [
+        {
+          "pos": "noun",
+          "word": "merchandise"
+        },
+        {
+          "pos": "noun",
+          "word": "merchandising"
+        }
+      ]
+    },
+    {
+      "antonyms": [
+        "actual",
+        "realized"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "potential",
+          "sentence": "The sales team sent discount codes to hundreds of ______ clients.",
+          "wrong": [
+            "potent",
+            "potentially",
+            "potency"
+          ]
+        }
+      ],
+      "collocations": [
+        "potential customer",
+        "potential client",
+        "potential market",
+        "reach your potential"
+      ],
+      "commonMistake": {
+        "correction": "The project has a lot of potential.",
+        "sentence": "The project has many potentials.",
+        "why": "When referring to the capacity for future growth or success, 'potential' is uncountable."
+      },
+      "commonMistakes": [
+        {
+          "correction": "The project has a lot of potential.",
+          "sentence": "The project has many potentials.",
+          "why": "When referring to the capacity for future growth or success, 'potential' is uncountable."
+        }
+      ],
+      "distractorGroup": "competition-and-strategy",
+      "gap": "We sent free samples to 500 ______ customers.",
+      "gaps": [
+        "We sent free samples to 500 ______ customers.",
+        "This young player has the ______ to become a star.",
+        "The team listed every ______ problem before the launch."
+      ],
+      "hints": [
+        "Possible, not real yet — like a future customer.",
+        "Starts with 'pot-' and ends with '-tial'."
+      ],
+      "id": "potential",
+      "learningData": {
+        "cluster": "competition-and-strategy",
+        "difficulty": "easy"
+      },
+      "level": "B1.1",
+      "meaning": "Possible in the future but not real yet; or the ability to develop and succeed later.",
+      "partsOfSpeech": [
+        "adjective",
+        "noun"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "actual",
+          "realized"
+        ],
+        "confusableWords": [
+          "Customer",
+          "Client"
+        ],
+        "synonyms": [
+          "prospective",
+          "possible",
+          "promising",
+          "future"
+        ]
+      },
+      "situation": "People who visited the website but haven't bought anything yet could become buyers one day.",
+      "situations": [
+        "People who visited the website but haven't bought anything yet could become buyers one day.",
+        "The small café is busy every day — the owner thinks it could become a big chain."
+      ],
+      "subCategory": "competition",
+      "subCategoryTitle": "Competition",
+      "synonyms": [
+        "prospective",
+        "possible",
+        "promising",
+        "future"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Potential",
+      "wordFamily": [
+        {
+          "pos": "adverb",
+          "word": "potentially"
+        }
+      ]
+    },
+    {
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "manipulate",
+          "sentence": "Some TV ads try to ______ parents into buying expensive games.",
+          "wrong": [
+            "manipulation",
+            "manipulative",
+            "manipulating"
+          ]
+        }
+      ],
+      "collocations": [
+        "manipulate someone into",
+        "manipulate data",
+        "manipulate the market"
+      ],
+      "commonMistake": {
+        "correction": "The dealer manipulated me into buying the extended warranty.",
+        "sentence": "The dealer manipulated me to buy the extended warranty.",
+        "why": "Use 'manipulate someone into doing something' (preposition 'into' + gerund)."
+      },
+      "commonMistakes": [
+        {
+          "correction": "The dealer manipulated me into buying the extended warranty.",
+          "sentence": "The dealer manipulated me to buy the extended warranty.",
+          "why": "Use 'manipulate someone into doing something' (preposition 'into' + gerund)."
+        }
+      ],
+      "distractorGroup": "influence-and-persuasion",
+      "gap": "Some ads ______ children into wanting expensive toys.",
+      "gaps": [
+        "Some ads ______ children into wanting expensive toys.",
+        "Don't let him ______ you — think for yourself.",
+        "The company tried to ______ the numbers to hide its losses."
+      ],
+      "hints": [
+        "The verb: to control people unfairly.",
+        "Starts with 'manip-' and ends with '-ate'."
+      ],
+      "id": "manipulate",
+      "learningData": {
+        "cluster": "influence-and-persuasion",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "To control what someone does or believes in a secret, unfair way, for your own benefit.",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [],
+        "confusableWords": [
+          "Manipulation",
+          "Manipulative"
+        ],
+        "synonyms": [
+          "exploit",
+          "influence unfairly",
+          "maneuver",
+          "trick"
+        ]
+      },
+      "situation": "The salesman said 'only one left!' even though the store room was full, just to make me buy quickly.",
+      "situations": [
+        "The salesman said 'only one left!' even though the store room was full, just to make me buy quickly.",
+        "He made his friend feel guilty every day until she lent him money."
+      ],
+      "subCategory": "influence",
+      "subCategoryTitle": "Influence",
+      "synonyms": [
+        "exploit",
+        "influence unfairly",
+        "maneuver",
+        "trick"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Manipulate",
+      "wordFamily": [
+        {
+          "pos": "noun",
+          "word": "manipulation"
+        },
+        {
+          "pos": "adjective",
+          "word": "manipulative"
+        },
+        {
+          "pos": "noun",
+          "word": "manipulator"
+        }
+      ]
+    },
+    {
+      "antonyms": [
+        "retailer"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "wholesaler",
+          "sentence": "Bookshops order most of their books through a book ______.",
+          "wrong": [
+            "wholesale",
+            "wholesome",
+            "retail"
+          ]
+        }
+      ],
+      "collocations": [
+        "food wholesaler",
+        "regional wholesaler",
+        "buy from a wholesaler"
+      ],
+      "commonMistake": {
+        "sentence": "I bought one notebook from the wholesaler.",
+        "correction": "I bought one notebook from the stationery shop.",
+        "why": "A wholesaler sells large amounts to shops, not single items to the public."
+      },
+      "commonMistakes": [
+        {
+          "sentence": "I bought one notebook from the wholesaler.",
+          "correction": "I bought one notebook from the stationery shop.",
+          "why": "A wholesaler sells large amounts to shops, not single items to the public."
+        }
+      ],
+      "distractorGroup": "sales-and-trade",
+      "gap": "The supermarket gets its rice from a ______ at a low price.",
+      "gaps": [
+        "The supermarket gets its rice from a ______ at a low price.",
+        "You can't buy just one T-shirt from a ______ — they sell big boxes to shops.",
+        "Small shop owners buy their stock from a local ______."
+      ],
+      "hints": [
+        "The company in the middle: factory → ___ → shop.",
+        "Ends in '-saler'."
+      ],
+      "id": "wholesaler",
+      "learningData": {
+        "cluster": "sales-and-trade",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "A company that buys goods in large amounts from factories and sells them to shops.",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "retailer"
+        ],
+        "confusableWords": [
+          "Wholesale"
+        ],
+        "synonyms": [
+          "distributor",
+          "bulk supplier",
+          "middleman"
+        ]
+      },
+      "situation": "The company buys 10,000 bottles of water from the factory and sells them in boxes to small shops.",
+      "situations": [
+        "The company buys 10,000 bottles of water from the factory and sells them in boxes to small shops.",
+        "Pharmacies order their medicine in big boxes from one supplier instead of from every factory."
+      ],
+      "subCategory": "sales-and-trade",
+      "subCategoryTitle": "Sales and trade",
+      "synonyms": [
+        "distributor",
+        "bulk supplier",
+        "middleman"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Wholesaler",
+      "wordFamily": [
+        {
+          "pos": "noun",
+          "word": "wholesale"
+        }
+      ]
+    },
+    {
+      "antonyms": [
+        "ally",
+        "partner"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "competitor",
+          "sentence": "The coffee brand ran a big ad campaign to win customers from its main ______.",
+          "wrong": [
+            "competitive",
+            "competing",
+            "competition"
+          ]
+        }
+      ],
+      "collocations": [
+        "main competitor",
+        "fierce competitor",
+        "closest competitor",
+        "outperform a competitor"
+      ],
+      "commonMistake": {
+        "correction": "They are our chief competitor in Europe.",
+        "sentence": "They are our chief competition company in Europe.",
+        "why": "Use the noun 'competitor' for the rival enterprise; 'competition' is the abstract rivalry."
+      },
+      "commonMistakes": [
+        {
+          "correction": "They are our chief competitor in Europe.",
+          "sentence": "They are our chief competition company in Europe.",
+          "why": "Use the noun 'competitor' for the rival enterprise; 'competition' is the abstract rivalry."
+        }
+      ],
+      "distractorGroup": "competition-and-strategy",
+      "gap": "Before setting our prices, we checked what our main ______ charges.",
+      "gaps": [
+        "Before setting our prices, we checked what our main ______ charges.",
+        "She is our biggest ______ — she sells the same cakes on the same street.",
+        "The airline cut its prices to match its main ______."
+      ],
+      "hints": [
+        "A rival company or person.",
+        "The person form of 'compete'."
+      ],
+      "id": "competitor",
+      "learningData": {
+        "cluster": "competition-and-strategy",
+        "difficulty": "easy"
+      },
+      "level": "B1.1",
+      "meaning": "A person or company that sells the same thing as you and tries to win your customers.",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "ally",
+          "partner"
+        ],
+        "confusableWords": [
+          "Competitive"
+        ],
+        "synonyms": [
+          "rival",
+          "opponent",
+          "adversary",
+          "challenger"
+        ]
+      },
+      "situation": "Pepsi and Coca-Cola both try to win the same customers in every country.",
+      "situations": [
+        "Pepsi and Coca-Cola both try to win the same customers in every country.",
+        "When the new bakery opened across the street, our bakery lowered its prices."
+      ],
+      "subCategory": "competition",
+      "subCategoryTitle": "Competition",
+      "synonyms": [
+        "rival",
+        "opponent",
+        "adversary",
+        "challenger"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Competitor",
+      "wordFamily": [
+        {
+          "pos": "verb",
+          "word": "compete"
+        },
+        {
+          "pos": "noun",
+          "word": "competition"
+        },
+        {
+          "pos": "adjective",
+          "word": "competitive"
+        }
+      ]
+    },
+    {
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "warranty",
+          "sentence": "Opening the phone yourself will cancel the maker's ______.",
+          "wrong": [
+            "warning",
+            "warrant",
+            "assurance"
+          ]
+        }
+      ],
+      "collocations": [
+        "under warranty",
+        "extended warranty",
+        "warranty period",
+        "void the warranty"
+      ],
+      "commonMistake": {
+        "sentence": "My phone is still in warranty.",
+        "correction": "My phone is still under warranty.",
+        "why": "We say 'under warranty'."
+      },
+      "commonMistakes": [
+        {
+          "sentence": "My phone is still in warranty.",
+          "correction": "My phone is still under warranty.",
+          "why": "We say 'under warranty'."
+        }
+      ],
+      "distractorGroup": "promises-and-values",
+      "gap": "The washing machine is still under ______, so they'll repair it for free.",
+      "gaps": [
+        "The washing machine is still under ______, so they'll repair it for free.",
+        "This phone comes with a one-year ______.",
+        "If you open the phone yourself, you lose the ______."
+      ],
+      "hints": [
+        "Written cover for repairs — 'under ___'.",
+        "Starts with 'war-' and ends with '-ty'."
+      ],
+      "id": "warranty",
+      "learningData": {
+        "cluster": "promises-and-values",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "A written promise from the maker to repair or replace a product for free if it breaks within a set time.",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "register": "formal",
+      "relations": {
+        "antonyms": [],
+        "confusableWords": [
+          "Guarantee"
+        ],
+        "synonyms": [
+          "written guarantee",
+          "service contract"
+        ]
+      },
+      "situation": "My laptop screen broke after eight months, so the maker fixed it for free — it was still covered.",
+      "situations": [
+        "My laptop screen broke after eight months, so the maker fixed it for free — it was still covered.",
+        "When I bought the fridge, I paid extra so repairs would be free for five years instead of one."
+      ],
+      "subCategory": "promises",
+      "subCategoryTitle": "Promises",
+      "synonyms": [
+        "written guarantee",
+        "service contract"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Warranty",
+      "wordFamily": [
+        {
+          "pos": "verb",
+          "word": "warrant"
+        }
+      ]
+    },
+    {
+      "antonyms": [
+        "seller",
+        "merchant"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "loyalty",
+          "sentence": "Quick refunds and friendly help build long-term customer ______.",
+          "wrong": [
+            "client",
+            "goods",
+            "trade"
+          ]
+        }
+      ],
+      "collocations": [
+        "customer service",
+        "loyal customer",
+        "customer satisfaction",
+        "customer loyalty"
+      ],
+      "commonMistake": {
+        "sentence": "The lawyer has many customers.",
+        "correction": "The lawyer has many clients.",
+        "why": "Professionals like lawyers have 'clients'; shops have 'customers'."
+      },
+      "commonMistakes": [
+        {
+          "sentence": "The lawyer has many customers.",
+          "correction": "The lawyer has many clients.",
+          "why": "Professionals like lawyers have 'clients'; shops have 'customers'."
+        }
+      ],
+      "distractorGroup": "sales-and-trade",
+      "gap": "The shop gave every ______ a free coffee on opening day.",
+      "gaps": [
+        "The shop gave every ______ a free coffee on opening day.",
+        "The ______ wanted to return the shoes because they were too small.",
+        "Our manager answers every ______ complaint the same day."
+      ],
+      "hints": [
+        "Someone who buys things in a shop.",
+        "Starts with 'cust-'."
+      ],
+      "id": "customer",
+      "learningData": {
+        "cluster": "sales-and-trade",
+        "difficulty": "easy"
+      },
+      "level": "B1.1",
+      "meaning": "A person who buys goods or services from a shop or business.",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "seller",
+          "merchant"
+        ],
+        "confusableWords": [
+          "Client"
+        ],
+        "synonyms": [
+          "buyer",
+          "shopper",
+          "consumer",
+          "patron"
+        ]
+      },
+      "situation": "A woman walks into the bakery, buys two loaves of bread, pays and leaves.",
+      "situations": [
+        "A woman walks into the bakery, buys two loaves of bread, pays and leaves.",
+        "A man brought his shoes back to the shop because they were too small."
+      ],
+      "subCategory": "sales-and-trade",
+      "subCategoryTitle": "Sales and trade",
+      "synonyms": [
+        "buyer",
+        "shopper",
+        "consumer",
+        "patron"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Customer",
+      "wordFamily": [
+        {
+          "pos": "noun",
+          "word": "custom"
+        },
+        {
+          "pos": "verb",
+          "word": "customise"
+        }
+      ]
+    },
+    {
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "client",
+          "sentence": "The marketing consultant had a first meeting with a new ______.",
+          "wrong": [
+            "shopper",
+            "buyer",
+            "consumer"
+          ]
+        }
+      ],
+      "collocations": [
+        "corporate client",
+        "prospective client",
+        "client meeting",
+        "retain a client"
+      ],
+      "commonMistake": {
+        "correction": "The corner grocery store has hundreds of daily customers.",
+        "sentence": "The corner grocery store has hundreds of daily clients.",
+        "why": "Shoppers buying merchandise are 'customers'; people hiring professional services are 'clients'."
+      },
+      "commonMistakes": [
+        {
+          "correction": "The corner grocery store has hundreds of daily customers.",
+          "sentence": "The corner grocery store has hundreds of daily clients.",
+          "why": "Shoppers buying merchandise are 'customers'; people hiring professional services are 'clients'."
+        }
+      ],
+      "distractorGroup": "sales-and-trade",
+      "gap": "The lawyer met her ______ to talk about the case.",
+      "gaps": [
+        "The lawyer met her ______ to talk about the case.",
+        "Our agency's biggest ______ is a famous sports brand.",
+        "The designer showed the new logo to the ______ for approval."
+      ],
+      "hints": [
+        "Someone who pays a professional for a service, not a shop.",
+        "Six letters; the group is 'clientele'."
+      ],
+      "id": "client",
+      "learningData": {
+        "cluster": "sales-and-trade",
+        "difficulty": "easy"
+      },
+      "level": "B1.1",
+      "meaning": "A person or company that pays a professional, like a lawyer or an agency, for a service.",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [],
+        "confusableWords": [
+          "Customer"
+        ],
+        "synonyms": [
+          "patron",
+          "account"
+        ]
+      },
+      "situation": "The ad agency meets the hotel owner every month to plan his next advertising project.",
+      "situations": [
+        "The ad agency meets the hotel owner every month to plan his next advertising project.",
+        "The accountant does the tax papers for a small company every year."
+      ],
+      "subCategory": "sales-and-trade",
+      "subCategoryTitle": "Sales and trade",
+      "synonyms": [
+        "patron",
+        "account"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Client",
+      "wordFamily": [
+        {
+          "pos": "noun",
+          "word": "clientele"
+        }
+      ]
+    },
+    {
+      "antonyms": [
+        "dissuade",
+        "discourage"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "persuade",
+          "sentence": "The caller tried for ten minutes to ______ my mum to change her internet plan.",
+          "wrong": [
+            "dissuade",
+            "prevent",
+            "discourage"
+          ]
+        }
+      ],
+      "collocations": [
+        "persuade someone to do something",
+        "try to persuade",
+        "successfully persuade",
+        "hard to persuade"
+      ],
+      "commonMistake": {
+        "correction": "She persuaded me to buy the luxury handbag.",
+        "sentence": "She persuaded me buying the luxury handbag.",
+        "why": "Use 'persuade someone to do something' (to + infinitive)."
+      },
+      "commonMistakes": [
+        {
+          "correction": "She persuaded me to buy the luxury handbag.",
+          "sentence": "She persuaded me buying the luxury handbag.",
+          "why": "Use 'persuade someone to do something' (to + infinitive)."
+        }
+      ],
+      "distractorGroup": "influence-and-persuasion",
+      "gap": "The salesman ______d me to buy the bigger TV.",
+      "gaps": [
+        "The salesman ______d me to buy the bigger TV.",
+        "Can you ______ your dad to lend us the car?",
+        "Free samples help ______ shoppers to try new brands."
+      ],
+      "hints": [
+        "Get someone to do something with good reasons.",
+        "Rhymes with 'made'."
+      ],
+      "id": "persuade",
+      "learningData": {
+        "cluster": "influence-and-persuasion",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "To get someone to do something by giving them good reasons.",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "dissuade",
+          "discourage"
+        ],
+        "confusableWords": [
+          "Convince",
+          "Pursue"
+        ],
+        "synonyms": [
+          "talk into",
+          "coax",
+          "influence",
+          "motivate"
+        ]
+      },
+      "situation": "My friend didn't want to join the gym, but I talked to her for an hour and she signed up the next day.",
+      "situations": [
+        "My friend didn't want to join the gym, but I talked to her for an hour and she signed up the next day.",
+        "The kids gave their dad five good reasons, and he finally agreed to get a dog."
+      ],
+      "subCategory": "influence",
+      "subCategoryTitle": "Influence",
+      "synonyms": [
+        "talk into",
+        "coax",
+        "influence",
+        "motivate"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Persuade",
+      "wordFamily": [
+        {
+          "pos": "noun",
+          "word": "persuasion"
+        },
+        {
+          "pos": "adjective",
+          "word": "persuasive"
+        }
+      ]
+    },
+    {
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "hatch",
+          "sentence": "The team met behind closed doors to ______ a new sales plan.",
+          "wrong": [
+            "catch",
+            "match",
+            "patch"
+          ]
+        }
+      ],
+      "collocations": [
+        "hatch a plan",
+        "hatch a scheme",
+        "hatch a plot",
+        "eggs hatch"
+      ],
+      "commonMistake": {
+        "sentence": "The startup hatched up a plan to beat its rivals.",
+        "correction": "The startup hatched a plan to beat its rivals.",
+        "why": "The usual phrase is 'hatch a plan' — 'up' isn't needed."
+      },
+      "commonMistakes": [
+        {
+          "sentence": "The startup hatched up a plan to beat its rivals.",
+          "correction": "The startup hatched a plan to beat its rivals.",
+          "why": "The usual phrase is 'hatch a plan' — 'up' isn't needed."
+        }
+      ],
+      "distractorGroup": "competition-and-strategy",
+      "gap": "The chicks will ______ from their eggs in about three weeks.",
+      "gaps": [
+        "The chicks will ______ from their eggs in about three weeks.",
+        "The two founders met privately to ______ a new marketing plan.",
+        "The kids ______ed a plan to surprise their mum on her birthday."
+      ],
+      "hints": [
+        "What eggs do when babies come out; also to invent a plan.",
+        "Rhymes with 'catch'."
+      ],
+      "id": "hatch",
+      "learningData": {
+        "cluster": "competition-and-strategy",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "When a baby bird comes out of its egg; also, to secretly plan something.",
+      "partsOfSpeech": [
+        "verb",
+        "noun"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [],
+        "confusableWords": [
+          "Don't count your chickens before they hatch"
+        ],
+        "synonyms": [
+          "devise (a plan)",
+          "concoct",
+          "formulate",
+          "emerge"
+        ]
+      },
+      "situation": "After three weeks, the eggs cracked open and small yellow chicks came out.",
+      "situations": [
+        "After three weeks, the eggs cracked open and small yellow chicks came out.",
+        "The two friends met in secret to plan how to start their own business."
+      ],
+      "subCategory": "expressions",
+      "subCategoryTitle": "Expressions",
+      "synonyms": [
+        "devise (a plan)",
+        "concoct",
+        "formulate",
+        "emerge"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Hatch",
+      "wordFamily": [
+        {
+          "pos": "noun",
+          "word": "hatchling"
+        }
+      ]
+    },
+    {
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "snitch",
+          "sentence": "The angry worker threatened to ______ on the company's fake ads.",
+          "wrong": [
+            "switch",
+            "stitch",
+            "pitch"
+          ]
+        }
+      ],
+      "collocations": [
+        "snitch on someone",
+        "labeled a snitch",
+        "refuse to snitch"
+      ],
+      "commonMistake": {
+        "correction": "He snitched on me to the company executives.",
+        "sentence": "He snitched me to the company executives.",
+        "why": "Use the preposition 'on' with the person reported: 'snitch on someone'."
+      },
+      "commonMistakes": [
+        {
+          "correction": "He snitched on me to the company executives.",
+          "sentence": "He snitched me to the company executives.",
+          "why": "Use the preposition 'on' with the person reported: 'snitch on someone'."
+        }
+      ],
+      "distractorGroup": "promises-and-values",
+      "gap": "Don't ______ on me to the teacher!",
+      "gaps": [
+        "Don't ______ on me to the teacher!",
+        "Nobody trusts him at work because he's a ______.",
+        "He threatened to ______ on his co-workers for leaving early."
+      ],
+      "hints": [
+        "To tell on someone — informal and negative.",
+        "Rhymes with 'switch'."
+      ],
+      "id": "snitch",
+      "learningData": {
+        "cluster": "promises-and-values",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "To secretly tell someone in charge that another person did something wrong (informal, negative).",
+      "partsOfSpeech": [
+        "verb",
+        "noun"
+      ],
+      "register": "informal",
+      "relations": {
+        "antonyms": [],
+        "confusableWords": [
+          "Loose lips sink ships"
+        ],
+        "synonyms": [
+          "inform on",
+          "tell on",
+          "rat on",
+          "blow the whistle"
+        ]
+      },
+      "situation": "When Ali took money from the till, his co-worker went straight to the manager and told her.",
+      "situations": [
+        "When Ali took money from the till, his co-worker went straight to the manager and told her.",
+        "My little sister told our mum that I'd been playing games instead of studying."
+      ],
+      "subCategory": "values",
+      "subCategoryTitle": "Values",
+      "synonyms": [
+        "inform on",
+        "tell on",
+        "rat on",
+        "blow the whistle"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Snitch",
+      "wordFamily": [
+        {
+          "pos": "noun",
+          "word": "snitching"
+        }
+      ]
+    },
+    {
+      "antonyms": [
+        "Retail"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "wholesale",
+          "sentence": "Shop owners go to the central market early to buy fruit at ______ prices.",
+          "wrong": [
+            "wholesome",
+            "wholesaler",
+            "retailing"
+          ]
+        }
+      ],
+      "collocations": [
+        "wholesale price",
+        "buy wholesale",
+        "wholesale market",
+        "wholesale business"
+      ],
+      "commonMistake": {
+        "sentence": "The shop buys wholesome and sells retail.",
+        "correction": "The shop buys wholesale and sells retail.",
+        "why": "Bulk trade is 'wholesale'; 'wholesome' means healthy or morally good."
+      },
+      "commonMistakes": [
+        {
+          "sentence": "The shop buys wholesome and sells retail.",
+          "correction": "The shop buys wholesale and sells retail.",
+          "why": "Bulk trade is 'wholesale'; 'wholesome' means healthy or morally good."
+        }
+      ],
+      "distractorGroup": "sales-and-trade",
+      "gap": "We buy our flour ______ because it's much cheaper in big bags.",
+      "gaps": [
+        "We buy our flour ______ because it's much cheaper in big bags.",
+        "The ______ price is much lower than the price in shops.",
+        "Shop owners visit the market early to buy fruit at ______ prices."
+      ],
+      "hints": [
+        "Buying or selling in bulk to shops.",
+        "Starts with 'whole-' and ends with '-sale'."
+      ],
+      "id": "wholesale",
+      "learningData": {
+        "cluster": "sales-and-trade",
+        "difficulty": "easy"
+      },
+      "level": "B1.1",
+      "meaning": "Selling goods in large amounts at low prices to shops, not to ordinary people.",
+      "partsOfSpeech": [
+        "noun",
+        "adjective",
+        "adverb"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "retail"
+        ],
+        "confusableWords": [
+          "Retail",
+          "Wholesome",
+          "Wholesaler"
+        ],
+        "synonyms": [
+          "bulk trade",
+          "in bulk",
+          "volume trade"
+        ]
+      },
+      "situation": "The café owner buys coffee beans in 50-kilo bags at a low price, then sells cups of coffee to people.",
+      "situations": [
+        "The café owner buys coffee beans in 50-kilo bags at a low price, then sells cups of coffee to people.",
+        "Restaurant owners go to the big market at 5 a.m. to buy boxes of vegetables cheaply."
+      ],
+      "subCategory": "sales-and-trade",
+      "subCategoryTitle": "Sales and trade",
+      "synonyms": [
+        "bulk trade",
+        "in bulk",
+        "volume trade"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Wholesale",
+      "wordFamily": [
+        {
+          "pos": "noun",
+          "word": "wholesaler"
+        }
+      ],
+      "opposite": "Retail"
+    },
+    {
+      "antonyms": [
+        "unconvincing"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "persuasive",
+          "sentence": "The manager gave a very ______ talk, and the sponsor said yes.",
+          "wrong": [
+            "persuade",
+            "persuading",
+            "persuasion"
+          ]
+        }
+      ],
+      "collocations": [
+        "persuasive argument",
+        "persuasive advertising",
+        "persuasive speaker",
+        "highly persuasive"
+      ],
+      "commonMistake": {
+        "correction": "Her argument was very persuasive to the board.",
+        "sentence": "Her argument was very persuading to the board.",
+        "why": "Use the standard descriptive adjective 'persuasive', not the participle 'persuading'."
+      },
+      "commonMistakes": [
+        {
+          "correction": "Her argument was very persuasive to the board.",
+          "sentence": "Her argument was very persuading to the board.",
+          "why": "Use the standard descriptive adjective 'persuasive', not the participle 'persuading'."
+        }
+      ],
+      "distractorGroup": "influence-and-persuasion",
+      "gap": "The ad was so ______ that I bought the product the same day.",
+      "gaps": [
+        "The ad was so ______ that I bought the product the same day.",
+        "He's a very ______ speaker — people always agree with him.",
+        "Write a ______ letter to get your money back."
+      ],
+      "hints": [
+        "Describes an argument or person that makes you agree.",
+        "The adjective of 'persuade'."
+      ],
+      "id": "persuasive",
+      "learningData": {
+        "cluster": "influence-and-persuasion",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "Good at getting people to agree or to do something, because the reasons are strong.",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "unconvincing"
+        ],
+        "confusableWords": [
+          "Persuade",
+          "Convince"
+        ],
+        "synonyms": [
+          "compelling",
+          "convincing",
+          "cogent",
+          "potent"
+        ]
+      },
+      "situation": "Her speech was so strong that the whole team agreed to her plan in five minutes.",
+      "situations": [
+        "Her speech was so strong that the whole team agreed to her plan in five minutes.",
+        "After reading the ad, I bought the product the same day."
+      ],
+      "subCategory": "influence",
+      "subCategoryTitle": "Influence",
+      "synonyms": [
+        "compelling",
+        "convincing",
+        "cogent",
+        "potent"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Persuasive",
+      "wordFamily": [
+        {
+          "pos": "verb",
+          "word": "persuade"
+        },
+        {
+          "pos": "noun",
+          "word": "persuasion"
+        },
+        {
+          "pos": "adverb",
+          "word": "persuasively"
+        }
+      ]
+    },
+    {
+      "antonyms": [
+        "forgettable",
+        "bland",
+        "dull"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "catchy",
+          "sentence": "The TV ad went viral because of its ______ jingle.",
+          "wrong": [
+            "catching",
+            "caught",
+            "catcher"
+          ]
+        }
+      ],
+      "collocations": [
+        "catchy slogan",
+        "catchy tune",
+        "catchy jingle",
+        "catchy headline"
+      ],
+      "commonMistake": {
+        "correction": "That is a very catchy marketing slogan.",
+        "sentence": "That is a very catching marketing slogan.",
+        "why": "The correct adjective meaning memorable or infectious is 'catchy', not 'catching'."
+      },
+      "commonMistakes": [
+        {
+          "correction": "That is a very catchy marketing slogan.",
+          "sentence": "That is a very catching marketing slogan.",
+          "why": "The correct adjective meaning memorable or infectious is 'catchy', not 'catching'."
+        }
+      ],
+      "distractorGroup": "influence-and-persuasion",
+      "gap": "Their slogan is so ______ — everyone at school repeats it.",
+      "gaps": [
+        "Their slogan is so ______ — everyone at school repeats it.",
+        "The song has a ______ tune that you can't forget.",
+        "A good ad needs a short, ______ name."
+      ],
+      "hints": [
+        "Describes a song or slogan that sticks in your head.",
+        "Comes from 'catch' + '-y'."
+      ],
+      "id": "catchy",
+      "learningData": {
+        "cluster": "influence-and-persuasion",
+        "difficulty": "easy"
+      },
+      "level": "B1.1",
+      "meaning": "Easy to remember and pleasant, so it stays in your head — used for songs and slogans.",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "forgettable",
+          "bland",
+          "dull"
+        ],
+        "confusableWords": [
+          "Innovative"
+        ],
+        "synonyms": [
+          "memorable",
+          "infectious",
+          "unforgettable",
+          "appealing"
+        ]
+      },
+      "situation": "I heard the burger ad song once on the radio, and I was singing it all day.",
+      "situations": [
+        "I heard the burger ad song once on the radio, and I was singing it all day.",
+        "Everyone at school keeps repeating the three-word slogan from the new drink ad."
+      ],
+      "subCategory": "influence",
+      "subCategoryTitle": "Influence",
+      "synonyms": [
+        "memorable",
+        "infectious",
+        "unforgettable",
+        "appealing"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Catchy",
+      "wordFamily": [
+        {
+          "pos": "verb",
+          "word": "catch"
+        }
+      ]
+    },
+    {
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "chickens",
+          "sentence": "The deal isn't signed yet, so don't count your ______ before they hatch.",
+          "wrong": [
+            "eggs",
+            "birds",
+            "roosters"
+          ]
+        }
+      ],
+      "collocations": [
+        "remember not to count your chickens before they hatch"
+      ],
+      "commonMistake": {
+        "correction": "Don't count your chickens before they hatch.",
+        "sentence": "Don't count your eggs before they hatch.",
+        "why": "The established traditional English proverb uses 'chickens', not 'eggs'."
+      },
+      "commonMistakes": [
+        {
+          "correction": "Don't count your chickens before they hatch.",
+          "sentence": "Don't count your eggs before they hatch.",
+          "why": "The established traditional English proverb uses 'chickens', not 'eggs'."
+        }
+      ],
+      "distractorGroup": "promises-and-values",
+      "gap": "You haven't got the job yet — ______!",
+      "gaps": [
+        "You haven't got the job yet — ______!",
+        "I know the client seems happy, but ______. The contract isn't signed.",
+        "Early sales look good, but ______ — the year isn't over."
+      ],
+      "hints": [
+        "Wait until good results really happen before celebrating.",
+        "An idiom about chickens and eggs."
+      ],
+      "id": "don-t-count-your-chickens-before-they-hatch",
+      "learningData": {
+        "cluster": "promises-and-values",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "Don't make plans based on something good before it has actually happened.",
+      "partsOfSpeech": [
+        "phrase"
+      ],
+      "register": "informal",
+      "relations": {
+        "antonyms": [],
+        "confusableWords": [
+          "Hatch"
+        ],
+        "synonyms": [
+          "don't get ahead of yourself",
+          "don't assume success prematurely"
+        ]
+      },
+      "situation": "Sami started spending his bonus money before his boss had even agreed to give it to him.",
+      "situations": [
+        "Sami started spending his bonus money before his boss had even agreed to give it to him.",
+        "The team booked a party for winning the final before the match had even started."
+      ],
+      "subCategory": "expressions",
+      "subCategoryTitle": "Expressions",
+      "synonyms": [
+        "don't get ahead of yourself",
+        "don't assume success prematurely"
+      ],
+      "type": "idiom",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Don't count your chickens before they hatch",
+      "wordFamily": []
+    },
+    {
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "make-or-break",
+          "sentence": "Tomorrow's demo will be a ______ moment for the small startup.",
+          "wrong": [
+            "break-or-make",
+            "make-and-break",
+            "make-or-take"
+          ]
+        }
+      ],
+      "collocations": [
+        "make-or-break moment",
+        "make-or-break year",
+        "make-or-break decision"
+      ],
+      "commonMistake": {
+        "correction": "This product launch is a make-or-break moment.",
+        "sentence": "This product launch is a break or make moment.",
+        "why": "The fixed binomial order in English is always 'make or break'."
+      },
+      "commonMistakes": [
+        {
+          "correction": "This product launch is a make-or-break moment.",
+          "sentence": "This product launch is a break or make moment.",
+          "why": "The fixed binomial order in English is always 'make or break'."
+        }
+      ],
+      "distractorGroup": "competition-and-strategy",
+      "gap": "This meeting is ______ for our company — if they say no, we close.",
+      "gaps": [
+        "This meeting is ______ for our company — if they say no, we close.",
+        "The first week of sales will ______ the new product.",
+        "For the young singer, this TV show was a ______ moment."
+      ],
+      "hints": [
+        "Two opposite verbs joined by 'or' — total success or total failure.",
+        "Make ___ break."
+      ],
+      "id": "make-or-break",
+      "learningData": {
+        "cluster": "competition-and-strategy",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "Describes a moment or event that will bring either great success or total failure.",
+      "partsOfSpeech": [
+        "phrase"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [],
+        "synonyms": [
+          "critical",
+          "decisive",
+          "pivotal",
+          "do-or-die"
+        ]
+      },
+      "situation": "If the new restaurant doesn't get customers this month, it will have to close for good.",
+      "situations": [
+        "If the new restaurant doesn't get customers this month, it will have to close for good.",
+        "If the big supermarket says yes to our product, we grow; if it says no, we close."
+      ],
+      "subCategory": "expressions",
+      "subCategoryTitle": "Expressions",
+      "synonyms": [
+        "critical",
+        "decisive",
+        "pivotal",
+        "do-or-die"
+      ],
+      "type": "binomial",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Make or break",
+      "wordFamily": []
+    },
+    {
+      "antonyms": [
+        "see through"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "fall for",
+          "sentence": "The police warn old people never to ______ phone scams.",
+          "wrong": [
+            "fall to",
+            "fall into",
+            "fall off"
+          ]
+        }
+      ],
+      "collocations": [
+        "fall for a trick",
+        "fall for a scam",
+        "fall for a lie",
+        "easily fall for"
+      ],
+      "commonMistake": {
+        "correction": "I fell for the false advertising trick.",
+        "sentence": "I fell to the false advertising trick.",
+        "why": "The phrasal verb meaning to be deceived is 'fall for', not 'fall to'."
+      },
+      "commonMistakes": [
+        {
+          "correction": "I fell for the false advertising trick.",
+          "sentence": "I fell to the false advertising trick.",
+          "why": "The phrasal verb meaning to be deceived is 'fall for', not 'fall to'."
+        }
+      ],
+      "distractorGroup": "promises-and-values",
+      "gap": "I can't believe I ______ that fake ad!",
+      "gaps": [
+        "I can't believe I ______ that fake ad!",
+        "Don't ______ his lies — he says that to everyone.",
+        "Many people ______ online scams every year."
+      ],
+      "hints": [
+        "To be tricked or deceived.",
+        "Phrasal verb: 'fall' + a preposition."
+      ],
+      "id": "fall-for",
+      "learningData": {
+        "cluster": "promises-and-values",
+        "difficulty": "easy"
+      },
+      "level": "B1.1",
+      "meaning": "To be tricked into believing something that isn't true.",
+      "partsOfSpeech": [
+        "phrasal verb"
+      ],
+      "register": "informal",
+      "relations": {
+        "antonyms": [
+          "see through"
+        ],
+        "confusableWords": [
+          "Manipulation"
+        ],
+        "synonyms": [
+          "be deceived by",
+          "be fooled by",
+          "be duped by"
+        ]
+      },
+      "situation": "The photo showed a big pizza, but the real one was tiny — and I still paid for it.",
+      "situations": [
+        "The photo showed a big pizza, but the real one was tiny — and I still paid for it.",
+        "My grandad gave his bank details to a man who said he had won a prize."
+      ],
+      "subCategory": "expressions",
+      "subCategoryTitle": "Expressions",
+      "synonyms": [
+        "be deceived by",
+        "be fooled by",
+        "be duped by"
+      ],
+      "transformExample": {
+        "after": "He easily fell for the fraudulent investment ad.",
+        "before": "He was easily deceived by the fraudulent investment ad."
+      },
+      "type": "phrasal",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Fall for",
+      "wordFamily": []
+    },
+    {
+      "antonyms": [
+        "original",
+        "fresh"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "corny",
+          "sentence": "The agency wanted a smart message, not a ______ holiday joke.",
+          "wrong": [
+            "corn",
+            "corning",
+            "cornered"
+          ]
+        }
+      ],
+      "collocations": [
+        "corny joke",
+        "corny line",
+        "corny slogan",
+        "sound corny"
+      ],
+      "commonMistake": {
+        "correction": "The television commercial was very corny.",
+        "sentence": "The television commercial was very corn.",
+        "why": "The informal descriptive adjective is 'corny', not the noun 'corn'."
+      },
+      "commonMistakes": [
+        {
+          "correction": "The television commercial was very corny.",
+          "sentence": "The television commercial was very corn.",
+          "why": "The informal descriptive adjective is 'corny', not the noun 'corn'."
+        }
+      ],
+      "distractorGroup": "promises-and-values",
+      "gap": "That joke was so ______ — nobody laughed.",
+      "gaps": [
+        "That joke was so ______ — nobody laughed.",
+        "The ad used a ______ slogan that sounded like the 1980s.",
+        "The boss rejected the script because the ending was ______."
+      ],
+      "hints": [
+        "A joke or line that is too old or obvious — like 'basic'.",
+        "Comes from 'corn'."
+      ],
+      "id": "corny",
+      "learningData": {
+        "cluster": "promises-and-values",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "Too old, obvious or silly to be funny or cool (informal).",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "register": "informal",
+      "relations": {
+        "antonyms": [
+          "original",
+          "fresh"
+        ],
+        "confusableWords": [
+          "Catchy"
+        ],
+        "synonyms": [
+          "cheesy",
+          "clichéd",
+          "trite",
+          "banal"
+        ]
+      },
+      "situation": "My dad told the same old 'why did the chicken cross the road' joke at dinner, and everyone groaned.",
+      "situations": [
+        "My dad told the same old 'why did the chicken cross the road' joke at dinner, and everyone groaned.",
+        "The ad used a cheesy 1980s song and a joke everyone had heard a hundred times."
+      ],
+      "subCategory": "expressions",
+      "subCategoryTitle": "Expressions",
+      "synonyms": [
+        "cheesy",
+        "clichéd",
+        "trite",
+        "banal"
+      ],
+      "transformExample": {
+        "after": "The slogan sounded utterly corny.",
+        "before": "The slogan sounded like a dated, cheesy joke from the 1980s."
+      },
+      "type": "fyi",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Corny",
+      "wordFamily": []
+    },
+    {
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "sink",
+          "sentence": "Never share secret plans with outsiders — loose lips ______ ships.",
+          "wrong": [
+            "drop",
+            "drown",
+            "crash"
+          ]
+        }
+      ],
+      "collocations": [
+        "remember that loose lips sink ships",
+        "warning that loose lips sink ships"
+      ],
+      "commonMistake": {
+        "correction": "Loose lips sink ships in business.",
+        "sentence": "Loose mouths sink ships in business.",
+        "why": "The fixed historical idiom is 'loose lips sink ships', not 'loose mouths'."
+      },
+      "commonMistakes": [
+        {
+          "correction": "Loose lips sink ships in business.",
+          "sentence": "Loose mouths sink ships in business.",
+          "why": "The fixed historical idiom is 'loose lips sink ships', not 'loose mouths'."
+        }
+      ],
+      "distractorGroup": "promises-and-values",
+      "gap": "Don't talk about our plans at lunch with people from other companies — remember, ______.",
+      "gaps": [
+        "Don't talk about our plans at lunch with people from other companies — remember, ______.",
+        "Our manager told us not to share the new designs, saying ______.",
+        "Keep the launch date secret — ______."
+      ],
+      "hints": [
+        "A cautionary idiom warning against leaking confidential information.",
+        "Mentions talking lips and sinking vessels."
+      ],
+      "id": "loose-lips-sink-ships",
+      "learningData": {
+        "cluster": "promises-and-values",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "A warning that talking carelessly about secret plans can cause serious damage.",
+      "partsOfSpeech": [
+        "phrase"
+      ],
+      "register": "informal",
+      "relations": {
+        "antonyms": [],
+        "confusableWords": [
+          "Don't count your chickens before they hatch",
+          "Snitch"
+        ],
+        "synonyms": [
+          "careless talk causes harm",
+          "keep secrets safe",
+          "discretion is crucial"
+        ]
+      },
+      "situation": "The manager told the team not to post anything about the new product online until the launch.",
+      "situations": [
+        "The manager told the team not to post anything about the new product online until the launch.",
+        "Before the merger, the boss reminded everyone to keep the news inside the office."
+      ],
+      "subCategory": "expressions",
+      "subCategoryTitle": "Expressions",
+      "synonyms": [
+        "careless talk causes harm",
+        "keep secrets safe",
+        "discretion is crucial"
+      ],
+      "type": "idiom",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Loose lips sink ships",
+      "wordFamily": []
+    },
+    {
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "commute",
+          "sentence": "Thousands of office workers ______ to the city centre by train every day.",
+          "wrong": [
+            "transport",
+            "migrate",
+            "transfer"
+          ]
+        }
+      ],
+      "collocations": [
+        "daily commute",
+        "commute to work",
+        "commute by train",
+        "long commute"
+      ],
+      "commonMistake": {
+        "correction": "I commute to the agency by subway.",
+        "sentence": "I commute to the agency with the subway.",
+        "why": "Use the preposition 'by' with forms of transport: commute by subway, by train, by bus."
+      },
+      "commonMistakes": [
+        {
+          "correction": "I commute to the agency by subway.",
+          "sentence": "I commute to the agency with the subway.",
+          "why": "Use the preposition 'by' with forms of transport: commute by subway, by train, by bus."
+        }
+      ],
+      "distractorGroup": "sales-and-trade",
+      "gap": "How long does it take you to ______ to work?",
+      "gaps": [
+        "How long does it take you to ______ to work?",
+        "She works from home on Fridays so she doesn't have to ______.",
+        "Thousands of people ______ into the city by train every morning."
+      ],
+      "hints": [
+        "To travel regularly between your home and office.",
+        "Starts with 'comm-' and ends in '-ute'."
+      ],
+      "id": "commute",
+      "learningData": {
+        "cluster": "sales-and-trade",
+        "difficulty": "easy"
+      },
+      "level": "B1.1",
+      "meaning": "To travel regularly between your home and your place of work or study.",
+      "partsOfSpeech": [
+        "verb",
+        "noun"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [],
+        "synonyms": [
+          "travel to work",
+          "journey",
+          "make the daily trip"
+        ]
+      },
+      "situation": "Every weekday, Mona takes a 40-minute train ride to her office and back.",
+      "situations": [
+        "Every weekday, Mona takes a 40-minute train ride to her office and back.",
+        "She works from home twice a week, so she only travels to the office three days."
+      ],
+      "subCategory": "sales-and-trade",
+      "subCategoryTitle": "Sales and trade",
+      "synonyms": [
+        "travel to work",
+        "journey",
+        "make the daily trip"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Commute",
+      "wordFamily": [
+        {
+          "pos": "noun",
+          "word": "commuter"
+        },
+        {
+          "pos": "noun",
+          "word": "commuting"
+        }
+      ]
+    },
+    {
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "preservatives",
+          "sentence": "The baby food is free from artificial colours and ______.",
+          "wrong": [
+            "preservations",
+            "preservers",
+            "reserves"
+          ]
+        }
+      ],
+      "collocations": [
+        "artificial preservatives",
+        "chemical preservatives",
+        "no preservatives",
+        "free of preservatives"
+      ],
+      "commonMistake": {
+        "sentence": "This juice has no conservatives.",
+        "correction": "This juice has no preservatives.",
+        "why": "Food additives are 'preservatives'; 'conservatives' are people with traditional political views."
+      },
+      "commonMistakes": [
+        {
+          "sentence": "This juice has no conservatives.",
+          "correction": "This juice has no preservatives.",
+          "why": "Food additives are 'preservatives'; 'conservatives' are people with traditional political views."
+        }
+      ],
+      "distractorGroup": "promises-and-values",
+      "gap": "This juice contains no artificial ______.",
+      "gaps": [
+        "This juice contains no artificial ______.",
+        "The bakery doesn't use ______, so the bread goes stale quickly.",
+        "Packaged meat often has added ______ so it lasts longer."
+      ],
+      "hints": [
+        "Chemical additives that prevent food and goods from spoiling.",
+        "Starts with 'preserv-' and ends in '-tives'."
+      ],
+      "id": "preservatives",
+      "learningData": {
+        "cluster": "promises-and-values",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "Chemicals added to food or products so they stay fresh and don't go bad for longer.",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [],
+        "synonyms": [
+          "food additives",
+          "stabilizers",
+          "curing agents"
+        ]
+      },
+      "situation": "The juice label says 'natural' because nothing was added to make it last longer.",
+      "situations": [
+        "The juice label says 'natural' because nothing was added to make it last longer.",
+        "The bread from the bakery goes stale in two days, but the supermarket bread stays soft for a week."
+      ],
+      "subCategory": "values",
+      "subCategoryTitle": "Values",
+      "synonyms": [
+        "food additives",
+        "stabilizers",
+        "curing agents"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Preservatives",
+      "wordFamily": [
+        {
+          "pos": "verb",
+          "word": "preserve"
+        },
+        {
+          "pos": "noun",
+          "word": "preservation"
+        }
+      ]
+    },
+    {
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "bribing",
+          "sentence": "The company faced charges for ______ officials to get a licence.",
+          "wrong": [
+            "bribed",
+            "bribe",
+            "bribery to"
+          ]
+        }
+      ],
+      "collocations": [
+        "bribing officials",
+        "accused of bribing",
+        "illegal bribing"
+      ],
+      "commonMistake": {
+        "sentence": "He was sent to prison for bribe officials.",
+        "correction": "He was sent to prison for bribing officials.",
+        "why": "After a preposition like 'for', use the -ing form: bribing."
+      },
+      "commonMistakes": [
+        {
+          "sentence": "He was sent to prison for bribe officials.",
+          "correction": "He was sent to prison for bribing officials.",
+          "why": "After a preposition like 'for', use the -ing form: bribing."
+        }
+      ],
+      "distractorGroup": "promises-and-values",
+      "gap": "The builder went to prison for ______ inspectors to ignore safety problems.",
+      "gaps": [
+        "The builder went to prison for ______ inspectors to ignore safety problems.",
+        "______ public officials is a crime in most countries.",
+        "The company has zero tolerance for ______ in any deal."
+      ],
+      "hints": [
+        "The corrupt act of offering money to officials to get advantages.",
+        "A gerund noun starting with 'brib-'."
+      ],
+      "id": "bribing",
+      "image": "https://sbekepibxivyysgealpr.supabase.co/storage/v1/object/public/word-images/words/d690539653516cee7115db12296c665b.webp",
+      "learningData": {
+        "cluster": "promises-and-values",
+        "difficulty": "hard"
+      },
+      "level": "B1.1",
+      "meaning": "Secretly giving money or gifts to someone in power so they will do something dishonest for you.",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "register": "formal",
+      "relations": {
+        "antonyms": [],
+        "confusableWords": [
+          "Manipulation"
+        ],
+        "synonyms": [
+          "bribery",
+          "payoffs",
+          "corruption",
+          "graft"
+        ]
+      },
+      "situation": "The company was fined after it paid officials in secret to win a government contract.",
+      "situations": [
+        "The company was fined after it paid officials in secret to win a government contract.",
+        "The driver offered the police officer money so he wouldn't get a ticket."
+      ],
+      "subCategory": "values",
+      "subCategoryTitle": "Values",
+      "synonyms": [
+        "bribery",
+        "payoffs",
+        "corruption",
+        "graft"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Bribing",
+      "wordFamily": [
+        {
+          "pos": "noun",
+          "word": "bribe"
+        },
+        {
+          "pos": "verb",
+          "word": "bribe"
+        },
+        {
+          "pos": "noun",
+          "word": "bribery"
+        }
+      ]
+    },
+    {
+      "antonyms": [
+        "abandon",
+        "give up"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "pursue",
+          "sentence": "The board voted to ______ a new global marketing plan.",
+          "wrong": [
+            "persuade",
+            "peruse",
+            "perceive"
+          ]
+        }
+      ],
+      "collocations": [
+        "pursue a strategy",
+        "pursue customers",
+        "pursue a career",
+        "pursue new markets"
+      ],
+      "commonMistake": {
+        "correction": "The company decided to pursue new market opportunities overseas.",
+        "sentence": "The company decided to persuade new market opportunities overseas.",
+        "why": "Use 'pursue' for seeking or going after goals/markets; use 'persuade' for convincing people."
+      },
+      "commonMistakes": [
+        {
+          "correction": "The company decided to pursue new market opportunities overseas.",
+          "sentence": "The company decided to persuade new market opportunities overseas.",
+          "why": "Use 'pursue' for seeking or going after goals/markets; use 'persuade' for convincing people."
+        }
+      ],
+      "distractorGroup": "competition-and-strategy",
+      "gap": "He left his job to ______ a master's degree.",
+      "gaps": [
+        "He left his job to ______ a master's degree.",
+        "The company will ______ growth in Europe this year.",
+        "Never stop trying to ______ your dreams."
+      ],
+      "hints": [
+        "To chase, seek, or strive after a business goal or market — NOT persuade!",
+        "Starts with 'pur-' and ends in '-sue'."
+      ],
+      "id": "pursue",
+      "learningData": {
+        "cluster": "competition-and-strategy",
+        "difficulty": "medium"
+      },
+      "level": "B1.1",
+      "meaning": "To try hard to get or reach something over a long time, like a goal, a career or a group of customers.",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "abandon",
+          "give up"
+        ],
+        "confusableWords": [
+          "Persuade"
+        ],
+        "synonyms": [
+          "seek",
+          "chase",
+          "go after",
+          "follow"
+        ]
+      },
+      "situation": "After university, Sarah decided to spend the next years building a career in digital marketing.",
+      "situations": [
+        "After university, Sarah decided to spend the next years building a career in digital marketing.",
+        "The brand changed its ads and its shops to try to win younger customers."
+      ],
+      "subCategory": "competition",
+      "subCategoryTitle": "Competition",
+      "synonyms": [
+        "seek",
+        "chase",
+        "go after",
+        "follow"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Pursue",
+      "wordFamily": [
+        {
+          "pos": "noun",
+          "word": "pursuit"
+        }
+      ]
+    },
+    {
+      "antonyms": [
+        "honest",
+        "straightforward",
+        "transparent"
+      ],
+      "category": "Work & Money",
+      "categoryId": "work-money",
+      "collocationChecks": [
+        {
+          "answer": "manipulative",
+          "sentence": "The government warned online stores against ______ tricks to keep subscribers.",
+          "wrong": [
+            "manipulated",
+            "manipulation",
+            "manipulator"
+          ]
+        }
+      ],
+      "collocations": [
+        "manipulative tactics",
+        "manipulative advertising",
+        "manipulative behavior"
+      ],
+      "commonMistake": {
+        "correction": "The company's advertising campaign was very manipulative.",
+        "sentence": "The company's advertising campaign was very manipulated.",
+        "why": "The marketing tactic itself is 'manipulative' (active character); a consumer who is tricked is 'manipulated' (passive recipient)."
+      },
+      "commonMistakes": [
+        {
+          "correction": "The company's advertising campaign was very manipulative.",
+          "sentence": "The company's advertising campaign was very manipulated.",
+          "why": "The marketing tactic itself is 'manipulative' (active character); a consumer who is tricked is 'manipulated' (passive recipient)."
+        }
+      ],
+      "distractorGroup": "influence-and-persuasion",
+      "gap": "People criticised the TV ad for using ______ tricks.",
+      "gaps": [
+        "People criticised the TV ad for using ______ tricks.",
+        "A fake countdown clock is a ______ sales technique.",
+        "Her boyfriend was ______ — he made her feel guilty to get his way."
+      ],
+      "hints": [
+        "Describes advertising or behavior that cleverly tricks people.",
+        "The adjective form: ends in '-ive'."
+      ],
+      "id": "manipulative",
+      "learningData": {
+        "cluster": "influence-and-persuasion",
+        "difficulty": "hard"
+      },
+      "level": "B1.1",
+      "meaning": "Describes a person or method that controls people in a secret, unfair way.",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "register": "neutral",
+      "relations": {
+        "antonyms": [
+          "honest",
+          "straightforward",
+          "transparent"
+        ],
+        "confusableWords": [
+          "Manipulate",
+          "Manipulation"
+        ],
+        "synonyms": [
+          "deceptive",
+          "calculating",
+          "scheming",
+          "exploitative"
+        ]
+      },
+      "situation": "The store puts milk at the very back, so you walk past hundreds of other products first.",
+      "situations": [
+        "The store puts milk at the very back, so you walk past hundreds of other products first.",
+        "The website shows a fake countdown clock to make you buy before 'time runs out'."
+      ],
+      "subCategory": "influence",
+      "subCategoryTitle": "Influence",
+      "synonyms": [
+        "deceptive",
+        "calculating",
+        "scheming",
+        "exploitative"
+      ],
+      "type": "vocab",
+      "units": [
+        "Marketing"
+      ],
+      "word": "Manipulative",
+      "wordFamily": [
+        {
+          "pos": "verb",
+          "word": "manipulate"
+        },
+        {
+          "pos": "noun",
+          "word": "manipulation"
+        },
+        {
+          "pos": "noun",
+          "word": "manipulator"
+        }
+      ]
+    }
+  ]
+}
