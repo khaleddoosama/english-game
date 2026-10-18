@@ -40,7 +40,9 @@ function pickPoolVariant(pools,key,seed){
 function withoutRemovedFields(content) {
   const out = {...content};
   delete out.puns;
-  if (Array.isArray(out.words)) out.words = out.words.map(({sentenceBuild, example, ...w}) => (!w.situation && example ? {...w, situation: example} : w));
+  // An entry that is not an object (null, a number) is left for validateContent to report.
+  const dropRemoved = ({sentenceBuild, example, ...w}) => (!w.situation && example ? {...w, situation: example} : w);
+  if (Array.isArray(out.words)) out.words = out.words.map(x => x && typeof x === 'object' ? dropRemoved(x) : x);
   if (Array.isArray(out.challenges)) out.challenges = out.challenges.filter(c => !['buildSentence','build-sentence'].includes(c?.type || c?.mode));
   return out;
 }
@@ -534,8 +536,11 @@ function makeQuestion(w,mode,words,rng=Math.random,difficulty=1,pools=null,boost
   const pool=poolType&&pools?{poolType,poolItemId:usable?variant.id:'seed'}:{};
   const q={id:`${w.word}:${mode}`,mode,targets:[w.word],hints:w.hints||[],explanation:w.meaning,type:'mcq',answers:[w.word],difficulty,...pool};
   if(mode==='transform')return {...q,type:'typing',prompt:`Use “${w.word}” to rewrite: ${w.transformExample.before}`,answers:[w.transformExample.after],explanation:w.transformExample.after,modelOnly:true};
-  if(mode==='typing')return {...q,type:'typing',prompt:w.meaning};
-  if(mode==='gapTyping')return {...q,type:'typing',prompt:w.gap};
+  // A typed question that shows the word it asks for is no question. Whole
+  // words only, so "Insane" in the meaning of "Sane" is fine.
+  const showsAnswer=text=>new RegExp(`(^|[^\\p{L}\\p{N}])${norm(bareWord(w.word)).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}($|[^\\p{L}\\p{N}])`,'u').test(norm(text));
+  if(mode==='typing')return showsAnswer(w.meaning)?null:{...q,type:'typing',prompt:w.meaning};
+  if(mode==='gapTyping')return showsAnswer(w.gap)?null:{...q,type:'typing',prompt:w.gap};
   q.prompt=mode==='meaning'?w.word:mode==='reverse'?w.meaning:mode==='gap'?w.gap:w.situation;
   // Easier questions take at most one distractor from the word's own
   // subCategory; from difficulty 3 all of them may (Strain, Fracture, Bruise…).
@@ -767,7 +772,11 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
   // round early instead of cycling the same few words over and over.
   const wordUses={};
   while(queue.length<wordSlots&&candidates.length){
-    const eligible=candidates.map((q,i)=>({q,i})).filter(({q})=>!(queue.length===0&&q.targets.includes(lastIntro)) && !questionSentences(q).some(t=>usedSentences.has(t)) && !q.targets.some(t=>(wordUses[t]||0)>=2) && !queue.slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))) && !(queue.length>=2&&queue.slice(-2).every(p=>p.mode===q.mode)));
+    const pickable=allowIntro=>candidates.map((q,i)=>({q,i})).filter(({q})=>(allowIntro||!(queue.length===0&&q.targets.includes(lastIntro))) && !questionSentences(q).some(t=>usedSentences.has(t)) && !q.targets.some(t=>(wordUses[t]||0)>=2) && !queue.slice(-2).some(p=>p.targets.some(t=>q.targets.includes(t))) && !(queue.length>=2&&queue.slice(-2).every(p=>p.mode===q.mode)));
+    let eligible=pickable(false),firstPractice=false;
+    // Nothing else can open the round (a view with one new word): the word just introduced is asked after all,
+    // once, as its first practice. Only a question that could be built is used; none is made up.
+    if(!eligible.length&&queue.length===0){eligible=pickable(true);firstPractice=eligible.length>0;}
     if(!eligible.length)break;
     eligible.sort((a,b)=>{
       const aFresh=a.q.targets.some(t=>!usedWords.has(t))?0:1;
@@ -775,7 +784,7 @@ function practice(content,mastery={},category=null,rng=Math.random,quarantine=nu
       if(aFresh!==bFresh)return aFresh-bFresh;
       return ((counts[a.q.mode]||0)/(weights[a.q.mode]||1))-((counts[b.q.mode]||0)/(weights[b.q.mode]||1));
     });
-    const {q,i}=eligible[0];queue.push(q);questionSentences(q).forEach(t=>usedSentences.add(t));counts[q.mode]=(counts[q.mode]||0)+1;q.targets.forEach(t=>{usedWords.add(t);wordUses[t]=(wordUses[t]||0)+1;});candidates.splice(i,1);
+    const {q,i}=eligible[0];if(firstPractice&&q.targets.includes(lastIntro))q.initialTraining=true;queue.push(q);questionSentences(q).forEach(t=>usedSentences.add(t));counts[q.mode]=(counts[q.mode]||0)+1;q.targets.forEach(t=>{usedWords.add(t);wordUses[t]=(wordUses[t]||0)+1;});candidates.splice(i,1);
   }
   // At most one grammar question per 4 word questions, so a short round
   // (e.g. the very first one) stays about the words. Spread the rest

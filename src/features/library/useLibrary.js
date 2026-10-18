@@ -5,11 +5,14 @@
 // half-working.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { isLocalMode, supabase } from "../../lib/supabase";
-import { getLibraryApi } from "./libraryApi";
-import { localAreFriends, localNameOf } from "../social/friendsApi";
 import { identityIds, loadIds } from "./libraryIds";
+import { openLibrary } from "./openLibrary";
 
-export function useLibrary({ enabled, me, knownWord = () => true }) {
+//   enabled  start once the course has loaded      me  the player's id
+//   knownWord(key)  is this word in the game (local mode: what may be added)
+//   people   local mode only: { areFriends(a, b), friendSince(a, b), nameOf(id) }, who the player's friends are
+//            (the library does not import the friends module; the app passes it in)
+export function useLibrary({ enabled, me, knownWord = () => true, people = null }) {
   const [state, setState] = useState({ status: "loading" });
   // Words added after the app started aren't in the id map yet; this reloads it.
   // Local mode has nothing to reload (a key is its own id).
@@ -22,21 +25,9 @@ export function useLibrary({ enabled, me, knownWord = () => true }) {
   useEffect(() => {
     if (!enabled) return undefined;
     let alive = true;
-    (async () => {
-      try {
-        if (isLocalMode) {
-          const storage = window.localStorage;
-          const api = getLibraryApi({ storage, me: () => me, canSee: knownWord, areFriends: (a, b) => localAreFriends(storage, a, b), nameOf: (id) => localNameOf(storage, id) });
-          if (alive) setState({ status: "ready", api, ids: identityIds });
-          return;
-        }
-        const api = getLibraryApi();
-        await api.tree();                                   // fails while the tables aren't there
-        const { ids, words } = await loadIds(supabase);
-        if (!words) { if (alive) setState({ status: "off" }); return; }
-        if (alive) setState({ status: "ready", api, ids });
-      } catch { if (alive) setState({ status: "off" }); }
-    })();
+    const storage = isLocalMode ? window.localStorage : null;
+    const local = isLocalMode ? { storage, me: () => me, canSee: knownWord, areFriends: people?.areFriends, friendSince: people?.friendSince, nameOf: people?.nameOf } : null;
+    openLibrary({ local, client: supabase }).then((next) => { if (alive) setState(next); });
     return () => { alive = false; };
   }, [enabled, me]); // eslint-disable-line react-hooks/exhaustive-deps
   return useMemo(() => ({ ...state, refreshIds }), [state, refreshIds]);

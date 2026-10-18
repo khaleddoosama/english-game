@@ -6,7 +6,7 @@ import LibraryWords from "./components/LibraryWords";
 import ShareInbox from "./components/ShareInbox";
 import ViewPanel from "./components/ViewPanel";
 import ViewTree from "./components/ViewTree";
-import { count } from "./components/format";
+import { libraryActions, offerAcceptedText } from "./libraryActions";
 import { useViews } from "./useViews";
 import "../../styles/library.css";
 
@@ -22,6 +22,7 @@ import "../../styles/library.css";
 // The page only arranges the parts; each part owns its own little state.
 export default function LibraryPage({ api, ids, words, grammar, levels = [], friendsApi = null, onPractice, onInboxChanged, onAskWord = null, onRefreshIds = null, isAdmin = false }) {
   const lib = useViews({ api, ids });
+  const actions = useMemo(() => libraryActions({ api, ids }), [api, ids]);
   const start = useMemo(() => readQuery(window.location.search), []);
   const newParent = start.parent ? lib.rows.find((v) => v.id === start.parent) || null : null;   // /library?new=1&parent=<id>
   const [offers, setOffers] = useState([]);
@@ -50,7 +51,7 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
       onInboxChanged?.();
       if (accept) {
         lib.select(out.view);
-        lib.setNotice({ kind: "ok", text: `Added “${out.name}”: ${count(out.words, "word")}${out.rules ? `, ${count(out.rules, "rule")}` : ""}${out.skipped ? ` (${out.skipped} private ${out.skipped === 1 ? "word was" : "words were"} not shared)` : ""}.` });
+        lib.setNotice({ kind: "ok", text: offerAcceptedText(out) });
       }
     } catch (e) { lib.setNotice({ kind: "error", text: e.message }); await loadOffers(); onInboxChanged?.(); }
     finally { lib.setBusy(false); }
@@ -73,15 +74,15 @@ export default function LibraryPage({ api, ids, words, grammar, levels = [], fri
 
       {tab === "library" && (
         <LibraryWords items={lib.mine} rows={lib.rows} grammar={grammar} isAdmin={isAdmin} wordByKey={wordByKey} busy={lib.busy}
-          onAddRulesToView={(viewId, keys) => lib.act(() => api.addRules(viewId, keys.map(ids.ruleOf).filter(Boolean)), (n) => (n ? `Added ${count(n, "rule")} to the view.` : "Those are already in that view."))}
-          onRemoveRules={(keys) => lib.act(async () => { for (const k of keys) await api.libraryRemoveRule(ids.ruleOf(k)); return keys.length; }, (n) => `Removed ${count(n, "rule")} from your library.`)}
-          onAddToView={(viewId, keys) => lib.act(() => api.add(viewId, keys.map(ids.senseOf).filter(Boolean)), (n) => (n ? `Added ${n} to the view.` : "Those are already in that view."))}
+          onAddRulesToView={(viewId, keys) => lib.act(...actions.addRulesToView(viewId, keys))}
+          onRemoveRules={(keys) => lib.act(...actions.removeRules(keys))}
+          onAddToView={(viewId, keys) => lib.act(...actions.addToView(viewId, keys))}
           onNewView={async (name, keys) => {
-            const id = await lib.act(async () => { const made = await api.create(name); await api.add(made, keys.map(ids.senseOf).filter(Boolean)); return made; }, `Made “${name.trim()}” with ${count(keys.length, "word")}.`);
+            const id = await lib.act(...actions.newViewWith(name, keys));
             if (id) { lib.select(id); setTab("views"); }
             return id;
           }}
-          onRemove={(keys) => lib.act(async () => { for (const k of keys) await api.libraryRemove(ids.senseOf(k)); return keys.length; }, (n) => `Removed ${count(n, "word")} from your library.`)} />
+          onRemove={(keys) => lib.act(...actions.removeWords(keys))} />
       )}
 
       {tab === "views" && (

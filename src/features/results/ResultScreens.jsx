@@ -1,5 +1,5 @@
 import { formatAccuracy, formatStars } from "../../engine/data";
-import { normalizeAnswerText } from "../../engine/ai";
+import { normalizeAnswerText } from "../../engine/text";
 
 // The screens after a round, each one a card with a stamp, a title, the
 // numbers and the buttons. They only show what they are given.

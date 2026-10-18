@@ -5,7 +5,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 
 export default [
   { linterOptions: { reportUnusedDisableDirectives: "off" } },
-  { ignores: ["dist/**", "dev-dist/**", "node_modules/**", "legacy/**", "imports/**"] },
+  { ignores: ["dist/**", "dev-dist/**", "node_modules/**", "legacy/**", "imports/**", "e2e/out/**"] },
   js.configs.recommended,
   {
     rules: {

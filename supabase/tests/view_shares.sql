@@ -147,8 +147,9 @@ begin
   perform public.view_share(v_empty, array[b]);
   perform public.friend_remove(b);
   perform pg_temp.act(b);
-  sh2 := (select id from public.collection_shares where status = 'pending' and to_user = b limit 1);
-  perform pg_temp.must(sh2 is not null, 'the offer is still waiting');
+  -- since 0040 the offer ends with the friendship (supabase/tests/view_shares_friendship.sql has the details)
+  sh2 := (select id from public.collection_shares where status = 'expired' and to_user = b limit 1);
+  perform pg_temp.must(sh2 is not null, 'the offer ended with the friendship');
   perform pg_temp.must(pg_temp.fails($q$select public.view_share_accept('$q$ || sh2 || $q$')$q$), 'after unfriending the offer cannot be accepted');
 
   -- ------------------------------------------------------ room

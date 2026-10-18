@@ -7,11 +7,13 @@ export function createFakeSupabase({ userId = "u1", admin = true, tables: shared
     content_items: [],
     content_meta: [{ id: 1, level_order: [], note: "", version: 0 }],
     progress: [],
+    progress_ops: [],
     mastery: [],
     reports: [],
     report_tombstones: [],
     profiles: [],
   };
+  tables.progress_ops ||= [];
   if (!tables.profiles.some((p) => p.id === userId)) tables.profiles.push({ id: userId, username: shared ? userId : "khaled", role: admin ? "admin" : "player" });
   const calls = [];
   const drafts = {};
@@ -165,8 +167,13 @@ export function createFakeSupabase({ userId = "u1", admin = true, tables: shared
       }
       return { data: { version, renamed } };
     },
-    // Same rules as supabase/migrations/0016_progress_merge.sql.
-    save_progress_v2({ p_sections, p_expected, p_mastery, p_mastery_removes, p_profile, p_replace }) {
+    // Same rules as supabase/migrations/0016_progress_merge.sql and 0042 (an operation id is applied once).
+    save_progress_v2({ p_sections, p_expected, p_mastery, p_mastery_removes, p_profile, p_replace, p_op }) {
+      const digest = JSON.stringify([p_sections, p_expected, p_mastery, p_mastery_removes, p_profile, !!p_replace]);
+      if (p_op) {
+        const done = tables.progress_ops.find((o) => o.user_id === userId && o.op_id === p_op);
+        if (done) return done.digest === digest ? { data: { duplicate: true, revs: clone(done.revs) } } : { error: { code: "22023", message: "this operation id was already used for a different save" } };
+      }
       const mine = (section) => tables.progress.find((r) => r.user_id === userId && r.section === section);
       if (!p_replace && p_expected) {
         const conflict = Object.keys(p_sections || {}).filter((name) => { const row = mine(name); return row && row.rev !== (p_expected[name] ?? null); }).sort();
@@ -194,7 +201,9 @@ export function createFakeSupabase({ userId = "u1", admin = true, tables: shared
         if (week && !p_replace) { profile.week_score = profile.week_start !== week ? gain : (profile.week_score || 0) + gain; profile.week_start = week; }
       }
       if (profile && Number.isFinite(p_profile?.mastered_count)) profile.mastered_count = p_profile.mastered_count;
-      return { data: { revs: Object.fromEntries(Object.keys(p_sections || {}).map((n) => [n, mine(n).rev])) } };
+      const revs = Object.fromEntries(Object.keys(p_sections || {}).map((n) => [n, mine(n).rev]));
+      if (p_op) tables.progress_ops.push({ user_id: userId, op_id: p_op, revs, digest });
+      return { data: { revs } };
     },
     reset_my_progress() {
       tables.progress = tables.progress.filter((r) => r.user_id !== userId);

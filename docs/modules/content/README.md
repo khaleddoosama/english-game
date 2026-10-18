@@ -37,7 +37,7 @@ The shared course that every player plays from: words, grammar rules, challenges
 
 ## 3. Files and database objects
 
-- Files: the content half of [lib/repo.js](../../../src/lib/repo.js) (`loadContent`, `saveContent`), [engine/data.js](../../../src/engine/data.js) (module variables, `mergeCustomData`, level and badge building), [features/data](../../../src/features/data) (`transfer.js`, `ImportExport.jsx`), content normalisation and validation inside [engine/v2.js](../../../src/engine/v2.js) (`validateContent`, `prepareImport`, `mergeContent`, `normalizeV3`, `applyRenames`, `withoutRemovedFields`), [lib/idb.js](../../../src/lib/idb.js).
+- Files: the content store [lib/repo/contentStore.js](../../../src/lib/repo/contentStore.js) and [contentPlan.js](../../../src/lib/repo/contentPlan.js), reached through `loadContent` / `saveContent` of [lib/repo.js](../../../src/lib/repo.js) (layer map: [architecture/repo.md](../../architecture/repo.md)); [lib/saveToLibrary.js](../../../src/lib/saveToLibrary.js) (new items join the admin's library), [engine/data.js](../../../src/engine/data.js) (module variables, `mergeCustomData`, level and badge building), [features/data](../../../src/features/data) (`transfer.js`, `ImportExport.jsx`), content normalisation and validation inside [engine/v2.js](../../../src/engine/v2.js) (`validateContent`, `prepareImport`, `mergeContent`, `normalizeV3`, `applyRenames`, `withoutRemovedFields`), [lib/idb.js](../../../src/lib/idb.js).
 - Screens: Import and Export (`/data`, also under Admin), the first-run "Fresh copy detected" banner on Home, and the content editors in Admin ([Words](../../../src/features/admin/sections/Words.jsx), [Categories](../../../src/features/admin/sections/Categories.jsx), [Grammar](../../../src/features/admin/sections/Grammar.jsx), [Stories and more](../../../src/features/admin/sections/Library.jsx)).
 - Tables: `content_items` (kind, key, data, position, deleted, updated_at), `content_meta` (one row: version, level order, note), `content_drafts`, `item_key_aliases`, and the copy tables listed in [library](../library/README.md).
 - Functions: `content_save_v2`, `apply_content_changes`, `apply_item_renames`, `dictionary_sync`, `dictionary_sync_core`; triggers that write `admin_audit`.
@@ -94,7 +94,7 @@ The shared course that every player plays from: words, grammar rules, challenges
 | Word editor | [tests/word-editor.test.js](../../../tests/word-editor.test.js) |
 | Admin-side audit entries for content | [supabase/tests/audit_and_reports.sql](../../../supabase/tests/audit_and_reports.sql) |
 
-**Gaps.** No test covers what a rename does to a player's library and views (`DP-01`). No test makes `dictionary_sync` fail after a save. The repo tests use the committed backup file as their data, which holds real account progress (`DP-07`).
+**Gaps.** What a rename does to a player's library and views is tested on the database (`dictionary_rename.sql`, `rename_conflict.sql`, migrations 0037 and 0039) but those migrations are not in production yet (`DP-01`). No test makes `dictionary_sync` fail after a save. The repo tests use the committed backup file as their data, which holds real account progress (`DP-07`).
 
 ## 8. Example journey
 
@@ -102,8 +102,8 @@ The admin renames the word "Chilly" to "Chilly (cold)" in Admin, Words. (Synthet
 
 1. The editor calls `renameWord`; state and `LEVELS` update at once. The rename is queued with the next save.
 2. 150 ms later `saveContent` sends the new item, the removal of the old key and the rename in one publish. The server writes the item, moves every player's mastery, pools, confusions and reports to the new key, and records an alias.
-3. The browser calls `dictionary_sync`. The old sense is flagged deleted and a new sense is created.
-4. A player who had the old word in their library no longer sees it there, and Home hides it for them. Their mastery is intact under the new name. This is `DP-01`.
+3. The browser calls `dictionary_sync`. With migration 0037 the existing sense is renamed (before 0037: the old sense is flagged deleted and a new sense is created).
+4. With 0037, a player who had the old word in their library still sees it there under the new name, and their mastery is intact. Before 0037, the word drops out of their library and Home hides it (`DP-01`). A rename into a name another word has is refused (0039).
 5. Other devices see the new `content_meta.version` on their next start and download the two changed items.
 
 ## 9. Status
@@ -112,13 +112,13 @@ The admin renames the word "Chilly" to "Chilly (cold)" in Admin, Words. (Synthet
 
 **Planned** (roadmap)
 
-- Phase 1: a rename carries library entries and view membership; `dictionary_sync` becomes part of the publish or reports its failure; a safe repair for past renames.
-- Phase 4: split from `repo.js`; replace the module variables with an object passed down.
+- Phase 1: `dictionary_sync` becomes part of the publish or reports its failure; a safe repair for past renames ([diagnosis-renamed-words.md](../../migrations/diagnosis-renamed-words.md)). A rename carrying library entries and views is done in code (0037), pending production.
+- Phase 4: replace the module variables with an object passed down. (The content store is already split out of `repo.js`.)
 - Phase 5: a synthetic fixture instead of the committed backup.
 
 **Known Issues**
 
-- `DP-01` rename breaks library links (Confirmed).
+- `DP-01` rename breaks library links (Confirmed). Fixed in code by 0037 for new renames, pending production; old renames not repaired.
 - `DP-02` `sense_create` has one caller; private words cannot be played.
 - `DP-03` best-effort dictionary copy.
 - `DP-07` the committed backup holds real account progress and doubles as a test fixture.

@@ -56,7 +56,10 @@ export function searchWords(words, query, limit = 40) {
 // dictionary. A line that names exactly one entry matches it; a word with
 // several meanings is "ambiguous" and the player picks; the rest is missing.
 export function matchPasted(text, words) {
-  const tokens = [...new Set(String(text || "").split(/[\n;,]+/).map((t) => t.trim()).filter(Boolean))];
+  // A word written twice ("Cast", "cast") is one token: the first spelling stays.
+  const first = new Map();
+  for (const t of String(text || "").split(/[\n;,]+/).map((x) => x.trim()).filter(Boolean)) if (!first.has(V2.norm(t))) first.set(V2.norm(t), t);
+  const tokens = [...first.values()];
   const matched = [], ambiguous = [], missing = [];
   for (const token of tokens) {
     const exact = (words || []).find((w) => V2.norm(w.word) === V2.norm(token));

@@ -1,7 +1,7 @@
 import { BookOpen, Scale, Sparkles } from "lucide-react";
 import { V2 } from "./v2";
 import { CHALLENGES, CHALLENGE_MODE_META, DISABLED_MODES, LAST_CHALLENGE_ID, MASTERY_STAGE, MASTERY_STAGE_RANK, MODE_META, RUNTIME_DISABLED_MODES, WORDS, confusionCount, dedupeBy, getMasteryStage, getProductionCorrect, levelItemKey, normalizeMasteryRecord } from "./data";
-import { normalizeAnswerText } from "./ai";
+import { normalizeAnswerText } from "./text";
 /* --------------------------------- HELPERS --------------------------------- */
 
 export function shuffle(arr) {

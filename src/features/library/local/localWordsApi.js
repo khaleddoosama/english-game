@@ -1,6 +1,6 @@
 // The library itself (which words a player has, and their own wording of
 // them), and adding words to a view, which adds them to the library first.
-import { MAX_LIBRARY, MAX_PER_CALL, MSG, senseFromCard } from "../libraryRules";
+import { MAX_LIBRARY, MAX_PER_CALL, MAX_WORD, MSG, senseFromCard } from "../libraryRules";
 import { activeKeys, findView, liveViews } from "./localViews";
 
 export function createLocalWordsApi(ctx) {
@@ -57,7 +57,7 @@ export function createLocalWordsApi(ctx) {
     // The word itself lives in the game's own content in local mode; here it only joins the library.
     async createWord(card) {
       const word = senseFromCard(card).word;
-      if (!word) fail(MSG.badWord);
+      if (!word || word.length > MAX_WORD) fail(MSG.badWord);
       const known = Boolean(load().entries[word] && !load().entries[word].removed);
       await libraryAdd([word]);
       return { id: word, existing: known };

@@ -1,7 +1,7 @@
 // What other screens need from the library: my views (to offer as a source of
 // words) and, for one of them, which words and rules it holds.
 import { useEffect, useState } from "react";
-import { scopeFromContents } from "./scope";
+import { scopeOfView } from "./viewRound";
 
 // My views, flat. Empty when there is no library.
 export function useMyViews(library) {
@@ -22,8 +22,8 @@ export function useViewScope(library, viewId) {
   useEffect(() => {
     if (!viewId || !library) { setScope(null); return undefined; }
     let alive = true;
-    library.api.contents(viewId, true).then(
-      (rows) => alive && setScope(scopeFromContents(rows, { resolveKey: library.ids.keyOfSense, resolveRule: library.ids.keyOfRule })),
+    scopeOfView(library, viewId).then(
+      (scope) => alive && setScope(scope),
       () => alive && setScope({ words: new Set(), rules: new Set() }));
     return () => { alive = false; };
   }, [viewId, library]);

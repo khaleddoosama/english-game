@@ -11,8 +11,20 @@ Working documentation for the Word Hunter code base. The top-level [README](../R
 | [architecture/current-state.md](architecture/current-state.md) | Entry points, screens, state, API routes, data layer, main user journeys, source of truth per entity, what was verified |
 | [architecture/module-map.md](architecture/module-map.md) | Proposed module boundaries and dependency rules |
 | [architecture/roadmap.md](architecture/roadmap.md) | Ranked problem register and a phased plan with acceptance criteria |
+| [architecture/modules.md](architecture/modules.md) | The module pattern (layers, one front door, boundary tests), proven on the library, and the plan for the rest |
+| [architecture/repo.md](architecture/repo.md) | The repo layer (`src/lib/repo.js` and `src/lib/repo/`): its parts and their state |
 | [adr/](adr/README.md) | Architecture decision records: what was decided, why, alternatives |
 | [ai-usage-inventory.md](ai-usage-inventory.md) | Where the app uses AI (written earlier, in Arabic) |
+
+### Tests, migrations and work records
+
+| Page | What it is for |
+| --- | --- |
+| [integration-tests.md](integration-tests.md) | Database integration tests and the real-stack tests: what they need, how to run them, what they do not prove |
+| [library-unit-test-matrix.md](library-unit-test-matrix.md) | Library and view-round rules, each with the test that checks it |
+| [migrations/review-0037-0042.md](migrations/review-0037-0042.md) | Review of migrations 0037-0042: order, compatibility, rollback, what was not verified |
+| [migrations/diagnosis-renamed-words.md](migrations/diagnosis-renamed-words.md) | Library entries left behind by renames made before 0037: diagnosis and repair plan (not run) |
+| [work-tracking/](work-tracking) | What was done, checked and left, per piece of work; handover notes |
 
 ### Modules
 
@@ -26,7 +38,7 @@ One folder per module under [modules](modules). Each page has the same sections:
 | [learning-engine](modules/learning-engine/README.md) | Pure rules: questions, grading, mastery, session evidence |
 | [practice](modules/practice/README.md) | Home, sessions, results, stories, speed, stats, question reports |
 | [progress](modules/progress/README.md) | A player's saved state, offline snapshot, merge, leaderboard numbers |
-| [library](modules/library/README.md) | Personal library, views, sharing, links, catalog |
+| [library](modules/library/README.md) | My Library: personal library, views, sharing, links, catalog |
 | [live](modules/live/README.md) | Live Challenge |
 | [social](modules/social/README.md) | Friends, leaderboard, profile, counts |
 | [ai-media](modules/ai-media/README.md) | Gemini calls, quota gate, pronunciation, pictures |

@@ -13,6 +13,7 @@ export const MAX_CATALOG = 20;
 export const MAX_TITLE = 60;
 export const MAX_DESCRIPTION = 300;
 export const MAX_NAME = 60;
+export const MAX_WORD = 120;
 export const NAME_ERROR = 'A view name is 1 to 60 characters and has no "::" in it.';
 
 export const cleanViewName = (s) => String(s ?? "").trim();
@@ -32,7 +33,7 @@ export const MSG = Object.freeze({
   notInLibrary: ["That word is not in your library.", "P0002"],
   patchShape: ["A patch is an object.", "22023"],
   patchSize: ["That change is too big.", "22023"],
-  badWord: ["A word is 1 to 120 characters.", "22023"],
+  badWord: [`A word is 1 to ${MAX_WORD} characters.`, "22023"],
   shareTooMany: [`Share with up to ${MAX_SHARE_USERS} friends at a time.`, "22023"],
   shareNotFriend: ["You can share only with your friends.", "42501"],
   shareFriendFull: ["A friend has too many shares waiting. Try again later.", "55000"],

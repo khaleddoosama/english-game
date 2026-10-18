@@ -35,6 +35,7 @@ can show it:
 | --- | --- | --- | --- |
 | Unit | `tests/*.test.js` | `npm test` | pure logic: the engine, rules, routing, ids, `features/home/homeState.js` |
 | Feature | `tests/library*.test.js`, `supabase/tests/*.sql` | `npm test`, `supabase/ci/run-tests.sh` | a feature through its API: the library over a local mirror, the same calls against the real SQL functions (`library-contract.test.js`) |
+| Integration | `tests/integration/*.test.js` | `supabase/ci/run-integration.sh` | the app's repo and library code against a real PostgreSQL with every migration, as `anon` / `authenticated` (RLS, grants, sharing, two devices, admin refusals); see `docs/integration-tests.md` |
 | Component | `tests/*.test.jsx` | `npm test` | one screen or piece on its own (jsdom): the library page, the catalog, the Home pieces |
 | End to end | `e2e/specs/*.cjs` | `npm run e2e [name…]` | the built app in a real browser, in local mode: library, catalog, sharing, Home tabs, grammar, Live with friends |
 
@@ -287,4 +288,7 @@ supabase/tests/      SQL tests (run inside a rolled-back transaction)
 tests/               Vitest unit and component tests
 e2e/                 browser specs (Playwright) and their runner
 legacy/              the original single-file Claude artifact, for reference
+docs/                README.md (index and documentation rules), architecture/ (current state, module map, roadmap,
+                     module pattern, repo layer), modules/<name>/README.md (one document per module), adr/,
+                     migrations/, work-tracking/ (what was done, checked and is left), integration-tests.md
 ```

@@ -124,7 +124,7 @@ In order of lowest risk first. Details and acceptance criteria are in [roadmap.m
 
 1. Remove the unreachable round engine from WordHunter (no behaviour change).
 2. Move the session lifecycle (`recordSessionResult`, `completeSession`, `start*`) out of WordHunter into `practice`, with tests.
-3. Split the two halves of `repo.js` into `content` and `progress` behind the same interface.
+3. Split the two halves of `repo.js` into `content` and `progress` behind the same interface. (Started: the content store and several progress parts are in `src/lib/repo/`, see [repo.md](repo.md).)
 4. Break the `live`/`social` and `engine`/`lib` cycles.
 5. Replace the mutable content globals with a content object passed down (or a read-only store).
 6. Decide the progress model (text keys vs ids) and finish or drop the unused `sense_progress` / `rule_progress` tables.

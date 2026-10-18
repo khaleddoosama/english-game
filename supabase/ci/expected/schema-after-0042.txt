@@ -1,0 +1,722 @@
+column public.admin_audit.action text notnull=true default=- acl=-
+column public.admin_audit.admin_id uuid notnull=false default=- acl=-
+column public.admin_audit.after jsonb notnull=false default=- acl=-
+column public.admin_audit.at timestamp with time zone notnull=true default=now() acl=-
+column public.admin_audit.batch_id uuid notnull=false default=- acl=-
+column public.admin_audit.before jsonb notnull=false default=- acl=-
+column public.admin_audit.changes jsonb notnull=false default=- acl=-
+column public.admin_audit.details jsonb notnull=true default='{}'::jsonb acl=-
+column public.admin_audit.entity text notnull=false default=- acl=-
+column public.admin_audit.id bigint notnull=true default=nextval('public.admin_audit_id_seq'::regclass) acl=-
+column public.admin_audit.item_key text notnull=false default=- acl=-
+column public.admin_audit.target text notnull=false default=- acl=-
+column public.ai_calls.admin_only boolean notnull=true default=false acl=-
+column public.ai_calls.at timestamp with time zone notnull=true default=now() acl=-
+column public.ai_calls.finished_at timestamp with time zone notnull=false default=- acl=-
+column public.ai_calls.http_status integer notnull=false default=- acl=-
+column public.ai_calls.id bigint notnull=true default=nextval('public.ai_calls_id_seq'::regclass) acl=-
+column public.ai_calls.input_tokens integer notnull=false default=- acl=-
+column public.ai_calls.kind text notnull=true default='ai'::text acl=-
+column public.ai_calls.model text notnull=false default=- acl=-
+column public.ai_calls.ms integer notnull=false default=- acl=-
+column public.ai_calls.output_chars integer notnull=false default=- acl=-
+column public.ai_calls.output_tokens integer notnull=false default=- acl=-
+column public.ai_calls.preview text notnull=false default=- acl=-
+column public.ai_calls.prompt_chars integer notnull=false default=- acl=-
+column public.ai_calls.reason text notnull=false default=- acl=-
+column public.ai_calls.status text notnull=true default='started'::text acl=-
+column public.ai_calls.task text notnull=false default=- acl=-
+column public.ai_calls.user_id uuid notnull=false default=- acl=-
+column public.ai_usage.calls integer notnull=true default=0 acl=-
+column public.ai_usage.day date notnull=true default=CURRENT_DATE acl=-
+column public.ai_usage.user_id uuid notnull=true default=- acl=-
+column public.app_settings.data jsonb notnull=true default='{}'::jsonb acl=-
+column public.app_settings.id smallint notnull=true default=1 acl=-
+column public.app_settings.updated_at timestamp with time zone notnull=true default=now() acl=-
+column public.app_settings.updated_by uuid notnull=false default=- acl=-
+column public.catalog_entries.collection_id uuid notnull=true default=- acl=-
+column public.catalog_entries.created_at timestamp with time zone notnull=true default=now() acl=-
+column public.catalog_entries.description text notnull=true default=''::text acl=-
+column public.catalog_entries.id uuid notnull=true default=gen_random_uuid() acl=-
+column public.catalog_entries.owner_id uuid notnull=true default=- acl=-
+column public.catalog_entries.takes integer notnull=true default=0 acl=-
+column public.catalog_entries.title text notnull=true default=- acl=-
+column public.catalog_entries.unpublished_at timestamp with time zone notnull=false default=- acl=-
+column public.catalog_entries.updated_at timestamp with time zone notnull=true default=now() acl=-
+column public.catalog_takes.copy_id uuid notnull=true default=- acl=-
+column public.catalog_takes.entry_id uuid notnull=true default=- acl=-
+column public.catalog_takes.taken_at timestamp with time zone notnull=true default=now() acl=-
+column public.catalog_takes.user_id uuid notnull=true default=- acl=-
+column public.collection_rules.added_at timestamp with time zone notnull=true default=now() acl=-
+column public.collection_rules.collection_id uuid notnull=true default=- acl=-
+column public.collection_rules.position integer notnull=true default=0 acl=-
+column public.collection_rules.removed_at timestamp with time zone notnull=false default=- acl=-
+column public.collection_rules.rule_id uuid notnull=true default=- acl=-
+column public.collection_senses.added_at timestamp with time zone notnull=true default=now() acl=-
+column public.collection_senses.collection_id uuid notnull=true default=- acl=-
+column public.collection_senses.position integer notnull=true default=0 acl=-
+column public.collection_senses.removed_at timestamp with time zone notnull=false default=- acl=-
+column public.collection_senses.sense_id uuid notnull=true default=- acl=-
+column public.collection_shares.collection_id uuid notnull=true default=- acl=-
+column public.collection_shares.copy_id uuid notnull=false default=- acl=-
+column public.collection_shares.created_at timestamp with time zone notnull=true default=now() acl=-
+column public.collection_shares.from_user uuid notnull=true default=- acl=-
+column public.collection_shares.id uuid notnull=true default=gen_random_uuid() acl=-
+column public.collection_shares.status text notnull=true default='pending'::text acl=-
+column public.collection_shares.to_user uuid notnull=true default=- acl=-
+column public.collection_shares.updated_at timestamp with time zone notnull=true default=now() acl=-
+column public.collections.course_level text notnull=false default=- acl=-
+column public.collections.created_at timestamp with time zone notnull=true default=now() acl=-
+column public.collections.deleted_at timestamp with time zone notnull=false default=- acl=-
+column public.collections.id uuid notnull=true default=gen_random_uuid() acl=-
+column public.collections.kind text notnull=true default='view'::text acl=-
+column public.collections.name text notnull=true default=- acl=-
+column public.collections.owner_id uuid notnull=false default=- acl=-
+column public.collections.parent_id uuid notnull=false default=- acl=-
+column public.collections.path text notnull=true default=- acl=-
+column public.collections.position integer notnull=true default=0 acl=-
+column public.collections.source_id uuid notnull=false default=- acl=-
+column public.collections.updated_at timestamp with time zone notnull=true default=now() acl=-
+column public.content_drafts.admin_id uuid notnull=true default=- acl=-
+column public.content_drafts.created_at timestamp with time zone notnull=true default=now() acl=-
+column public.content_drafts.draft_id uuid notnull=true default=- acl=-
+column public.content_drafts.item jsonb notnull=true default=- acl=-
+column public.content_drafts.key text notnull=true default=- acl=-
+column public.content_drafts.kind text notnull=true default=- acl=-
+column public.content_items.data jsonb notnull=true default=- acl=-
+column public.content_items.deleted boolean notnull=true default=false acl=-
+column public.content_items.key text notnull=true default=- acl=-
+column public.content_items.kind text notnull=true default=- acl=-
+column public.content_items.position integer notnull=true default=0 acl=-
+column public.content_items.updated_at timestamp with time zone notnull=true default=now() acl=-
+column public.content_meta.id smallint notnull=true default=1 acl=-
+column public.content_meta.level_order jsonb notnull=true default='[]'::jsonb acl=-
+column public.content_meta.note text notnull=true default=''::text acl=-
+column public.content_meta.updated_at timestamp with time zone notnull=true default=now() acl=-
+column public.content_meta.version bigint notnull=true default=0 acl=-
+column public.friendships.created_at timestamp with time zone notnull=true default=now() acl=-
+column public.friendships.ended_by uuid notnull=false default=- acl=-
+column public.friendships.requested_by uuid notnull=true default=- acl=-
+column public.friendships.status text notnull=true default='pending'::text acl=-
+column public.friendships.updated_at timestamp with time zone notnull=true default=now() acl=-
+column public.friendships.user_a uuid notnull=true default=- acl=-
+column public.friendships.user_b uuid notnull=true default=- acl=-
+column public.grammar_questions.data jsonb notnull=true default=- acl=-
+column public.grammar_questions.deleted_at timestamp with time zone notnull=false default=- acl=-
+column public.grammar_questions.id uuid notnull=true default=gen_random_uuid() acl=-
+column public.grammar_questions.legacy_pos integer notnull=false default=- acl=-
+column public.grammar_questions.position integer notnull=true default=0 acl=-
+column public.grammar_questions.rule_id uuid notnull=true default=- acl=-
+column public.grammar_questions.type text notnull=true default='choose'::text acl=-
+column public.grammar_rules.category text notnull=false default=- acl=-
+column public.grammar_rules.content jsonb notnull=true default='{}'::jsonb acl=-
+column public.grammar_rules.course_level text notnull=false default=- acl=-
+column public.grammar_rules.created_at timestamp with time zone notnull=true default=now() acl=-
+column public.grammar_rules.deleted_at timestamp with time zone notnull=false default=- acl=-
+column public.grammar_rules.explanation text notnull=false default=- acl=-
+column public.grammar_rules.id uuid notnull=true default=gen_random_uuid() acl=-
+column public.grammar_rules.legacy_key text notnull=false default=- acl=-
+column public.grammar_rules.rev integer notnull=true default=1 acl=-
+column public.grammar_rules.rule text notnull=true default=- acl=-
+column public.grammar_rules.units text[] notnull=true default='{}'::text[] acl=-
+column public.grammar_rules.updated_at timestamp with time zone notnull=true default=now() acl=-
+column public.headwords.created_at timestamp with time zone notnull=true default=now() acl=-
+column public.headwords.id uuid notnull=true default=gen_random_uuid() acl=-
+column public.headwords.ipa text notnull=false default=- acl=-
+column public.headwords.text text notnull=true default=- acl=-
+column public.item_key_aliases.at timestamp with time zone notnull=true default=now() acl=-
+column public.item_key_aliases.from_key text notnull=true default=- acl=-
+column public.item_key_aliases.kind text notnull=true default=- acl=-
+column public.item_key_aliases.to_key text notnull=true default=- acl=-
+column public.library_entries.added_at timestamp with time zone notnull=true default=now() acl=-
+column public.library_entries.note text notnull=false default=- acl=-
+column public.library_entries.patch jsonb notnull=true default='{}'::jsonb acl=-
+column public.library_entries.removed_at timestamp with time zone notnull=false default=- acl=-
+column public.library_entries.sense_id uuid notnull=true default=- acl=-
+column public.library_entries.user_id uuid notnull=true default=- acl=-
+column public.library_rules.added_at timestamp with time zone notnull=true default=now() acl=-
+column public.library_rules.removed_at timestamp with time zone notnull=false default=- acl=-
+column public.library_rules.rule_id uuid notnull=true default=- acl=-
+column public.library_rules.user_id uuid notnull=true default=- acl=-
+column public.live_answer_keys.answers jsonb notnull=true default=- acl=-
+column public.live_answer_keys.code text notnull=true default=- acl=-
+column public.live_answers.answered_at timestamp with time zone notnull=true default=now() acl=-
+column public.live_answers.choice text notnull=false default=- acl=-
+column public.live_answers.code text notnull=true default=- acl=-
+column public.live_answers.correct boolean notnull=true default=- acl=-
+column public.live_answers.idx integer notnull=true default=- acl=-
+column public.live_answers.ms integer notnull=true default=- acl=-
+column public.live_answers.user_id uuid notnull=true default=- acl=-
+column public.live_challenges.code text notnull=true default=- acl=-
+column public.live_challenges.created_at timestamp with time zone notnull=true default=now() acl=-
+column public.live_challenges.ended_at timestamp with time zone notnull=false default=- acl=-
+column public.live_challenges.expires_at timestamp with time zone notnull=true default=- acl=-
+column public.live_challenges.host_id uuid notnull=true default=auth.uid() acl=-
+column public.live_challenges.max_players integer notnull=true default=10 acl=-
+column public.live_challenges.question_count integer notnull=true default=- acl=-
+column public.live_challenges.questions jsonb notnull=true default=- acl=-
+column public.live_challenges.seconds integer notnull=true default=20 acl=-
+column public.live_challenges.settings jsonb notnull=true default='{}'::jsonb acl=-
+column public.live_challenges.start_mode text notnull=true default='together'::text acl=-
+column public.live_challenges.started_at timestamp with time zone notnull=false default=- acl=-
+column public.live_challenges.state text notnull=true default='lobby'::text acl=-
+column public.live_challenges.title text notnull=true default=- acl=-
+column public.live_invites.code text notnull=true default=- acl=-
+column public.live_invites.created_at timestamp with time zone notnull=true default=now() acl=-
+column public.live_invites.dismissed boolean notnull=true default=false acl=-
+column public.live_invites.invited_by uuid notnull=true default=- acl=-
+column public.live_invites.user_id uuid notnull=true default=- acl=-
+column public.live_players.answered integer notnull=true default=0 acl=-
+column public.live_players.code text notnull=true default=- acl=-
+column public.live_players.correct integer notnull=true default=0 acl=-
+column public.live_players.finished_at timestamp with time zone notnull=false default=- acl=-
+column public.live_players.joined_at timestamp with time zone notnull=true default=now() acl=-
+column public.live_players.last_at timestamp with time zone notnull=false default=- acl=-
+column public.live_players.started_at timestamp with time zone notnull=false default=- acl=-
+column public.live_players.total_ms bigint notnull=true default=0 acl=-
+column public.live_players.user_id uuid notnull=true default=auth.uid() acl=-
+column public.live_results.correct integer notnull=true default=- acl=-
+column public.live_results.finished boolean notnull=true default=true acl=-
+column public.live_results.is_host boolean notnull=true default=false acl=-
+column public.live_results.played_at timestamp with time zone notnull=true default=now() acl=-
+column public.live_results.players integer notnull=true default=- acl=-
+column public.live_results.points integer notnull=true default=- acl=-
+column public.live_results.rank integer notnull=true default=- acl=-
+column public.live_results.room_code text notnull=true default=- acl=-
+column public.live_results.title text notnull=true default=''::text acl=-
+column public.live_results.total integer notnull=true default=- acl=-
+column public.live_results.total_ms bigint notnull=true default=0 acl=-
+column public.live_results.user_id uuid notnull=true default=auth.uid() acl=-
+column public.mastery.item_key text notnull=true default=- acl=-
+column public.mastery.stats jsonb notnull=true default=- acl=-
+column public.mastery.updated_at timestamp with time zone notnull=true default=now() acl=-
+column public.mastery.user_id uuid notnull=true default=- acl=-
+column public.profiles.best_study_streak integer notnull=true default=0 acl=-
+column public.profiles.created_at timestamp with time zone notnull=true default=now() acl=-
+column public.profiles.id uuid notnull=true default=- acl=-
+column public.profiles.live_played integer notnull=true default=0 acl=-
+column public.profiles.live_wins integer notnull=true default=0 acl=-
+column public.profiles.mastered_count integer notnull=true default=0 acl=-
+column public.profiles.role text notnull=true default='player'::text acl=-
+column public.profiles.score integer notnull=true default=0 acl=-
+column public.profiles.study_streak integer notnull=true default=0 acl=-
+column public.profiles.updated_at timestamp with time zone notnull=true default=now() acl=-
+column public.profiles.username text notnull=true default=- acl=-
+column public.profiles.week_score integer notnull=true default=0 acl=-
+column public.profiles.week_start date notnull=false default=- acl=-
+column public.progress.data jsonb notnull=true default=- acl=-
+column public.progress.rev bigint notnull=true default=1 acl=-
+column public.progress.section text notnull=true default=- acl=-
+column public.progress.updated_at timestamp with time zone notnull=true default=now() acl=-
+column public.progress.user_id uuid notnull=true default=- acl=-
+column public.progress_ops.created_at timestamp with time zone notnull=true default=now() acl=-
+column public.progress_ops.digest text notnull=true default=- acl=-
+column public.progress_ops.op_id uuid notnull=true default=- acl=-
+column public.progress_ops.revs jsonb notnull=true default=- acl=-
+column public.progress_ops.user_id uuid notnull=true default=- acl=-
+column public.report_tombstones.deleted_at timestamp with time zone notnull=true default=now() acl=-
+column public.report_tombstones.id text notnull=true default=- acl=-
+column public.reports.correct_answers jsonb notnull=false default=- acl=-
+column public.reports.created_at timestamp with time zone notnull=true default=now() acl=-
+column public.reports.data jsonb notnull=true default=- acl=-
+column public.reports.id text notnull=true default=- acl=-
+column public.reports.note text notnull=false default=- acl=-
+column public.reports.player_answer text notnull=false default=- acl=-
+column public.reports.player_was_correct boolean notnull=false default=- acl=-
+column public.reports.question_mode text notnull=false default=- acl=-
+column public.reports.question_options jsonb notnull=false default=- acl=-
+column public.reports.question_prompt text notnull=false default=- acl=-
+column public.reports.question_type text notnull=false default=- acl=-
+column public.reports.reason text notnull=false default=- acl=-
+column public.reports.reported_at timestamp with time zone notnull=false default=- acl=-
+column public.reports.resolved_at timestamp with time zone notnull=false default=- acl=-
+column public.reports.session_kind text notnull=false default=- acl=-
+column public.reports.session_title text notnull=false default=- acl=-
+column public.reports.target_words text[] notnull=false default=- acl=-
+column public.reports.user_id uuid notnull=true default=auth.uid() acl=-
+column public.rule_progress.correct integer notnull=true default=0 acl=-
+column public.rule_progress.last_result text notnull=false default=- acl=-
+column public.rule_progress.last_reviewed_at timestamp with time zone notnull=false default=- acl=-
+column public.rule_progress.rev integer notnull=true default=1 acl=-
+column public.rule_progress.rule_id uuid notnull=true default=- acl=-
+column public.rule_progress.total integer notnull=true default=0 acl=-
+column public.rule_progress.updated_at timestamp with time zone notnull=true default=now() acl=-
+column public.rule_progress.user_id uuid notnull=true default=- acl=-
+column public.sense_links.from_sense uuid notnull=true default=- acl=-
+column public.sense_links.kind text notnull=true default=- acl=-
+column public.sense_links.origin text notnull=true default='sync'::text acl=-
+column public.sense_links.removed_at timestamp with time zone notnull=false default=- acl=-
+column public.sense_links.to_sense uuid notnull=true default=- acl=-
+column public.sense_progress.correct integer notnull=true default=0 acl=-
+column public.sense_progress.ever_mastered boolean notnull=true default=false acl=-
+column public.sense_progress.last_result text notnull=false default=- acl=-
+column public.sense_progress.last_reviewed_at timestamp with time zone notnull=false default=- acl=-
+column public.sense_progress.modes jsonb notnull=true default='{}'::jsonb acl=-
+column public.sense_progress.next_review_at timestamp with time zone notnull=false default=- acl=-
+column public.sense_progress.production_correct integer notnull=true default=0 acl=-
+column public.sense_progress.recent jsonb notnull=true default='[]'::jsonb acl=-
+column public.sense_progress.rev integer notnull=true default=1 acl=-
+column public.sense_progress.review_step integer notnull=true default=0 acl=-
+column public.sense_progress.sense_id uuid notnull=true default=- acl=-
+column public.sense_progress.total integer notnull=true default=0 acl=-
+column public.sense_progress.updated_at timestamp with time zone notnull=true default=now() acl=-
+column public.sense_progress.user_id uuid notnull=true default=- acl=-
+column public.senses.category text notnull=false default=- acl=-
+column public.senses.content jsonb notnull=true default='{}'::jsonb acl=-
+column public.senses.course_level text notnull=false default=- acl=-
+column public.senses.created_at timestamp with time zone notnull=true default=now() acl=-
+column public.senses.deleted_at timestamp with time zone notnull=false default=- acl=-
+column public.senses.headword_id uuid notnull=true default=- acl=-
+column public.senses.id uuid notnull=true default=gen_random_uuid() acl=-
+column public.senses.label text notnull=false default=- acl=-
+column public.senses.legacy_key text notnull=false default=- acl=-
+column public.senses.meaning text notnull=true default=- acl=-
+column public.senses.owner_id uuid notnull=false default=- acl=-
+column public.senses.pos text[] notnull=true default='{}'::text[] acl=-
+column public.senses.rev integer notnull=true default=1 acl=-
+column public.senses.review_status text notnull=true default='approved'::text acl=-
+column public.senses.source text notnull=true default='curated'::text acl=-
+column public.senses.type text notnull=true default='vocab'::text acl=-
+column public.senses.updated_at timestamp with time zone notnull=true default=now() acl=-
+column public.senses.visibility text notnull=true default='public'::text acl=-
+column public.signup_log.at timestamp with time zone notnull=true default=now() acl=-
+column public.signup_log.ip_hash text notnull=false default=- acl=-
+column public.view_link_takes.copy_id uuid notnull=true default=- acl=-
+column public.view_link_takes.taken_at timestamp with time zone notnull=true default=now() acl=-
+column public.view_link_takes.token text notnull=true default=- acl=-
+column public.view_link_takes.user_id uuid notnull=true default=- acl=-
+column public.view_links.collection_id uuid notnull=true default=- acl=-
+column public.view_links.created_at timestamp with time zone notnull=true default=now() acl=-
+column public.view_links.expires_at timestamp with time zone notnull=true default=(now() + '30 days'::interval) acl=-
+column public.view_links.owner_id uuid notnull=true default=- acl=-
+column public.view_links.revoked_at timestamp with time zone notnull=false default=- acl=-
+column public.view_links.token text notnull=true default=- acl=-
+column public.view_links.uses integer notnull=true default=0 acl=-
+constraint public.admin_audit admin_audit_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES auth.users(id) ON DELETE SET NULL
+constraint public.admin_audit admin_audit_admin_profile_fk FOREIGN KEY (admin_id) REFERENCES public.profiles(id) ON DELETE SET NULL
+constraint public.admin_audit admin_audit_pkey PRIMARY KEY (id)
+constraint public.ai_calls ai_calls_kind_check CHECK ((kind = ANY (ARRAY['ai'::text, 'tts'::text])))
+constraint public.ai_calls ai_calls_pkey PRIMARY KEY (id)
+constraint public.ai_calls ai_calls_status_check CHECK ((status = ANY (ARRAY['started'::text, 'ok'::text, 'error'::text, 'denied'::text])))
+constraint public.ai_calls ai_calls_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE SET NULL
+constraint public.ai_usage ai_usage_pkey PRIMARY KEY (user_id, day)
+constraint public.ai_usage ai_usage_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+constraint public.app_settings app_settings_id_check CHECK ((id = 1))
+constraint public.app_settings app_settings_pkey PRIMARY KEY (id)
+constraint public.app_settings app_settings_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL
+constraint public.catalog_entries catalog_entries_collection_id_fkey FOREIGN KEY (collection_id) REFERENCES public.collections(id)
+constraint public.catalog_entries catalog_entries_description_check CHECK ((char_length(description) <= 300))
+constraint public.catalog_entries catalog_entries_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.catalog_entries catalog_entries_pkey PRIMARY KEY (id)
+constraint public.catalog_entries catalog_entries_title_check CHECK (((char_length(title) >= 1) AND (char_length(title) <= 60)))
+constraint public.catalog_takes catalog_takes_entry_id_fkey FOREIGN KEY (entry_id) REFERENCES public.catalog_entries(id)
+constraint public.catalog_takes catalog_takes_pkey PRIMARY KEY (entry_id, user_id)
+constraint public.catalog_takes catalog_takes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.collection_rules collection_rules_collection_id_fkey FOREIGN KEY (collection_id) REFERENCES public.collections(id)
+constraint public.collection_rules collection_rules_pkey PRIMARY KEY (collection_id, rule_id)
+constraint public.collection_rules collection_rules_rule_id_fkey FOREIGN KEY (rule_id) REFERENCES public.grammar_rules(id)
+constraint public.collection_senses collection_senses_collection_id_fkey FOREIGN KEY (collection_id) REFERENCES public.collections(id)
+constraint public.collection_senses collection_senses_pkey PRIMARY KEY (collection_id, sense_id)
+constraint public.collection_senses collection_senses_sense_id_fkey FOREIGN KEY (sense_id) REFERENCES public.senses(id)
+constraint public.collection_shares collection_shares_check CHECK ((from_user <> to_user))
+constraint public.collection_shares collection_shares_collection_id_fkey FOREIGN KEY (collection_id) REFERENCES public.collections(id)
+constraint public.collection_shares collection_shares_copy_id_fkey FOREIGN KEY (copy_id) REFERENCES public.collections(id)
+constraint public.collection_shares collection_shares_from_user_fkey FOREIGN KEY (from_user) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.collection_shares collection_shares_pkey PRIMARY KEY (id)
+constraint public.collection_shares collection_shares_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'accepted'::text, 'dismissed'::text, 'expired'::text])))
+constraint public.collection_shares collection_shares_to_user_fkey FOREIGN KEY (to_user) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.collections collections_kind_check CHECK ((kind = ANY (ARRAY['course'::text, 'session'::text, 'category'::text, 'view'::text, 'pack'::text])))
+constraint public.collections collections_name_check CHECK ((((length(btrim(name)) >= 1) AND (length(btrim(name)) <= 60)) AND (name !~ '::'::text)))
+constraint public.collections collections_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.collections collections_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.collections(id)
+constraint public.collections collections_pkey PRIMARY KEY (id)
+constraint public.collections collections_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.collections(id)
+constraint public.content_drafts content_drafts_pkey PRIMARY KEY (draft_id, kind, key)
+constraint public.content_items content_items_kind_check CHECK ((kind = ANY (ARRAY['words'::text, 'grammar'::text, 'challenges'::text, 'stories'::text, 'combos'::text])))
+constraint public.content_items content_items_pkey PRIMARY KEY (kind, key)
+constraint public.content_meta content_meta_id_check CHECK ((id = 1))
+constraint public.content_meta content_meta_pkey PRIMARY KEY (id)
+constraint public.friendships friendships_check CHECK ((user_a < user_b))
+constraint public.friendships friendships_check1 CHECK (((requested_by = user_a) OR (requested_by = user_b)))
+constraint public.friendships friendships_ended_by_check CHECK (((ended_by IS NULL) OR ((ended_by = user_a) OR (ended_by = user_b))))
+constraint public.friendships friendships_pkey PRIMARY KEY (user_a, user_b)
+constraint public.friendships friendships_requested_by_fkey FOREIGN KEY (requested_by) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.friendships friendships_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text, 'removed'::text, 'cancelled'::text])))
+constraint public.friendships friendships_user_a_fkey FOREIGN KEY (user_a) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.friendships friendships_user_b_fkey FOREIGN KEY (user_b) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.grammar_questions grammar_questions_pkey PRIMARY KEY (id)
+constraint public.grammar_questions grammar_questions_rule_id_fkey FOREIGN KEY (rule_id) REFERENCES public.grammar_rules(id)
+constraint public.grammar_questions grammar_questions_type_check CHECK ((type = ANY (ARRAY['choose'::text, 'judge'::text, 'fix'::text])))
+constraint public.grammar_rules grammar_rules_pkey PRIMARY KEY (id)
+constraint public.headwords headwords_pkey PRIMARY KEY (id)
+constraint public.item_key_aliases item_key_aliases_kind_check CHECK ((kind = ANY (ARRAY['word'::text, 'category'::text])))
+constraint public.item_key_aliases item_key_aliases_pkey PRIMARY KEY (kind, from_key)
+constraint public.library_entries library_entries_note_check CHECK ((length(note) <= 1000))
+constraint public.library_entries library_entries_patch_check CHECK (((jsonb_typeof(patch) = 'object'::text) AND (pg_column_size(patch) < 8000)))
+constraint public.library_entries library_entries_pkey PRIMARY KEY (user_id, sense_id)
+constraint public.library_entries library_entries_sense_id_fkey FOREIGN KEY (sense_id) REFERENCES public.senses(id)
+constraint public.library_entries library_entries_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.library_rules library_rules_pkey PRIMARY KEY (user_id, rule_id)
+constraint public.library_rules library_rules_rule_id_fkey FOREIGN KEY (rule_id) REFERENCES public.grammar_rules(id)
+constraint public.library_rules library_rules_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.live_answer_keys live_answer_keys_code_fkey FOREIGN KEY (code) REFERENCES public.live_challenges(code) ON DELETE CASCADE
+constraint public.live_answer_keys live_answer_keys_pkey PRIMARY KEY (code)
+constraint public.live_answers live_answers_code_user_id_fkey FOREIGN KEY (code, user_id) REFERENCES public.live_players(code, user_id) ON DELETE CASCADE
+constraint public.live_answers live_answers_pkey PRIMARY KEY (code, user_id, idx)
+constraint public.live_challenges live_challenges_code_check CHECK ((code ~ '^[A-Z0-9]{6}$'::text))
+constraint public.live_challenges live_challenges_host_id_fkey FOREIGN KEY (host_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.live_challenges live_challenges_max_players_check CHECK (((max_players >= 2) AND (max_players <= 10)))
+constraint public.live_challenges live_challenges_pkey PRIMARY KEY (code)
+constraint public.live_challenges live_challenges_question_count_check CHECK (((question_count >= 3) AND (question_count <= 50)))
+constraint public.live_challenges live_challenges_seconds_check CHECK (((seconds = 0) OR ((seconds >= 5) AND (seconds <= 120))))
+constraint public.live_challenges live_challenges_start_mode_check CHECK ((start_mode = ANY (ARRAY['together'::text, 'anytime'::text])))
+constraint public.live_challenges live_challenges_state_check CHECK ((state = ANY (ARRAY['lobby'::text, 'playing'::text, 'done'::text])))
+constraint public.live_challenges live_challenges_title_check CHECK (((length(title) >= 1) AND (length(title) <= 120)))
+constraint public.live_invites live_invites_code_fkey FOREIGN KEY (code) REFERENCES public.live_challenges(code) ON DELETE CASCADE
+constraint public.live_invites live_invites_invited_by_fkey FOREIGN KEY (invited_by) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.live_invites live_invites_pkey PRIMARY KEY (code, user_id)
+constraint public.live_invites live_invites_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.live_players live_players_code_fkey FOREIGN KEY (code) REFERENCES public.live_challenges(code) ON DELETE CASCADE
+constraint public.live_players live_players_pkey PRIMARY KEY (code, user_id)
+constraint public.live_players live_players_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.live_results live_results_pkey PRIMARY KEY (room_code, user_id, played_at)
+constraint public.live_results live_results_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+constraint public.live_results live_results_user_profile_fk FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.mastery mastery_pkey PRIMARY KEY (user_id, item_key)
+constraint public.mastery mastery_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+constraint public.profiles profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
+constraint public.profiles profiles_pkey PRIMARY KEY (id)
+constraint public.profiles profiles_role_check CHECK ((role = ANY (ARRAY['admin'::text, 'player'::text])))
+constraint public.profiles profiles_username_check CHECK ((username ~ '^[a-z0-9_]{3,20}$'::text))
+constraint public.profiles profiles_username_key UNIQUE (username)
+constraint public.progress progress_pkey PRIMARY KEY (user_id, section)
+constraint public.progress progress_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+constraint public.progress_ops progress_ops_pkey PRIMARY KEY (user_id, op_id)
+constraint public.progress_ops progress_ops_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.report_tombstones report_tombstones_pkey PRIMARY KEY (id)
+constraint public.reports reports_pkey PRIMARY KEY (id)
+constraint public.reports reports_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+constraint public.reports reports_user_profile_fk FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.rule_progress rule_progress_pkey PRIMARY KEY (user_id, rule_id)
+constraint public.rule_progress rule_progress_rule_id_fkey FOREIGN KEY (rule_id) REFERENCES public.grammar_rules(id)
+constraint public.rule_progress rule_progress_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.sense_links sense_links_check CHECK ((from_sense <> to_sense))
+constraint public.sense_links sense_links_from_sense_fkey FOREIGN KEY (from_sense) REFERENCES public.senses(id)
+constraint public.sense_links sense_links_kind_check CHECK ((kind = ANY (ARRAY['antonym'::text, 'synonym'::text, 'confusable'::text, 'never_together'::text])))
+constraint public.sense_links sense_links_pkey PRIMARY KEY (from_sense, to_sense, kind)
+constraint public.sense_links sense_links_to_sense_fkey FOREIGN KEY (to_sense) REFERENCES public.senses(id)
+constraint public.sense_progress sense_progress_pkey PRIMARY KEY (user_id, sense_id)
+constraint public.sense_progress sense_progress_sense_id_fkey FOREIGN KEY (sense_id) REFERENCES public.senses(id)
+constraint public.sense_progress sense_progress_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.senses senses_check CHECK (((visibility = 'public'::text) OR (owner_id IS NOT NULL)))
+constraint public.senses senses_content_check CHECK ((pg_column_size(content) < 200000))
+constraint public.senses senses_headword_id_fkey FOREIGN KEY (headword_id) REFERENCES public.headwords(id)
+constraint public.senses senses_meaning_check CHECK (((length(meaning) >= 1) AND (length(meaning) <= 2000)))
+constraint public.senses senses_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.senses senses_pkey PRIMARY KEY (id)
+constraint public.senses senses_review_status_check CHECK ((review_status = ANY (ARRAY['approved'::text, 'pending'::text, 'rejected'::text])))
+constraint public.senses senses_source_check CHECK ((source = ANY (ARRAY['curated'::text, 'ai'::text, 'user'::text, 'import'::text])))
+constraint public.senses senses_type_check CHECK ((type = ANY (ARRAY['vocab'::text, 'idiom'::text, 'binomial'::text, 'phrasal'::text, 'fyi'::text, 'pun'::text])))
+constraint public.senses senses_visibility_check CHECK ((visibility = ANY (ARRAY['public'::text, 'private'::text])))
+constraint public.view_link_takes view_link_takes_pkey PRIMARY KEY (token, user_id)
+constraint public.view_link_takes view_link_takes_token_fkey FOREIGN KEY (token) REFERENCES public.view_links(token)
+constraint public.view_link_takes view_link_takes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.view_links view_links_collection_id_fkey FOREIGN KEY (collection_id) REFERENCES public.collections(id)
+constraint public.view_links view_links_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+constraint public.view_links view_links_pkey PRIMARY KEY (token)
+function public.activity_day_rows(text) src=9f96fd2a237fba583b11aeb981380d82 secdef=true vol=s cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.admin_activity(integer,text) src=447e259d5060c3e7549575218f82c58f secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_ai_summary(integer) src=ebbe39ee500ecf6fd3fd74c790f60421 secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_ai_usage(integer) src=63e651078d3112297494ba558e6baa90 secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_analytics(text) src=5240b81f4c5e1d1f902b84ce8eadae74 secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_audit_clear() src=d3947be3f4940bb4322d4bcdb3915cec secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_audit_delete(bigint[]) src=8af6c27c38e0ae1a59b5e113ec4295cb secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_data_issues() src=a45b2550048ba403cee18f2d6f87a052 secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_delete_player(uuid) src=e60f6dad3c163ffa7d78f8ea28e402e0 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_live_challenges(integer) src=17dc91e272413dc2005a3955745d3b4b secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_live_matches(integer) src=234ef35d3bf4de033c1d38c75e378548 secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_overview() src=6553377887f51540d0187e58b7a8b30b secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_player_detail(uuid) src=815fbe610a98ca7d164290a10635d0af secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_players(text) src=941f574de887a16a0d6779408f285ce7 secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_reset_player(uuid) src=15966f60a7325d323c2cb257d0bf5da9 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_save_settings(jsonb) src=eb5c12404f98ea0b386c4ba43fc4572f secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_set_password(uuid,text) src=599a14da1ec062a475277281ef8415fe secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_set_role(uuid,text) src=c1c12f669c76cf4b6e022adaa76f9a6d secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.admin_word_stats() src=7964a9c21ae5a37244dad4baa5b7094a secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.ai_call_finish(bigint,boolean,text,integer,integer,text,integer,integer,integer) src=5d18a105d14c0caedea021f41aed757c secdef=true vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.ai_gate(boolean,integer,text,text,text,integer) src=257112116378380f5d92341c8f3fbf32 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.app_setting(text) src=976b82cfaddaa94c315b4a2d3fe787ad secdef=true vol=s cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.apply_content_changes(jsonb,jsonb,jsonb,text) src=45c97bac8c3bae5b5e6fc5d8ddd9e524 secdef=false vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.apply_item_renames(jsonb) src=d80b65bfe6bf2e4b02f0b05852a46cef secdef=true vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.are_friends(uuid,uuid) src=c9f2c8acfe4965856f95fbdc70cf05e5 secdef=true vol=s cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.audit_batch() src=5aff4ed235f8b45fd9635a26dbcef7c8 secdef=false vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.audit_content_item() src=b610a26110ed0d027c4a6e6dc3e0a160 secdef=true vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.audit_content_meta() src=327af5ac8914b48fcb7f7228447c2d3c secdef=true vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.audit_report() src=7432a1252812e7c3158f5327b6b722a9 secdef=true vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.bump_live_counters() src=28340513f81bd8546d6e04f331203202 secdef=true vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.catalog_edit(uuid,text,text) src=ae4ac5dae826e03ef135275d369acc34 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.catalog_list(text,integer) src=c73919f5f71f201c4692d49ae0cca0ea secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.catalog_publish(uuid,text,text) src=2210f537bdbf8ec1cf56d15593c5b8c6 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.catalog_take(uuid) src=4203c096811bf5c54feacba3da45774c secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.catalog_unpublish(uuid) src=5f4ac8f23268da3c3440d65aa746a331 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.content_save_v2(uuid,jsonb,jsonb,jsonb,text,jsonb,bigint,boolean) src=d19d02517fc1946bd5c5ca5fe89e16c6 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.dictionary_follow_renames() src=9dee29e047714dcdb4dece132e2b053d secdef=true vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.dictionary_sync() src=96964a03dcad0a4a37faaba9292b189a secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.dictionary_sync_core() src=967ffda6657004c333beb6c61069cd8e secdef=true vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.friend_count(uuid) src=aa51d711f97e4a4fdb1ae9370a1eaec5 secdef=true vol=s cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.friend_remove(uuid) src=45e0cf8158b4bf21e613ba1a33043524 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.friend_request(text) src=c60d6dd1e4b173f4da18c8b25aefae9e secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.friend_respond(uuid,boolean) src=4089bb4b290e8c5b93546f6c6f10f241 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.friends_list() src=d43496ac673091c39a8121365d388fff secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.handle_new_user() src=2c432af0157d56f88890318e1e5caf43 secdef=true vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.is_admin() src=179fa0d8812534e8b511e62c76065d14 secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.is_live_member(text) src=2240346c5025002c96ebadbd26e2db64 secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.json_int(jsonb) src=bca578671ce401d1e14b8e074241cbbe secdef=false vol=i cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.json_texts(jsonb) src=defd98e23555e979dee8c88bf86c3b10 secdef=false vol=i cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.jsonb_changes(jsonb,jsonb) src=936de1cc1dd8e4a59a4e186c808656f9 secdef=false vol=i cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.leaderboard_visible() src=096104203b7e7cc6080e6274b3b4c89e secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.library_add(uuid[]) src=045b2067f363b4dfd4900f9ba09d6174 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.library_add_rules(uuid[]) src=760f0ff750215cdf54157f31b449ca04 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.library_list() src=cbc02a3029b2b301df582977c8f306b0 secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.library_patch(uuid,jsonb,text) src=28977ad7efd021d2895b961e899fa90e secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.library_remove(uuid) src=cb752f273483141a316bfcd4bdcd1ff6 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.library_remove_rule(uuid) src=8a5090bfe9296a19c7dad5b4d20eadfb secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.live_answer(text,integer,text,integer) src=24e86fb98e6a3f2de36da585af7f9b30 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.live_begin(text) src=6d678756a33273944d8eccd83d1d6cd7 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.live_create(text,integer,integer,text,jsonb,jsonb,integer) src=38a45c8ba5dd8e760d55bbf9ebe4d50d secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.live_end(text) src=29696785dabe3bf1f3f87350500fd59d secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.live_finalize(text) src=9df380e88aad02e46ea6db2484c2b1b8 secdef=true vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.live_invite_dismiss(text) src=fc6d065a1665e22c3078c61e8932122a secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.live_invite_friends(text,uuid[]) src=0cd4f452c63c7e8dd797307633582ea2 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.live_invites_sent(text) src=7575e515464fb1a1b5e8e3d63d9d2d53 secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.live_join(text) src=26eef518013f27e46a4d6c303c54d857 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.live_leave(text) src=091471e91511d51c1f6fc5a911df7c90 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.live_mine() src=2340e0792ea4afb303031dd38fc52331 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.live_my_invites() src=b5f02af9a76c7f538f468c665872c964 secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.live_remove_player(text,uuid) src=2dfc1d1cec12b7e0ffc622ced653bfba secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.live_set_next(text,text) src=d37062079e5a6de08844cff67b6f7139 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.live_settle(text) src=538c34b91b6a7c989486d99b7f94f284 secdef=true vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.live_start(text) src=44b7c5fbc0282b68730fb30f61cc0001 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.live_view(text) src=b032cc910844793f851853f76b399c8f secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.progress_bump_rev() src=915dc37e115f854e8fbd0adbb7645852 secdef=false vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.register_player(text,text) src=2b306fd5604036936509e7707df19f80 secdef=true vol=v cfg={"search_path=\"\""} acl=anon:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.reports_fill_columns() src=f48fdeb49cc3704b97ba21ff40938930 secdef=false vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.reports_keep_decision() src=0f5281533ff8b18fde30234da02b2b40 secdef=true vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.reports_no_resurrect() src=d715af21a969695d6ca361639b315683 secdef=true vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.reports_tombstone() src=de641f74e6593e2a93be2feb3c8ea0c9 secdef=true vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.request_ip() src=eded17298bea006438e77d2e77ada327 secdef=false vol=s cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.require_admin() src=0e665d6157fbf7d3eba61a17b4ff363a secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.reset_my_progress() src=9377409d70b959fe0ff360e80cc6c94d secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.save_progress(jsonb,jsonb,text[],jsonb) src=e9fd1e9bb554feb3f359c5916958561b secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.save_progress_v2(jsonb,jsonb,jsonb,text[],jsonb,boolean,uuid) src=5b95eb686d39150f76a082b7a085d290 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.sense_create(text,text,text[],text,text,jsonb,text) src=a5af86cd8afe7178d7e00992adbd2e97 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.session_log_rows(text) src=b071f99f57925af831b3a386b03c301a secdef=true vol=s cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.social_counts() src=72d1d6ef811b6c23087309be4f02f108 secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.try_date(text) src=9d113d181cf0b8ae678678d1e674634c secdef=false vol=i cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_add(uuid,uuid[]) src=93e274783f80ef77b2aca9e6f2a95d74 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_add_rules(uuid,uuid[]) src=0b0c43612a713e48cca5a1f27beaa9af secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_contents(uuid,boolean) src=7817303ddb602de925fd4c858eddadb0 secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_copy_tree(uuid,uuid,text,text) src=24ce953d2caa37db47158cd948bef46a secdef=true vol=v cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.view_create(text,uuid,uuid) src=b6f96b2d21d059b5735d0f7aeb23731f secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_depth(uuid) src=4e5d43dade527477594de20d908f8109 secdef=true vol=s cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.view_drop(uuid,uuid) src=f8badef4094acc79a879c43d0b553a51 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_drop_rule(uuid,uuid) src=9655524e277feabf0c6eb688eaaedb2e secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_edit(uuid,text,boolean,uuid) src=ca710d2bba03e45d89f04b2766a7e732 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_height(uuid) src=0538c1d539d601fdff097f859d8354dc secdef=true vol=s cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+function public.view_link_accept(text) src=bca6a477dddc12c3bc274eb51fd36bda secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_link_create(uuid) src=0629ded77783ae413eacab980695fe07 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_link_info(text) src=d9eccd857a431b30b9baa12e993482c5 secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_link_revoke(text) src=cf20012c8ba74261fd65c839cf592e56 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_remove(uuid) src=a9720fa5fa8d499349adeae5a5bd6200 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_share(uuid,uuid[]) src=fb97e14929a51d1e9197547cd97bd9e2 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_share_accept(uuid) src=04ded818a54669432c5e8acd85c985d6 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_share_dismiss(uuid) src=b5b9f2939fcc0c22ceceb60ce62876a1 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_shares_inbox() src=9a7a26603e89779f6c2346d03c159600 secdef=true vol=v cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.view_tree() src=7a183832b26277e8403aada10b7f0cf9 secdef=true vol=s cfg={"search_path=\"\""} acl=authenticated:EXECUTE,postgres:EXECUTE,service_role:EXECUTE
+function public.word_key_norm(text) src=8a9e3d412cae3a0533ad4871eb886fce secdef=false vol=i cfg={"search_path=\"\""} acl=postgres:EXECUTE,service_role:EXECUTE
+index CREATE INDEX admin_audit_action_idx ON public.admin_audit USING btree (action, at DESC)
+index CREATE INDEX admin_audit_admin_idx ON public.admin_audit USING btree (admin_id)
+index CREATE INDEX admin_audit_at_idx ON public.admin_audit USING btree (at DESC)
+index CREATE INDEX admin_audit_batch_idx ON public.admin_audit USING btree (batch_id) WHERE (batch_id IS NOT NULL)
+index CREATE INDEX admin_audit_entity_idx ON public.admin_audit USING btree (entity, item_key)
+index CREATE INDEX ai_calls_at_idx ON public.ai_calls USING btree (at DESC)
+index CREATE INDEX ai_calls_task_idx ON public.ai_calls USING btree (task, at DESC)
+index CREATE INDEX ai_calls_user_idx ON public.ai_calls USING btree (user_id, at DESC)
+index CREATE INDEX catalog_entries_collection_idx ON public.catalog_entries USING btree (collection_id)
+index CREATE INDEX catalog_entries_owner_idx ON public.catalog_entries USING btree (owner_id) WHERE (unpublished_at IS NULL)
+index CREATE INDEX catalog_takes_user_idx ON public.catalog_takes USING btree (user_id)
+index CREATE INDEX collection_rules_rule_idx ON public.collection_rules USING btree (rule_id)
+index CREATE INDEX collection_senses_sense_idx ON public.collection_senses USING btree (sense_id)
+index CREATE INDEX collection_shares_from_idx ON public.collection_shares USING btree (from_user)
+index CREATE INDEX collection_shares_to_idx ON public.collection_shares USING btree (to_user, status)
+index CREATE INDEX collections_owner_idx ON public.collections USING btree (owner_id, parent_id) WHERE (deleted_at IS NULL)
+index CREATE INDEX collections_parent_idx ON public.collections USING btree (parent_id) WHERE (parent_id IS NOT NULL)
+index CREATE INDEX content_items_updated_at_idx ON public.content_items USING btree (updated_at)
+index CREATE INDEX friendships_b_idx ON public.friendships USING btree (user_b, status)
+index CREATE INDEX grammar_questions_rule_idx ON public.grammar_questions USING btree (rule_id, "position") WHERE (deleted_at IS NULL)
+index CREATE INDEX library_entries_sense_idx ON public.library_entries USING btree (sense_id)
+index CREATE INDEX library_rules_rule_idx ON public.library_rules USING btree (rule_id)
+index CREATE INDEX live_challenges_host_idx ON public.live_challenges USING btree (host_id, created_at DESC)
+index CREATE INDEX live_challenges_open_idx ON public.live_challenges USING btree (expires_at) WHERE (state <> 'done'::text)
+index CREATE INDEX live_invites_user_idx ON public.live_invites USING btree (user_id, created_at DESC)
+index CREATE INDEX live_players_user_idx ON public.live_players USING btree (user_id, joined_at DESC)
+index CREATE INDEX live_results_user_idx ON public.live_results USING btree (user_id, played_at DESC)
+index CREATE INDEX progress_ops_age_idx ON public.progress_ops USING btree (user_id, created_at)
+index CREATE INDEX reports_reported_at_idx ON public.reports USING btree (reported_at DESC)
+index CREATE INDEX reports_user_idx ON public.reports USING btree (user_id)
+index CREATE INDEX sense_links_to_idx ON public.sense_links USING btree (to_sense)
+index CREATE INDEX sense_progress_due_idx ON public.sense_progress USING btree (user_id, next_review_at)
+index CREATE INDEX senses_headword_idx ON public.senses USING btree (headword_id) WHERE (deleted_at IS NULL)
+index CREATE INDEX senses_legacy_lower_idx ON public.senses USING btree (lower(legacy_key)) WHERE (legacy_key IS NOT NULL)
+index CREATE INDEX senses_level_idx ON public.senses USING btree (course_level, category) WHERE (deleted_at IS NULL)
+index CREATE INDEX senses_owner_idx ON public.senses USING btree (owner_id) WHERE (owner_id IS NOT NULL)
+index CREATE INDEX signup_log_ip_idx ON public.signup_log USING btree (ip_hash, at)
+index CREATE INDEX view_link_takes_user_idx ON public.view_link_takes USING btree (user_id)
+index CREATE INDEX view_links_collection_idx ON public.view_links USING btree (collection_id)
+index CREATE INDEX view_links_owner_idx ON public.view_links USING btree (owner_id, collection_id)
+index CREATE UNIQUE INDEX admin_audit_pkey ON public.admin_audit USING btree (id)
+index CREATE UNIQUE INDEX ai_calls_pkey ON public.ai_calls USING btree (id)
+index CREATE UNIQUE INDEX ai_usage_pkey ON public.ai_usage USING btree (user_id, day)
+index CREATE UNIQUE INDEX app_settings_pkey ON public.app_settings USING btree (id)
+index CREATE UNIQUE INDEX catalog_entries_open_idx ON public.catalog_entries USING btree (collection_id) WHERE (unpublished_at IS NULL)
+index CREATE UNIQUE INDEX catalog_entries_pkey ON public.catalog_entries USING btree (id)
+index CREATE UNIQUE INDEX catalog_takes_pkey ON public.catalog_takes USING btree (entry_id, user_id)
+index CREATE UNIQUE INDEX collection_rules_pkey ON public.collection_rules USING btree (collection_id, rule_id)
+index CREATE UNIQUE INDEX collection_senses_pkey ON public.collection_senses USING btree (collection_id, sense_id)
+index CREATE UNIQUE INDEX collection_shares_open_idx ON public.collection_shares USING btree (collection_id, to_user) WHERE (status = 'pending'::text)
+index CREATE UNIQUE INDEX collection_shares_pkey ON public.collection_shares USING btree (id)
+index CREATE UNIQUE INDEX collections_name_idx ON public.collections USING btree (COALESCE(owner_id, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(parent_id, '00000000-0000-0000-0000-000000000000'::uuid), lower(name)) WHERE (deleted_at IS NULL)
+index CREATE UNIQUE INDEX collections_pkey ON public.collections USING btree (id)
+index CREATE UNIQUE INDEX content_drafts_pkey ON public.content_drafts USING btree (draft_id, kind, key)
+index CREATE UNIQUE INDEX content_items_pkey ON public.content_items USING btree (kind, key)
+index CREATE UNIQUE INDEX content_meta_pkey ON public.content_meta USING btree (id)
+index CREATE UNIQUE INDEX friendships_pkey ON public.friendships USING btree (user_a, user_b)
+index CREATE UNIQUE INDEX grammar_questions_legacy_idx ON public.grammar_questions USING btree (rule_id, legacy_pos) WHERE (legacy_pos IS NOT NULL)
+index CREATE UNIQUE INDEX grammar_questions_pkey ON public.grammar_questions USING btree (id)
+index CREATE UNIQUE INDEX grammar_rules_legacy_idx ON public.grammar_rules USING btree (legacy_key) WHERE (legacy_key IS NOT NULL)
+index CREATE UNIQUE INDEX grammar_rules_pkey ON public.grammar_rules USING btree (id)
+index CREATE UNIQUE INDEX headwords_pkey ON public.headwords USING btree (id)
+index CREATE UNIQUE INDEX headwords_text_idx ON public.headwords USING btree (lower(text))
+index CREATE UNIQUE INDEX item_key_aliases_pkey ON public.item_key_aliases USING btree (kind, from_key)
+index CREATE UNIQUE INDEX library_entries_pkey ON public.library_entries USING btree (user_id, sense_id)
+index CREATE UNIQUE INDEX library_rules_pkey ON public.library_rules USING btree (user_id, rule_id)
+index CREATE UNIQUE INDEX live_answer_keys_pkey ON public.live_answer_keys USING btree (code)
+index CREATE UNIQUE INDEX live_answers_pkey ON public.live_answers USING btree (code, user_id, idx)
+index CREATE UNIQUE INDEX live_challenges_pkey ON public.live_challenges USING btree (code)
+index CREATE UNIQUE INDEX live_invites_pkey ON public.live_invites USING btree (code, user_id)
+index CREATE UNIQUE INDEX live_players_pkey ON public.live_players USING btree (code, user_id)
+index CREATE UNIQUE INDEX live_results_pkey ON public.live_results USING btree (room_code, user_id, played_at)
+index CREATE UNIQUE INDEX mastery_pkey ON public.mastery USING btree (user_id, item_key)
+index CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)
+index CREATE UNIQUE INDEX profiles_username_key ON public.profiles USING btree (username)
+index CREATE UNIQUE INDEX progress_ops_pkey ON public.progress_ops USING btree (user_id, op_id)
+index CREATE UNIQUE INDEX progress_pkey ON public.progress USING btree (user_id, section)
+index CREATE UNIQUE INDEX report_tombstones_pkey ON public.report_tombstones USING btree (id)
+index CREATE UNIQUE INDEX reports_pkey ON public.reports USING btree (id)
+index CREATE UNIQUE INDEX rule_progress_pkey ON public.rule_progress USING btree (user_id, rule_id)
+index CREATE UNIQUE INDEX sense_links_pkey ON public.sense_links USING btree (from_sense, to_sense, kind)
+index CREATE UNIQUE INDEX sense_progress_pkey ON public.sense_progress USING btree (user_id, sense_id)
+index CREATE UNIQUE INDEX senses_label_idx ON public.senses USING btree (headword_id, lower(COALESCE(label, ''::text)), COALESCE(owner_id, '00000000-0000-0000-0000-000000000000'::uuid)) WHERE (deleted_at IS NULL)
+index CREATE UNIQUE INDEX senses_legacy_idx ON public.senses USING btree (legacy_key) WHERE (legacy_key IS NOT NULL)
+index CREATE UNIQUE INDEX senses_pkey ON public.senses USING btree (id)
+index CREATE UNIQUE INDEX view_link_takes_pkey ON public.view_link_takes USING btree (token, user_id)
+index CREATE UNIQUE INDEX view_links_pkey ON public.view_links USING btree (token)
+policy admin_audit admin reads the audit log cmd=SELECT roles={authenticated} using=( SELECT public.is_admin() AS is_admin) check=-
+policy admin_audit admin writes the audit log cmd=INSERT roles={authenticated} using=- check=(( SELECT public.is_admin() AS is_admin) AND (admin_id = ( SELECT auth.uid() AS uid)))
+policy ai_calls admin reads AI calls cmd=SELECT roles={authenticated} using=( SELECT public.is_admin() AS is_admin) check=-
+policy ai_usage players see their own AI usage cmd=SELECT roles={authenticated} using=(user_id = ( SELECT auth.uid() AS uid)) check=-
+policy app_settings everyone reads app settings cmd=SELECT roles={anon,authenticated} using=true check=-
+policy catalog_entries signed-in players read the open catalog cmd=SELECT roles={authenticated} using=((unpublished_at IS NULL) OR (owner_id = ( SELECT auth.uid() AS uid))) check=-
+policy collection_rules players read the rules in the views they can see cmd=SELECT roles={authenticated} using=((removed_at IS NULL) AND (EXISTS ( SELECT 1
+   FROM public.collections c
+  WHERE (c.id = collection_rules.collection_id)))) check=-
+policy collection_senses players read what is in the views they can see cmd=SELECT roles={authenticated} using=((removed_at IS NULL) AND (EXISTS ( SELECT 1
+   FROM public.collections c
+  WHERE (c.id = collection_senses.collection_id)))) check=-
+policy collection_shares players read the shares they sent or got cmd=SELECT roles={authenticated} using=((( SELECT auth.uid() AS uid) = from_user) OR (( SELECT auth.uid() AS uid) = to_user)) check=-
+policy collections players read the course and their own views cmd=SELECT roles={authenticated} using=((deleted_at IS NULL) AND ((owner_id IS NULL) OR (owner_id = ( SELECT auth.uid() AS uid)))) check=-
+policy content_items admin adds content cmd=INSERT roles={authenticated} using=- check=( SELECT public.is_admin() AS is_admin)
+policy content_items admin edits content cmd=UPDATE roles={authenticated} using=( SELECT public.is_admin() AS is_admin) check=( SELECT public.is_admin() AS is_admin)
+policy content_items admin removes content cmd=DELETE roles={authenticated} using=( SELECT public.is_admin() AS is_admin) check=-
+policy content_items content is readable by players cmd=SELECT roles={authenticated} using=true check=-
+policy content_meta admin writes content meta cmd=UPDATE roles={authenticated} using=( SELECT public.is_admin() AS is_admin) check=( SELECT public.is_admin() AS is_admin)
+policy content_meta content meta is readable by players cmd=SELECT roles={authenticated} using=true check=-
+policy friendships players read their own friendships cmd=SELECT roles={authenticated} using=((( SELECT auth.uid() AS uid) = user_a) OR (( SELECT auth.uid() AS uid) = user_b)) check=-
+policy grammar_questions everyone reads grammar questions cmd=SELECT roles={authenticated} using=(deleted_at IS NULL) check=-
+policy grammar_rules everyone reads grammar rules cmd=SELECT roles={authenticated} using=(deleted_at IS NULL) check=-
+policy headwords everyone reads headwords cmd=SELECT roles={authenticated} using=true check=-
+policy item_key_aliases admin reads aliases cmd=SELECT roles={authenticated} using=( SELECT public.is_admin() AS is_admin) check=-
+policy library_entries players read their own library cmd=SELECT roles={authenticated} using=(user_id = ( SELECT auth.uid() AS uid)) check=-
+policy library_rules players read their own rules cmd=SELECT roles={authenticated} using=(user_id = ( SELECT auth.uid() AS uid)) check=-
+policy live_answers players see their answers cmd=SELECT roles={authenticated} using=((user_id = ( SELECT auth.uid() AS uid)) OR ( SELECT public.is_admin() AS is_admin)) check=-
+policy live_challenges admin removes challenges cmd=DELETE roles={authenticated} using=( SELECT public.is_admin() AS is_admin) check=-
+policy live_challenges members and the admin see challenges cmd=SELECT roles={authenticated} using=((host_id = ( SELECT auth.uid() AS uid)) OR ( SELECT public.is_live_member(live_challenges.code) AS is_live_member) OR ( SELECT public.is_admin() AS is_admin)) check=-
+policy live_invites invitees and inviters read invitations cmd=SELECT roles={authenticated} using=((( SELECT auth.uid() AS uid) = user_id) OR (( SELECT auth.uid() AS uid) = invited_by)) check=-
+policy live_players members see who plays cmd=SELECT roles={authenticated} using=(( SELECT public.is_live_member(live_players.code) AS is_live_member) OR ( SELECT public.is_admin() AS is_admin)) check=-
+policy live_results players see live results cmd=SELECT roles={authenticated} using=true check=-
+policy mastery players own their mastery cmd=ALL roles={authenticated} using=(user_id = ( SELECT auth.uid() AS uid)) check=(user_id = ( SELECT auth.uid() AS uid))
+policy profiles profiles are visible to players cmd=SELECT roles={authenticated} using=((id = ( SELECT auth.uid() AS uid)) OR ( SELECT public.leaderboard_visible() AS leaderboard_visible) OR ( SELECT public.is_admin() AS is_admin)) check=-
+policy progress players own their progress cmd=ALL roles={authenticated} using=(user_id = ( SELECT auth.uid() AS uid)) check=(user_id = ( SELECT auth.uid() AS uid))
+policy reports players file reports cmd=INSERT roles={authenticated} using=- check=(user_id = ( SELECT auth.uid() AS uid))
+policy reports players see their reports, admin sees all cmd=SELECT roles={authenticated} using=((user_id = ( SELECT auth.uid() AS uid)) OR ( SELECT public.is_admin() AS is_admin)) check=-
+policy reports players update their reports, admin updates all cmd=UPDATE roles={authenticated} using=((user_id = ( SELECT auth.uid() AS uid)) OR ( SELECT public.is_admin() AS is_admin)) check=((user_id = ( SELECT auth.uid() AS uid)) OR ( SELECT public.is_admin() AS is_admin))
+policy reports players withdraw their reports, admin manages all cmd=DELETE roles={authenticated} using=((user_id = ( SELECT auth.uid() AS uid)) OR ( SELECT public.is_admin() AS is_admin)) check=-
+policy rule_progress players read their own rule progress cmd=SELECT roles={authenticated} using=(user_id = ( SELECT auth.uid() AS uid)) check=-
+policy sense_links players read links between senses they can see cmd=SELECT roles={authenticated} using=((removed_at IS NULL) AND (EXISTS ( SELECT 1
+   FROM public.senses s
+  WHERE (s.id = sense_links.from_sense))) AND (EXISTS ( SELECT 1
+   FROM public.senses s
+  WHERE (s.id = sense_links.to_sense)))) check=-
+policy sense_progress players read their own progress cmd=SELECT roles={authenticated} using=(user_id = ( SELECT auth.uid() AS uid)) check=-
+policy senses players read public and their own senses cmd=SELECT roles={authenticated} using=((deleted_at IS NULL) AND (((visibility = 'public'::text) AND (review_status <> 'rejected'::text)) OR (owner_id = ( SELECT auth.uid() AS uid)))) check=-
+policy view_links owners read their own links cmd=SELECT roles={authenticated} using=(owner_id = ( SELECT auth.uid() AS uid)) check=-
+table public.admin_audit kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.admin_audit_id_seq kind=S rls=false force=false acl=anon:SELECT,anon:UPDATE,anon:USAGE,authenticated:SELECT,authenticated:UPDATE,authenticated:USAGE,postgres:SELECT,postgres:UPDATE,postgres:USAGE,service_role:SELECT,service_role:UPDATE,service_role:USAGE
+table public.ai_calls kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.ai_calls_id_seq kind=S rls=false force=false acl=anon:SELECT,anon:UPDATE,anon:USAGE,authenticated:SELECT,authenticated:UPDATE,authenticated:USAGE,postgres:SELECT,postgres:UPDATE,postgres:USAGE,service_role:SELECT,service_role:UPDATE,service_role:USAGE
+table public.ai_usage kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.app_settings kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.catalog_entries kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.catalog_takes kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.collection_rules kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.collection_senses kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.collection_shares kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.collections kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.content_drafts kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.content_items kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.content_meta kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.friendships kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.grammar_questions kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.grammar_rules kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.headwords kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.item_key_aliases kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.library_entries kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.library_rules kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.live_answer_keys kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.live_answers kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.live_challenges kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.live_invites kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.live_players kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.live_results kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.mastery kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.profiles kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.progress kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.progress_ops kind=r rls=true force=false acl=postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.report_tombstones kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.reports kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.rule_progress kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.sense_links kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.sense_progress kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.senses kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.signup_log kind=r rls=true force=false acl=anon:DELETE,anon:INSERT,anon:REFERENCES,anon:SELECT,anon:TRIGGER,anon:TRUNCATE,anon:UPDATE,authenticated:DELETE,authenticated:INSERT,authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,authenticated:TRUNCATE,authenticated:UPDATE,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.view_link_takes kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+table public.view_links kind=r rls=true force=false acl=authenticated:REFERENCES,authenticated:SELECT,authenticated:TRIGGER,postgres:DELETE,postgres:INSERT,postgres:REFERENCES,postgres:SELECT,postgres:TRIGGER,postgres:TRUNCATE,postgres:UPDATE,service_role:DELETE,service_role:INSERT,service_role:REFERENCES,service_role:SELECT,service_role:TRIGGER,service_role:TRUNCATE,service_role:UPDATE
+trigger public.content_items CREATE TRIGGER audit_content_items AFTER INSERT OR DELETE OR UPDATE ON public.content_items FOR EACH ROW EXECUTE FUNCTION public.audit_content_item()
+trigger public.content_meta CREATE TRIGGER audit_content_meta AFTER UPDATE ON public.content_meta FOR EACH ROW EXECUTE FUNCTION public.audit_content_meta()
+trigger public.live_results CREATE TRIGGER on_live_result AFTER INSERT ON public.live_results FOR EACH ROW EXECUTE FUNCTION public.bump_live_counters()
+trigger public.progress CREATE TRIGGER progress_bump_rev BEFORE UPDATE ON public.progress FOR EACH ROW EXECUTE FUNCTION public.progress_bump_rev()
+trigger public.reports CREATE TRIGGER audit_reports AFTER DELETE OR UPDATE ON public.reports FOR EACH ROW EXECUTE FUNCTION public.audit_report()
+trigger public.reports CREATE TRIGGER reports_fill_columns BEFORE INSERT OR UPDATE OF data ON public.reports FOR EACH ROW EXECUTE FUNCTION public.reports_fill_columns()
+trigger public.reports CREATE TRIGGER reports_keep_decision BEFORE UPDATE ON public.reports FOR EACH ROW EXECUTE FUNCTION public.reports_keep_decision()
+trigger public.reports CREATE TRIGGER reports_no_resurrect BEFORE INSERT ON public.reports FOR EACH ROW EXECUTE FUNCTION public.reports_no_resurrect()
+trigger public.reports CREATE TRIGGER reports_tombstone AFTER DELETE ON public.reports FOR EACH ROW EXECUTE FUNCTION public.reports_tombstone()

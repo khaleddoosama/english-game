@@ -25,6 +25,10 @@ export const DECLINE_WAIT_MS = 7 * 86400000;
 export function localAreFriends(storage, x, y) {
   try { return JSON.parse(storage.getItem(`friends1:p:${[x, y].sort().join("|")}`) || "null")?.status === "accepted"; } catch { return false; }
 }
+// When this friendship began (it changes whenever the pair is made friends again), or null.
+export function localFriendSince(storage, x, y) {
+  try { const r = JSON.parse(storage.getItem(`friends1:p:${[x, y].sort().join("|")}`) || "null"); return r?.status === "accepted" ? r.updated_at ?? null : null; } catch { return null; }
+}
 export function localNameOf(storage, id) {
   try { return JSON.parse(storage.getItem("friends1:users") || "null")?.[id] || "player"; } catch { return "player"; }
 }

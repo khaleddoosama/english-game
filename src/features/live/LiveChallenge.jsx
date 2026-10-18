@@ -8,7 +8,7 @@ import { FEEDBACK_MS, MAX_PLAYERS, MIN_PLAYERS, challengeLink, codeFromInput, fo
 import { getLiveApi, withRetry } from "./liveApi";
 import { openLiveChannel } from "./transport";
 import { navigate, useQueryParam } from "../../lib/router";
-import { useMyViews, useViewScope } from "../library/useViewScope";
+import { useMyViews, useViewScope } from "../library";
 import { AddFriendButton, useFriendStatus } from "../social/AddFriendButton";
 import { FriendPicker, InviteFriends, Invitations } from "./LiveFriends";
 import "../../styles/live.css";
