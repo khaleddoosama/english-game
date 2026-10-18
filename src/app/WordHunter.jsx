@@ -1365,18 +1365,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     setScreen("levels"); setCurrentLevelIndex(null);
     // Content is intentionally left alone here.
   }
-  // Full factory reset: progress AND every imported word/grammar/pun/story/
-  // combo, plus the level order they built. Distinct from handleReset, which
-  // deliberately leaves imported content untouched.
-  async function handleWipeEverything() {
-    await handleReset();
-    mergeCustomData([], [], [], [], []);
-    setCustomWords([]); setCustomGrammar([]); setCustomChallenges([]);
-    setCustomCombos([]); setCustomStories([]);
-    setDataVersion((v) => v + 1);
-    try { await repo.wipeContent(); } catch (e) { console.error("Could not clear content:", e); }
-  }
-
   function backupPayload() {
     const content = V2.contentOnly(liveContent());
     return {
@@ -1397,10 +1385,10 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     questionReportsApi.load(restored.reports); setSettings(normalizeSettings(restored.settings));
   }
   // ---- Import & export (/data, and Admin -> Data & backup), and the Profile page's backups -------------
-  const { exportFile, checkImport, applyImport, aiFixImport, downloadBackup, handleQuickBackup } = useDataTransfer({
+  const { exportFile, checkImport, applyImport, aiFixImport, downloadBackup, handleQuickBackup, wipeEverything } = useDataTransfer({
     isAdmin, exportedBy: profile?.username || "local", liveContent, backupPayload, contentNoteRef,
     setContent: (c) => { setCustomWords(c.words); setCustomGrammar(c.grammar); setCustomChallenges(c.challenges); setCustomCombos(c.combos); setCustomStories(c.stories); },
-    migrateRenamedProgress, applyRestoredProgress, set: { setDataVersion, setShowFreshCopyPrompt, setToast, setQuickBackupCopied },
+    migrateRenamedProgress, applyRestoredProgress, resetProgress: handleReset, wipeContent: () => repo.wipeContent(), set: { setDataVersion, setShowFreshCopyPrompt, setToast, setQuickBackupCopied },
   });
   const contentCounts = { words: WORDS.length, grammar: GRAMMAR.length, challenges: CHALLENGES.length, stories: customStories.length, combos: customCombos.length, categories: LEVEL_ORDER.length };
   const dataTools = { exportFile, checkImport, applyImport, aiFixImport, contentCounts, progressCounts: { score, words: Object.keys(mastery).filter(isWordKey).length, mastered: masteredCountFor(mastery), sessions: sessionLogs.length }, onResetProgress: () => setConfirmAction("reset"), onWipeEverything: () => setConfirmAction("wipe") };
@@ -1508,7 +1496,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           </aside>
         </div>}
         {screen==="admin"&&isAdmin&&<Suspense fallback={<ScreenSkeleton />}><AdminPanel route={route} profile={profile} onSignOut={onSignOut ? logOut : null} loggingOut={loggingOut} score={score} studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} content={{...liveContent(),levels:LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}))}} mastery={mastery} confusions={confusions} reports={questionReports} activeSession={activeSession} sessionLogs={sessionLogs} estimatedStorageBytes={JSON.stringify({...progressExtrasRef.current,activeSession,score,streak,bestStreak,attempted,mastery,levelsCleared,levelStats,studyStreak,bestStudyStreak,lastStudyDate,pools,bestSpeedScore,bestSpeedCombo,confusions}).length} settings={settings} onUpdateSettings={setSettings} onClearActiveSession={()=>setActiveSession(null)} onUpdate={updateAdminContent} onRenameWord={renameWord} onResolveReport={questionReportsApi.resolve} onReopenReport={questionReportsApi.reopen} onReviewReport={questionReportsApi.review} onRetireVariant={questionReportsApi.retire} onDeleteReport={questionReportsApi.remove} onMergeCategories={mergeCategories} onRemoveEmptyLevels={removeEmptyLevels} onResetProgress={()=>setConfirmAction("reset")} onWipeEverything={()=>setConfirmAction("wipe")} onClose={()=>setScreen("levels")} dataTools={dataTools}/></Suspense>}
-        {confirmAction && <ResetConfirm action={confirmAction} onConfirm={confirmAction === "reset" ? handleReset : handleWipeEverything} onClose={() => setConfirmAction(null)} />}
+        {confirmAction && <ResetConfirm action={confirmAction} onConfirm={confirmAction === "reset" ? handleReset : wipeEverything} onClose={() => setConfirmAction(null)} />}
         {deleteCategoryTarget && <DeleteCategoryConfirm level={deleteCategoryTarget} onConfirm={deleteLevelCategory} onClose={() => setDeleteCategoryTarget(null)} />}
 
         {badgesOpen && (
