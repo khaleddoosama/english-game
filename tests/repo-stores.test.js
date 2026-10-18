@@ -83,6 +83,63 @@ describe("content store", () => {
     const down = { from: () => { throw new Error("offline"); } };
     await expect(createContentStore({ sb: down, isAdmin: false }).load()).rejects.toThrow("offline");
   });
+
+  // The fake database plus the dictionary: dictionary_sync gives every saved word a sense and every
+  // rule a grammar_rules row (keyed by legacy_key); library_add / library_add_rules record what joined.
+  function withDictionary({ syncError = null } = {}) {
+    const fake = createFakeSupabase({ userId: "admin", admin: true });
+    Object.assign(fake.tables, { senses: [], grammar_rules: [] });
+    const joined = { words: [], rules: [] };
+    const sync = () => {
+      for (const r of fake.tables.content_items.filter((x) => !x.deleted)) {
+        const table = r.kind === "words" ? "senses" : r.kind === "grammar" ? "grammar_rules" : null;
+        if (table && !fake.tables[table].some((x) => x.legacy_key === r.key)) fake.tables[table].push({ id: `${table}:${r.key}`, legacy_key: r.key });
+      }
+    };
+    const sb = {
+      ...fake,
+      async rpc(name, args) {
+        if (name === "dictionary_sync") { if (syncError) return { data: null, error: syncError }; sync(); return { data: null, error: null }; }
+        if (name === "library_add") { joined.words.push(...args.p_senses); return { data: args.p_senses.length, error: null }; }
+        if (name === "library_add_rules") { joined.rules.push(...args.p_rules); return { data: args.p_rules.length, error: null }; }
+        return fake.rpc(name, args);
+      },
+    };
+    return { sb, joined, calls: fake.calls };
+  }
+  const rule = (id, extra = {}) => ({ id, title: `Rule ${id}`, ...extra });
+
+  it("new words and rules an admin saves join their own library once the dictionary is in step", async () => {
+    const { sb, joined } = withDictionary();
+    const store = createContentStore({ sb, isAdmin: true });
+    await store.load();
+    await store.save({ words: words(2), grammar: [rule("g-1")] });
+    await vi.waitFor(() => expect(joined.rules).toHaveLength(1));
+    expect(joined.words.sort()).toEqual(["senses:W0000", "senses:W0001"]);
+    expect(joined.rules).toEqual(["grammar_rules:g-1"]);
+  });
+
+  it("editing a word that is already saved does not put it back in the library; only the new one joins", async () => {
+    const { sb, joined } = withDictionary();
+    const store = createContentStore({ sb, isAdmin: true });
+    await store.load();
+    await store.save({ words: words(1) });
+    await vi.waitFor(() => expect(joined.words).toHaveLength(1));
+    joined.words.length = 0;
+    await store.save({ words: [{ ...words(1)[0], meaning: "changed" }, ...words(2).slice(1)] });
+    await vi.waitFor(() => expect(joined.words).toHaveLength(1));
+    expect(joined.words).toEqual(["senses:W0001"]);
+  });
+
+  it("when the dictionary sync fails, nothing is added and the save itself still succeeds", async () => {
+    const { sb, joined, calls } = withDictionary({ syncError: { code: "XX000", message: "sync broke" } });
+    const store = createContentStore({ sb, isAdmin: true });
+    await store.load();
+    await expect(store.save({ words: words(1) })).resolves.toBeUndefined();
+    await vi.waitFor(() => expect(console.warn).toHaveBeenCalledWith("dictionary_sync:", "sync broke"));
+    expect(joined).toEqual({ words: [], rules: [] });
+    expect(calls.some((c) => c.rpc === "content_save_v2")).toBe(true);
+  });
 });
 
 describe("reports sync", () => {
