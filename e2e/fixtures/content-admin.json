@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 2, "kind": "content", "note": "Made-up content for the content-admin browser spec.",
+  "words": [
+    { "word": "Drizzle", "type": "vocab", "category": "Weather", "meaning": "Light rain in very small drops.", "situation": "We walked to the shop in a light Drizzle and did not need an umbrella.", "gap": "We walked to the shop in a light ______ and did not need an umbrella.", "partsOfSpeech": ["noun"] },
+    { "word": "Gust", "type": "vocab", "category": "Weather", "meaning": "A sudden strong rush of wind.", "situation": "A Gust of wind blew the paper out of her hand.", "gap": "A ______ of wind blew the paper out of her hand.", "partsOfSpeech": ["noun"] },
+    { "word": "Humid", "type": "vocab", "category": "Climate", "meaning": "Warm and wet in the air, so you feel sticky.", "situation": "The city is Humid in summer, so we stay inside at noon.", "gap": "The city is ______ in summer, so we stay inside at noon.", "partsOfSpeech": ["adjective"] },
+    { "word": "Arid", "type": "vocab", "category": "Climate", "meaning": "Very dry, with almost no rain.", "situation": "Few plants grow in the Arid land near the desert.", "gap": "Few plants grow in the ______ land near the desert.", "partsOfSpeech": ["adjective"] },
+    { "word": "Concierge", "type": "vocab", "category": "Hotel", "meaning": "A hotel worker who helps guests with plans and tickets.", "situation": "The Concierge booked a taxi and two museum tickets for us.", "gap": "The ______ booked a taxi and two museum tickets for us.", "partsOfSpeech": ["noun"] },
+    { "word": "Vacancy", "type": "vocab", "category": "Hotel", "meaning": "A free room that a guest can book.", "situation": "The sign said there was no Vacancy, so we tried the next hotel.", "gap": "The sign said there was no ______, so we tried the next hotel.", "partsOfSpeech": ["noun"] }
+  ],
+  "grammar": [], "challenges": [], "combos": [], "stories": []
+}

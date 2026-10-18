@@ -12,8 +12,8 @@ import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, MASTER
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildEntryQuestion, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, entryFileMeta, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, uniqueStrings, v2SessionFromEntries } from "../engine/questions";
 import { aiFixImportJson, askAiForWord, buildContrastiveFeedback, containsRequiredTerm, evaluateAlternativeGap, evaluateFinalReport, evaluateFreeForm, evaluateGrammarCorrection, explainWrongLead, generateComboVariant, generateContent, generateGrammarVariant, generateStory, spellingDistanceInfo } from "../engine/ai";
 import { normalizeAnswerText } from "../engine/text";
-import { renameProblem } from "../engine/wordIdentity";
 import { useQuestionReports } from "../features/reports";
+import { useContentAdmin } from "../features/content-admin";
 import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, deriveLearningInsights, emptyProgressData, getBadgeProgress, getWeakWordCandidates, insertLevelTitles, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
@@ -384,107 +384,10 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       setScreen("finalReport");
     }
   }
-  // Renaming a word: stories, combos, challenges and other words that
-  // point at it follow, and every player's progress moves with it (sent
-  // with the next content save; see migrateRenamedProgress).
-  function renameWord(from, nextWord){
-    const problem = renameProblem(customWords, from, nextWord.word);
-    if (problem) { setToast({ text: problem }); return; }
-    const renames={words:[{from,to:nextWord.word}],categories:[]};
-    const words=customWords.map(w=>V2.norm(w.word)===V2.norm(from)?nextWord:w);
-    const linked=V2.applyRenames({words,combos:customCombos,stories:customStories,challenges:customChallenges,grammar:customGrammar},renames);
-    mergeCustomData(linked.words,customGrammar,linked.challenges,LEVEL_ORDER);
-    setCustomWords(linked.words);setCustomCombos(linked.combos);setCustomStories(linked.stories);setCustomChallenges(linked.challenges);
-    migrateRenamedProgress(renames);setDataVersion(v=>v+1);
-  }
-  function updateWordFields(wordName, patch) {
-    const next = customWords.map((w) => (V2.norm(w.word) === V2.norm(wordName) ? { ...w, ...patch } : w));
-    mergeCustomData(next, customGrammar, customChallenges, LEVEL_ORDER);
-    setCustomWords(next);
-    setDataVersion((v) => v + 1);
-  }
-  // A v3 import can rename a word (same id, new spelling) or a category
-  // (same id, new title). Progress is keyed by those names, so move it:
-  // mastery, content pools, confusion pairs and report targets for words;
-  // level stats and cleared levels for categories.
-  // Renames waiting to go to the server with the next content save, where
-  // they move every player's progress (content_save_v2).
-  const pendingRenamesRef=useRef([]);
-  function migrateRenamedProgress(renames){
-    if(!renames||(!renames.words.length&&!renames.categories.length))return;
-    if(isAdmin)pendingRenamesRef.current.push(...renames.words.map(r=>({kind:"word",from:r.from,to:r.to})),...renames.categories.map(r=>({kind:"category",from:r.from,to:r.to})));
-    const wmap=new Map(renames.words.map(r=>[r.from,r.to]));
-    const moveKeys=obj=>{const next={...obj};for(const [from,to] of wmap){if(from in next){if(!(to in next))next[to]=next[from];delete next[from];}}return next;};
-    if(wmap.size){
-      const m=moveKeys(masteryRef.current);masteryRef.current=m;setMastery(m);
-      const p=moveKeys(poolsRef.current);poolsRef.current=p;setPools(p);
-      const c={};for(const [key,val] of Object.entries(confusionsRef.current||{})){const [a,b]=key.split("|");c[`${wmap.get(a)||a}|${wmap.get(b)||b}`]=val;}
-      confusionsRef.current=c;setConfusions(c);
-      questionReportsApi.followRename(wmap);
-    }
-    if(renames.categories.length){
-      const cmap=new Map(renames.categories.map(r=>[`cat-${r.from}`,`cat-${r.to}`]));
-      setLevelStats(prev=>{const next={...prev};for(const [from,to] of cmap){if(from in next){if(!(to in next))next[to]=next[from];delete next[from];}}return next;});
-      setLevelsCleared(prev=>[...new Set(prev.map(id=>cmap.get(id)||id))]);
-    }
-  }
-  // Merge category names in one pass over every content list and the level
-  // order, so no empty duplicate level is left behind (the old per-list
-  // merge moved the items but kept the old level).
-  function mergeCategories(canonical, duplicates){
-    const dup=new Set(duplicates.filter(name=>name!==canonical));
-    if(!dup.size)return;
-    const remap=item=>dup.has(item.category)?{...item,category:canonical}:item;
-    const nextWords=customWords.map(remap),nextGrammar=customGrammar.map(remap),nextChallenges=customChallenges.map(remap),nextCombos=customCombos.map(remap),nextStories=customStories.map(remap);
-    let order=[...LEVEL_ORDER];
-    if(!order.includes(canonical)){const at=order.findIndex(t=>dup.has(t));order.splice(at<0?order.length:at,0,canonical);}
-    order=order.filter(t=>!dup.has(t));
-    setCustomWords(nextWords);setCustomGrammar(nextGrammar);setCustomChallenges(nextChallenges);setCustomCombos(nextCombos);setCustomStories(nextStories);
-    mergeCustomData(nextWords,nextGrammar,nextChallenges,order);
-    migrateRenamedProgress({words:[],categories:[...dup].map(from=>({from,to:canonical}))});setDataVersion(value=>value+1);
-  }
-  function removeEmptyLevels(){
-    const used=new Set([...customWords,...customGrammar,...customChallenges,...customCombos,...customStories].map(item=>item.category).filter(Boolean));
-    const order=LEVEL_ORDER.filter(title=>used.has(title));
-    const removed=LEVEL_ORDER.length-order.length;
-    if(removed){mergeCustomData(customWords,customGrammar,customChallenges,order);setDataVersion(value=>value+1);}
-    return removed;
-  }
-  function updateAdminContent(field,nextList){
-    if(field==="levels"){
-      const current=LEVEL_ORDER.map(title=>({id:`cat-${title}`,title}));
-      const nextById=new Map(nextList.filter(level=>level.id).map(level=>[level.id,level.title]));
-      const deleted=new Set(current.filter(level=>!nextById.has(level.id)).map(level=>level.title));
-      const renamed=new Map(current.filter(level=>nextById.has(level.id)&&nextById.get(level.id)!==level.title).map(level=>[level.title,nextById.get(level.id)]));
-      const adjust=item=>deleted.has(item.category)?null:renamed.has(item.category)?{...item,category:renamed.get(item.category)}:item;
-      const nextWords=customWords.map(adjust).filter(Boolean),nextGrammar=customGrammar.map(adjust).filter(Boolean),nextChallenges=customChallenges.map(adjust).filter(Boolean);
-      const nextCombos=customCombos.map(adjust).filter(Boolean),nextStories=customStories.map(adjust).filter(Boolean);
-      const nextOrder=nextList.map(level=>String(level.title||"").trim()).filter(Boolean);
-      setCustomWords(nextWords);setCustomGrammar(nextGrammar);setCustomChallenges(nextChallenges);setCustomCombos(nextCombos);setCustomStories(nextStories);
-      mergeCustomData(nextWords,nextGrammar,nextChallenges,nextOrder);
-      if(renamed.size)migrateRenamedProgress({words:[],categories:[...renamed].map(([from,to])=>({from,to}))});
-      setDataVersion(value=>value+1);return;
-    }
-    const nextWords=field==="words"?nextList:customWords;
-    const nextGrammar=field==="grammar"?nextList:customGrammar;
-    const nextChallenges=field==="challenges"?nextList:customChallenges;
-    if(field==="words")setCustomWords(nextList);
-    if(field==="grammar")setCustomGrammar(nextList);
-    if(field==="challenges")setCustomChallenges(nextList);
-    if(field==="combos")setCustomCombos(nextList);
-    if(field==="stories")setCustomStories(nextList);
-    mergeCustomData(nextWords,nextGrammar,nextChallenges,LEVEL_ORDER);
-    setDataVersion(value=>value+1);
-  }
-
   const [dataVersion, setDataVersion] = useState(0); // bumped whenever WORDS/GRAMMAR/LEVELS change
   const [confirmAction, setConfirmAction] = useState(null); // null | 'reset' | 'wipe'
   const [deleteCategoryTarget, setDeleteCategoryTarget] = useState(null); // null | level object
 
-  function deleteLevelCategory(level) {
-    const nextOrder = LEVEL_ORDER.filter((t) => t !== level.title).map((t) => ({ id: `cat-${t}`, title: t }));
-    updateAdminContent("levels", nextOrder);
-  }
   const [customWords, setCustomWords] = useState([]);
   const [customGrammar, setCustomGrammar] = useState([]);
   const [customChallenges, setCustomChallenges] = useState([]);
@@ -589,6 +492,14 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const { reports: questionReports, quarantine: reportQuarantine } = questionReportsApi;
   const masteryRef = useRef(mastery);
   const confusionsRef = useRef(confusions);
+  // The admin's content changes (rename a word, merge categories, the levels editor...) and the progress that follows a rename.
+  const { renameWord, updateWordFields, migrateRenamedProgress, mergeCategories, removeEmptyLevels, updateAdminContent, deleteLevelCategory, takePendingRenames, returnPendingRenames } = useContentAdmin({
+    isAdmin,
+    content: { customWords, customGrammar, customChallenges, customCombos, customStories },
+    set: { setCustomWords, setCustomGrammar, setCustomChallenges, setCustomCombos, setCustomStories, setDataVersion, setToast },
+    progress: { masteryRef, setMastery, poolsRef, setPools, confusionsRef, setConfusions, setLevelStats, setLevelsCleared },
+    followReportRename: questionReportsApi.followRename,
+  });
   const roundCorrectRef = useRef(0);
   const roundTotalRef = useRef(0);
   const roundStartStagesRef = useRef({});
@@ -881,10 +792,10 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     const settle = () => { if (counted) { counted = false; contentWritesRef.current--; } };
     const cancel = debouncedSave("content", () => {
       const content = { note: contentNoteRef.current, combos: customCombos, stories: customStories, words: customWords, grammar: customGrammar, challenges: customChallenges, levelOrder: LEVEL_ORDER };
-      const renames = pendingRenamesRef.current.splice(0);
+      const renames = takePendingRenames();
       return contentSavingRef.current = contentSavingRef.current.then(() => repo.saveContent(content, { renames })).catch((e) => {
         console.error("Could not save content:", e);
-        pendingRenamesRef.current.unshift(...renames);
+        returnPendingRenames(renames);
         setStorageWarning(e?.conflict ? e.message : "Content could not be saved to the server. Check your connection; your last change will be saved with the next edit. Take a Full Backup if this keeps happening.");
       }).finally(settle);
     }, 150);

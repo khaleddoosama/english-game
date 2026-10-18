@@ -32,6 +32,13 @@ describe("no new loops between modules", () => {
     expect(outside.map(([file]) => file)).toEqual([]);
   });
 
+  it("content admin is in no loop and uses only the engine; the app shell reaches it through its index", () => {
+    expect(cycles(modules).flat()).not.toContain("features/content-admin");
+    expect(modules["features/content-admin"]).toEqual(["engine"]);
+    const outside = Object.entries(graph).filter(([file, tos]) => !file.startsWith("features/content-admin/") && tos.some((t) => t.startsWith("features/content-admin/") && t !== "features/content-admin/index"));
+    expect(outside.map(([file]) => file)).toEqual([]);
+  });
+
   it("the engine is below the features: its one import of a feature is the known debt (engine/ai uses media)", () => {
     expect(modules.engine).toEqual(["features/media", "lib"]);
   });
