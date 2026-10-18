@@ -18,7 +18,7 @@ const word = (w, category, extra = {}) => ({
 const contentFile = (words, extra = {}) => JSON.stringify({ schemaVersion: 2, kind: "content", words, ...extra });
 const backupFile = (words, extra = {}) => JSON.stringify({ schemaVersion: 6, contentSchemaVersion: 2, kind: "backup", words, levelOrder: [...new Set(words.map((w) => w.category))], score: 30, mastery: { [words[0].word]: { total: 2, correct: 1 } }, ...extra });
 
-let root, host, api, state, isAdmin, contentNoteRef, migrateRenamedProgress, applyRestoredProgress, backupPayload;
+let root, host, api, state, isAdmin, contentNoteRef, migrateRenamedProgress, applyRestoredProgress, backupPayload, calls, resetProgress, wipeContent;
 const startWords = () => [word("Ferry", "Travel"), word("Harbour", "Travel")];
 
 function Probe() {
@@ -31,7 +31,7 @@ function Probe() {
   api = useDataTransfer({
     isAdmin, exportedBy: "tester", liveContent: () => ({ ...lists, note: contentNoteRef.current }), backupPayload, contentNoteRef,
     setContent: (c) => setLists({ words: c.words, grammar: c.grammar, challenges: c.challenges, combos: c.combos, stories: c.stories }),
-    migrateRenamedProgress, applyRestoredProgress, set: { setDataVersion, setShowFreshCopyPrompt, setToast, setQuickBackupCopied },
+    migrateRenamedProgress, applyRestoredProgress, resetProgress, wipeContent, set: { setDataVersion, setShowFreshCopyPrompt, setToast, setQuickBackupCopied },
   });
   return null;
 }
@@ -44,6 +44,9 @@ beforeEach(async () => {
   applyRestoredProgress = vi.fn();
   backupPayload = vi.fn(() => ({ kind: "backup", score: 30 }));
   aiFixImportJson.mockReset();
+  calls = [];
+  resetProgress = vi.fn(async () => { calls.push("reset"); });
+  wipeContent = vi.fn(async () => { calls.push("wipe"); });
   mergeCustomData(startWords(), [], [], ["Travel"]);
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
   await act(async () => root.render(<Probe />));
@@ -154,6 +157,24 @@ describe("files and backups", () => {
     await act(async () => { await api.handleQuickBackup(); });
     expect(state.copied).toBe(false);
     expect(state.toast).toEqual({ text: "Couldn't copy to the clipboard. Use Download backup instead." });
+  });
+});
+
+describe("Delete everything", () => {
+  it("resets the progress first, then empties the content and the level order, and clears the saved content", async () => {
+    await act(async () => { await api.wipeEverything(); });
+    expect(calls).toEqual(["reset", "wipe"]);
+    expect(state.lists).toEqual({ words: [], grammar: [], challenges: [], combos: [], stories: [] });
+    expect([...LEVEL_ORDER]).toEqual([]);
+    expect(state.dataVersion).toBe(1);
+  });
+  it("a failed server wipe is only logged; the content on screen is empty anyway", async () => {
+    wipeContent.mockRejectedValue(new Error("offline"));
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    await act(async () => { await api.wipeEverything(); });
+    expect(log).toHaveBeenCalledWith("Could not clear content:", expect.any(Error));
+    expect(state.lists.words).toEqual([]);
+    expect(state.dataVersion).toBe(1);
   });
 });
 

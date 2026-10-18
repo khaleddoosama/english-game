@@ -15,8 +15,10 @@ import { contentImportPlan, exportFileOf, importDoneText, restoredProgressOf } f
 // setContent(content)     sets the five custom lists ({ words, grammar, challenges, combos, stories })
 // migrateRenamedProgress  progress follows the renames of a v3 import (content admin)
 // applyRestoredProgress(restored)   replaces the progress with a backup's (the shell saves it as a replacement)
+// resetProgress()         "Reset progress" (the shell; it clears every progress field)
+// wipeContent()           the repo's wipeContent: online an empty content save, locally the content key deleted
 // set                     { setDataVersion, setShowFreshCopyPrompt, setToast, setQuickBackupCopied }
-export function useDataTransfer({ isAdmin, exportedBy, liveContent, backupPayload, contentNoteRef, setContent, migrateRenamedProgress, applyRestoredProgress, set }) {
+export function useDataTransfer({ isAdmin, exportedBy, liveContent, backupPayload, contentNoteRef, setContent, migrateRenamedProgress, applyRestoredProgress, resetProgress, wipeContent, set }) {
   const { setDataVersion, setShowFreshCopyPrompt, setToast, setQuickBackupCopied } = set;
 
   // Files: a full backup (progress + content), content only (admin), or the words as a spreadsheet (admin).
@@ -70,5 +72,15 @@ export function useDataTransfer({ isAdmin, exportedBy, liveContent, backupPayloa
     return { text: JSON.stringify(result.fixed, null, 2), changes: result.changes.length ? result.changes : ["AI adjusted the file to pass the checks."] };
   }
 
-  return { exportFile, checkImport, applyImport, aiFixImport, downloadBackup, handleQuickBackup };
+  // "Delete everything" (admin): the progress, then every imported word, grammar rule, challenge, combo and story,
+  // and the level order they built.
+  async function wipeEverything() {
+    await resetProgress();
+    mergeCustomData([], [], [], [], []);
+    setContent({ words: [], grammar: [], challenges: [], combos: [], stories: [] });
+    setDataVersion((v) => v + 1);
+    try { await wipeContent(); } catch (e) { console.error("Could not clear content:", e); }
+  }
+
+  return { exportFile, checkImport, applyImport, aiFixImport, downloadBackup, handleQuickBackup, wipeEverything };
 }

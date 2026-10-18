@@ -20,10 +20,11 @@ Status: **Implemented** (current code). The behaviour below was written down bef
 
 `useDataTransfer({ isAdmin, exportedBy, liveContent, backupPayload, contentNoteRef, setContent, migrateRenamedProgress,
 applyRestoredProgress, set })` returns `{ exportFile, checkImport, applyImport, aiFixImport, downloadBackup,
-handleQuickBackup }`. The shell keeps `backupPayload()` (it reads every progress field) and
-`applyRestoredProgress(restored)` (it sets every progress field and `restoringRef`); `migrateRenamedProgress` comes from
-[content admin](content-admin.md). The shell passes the first four to the screen as `dataTools`, and the last two to
-Profile, exactly as before. Depends on the engine only (`data`: `LEVEL_ORDER`, `WORDS`, `mergeCustomData`; `ai`:
+handleQuickBackup, wipeEverything }`. The shell keeps `backupPayload()` (it reads every progress field) and
+`applyRestoredProgress(restored)` (it sets every progress field and `restoringRef`) and `handleReset()` (passed as
+`resetProgress`; Reset progress belongs to progress, not to this module); `migrateRenamedProgress` comes from
+[content admin](content-admin.md). The shell passes the first four to the screen as `dataTools`, `downloadBackup` and
+`handleQuickBackup` to Profile, and `wipeEverything` to the Delete everything dialog, exactly as before. Depends on the engine only (`data`: `LEVEL_ORDER`, `WORDS`, `mergeCustomData`; `ai`:
 `aiFixImportJson`; `v2`; `progress`).
 
 ## Export (`exportFile(kind)`)
@@ -65,7 +66,8 @@ A restored progress is saved as a replacement (`restoringRef`), not merged with 
 | --- | --- |
 | Checking a file: refused files, accepted files, what would change; modes per role; the words spreadsheet | `tests/import-export.test.js` |
 | The steps with no state: the exported files, each mode's content and level order, v3 renames, the restored progress | `tests/import-plan.test.js` |
-| The hook: each mode on real React state, a player's refusal, the files, Download and Copy backup, AI repair | `tests/data-transfer-hook.test.jsx` |
+| The hook: each mode on real React state, a player's refusal, the files, Download and Copy backup, AI repair, Delete everything (order, a failed server wipe) | `tests/data-transfer-hook.test.jsx` |
+| Reset progress keeps the content; Delete everything clears content and progress; both after a reload (made-up content) | `e2e/specs/startover.cjs` |
 | Export a backup and the content, then import the backup back in "My progress only" and "Content and my progress", saved and after a reload (made-up content) | `e2e/specs/importexport.cjs` |
 | Only through the index or the screen, engine only, no loop | `tests/architecture.test.js` |
 | Pictures inside imported content | `tests/image-import.test.js` |
@@ -73,10 +75,28 @@ A restored progress is saved as a replacement (`restoringRef`), not merged with 
 
 How the behaviour was kept: the steps with no state were moved first, unchanged, and compared with the old shell code
 on random synthetic files (one-off, not kept); `importexport.cjs` passes on the build before the hook move and after
-it. Deliberate breaks of `importPlan.js` (5) and of the hook (7) each make a test fail.
+it, and `startover.cjs` before and after Delete everything moved. Deliberate breaks of `importPlan.js` (5) and of the
+hook (11) each make a test fail.
 
 **Gaps.** The AI repair is tested with the AI call mocked; the real repair is not. The words spreadsheet export and
-the paste box are not covered in a browser. `applyRestoredProgress` (in the shell) is covered only by the browser test.
+the paste box are not covered in a browser. `applyRestoredProgress` and `handleReset` (in the shell) are covered only by the browser tests. A
+failed server call during Reset progress or Delete everything is not tested in a browser.
+
+## Start over
+
+Both buttons are on the Import & Export screen and ask first (`ResetConfirm`, `src/features/shell/ConfirmDialogs.jsx`).
+
+- **Reset progress** (everyone, `/data` and Admin): `handleReset()` in the shell. Clears the score, streaks, mastery,
+  level stats, cleared levels, study streak, question pools, confusions, speed bests, solved stories, round logs, the
+  open round and everything else kept with the progress; then goes to the home screen. The content is not touched.
+  The repo call is `resetProgress()`: online `reset_my_progress` (the player's own rows), locally the
+  `local:progress` key is deleted. When the server call fails, the storage warning says so; the progress on screen is
+  cleared anyway.
+- **Delete everything** (admin, Admin → Import & export only): `wipeEverything()` of the hook. First the same reset, then
+  the five content lists and the level order are emptied, `dataVersion` is bumped (the usual content save follows),
+  and the repo's `wipeContent()` runs (online: an empty content save, for everyone; locally the `local:content` key is
+  deleted). A failed `wipeContent()` is only logged; the content save that follows shows the usual warning if it
+  fails too.
 
 ## Backups from the Profile page
 
