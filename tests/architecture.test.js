@@ -25,6 +25,13 @@ describe("no new loops between modules", () => {
     expect(modules["features/library"]).toEqual(["engine", "features/home", "lib", "styles"]);
   });
 
+  it("question reports are in no loop and use only the engine; the app shell reaches them through their index", () => {
+    expect(cycles(modules).flat()).not.toContain("features/reports");
+    expect(modules["features/reports"]).toEqual(["engine"]);
+    const outside = Object.entries(graph).filter(([file, tos]) => !file.startsWith("features/reports/") && tos.some((t) => t.startsWith("features/reports/") && t !== "features/reports/index"));
+    expect(outside.map(([file]) => file)).toEqual([]);
+  });
+
   it("the engine is below the features: its one import of a feature is the known debt (engine/ai uses media)", () => {
     expect(modules.engine).toEqual(["features/media", "lib"]);
   });

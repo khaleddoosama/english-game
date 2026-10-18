@@ -16,7 +16,7 @@ Playing the game: Home, starting a round, answering, results, stories, the Speed
 - Per-answer recording and end-of-round recording (see section 5).
 - Results: round summary, speed results, final report.
 - Stories (play; the admin builds them), badges, daily goal, study dashboard.
-- Question reports: file, review with AI, withdraw; reported word and mode pairs are kept out of new rounds until resolved.
+- Question reports: file, review with AI, withdraw; reported word and mode pairs are kept out of new rounds until resolved. Rules, state and operations are in [features/reports](../../../src/features/reports) (guide: [question-reports.md](question-reports.md)).
 
 **Out of scope**
 
@@ -44,7 +44,8 @@ These are user actions today, not exported functions.
 
 - Home: [HomeTabs](../../../src/features/home/HomeTabs.jsx), [LessonsView](../../../src/features/home/LessonsView.jsx), [CourseLevelsView](../../../src/features/home/CourseLevelsView.jsx), [StageCard](../../../src/features/home/StageCard.jsx), [homeState.js](../../../src/features/home/homeState.js) (pure decisions: which tab, what a player sees), [MyViewsHome](../../../src/features/library/components/MyViewsHome.jsx) (read-only personal views).
 - Session: [SessionView](../../../src/features/session/SessionView.jsx), results: [ResultScreens](../../../src/features/results/ResultScreens.jsx), study dashboard: [StudyDashboard](../../../src/features/stats/StudyDashboard.jsx) with [studyStats.js](../../../src/features/stats/studyStats.js).
-- In WordHunter: `startPractice`, `launchSession`, `recordSessionResult`, `completeSession`, `reportSessionQuestion`, `reviewQuestionReport`, `retireReportedVariant`, `startWeakReview`, `startFinalCase`, `startSpeedRound`, `triggerGeneration`, `triggerVariantGeneration`.
+- Question reports: [reportRules.js](../../../src/features/reports/reportRules.js) (pure rules) and [useQuestionReports.js](../../../src/features/reports/useQuestionReports.js) (state and operations), used by the shell through [features/reports/index.js](../../../src/features/reports/index.js).
+- In WordHunter: `startPractice`, `launchSession`, `recordSessionResult`, `completeSession`, `startWeakReview`, `startFinalCase`, `startSpeedRound`, `triggerGeneration`, `triggerVariantGeneration`.
 - Database: none of its own. Data is saved by [progress](../progress/README.md) in the sections `core`, `session`, `pools`, `seen`, `confusions`, `history`, `levels`, `reports` and in `mastery`.
 
 ## 4. Business rules and permissions
@@ -96,6 +97,8 @@ sequenceDiagram
 | Course levels | [tests/course-levels.test.js](../../../tests/course-levels.test.js) |
 | Result screens | [tests/result-screens.test.jsx](../../../tests/result-screens.test.jsx) |
 | Report window | [tests/report-modal.test.jsx](../../../tests/report-modal.test.jsx) |
+| Question report rules and the reports hook (AI review mocked) | [question-reports-rules.test.js](../../../tests/question-reports-rules.test.js), [question-reports-hook.test.jsx](../../../tests/question-reports-hook.test.jsx) |
+| File a report in a round; the admin resolves, reopens, deletes it (browser) | [e2e/specs/reports.cjs](../../../e2e/specs/reports.cjs) |
 | Study dashboard numbers | [tests/study-stats.test.js](../../../tests/study-stats.test.js) |
 | AI progress and cancellation while answering | [tests/ai-progress.test.jsx](../../../tests/ai-progress.test.jsx), [tests/ai-timeout.test.js](../../../tests/ai-timeout.test.js), [tests/listening-background.test.jsx](../../../tests/listening-background.test.jsx) |
 | Practice from a library view, grammar-only views | [e2e/specs/library.cjs](../../../e2e/specs/library.cjs), [e2e/specs/libgrammar.cjs](../../../e2e/specs/libgrammar.cjs) |
@@ -131,3 +134,4 @@ Omar (synthetic player) opens the game, taps "Practise" on the card for his view
 - `MT-03` an unreachable `playing` screen and its handlers remain in WordHunter.
 - `MT-04` the session lifecycle is untested at unit level.
 - `DP-02` words cannot be added by a player; "Add to Collection" in Ask AI is admin-only.
+- Reports (found when the reports code was moved, not fixed): after "Reset progress" the reports list in memory is not cleared until a reload; `retire` on a report whose `poolType` is not a known pool would throw (Admin only offers it for reports with a pool). Details: [question-reports.md](question-reports.md#old-problems-found-not-fixed-here).

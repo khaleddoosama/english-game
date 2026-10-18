@@ -36,7 +36,7 @@ One folder per module under [modules](modules). Each page has the same sections:
 | [accounts](modules/accounts/README.md) | Sign-in, sign-up, roles, profile |
 | [content](modules/content/README.md) | The shared course: loading, caching, saving, import and export, renames |
 | [learning-engine](modules/learning-engine/README.md) | Pure rules: questions, grading, mastery, session evidence; guide to [practice question selection](modules/learning-engine/practice-selection.md) |
-| [practice](modules/practice/README.md) | Home, sessions, results, stories, speed, stats, question reports |
+| [practice](modules/practice/README.md) | Home, sessions, results, stories, speed, stats, question reports (guide: [question-reports](modules/practice/question-reports.md)) |
 | [progress](modules/progress/README.md) | A player's saved state, offline snapshot, merge, leaderboard numbers |
 | [library](modules/library/README.md) | My Library: personal library, views, sharing, links, catalog |
 | [live](modules/live/README.md) | Live Challenge |

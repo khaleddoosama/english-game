@@ -63,7 +63,7 @@ The admin API ([adminApi.js](../../../src/features/admin/adminApi.js)); online e
 
 - Reads: each section calls the admin API with the current range (7, 30 or 90 days) and a refresh tick; results are cached only in component state.
 - Content writes: the section calls a WordHunter handler (`onUpdate`, rename, merge, delete), which updates the content state; the content save effect writes it ([content](../content/README.md)).
-- Report decisions: handlers update the progress `reports` list, and the repo writes the `reports` table for other players' reports (admin only).
+- Report decisions: the reports hook ([question-reports.md](../practice/question-reports.md)) updates the progress `reports` list, and the repo writes the `reports` table for other players' reports (admin only).
 - Player actions and settings: one function call each; the audit entry is written by the function.
 - Local mode: the same shapes are computed from the browser's own data; player management says "needs the online version".
 
