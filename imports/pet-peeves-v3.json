@@ -1,0 +1,666 @@
+{
+  "schemaVersion": 3,
+  "kind": "content",
+  "note": "Pet Peeves, content v3 (10 words). Course level B1.1 (Gateway level 9), unit Pet Peeves, from the Anki Pet-Peeves export.",
+  "categories": [
+    {
+      "id": "pet-peeves",
+      "title": "Pet Peeves",
+      "subCategories": [
+        {
+          "id": "annoying-people",
+          "title": "Annoying people"
+        },
+        {
+          "id": "bad-manners",
+          "title": "Bad manners"
+        },
+        {
+          "id": "bad-moods",
+          "title": "Bad moods"
+        },
+        {
+          "id": "hygiene",
+          "title": "Hygiene"
+        },
+        {
+          "id": "unfair-business",
+          "title": "Unfair business"
+        }
+      ]
+    }
+  ],
+  "words": [
+    {
+      "id": "hypocrites",
+      "word": "Hypocrites",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "annoying-people",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "People who tell others how to behave but don't follow their own advice.",
+      "situations": [
+        "My uncle tells everyone to stop smoking, but he smokes a pack a day himself.",
+        "Our boss shouts at us for being late, then walks in at ten every morning."
+      ],
+      "gaps": [
+        "I can't stand ______ who tell you to save money while they waste theirs.",
+        "Politicians who talk about saving water but fill their huge pools are ______.",
+        "Don't be one of those ______ who say 'be kind online' and then post mean comments."
+      ],
+      "hints": [
+        "They say one thing and do the opposite.",
+        "Starts with 'hypo-'; the singular ends in '-crite'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He is a real hypocrisy.",
+          "correction": "He is a real hypocrite.",
+          "why": "'Hypocrisy' is the behaviour; the person is a 'hypocrite'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "hypocrite",
+          "pos": "noun"
+        },
+        {
+          "word": "hypocrisy",
+          "pos": "noun"
+        },
+        {
+          "word": "hypocritical",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "total hypocrites",
+        "call someone a hypocrite"
+      ],
+      "synonyms": [
+        "double-standard people"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "price-gouging",
+      "word": "Price gouging",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "unfair-business",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "Charging much higher prices than normal for things people badly need, especially during a shortage or emergency.",
+      "situations": [
+        "During the storm, the shop near my house sold bottles of water for five times what they normally cost.",
+        "When everyone needed face masks, some websites sold a box for $80 instead of $5."
+      ],
+      "gaps": [
+        "The store was fined for ______ after it tripled the cost of water during the flood.",
+        "Charging crazy amounts for medicine during a crisis is ______.",
+        "The government passed a law against ______ during emergencies."
+      ],
+      "hints": [
+        "Raising prices unfairly when people have no choice.",
+        "Two words: 'price' + a word meaning to overcharge."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The shop did a price gouge on water.",
+          "correction": "The shop was accused of price gouging on water.",
+          "why": "Use the noun phrase 'price gouging' (or the verb 'gouge customers')."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "gouge",
+          "pos": "verb"
+        }
+      ],
+      "collocations": [
+        "accused of price gouging",
+        "laws against price gouging"
+      ],
+      "synonyms": [
+        "overcharging",
+        "ripping people off"
+      ],
+      "antonyms": [
+        "fair pricing"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "short-tempered",
+      "word": "Short-tempered",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "bad-moods",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "Describes a person who gets angry very quickly, even about small things — it's part of their personality.",
+      "situations": [
+        "My neighbour starts shouting the moment a child's ball touches his car — he's been like that for years.",
+        "Our old coach lost his patience with players over tiny mistakes in every single practice."
+      ],
+      "gaps": [
+        "He's very ______ — he loses his patience over the smallest thing.",
+        "Don't argue with her; she's ______ and will start shouting.",
+        "Working long hours made him tired and ______."
+      ],
+      "hints": [
+        "Gets angry quickly as a personality trait — the opposite of patient.",
+        "Two words with a hyphen: 'short' + a word for mood."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He is very short-temper.",
+          "correction": "He is very short-tempered.",
+          "why": "The adjective ends in '-ed': short-tempered."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "temper",
+          "pos": "noun"
+        },
+        {
+          "word": "bad-tempered",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "short-tempered person",
+        "become short-tempered"
+      ],
+      "synonyms": [
+        "hot-headed",
+        "quick-tempered",
+        "irritable"
+      ],
+      "antonyms": [
+        "patient",
+        "even-tempered",
+        "calm"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "snappy",
+          "grumpy"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "chewing-with-mouth-open",
+      "word": "Chewing with mouth open",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "bad-manners",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "Eating without closing your lips, so other people can see the food in your mouth.",
+      "situations": [
+        "At dinner, my cousin talked while eating, and everyone could see the half-eaten rice in his mouth.",
+        "My mum always tells my little brother, 'Close your lips when you eat!'"
+      ],
+      "gaps": [
+        "______ is considered very rude at the table.",
+        "My biggest pet peeve at restaurants is ______ — I don't want to see your food.",
+        "Kids need to learn that ______ is bad table manners."
+      ],
+      "hints": [
+        "A table-manners problem you can see, not just hear.",
+        "Starts with 'Chewing with…'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He chews with open mouth.",
+          "correction": "He chews with his mouth open.",
+          "why": "Say 'with his/your mouth open' — the possessive is needed."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "chew",
+          "pos": "verb"
+        },
+        {
+          "word": "table manners",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "chew with your mouth open",
+        "bad table manners"
+      ],
+      "synonyms": [
+        "eating with your mouth open"
+      ],
+      "antonyms": [
+        "chewing with your mouth closed"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "unhygienic-people",
+      "word": "Unhygienic people",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "hygiene",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "People who don't keep their body, hands or space clean.",
+      "situations": [
+        "My roommate never washes his hands after the bathroom and leaves dirty plates for days.",
+        "On the hot bus, a man who clearly hadn't showered for a week sat next to me."
+      ],
+      "gaps": [
+        "______ who don't wash their hands after the bathroom really annoy me.",
+        "Sharing a kitchen with ______ is a nightmare.",
+        "The gym asked members to wipe the machines because of a few ______."
+      ],
+      "hints": [
+        "People who aren't clean — the opposite of 'hygienic'.",
+        "The adjective starts with 'un-'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He is an unhygiene person.",
+          "correction": "He is an unhygienic person.",
+          "why": "The adjective is 'unhygienic'; 'hygiene' is the noun."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "hygiene",
+          "pos": "noun"
+        },
+        {
+          "word": "hygienic",
+          "pos": "adjective"
+        },
+        {
+          "word": "unhygienic",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "unhygienic habits",
+        "unhygienic conditions"
+      ],
+      "synonyms": [
+        "dirty people",
+        "unclean people"
+      ],
+      "antonyms": [
+        "hygienic people",
+        "clean people"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "snappy",
+      "word": "Snappy",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "bad-moods",
+      "level": "B1.1",
+      "register": "informal",
+      "meaning": "Speaking to people in short, sharp, angry words, usually because you are tired or stressed.",
+      "situations": [
+        "When I asked my sister a simple question this morning, she answered 'What?! I'm busy!' and turned away.",
+        "Dad didn't sleep last night, so every time we talked to him, he answered in one rude word."
+      ],
+      "gaps": [
+        "She was ______ with everyone at work today because she didn't sleep well.",
+        "Sorry I was ______ on the phone — I was really stressed.",
+        "Don't be so ______ with the waiter; it's not his fault."
+      ],
+      "hints": [
+        "About how you talk: quick, sharp, irritated replies.",
+        "From the verb 'snap' + '-y'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She snappy at me.",
+          "correction": "She was snappy with me. / She snapped at me.",
+          "why": "'Snappy' is an adjective; the verb is 'snap at someone'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "snap",
+          "pos": "verb"
+        },
+        {
+          "word": "snappish",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "snappy with someone",
+        "snappy reply"
+      ],
+      "synonyms": [
+        "sharp",
+        "curt",
+        "irritable"
+      ],
+      "antonyms": [
+        "patient",
+        "gentle"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "short-tempered",
+          "grumpy"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "gloveless-food-handlers",
+      "word": "Gloveless food handlers",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "hygiene",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "Workers who prepare or serve food with their bare hands instead of wearing gloves.",
+      "situations": [
+        "The man at the sandwich shop took my money, then made my sandwich with the same bare hands.",
+        "At the bakery, the worker picked up my croissant with her bare fingers instead of using tongs."
+      ],
+      "gaps": [
+        "______ are one of my biggest pet peeves — it just feels unsafe.",
+        "The restaurant was fined because inspectors saw ______ touching raw meat and salad.",
+        "I stopped eating at that burger place because of the ______."
+      ],
+      "hints": [
+        "Kitchen workers with no gloves on.",
+        "Starts with 'Glove-' and ends with 'handlers'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The cook was glovesless.",
+          "correction": "The cook wasn't wearing gloves.",
+          "why": "The adjective is 'gloveless' (no 's' in the middle)."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "glove",
+          "pos": "noun"
+        },
+        {
+          "word": "food handler",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "food handlers",
+        "wear gloves"
+      ],
+      "synonyms": [
+        "bare-handed food workers"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "grumpy",
+      "word": "Grumpy",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "bad-moods",
+      "level": "B1.1",
+      "register": "informal",
+      "meaning": "In a bad, complaining mood — quietly annoyed and unfriendly, but not shouting.",
+      "situations": [
+        "Every morning before his coffee, my dad sits at the table, frowns and complains about everything.",
+        "The old man next door never smiles and moans about the weather, the noise and the neighbours."
+      ],
+      "gaps": [
+        "He's always ______ before he's had his morning coffee.",
+        "Why are you so ______ today? You haven't smiled once.",
+        "My cat gets ______ when I wake her up."
+      ],
+      "hints": [
+        "A bad, complaining mood — like one of the seven dwarfs.",
+        "Rhymes with 'lumpy'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He is grumpily today.",
+          "correction": "He is grumpy today.",
+          "why": "After 'is', use the adjective 'grumpy'; 'grumpily' is an adverb."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "grumpily",
+          "pos": "adverb"
+        },
+        {
+          "word": "grumpiness",
+          "pos": "noun"
+        },
+        {
+          "word": "grump",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "grumpy old man",
+        "feel grumpy",
+        "grumpy mood"
+      ],
+      "synonyms": [
+        "bad-tempered",
+        "moody",
+        "cranky"
+      ],
+      "antonyms": [
+        "cheerful",
+        "good-humoured"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "short-tempered",
+          "snappy"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "piss-someone-off",
+      "word": "Piss someone off",
+      "type": "phrasal",
+      "partsOfSpeech": [
+        "phrasal verb"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "annoying-people",
+      "level": "B1.1",
+      "register": "informal",
+      "meaning": "To make someone very annoyed or angry (informal and a bit rude — use with friends, not at work).",
+      "situations": [
+        "It really makes me mad when people take my parking spot after I've been waiting with my signal on.",
+        "My friend keeps borrowing my charger and never gives it back, and I'm sick of it."
+      ],
+      "gaps": [
+        "It really ______ when people cut in line.",
+        "Stop doing that — you're going to ______!",
+        "Nothing ______ more than slow Wi-Fi."
+      ],
+      "hints": [
+        "A rude informal way to say 'make someone very angry'.",
+        "Phrasal verb with 'off'; the adjective is '___ed off'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He pissed off me.",
+          "correction": "He pissed me off.",
+          "why": "With a pronoun, it goes in the middle: piss me off."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "pissed off",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "piss someone off",
+        "be pissed off"
+      ],
+      "synonyms": [
+        "annoy",
+        "make someone mad",
+        "tick someone off"
+      ],
+      "antonyms": [
+        "please",
+        "calm someone down"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    },
+    {
+      "id": "movie-talkers",
+      "word": "Movie talkers",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "pet-peeves",
+      "subCategory": "annoying-people",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "People who talk during a film at the cinema and spoil it for everyone else.",
+      "situations": [
+        "The couple behind us in the cinema discussed their weekend plans through the whole film.",
+        "A man in the front row kept explaining the story to his friend in a loud voice."
+      ],
+      "gaps": [
+        "______ are one of my biggest pet peeves — I paid to hear the film, not their chat.",
+        "The cinema shows a 'please be quiet' message to stop ______.",
+        "I prefer watching films at home, away from ______."
+      ],
+      "hints": [
+        "Cinema-goers who chat during the film.",
+        "Two words: 'movie' + people who talk."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "They are movie talker.",
+          "correction": "They are movie talkers.",
+          "why": "Use the plural 'talkers' for more than one person."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "movie talker",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "annoying movie talkers"
+      ],
+      "synonyms": [
+        "noisy cinema-goers"
+      ],
+      "antonyms": [
+        "quiet viewers"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Pet Peeves"
+      ]
+    }
+  ]
+}
