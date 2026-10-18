@@ -47,6 +47,13 @@ describe("no new loops between modules", () => {
     expect(outside.map(([file]) => file)).toEqual([]);
   });
 
+  it("the admin panel is in no loop, depends only on what the module document lists, and is reached only through AdminPanel", () => {
+    expect(cycles(modules).flat()).not.toContain("features/admin");
+    expect(modules["features/admin"]).toEqual(["engine", "features/data", "features/media", "lib", "styles"]);
+    const outside = Object.entries(graph).filter(([file, tos]) => !file.startsWith("features/admin/") && tos.some((t) => t.startsWith("features/admin/") && t !== "features/admin/AdminPanel"));
+    expect(outside.map(([file]) => file)).toEqual([]);
+  });
+
   it("the engine is below the features: its one import of a feature is the known debt (engine/ai uses media)", () => {
     expect(modules.engine).toEqual(["features/media", "lib"]);
   });
