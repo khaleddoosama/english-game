@@ -20,7 +20,7 @@ Playing the game: Home, starting a round, answering, results, stories, the Speed
 
 **Out of scope**
 
-- The rules themselves ([learning-engine](../learning-engine/README.md)).
+- The rules themselves ([learning-engine](../learning-engine/README.md)), including how a round's questions are picked and ordered ([practice-selection.md](../learning-engine/practice-selection.md)).
 - Saving ([progress](../progress/README.md)); personal views ([library](../library/README.md)); competition ([live](../live/README.md)).
 - The admin's report handling ([admin](../admin/README.md)).
 

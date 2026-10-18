@@ -18,7 +18,7 @@ Base: `cb2fb571caf518922c3fdb2a0ab727a350b8ddc9` from
 `ccr-29322d12-v8wkmd`. This does not incorporate the divergent `master`
 commit `2a7da81`. The Library branch was not changed.
 
-Implementation guide: [Practice question selection](../architecture/modules.md#practice-question-selection-current-code).
+Implementation guide: [Practice question selection](../modules/learning-engine/practice-selection.md) (moved from `docs/architecture/modules.md`).
 It lives in the existing architecture document; this file remains the execution
 and handover record, not a second copy of the API guide.
 

@@ -8,7 +8,7 @@ The rules of learning: how a round is picked, how questions are built, how an an
 
 **Responsibilities (Implemented)**
 
-- Pick a round: new words, known words in rotation, words missed last time first, weak words, narrowing by lesson, unit, course level or a personal view, and avoiding sentences read recently ([v2.js](../../../src/engine/v2.js) `practice`).
+- Pick a round: new words, known words in rotation, words missed last time first, weak words, narrowing by lesson, unit, course level or a personal view, and avoiding sentences read recently ([v2.js](../../../src/engine/v2.js) `practice`; the word-question order is the private helper `selectPracticeQuestions`). Detailed guide: [practice-selection.md](practice-selection.md).
 - Build questions: many modes (meaning, gap, typing, reverse, picture, opposite, collocation, family, grammar choose / judge / fix, grammar court, story and combo questions, Final Case) and the older builders used by Live and the Speed Round ([questions.js](../../../src/engine/questions.js)).
 - Make distractors that are safe: words with several meanings never appear together, confusable pairs and the player's own mistakes come first.
 - Grade an answer (`V2.grade`): normalised text comparison, one-letter typo detection ("spelling"), `unverified` for free-writing questions.
@@ -68,6 +68,7 @@ Pure in, pure out. The caller passes the content lists, the mastery map and opti
 | Check | Where |
 | --- | --- |
 | Engine rules, question building, stages | [tests/engine.test.js](../../../tests/engine.test.js) |
+| Practice question order, repetition limits, grammar slots, reserves and reinforcement (seeded RNG, frozen time) | [tests/practice-selection.test.js](../../../tests/practice-selection.test.js) |
 | Grammar questions, variants and repetition | [tests/grammar.test.js](../../../tests/grammar.test.js), [grammar-variants.test.js](../../../tests/grammar-variants.test.js), [grammar-repeat.test.js](../../../tests/grammar-repeat.test.js) |
 | Several meanings of one word | [tests/senses.test.js](../../../tests/senses.test.js) |
 | Session evidence, merge behaviour | [tests/review-audit.test.js](../../../tests/review-audit.test.js) |
@@ -101,3 +102,4 @@ Mia (synthetic) practises the word "Reluctant" for the third time on three separ
 - `LC-03` score and streaks change per answer, mastery per finished session.
 - `MT-03` dead round engine with duplicate rules in WordHunter.
 - `MT-04` the session handlers are untested.
+- `PRACTICE-OBS-01` (observation, not classified): a round with only one available question style stops after two questions, because the selector refuses a third question of the same mode in a row. Pinned as current behaviour in `tests/practice-selection.test.js`; whether it is a defect or intended is the owner's decision ([work record](../../work-tracking/practice-baseline.md#observed-edge-requiring-separate-review)).
