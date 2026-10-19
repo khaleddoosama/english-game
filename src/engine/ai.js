@@ -1,6 +1,6 @@
 import { V2 } from "./v2";
 import { WORDS } from "./data";
-import { findWordByLabel, getWordPools, levenshtein, semanticRelation, situationLeaks } from "./questions";
+import { getWordPools, levenshtein, situationLeaks } from "./questions";
 import { normalizeAnswerText } from "./text";
 import { callAiText } from "../lib/ai";
 import { managedAiFunction, isAiCancelled, updateAiOperation } from "../lib/aiOperations.js";
@@ -690,25 +690,6 @@ async function evaluateGrammarCorrectionImpl(question, correction, operationOpti
     confidence: ["high","medium","low"].includes(raw?.confidence) ? raw.confidence : "low",
     feedback: String(raw?.feedback || "").slice(0, 240),
     suggestedCorrection: String(raw?.suggestedCorrection || "").slice(0, 240),
-  };
-}
-
-export function buildContrastiveFeedback(question, selectedValue) {
-  if (!question || !selectedValue || selectedValue === question.answer) return null;
-  const selectedWord = findWordByLabel(selectedValue);
-  const correctWord = findWordByLabel(question.answer) || question.target;
-  if (!selectedWord || !correctWord?.meaning) return null;
-  const relation = semanticRelation(correctWord, selectedWord);
-  const selectedMeaning = String(selectedWord.meaning || "").replace(/\s+/g, " ").trim();
-  const correctMeaning = String(correctWord.meaning || correctWord.explanation || "").replace(/\s+/g, " ").trim();
-  return {
-    chosen: selectedWord.word,
-    correct: correctWord.word,
-    chosenMeaning: selectedMeaning,
-    correctMeaning,
-    keyDifference: relation === "antonym"
-      ? `${correctWord.word} and ${selectedWord.word} express opposite ideas.`
-      : `${correctWord.word} fits this evidence; ${selectedWord.word} means ${selectedMeaning.charAt(0).toLowerCase()}${selectedMeaning.slice(1)}.`,
   };
 }
 

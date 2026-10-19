@@ -568,17 +568,6 @@ export function findWordByLabel(label) {
   return WORDS.find((w) => String(w.word || "").trim().toLowerCase() === key) || null;
 }
 
-export function semanticRelation(a, b) {
-  if (!a || !b || a.word === b.word) return null;
-  if (a.opposite && String(a.opposite).toLowerCase() === String(b.word).toLowerCase()) return "antonym";
-  if (b.opposite && String(b.opposite).toLowerCase() === String(a.word).toLowerCase()) return "antonym";
-  const sim = meaningSimilarity(a.meaning, b.meaning);
-  if (sim >= 0.45) return "related concept";
-  if (a.semanticGroup && b.semanticGroup && a.semanticGroup === b.semanticGroup) return `semantic group: ${a.semanticGroup}`;
-  if (a.wordFamily && b.wordFamily && a.wordFamily === b.wordFamily) return `word family: ${a.wordFamily}`;
-  return null;
-}
-
 export function hardDistractors(target, count = 3) { return sampleDistractors(target, count); }
 
 export function buildImpostorQuestion(wordObj, _difficulty = 2) {
