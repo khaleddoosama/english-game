@@ -46,7 +46,7 @@ The friends API in [friendsApi.js](../../../src/features/social/friendsApi.js).
 - Data: [friendsApi.js](../../../src/features/social/friendsApi.js), [socialApi.js](../../../src/features/social/socialApi.js).
 - Tables: `friendships`, `live_invites`, `profiles` (leaderboard columns), `live_results`.
 - Functions: `friend_request`, `friend_respond`, `friend_remove`, `friends_list`, `are_friends`, `friend_count`, `social_counts`, `live_invite_friends`, `live_my_invites`, `live_invite_dismiss`, `live_invites_sent`, `leaderboard_visible`.
-- Migrations 0013, 0024, 0025.
+- Migrations 0013, 0024, 0025, 0043 (signals to each player: triggers `friendships_signal`, `live_invites_signal`; policy "players read their own signals").
 
 ## 4. Business rules and permissions
 
@@ -60,7 +60,7 @@ The friends API in [friendsApi.js](../../../src/features/social/friendsApi.js).
 ## 5. Data flow
 
 - Pages call the friends API (RPC) or read `profiles` directly (leaderboard).
-- Counts are fetched when the game opens, every 45 seconds, when the tab becomes visible or gets focus, and (in local mode) when another tab changes data. A failed check keeps the last numbers.
+- Counts are fetched when the game opens, every 45 seconds, when the tab becomes visible or gets focus, (in local mode) when another tab changes data, and (online, with migration 0043) at once when the database signals a friend request, answer or removal, or an invitation, on the player's private channel `user:<id>`. A failed check keeps the last numbers.
 - The profile's Live history reads `live_results` for the signed-in player.
 
 ## 6. Failure, retry, cancel, offline
@@ -87,7 +87,7 @@ The friends API in [friendsApi.js](../../../src/features/social/friendsApi.js).
 
 Dana (synthetic) adds Omar as a friend.
 
-1. Dana opens Friends and types `omar`. `friend_request` creates a pending request; Omar's Profile tab shows a badge "1" at his next count check (within 45 seconds, or when his tab regains focus).
+1. Dana opens Friends and types `omar`. `friend_request` creates a pending request; the database signals both of them, and Omar's Profile tab shows a badge "1" within about a second (without migration 0043: at his next count check, within 45 seconds, or when his tab regains focus).
 2. Omar opens Friends and accepts. They are friends. Dana can now share a view with Omar or invite him to a challenge.
 3. Later Omar removes Dana. The row stays (marked removed by Omar). Dana cannot ask again for a week; Omar can.
 
