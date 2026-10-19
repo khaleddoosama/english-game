@@ -17,7 +17,7 @@ from the documented baseline `2da4133`.
 | `src/app/WordHunter.jsx` | `startPractice` gathers inputs and adjusts new-word intake from the previous round. `buildPracticeExtra` supplies extra styles; `launchSession` sends the result to the UI. |
 | `src/engine/v2.js` | `practice` builds candidates, filters stale sentences, inserts grammar and returns the session. Private `selectPracticeQuestions` orders word candidates. `makeQuestion` builds basic word questions, `optionWords` chooses distractors, grammar builders produce rule questions. `reinforcement` consumes reserves later. |
 | `src/engine/questions.js` | Extra-style factories such as Who Am I, Opposites and paired questions; `legacyQuestionToV2` adapts their output to the session contract. `buildRound`/`buildAdaptiveRound` are not called by the current Practice start path. |
-| `src/engine/data.js` | Mutable shared content (`WORDS`, `GRAMMAR`, `CHALLENGES`), level groups and mode metadata used by the shell and older factories. |
+| `src/engine/data.js` | Level groups, mastery helpers and mode metadata used by the shell and older factories (the content itself is passed in; see [content-catalog.md](../content/content-catalog.md)). |
 | `src/engine/text.js` | Text normalization used by extra-question safety checks; no imports. |
 | `src/features/session/SessionView.jsx` | Shows introductions, then `session.queue[session.index]`; `AnswerControl` renders the answer type. Offers reinforcement through the existing engine interface. |
 

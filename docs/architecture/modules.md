@@ -163,7 +163,7 @@ So "0 file cycles" does not mean "no cycles between modules": the second kind is
 Known debts the guards list (outside My Library; module cycles, not file cycles):
 
 - ~~loop `engine/ai` <-> `engine/questions`~~ fixed: `normalizeAnswerText` moved to `engine/text.js`
-- loop `engine` <-> `features/media` <-> `lib` (the engine imports the media feature: `engine/data.js` uses `checkImageLinks`; and `lib` imports the engine)
+- loop `engine` <-> `lib` (`lib` imports the engine, and the engine imports `lib`); the media part is fixed: since `MT-02` the picture check (`checkImageLinks`) is called by the content module, so the engine imports no feature
 - loop `features/social` <-> `features/live`
 
 ## What was not verified
