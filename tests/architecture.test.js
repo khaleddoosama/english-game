@@ -74,6 +74,12 @@ describe("no new loops between modules", () => {
     expect(importers).toEqual(["engine/v2"]);
   });
 
+  it("the game's copy of the content is built with no state (only V2), and only engine/data keeps it", () => {
+    expect(graph["engine/catalog"]).toEqual(["engine/v2"]);
+    const importers = Object.entries(graph).filter(([, tos]) => tos.includes("engine/catalog")).map(([file]) => file);
+    expect(importers).toEqual(["engine/data"]);
+  });
+
   it("the engine is below the features: its one import of a feature is the known debt (engine/data uses media's checkImageLinks)", () => {
     expect(modules.engine).toEqual(["features/media", "lib"]);
   });

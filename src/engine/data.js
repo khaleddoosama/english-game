@@ -2,6 +2,7 @@ import { Angry, ArrowLeftRight, BookOpen, Compass, HelpCircle, Keyboard, ListChe
 import { V2 } from "./v2";
 import { checkImageLinks } from "../features/media/media";
 import { PRODUCTION_GATE_STEP } from "./constants";
+import { buildCatalog, dedupeBy } from "./catalog";
 /* ---------------------------------- DATA ---------------------------------- */
 
 export const BUILTIN_WORDS = [];
@@ -261,18 +262,6 @@ export function nextStudyStreakState(lastStudyDate, studyStreak, bestStudyStreak
 }
 
 
-export function buildLevel(title) {
-  return {
-    id: `cat-${title}`,
-    title,
-    items: [
-      ...WORDS.filter((w) => w.category === title).map((w) => ({ kind: "word", obj: w })),
-      ...GRAMMAR.filter((g) => g.category === title).map((g) => ({ kind: "grammar", obj: g })),
-      ...CHALLENGES.filter((c) => c.category === title).map((c) => ({ kind: "challenge", obj: c })),
-    ],
-  };
-}
-
 export const TOPIC_ICONS = {
   Personality: Users,
   Media: Newspaper,
@@ -323,37 +312,15 @@ export let BADGES = [];
 export let LAST_CHALLENGE_ID = null;
 export function setLastChallengeId(id) { LAST_CHALLENGE_ID = id; }
 
-export function rebuildDerived() {
-  LEVELS = LEVEL_ORDER.map(buildLevel);
-  BADGES = [
-    ...LEVELS.map((level) => ({
-      id: level.id,
-      type: "category",
-      category: level.title,
-      label: `${level.title} Files Closed`,
-    })),
-    { id: "streak-5", type: "streak", threshold: 5, label: "Warming Up" },
-    { id: "streak-10", type: "streak", threshold: 10, label: "On a Roll" },
-    { id: "streak-20", type: "streak", threshold: 20, label: "Unstoppable" },
-    { id: "completionist", type: "completionist", label: "Full Case Archive" },
-  ];
+// The current copy as one object (engine/catalog.js); the variables above follow it.
+let catalog;
+export const currentCatalog = () => catalog;
+function install(next) {
+  catalog = next;
+  ({ words: WORDS, grammar: GRAMMAR, challenges: CHALLENGES, levelOrder: LEVEL_ORDER, levels: LEVELS, badges: BADGES } = next);
 }
-rebuildDerived();
-
-// Keeps only the first entry for each key — a safety net so a word can never
-// be dealt into the same round twice, no matter how it ended up duplicated
-// (repeated imports, a review that reintroduced an entry, case differences).
-export function dedupeBy(list, keyFn) {
-  const seen = new Set();
-  const out = [];
-  for (const item of list) {
-    const k = keyFn(item);
-    if (!k || seen.has(k)) continue;
-    seen.add(k);
-    out.push(item);
-  }
-  return out;
-}
+install(buildCatalog(WORDS, GRAMMAR, CHALLENGES, LEVEL_ORDER));
+export { dedupeBy };
 
 // The original ~64 words / 15 grammar cards / 6 puns were only ever seed
 // examples for building the game. Once real content is imported they're
@@ -364,17 +331,13 @@ export function dedupeBy(list, keyFn) {
 export const INCLUDE_BUILTIN_IN_PLAY = false;
 
 // Merges freshly imported content into the live data and rebuilds
-// LEVELS/BADGES. Called once on load (with anything saved from a previous
-// import) and again right after a new import completes.
+// LEVELS/BADGES, in one step (buildCatalog, engine/catalog.js). Called once on
+// load (with anything saved from a previous import) and again right after a
+// new import completes.
 export function mergeCustomData(customWords, customGrammar, customChallenges, levelOrder) {
   const baseWords = INCLUDE_BUILTIN_IN_PLAY ? BUILTIN_WORDS : [];
   const baseGrammar = INCLUDE_BUILTIN_IN_PLAY ? BUILTIN_GRAMMAR : [];
   const baseChallenges = INCLUDE_BUILTIN_IN_PLAY ? BUILTIN_CHALLENGES : [];
-  WORDS = V2.linkAntonyms(dedupeBy([...baseWords, ...customWords], (w) => w.word && w.word.trim().toLowerCase()));
-  GRAMMAR = dedupeBy([...baseGrammar, ...customGrammar], (g) => g.id);
-  CHALLENGES = dedupeBy([...baseChallenges, ...(Array.isArray(customChallenges) ? customChallenges : [])], (c) => c && c.id);
-  LEVEL_ORDER = levelOrder;
-  rebuildDerived();
+  install(buildCatalog([...baseWords, ...customWords], [...baseGrammar, ...customGrammar], [...baseChallenges, ...(Array.isArray(customChallenges) ? customChallenges : [])], levelOrder));
   checkImageLinks(WORDS);
 }
-
