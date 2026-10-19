@@ -1,4 +1,4 @@
-import { LEVELS, MASTERY_STAGE, MAX_CONFUSIONS, PRODUCTION_GATE_STEP, confusionCount, getAccuracy, getMasteryStage, getProductionCorrect, isWordKey, levelMasteredCount, localDateKey, normalizeMasteryRecord } from "./data";
+import { MASTERY_STAGE, MAX_CONFUSIONS, PRODUCTION_GATE_STEP, confusionCount, getAccuracy, getMasteryStage, getProductionCorrect, isWordKey, levelMasteredCount, localDateKey, normalizeMasteryRecord } from "./data";
 import { getAllowedModes, getStrongConfusion, modeAccuracy, selectAdaptiveMode } from "./questions";
 export function pruneConfusions(confusions) {
   const entries = Object.entries(confusions || {}).sort((a, b) => {
@@ -33,16 +33,16 @@ export function getWeakWordCandidates(words, mastery, confusions = {}, _now = Da
   }).filter(Boolean).sort((a, b) => b.priority - a.priority || a.accuracy - b.accuracy || Number(a.stats.lastReviewedAt || 0) - Number(b.stats.lastReviewedAt || 0));
 }
 
-export function pickWeakMode(word, stats, confusions = {}, quarantine = null) {
+export function pickWeakMode(content, word, stats, confusions = {}, quarantine = null) {
   const s = normalizeMasteryRecord(stats);
   const isQuarantined = (mode) => !!quarantine && quarantine.has(`${String(word.word || "").trim().toLowerCase()}|${mode}`);
   const confusion = getStrongConfusion(word, confusions);
   if (s.spellingMisses > 0 && (!s.modes.typing || modeAccuracy(s, "typing") < 80) && !isQuarantined("typing")) return "typing";
   const weak = Object.entries(s.modes).filter(([, m]) => m.total >= 2 && (m.correct / m.total) < 0.65).sort((a, b) => (a[1].correct / a[1].total) - (b[1].correct / b[1].total));
-  if (weak.length && getAllowedModes(word).includes(weak[0][0]) && !isQuarantined(weak[0][0])) return weak[0][0];
+  if (weak.length && getAllowedModes(content, word).includes(weak[0][0]) && !isQuarantined(weak[0][0])) return weak[0][0];
   if (confusion && !isQuarantined("meaning") && !isQuarantined("impostor")) return Math.random() < 0.5 ? "meaning" : "impostor";
   if (getProductionCorrect(s) === 0 && s.correct >= 2 && !word.skipTyping && !isQuarantined("gapTyping")) return "gapTyping";
-  return selectAdaptiveMode(word, s, { sessionType: "weak", confusion, quarantine });
+  return selectAdaptiveMode(content, word, s, { sessionType: "weak", confusion, quarantine });
 }
 
 export function deriveLearningInsights(words, mastery, confusions = {}, _now = Date.now()) {
@@ -67,16 +67,17 @@ export function deriveLearningInsights(words, mastery, confusions = {}, _now = D
   };
 }
 
-export function getBadgeProgress(badge, { mastery, bestStreak }) {
+// `levels` is the game's current levels (engine/catalog.js).
+export function getBadgeProgress(badge, { mastery, bestStreak, levels }) {
   if (badge.type === "category") {
-    const level = LEVELS.find((l) => l.title === badge.category);
+    const level = levels.find((l) => l.title === badge.category);
     const done = levelMasteredCount(level, mastery);
     return { done, total: level.items.length, earned: done >= level.items.length };
   }
   if (badge.type === "streak") {
     return { done: Math.min(bestStreak, badge.threshold), total: badge.threshold, earned: bestStreak >= badge.threshold };
   }
-  const earned = LEVELS.every((l) => levelMasteredCount(l, mastery) >= l.items.length);
+  const earned = levels.every((l) => levelMasteredCount(l, mastery) >= l.items.length);
   return { done: earned ? 1 : 0, total: 1, earned };
 }
 

@@ -1,5 +1,5 @@
 import { V2 } from "./v2";
-import { CHALLENGES, CHALLENGE_MODE_META, DISABLED_MODES, MASTERY_STAGE, RUNTIME_DISABLED_MODES, WORDS, confusionCount, getMasteryStage, getProductionCorrect, normalizeMasteryRecord } from "./data";
+import { CHALLENGE_MODE_META, DISABLED_MODES, MASTERY_STAGE, RUNTIME_DISABLED_MODES, confusionCount, getMasteryStage, getProductionCorrect, normalizeMasteryRecord } from "./data";
 import { normalizeAnswerText } from "./text";
 /* --------------------------------- HELPERS --------------------------------- */
 
@@ -51,8 +51,8 @@ export function meaningSimilarity(a, b) {
 // and category first, then rank what's left by definition overlap and pick
 // from the closest handful — with a little randomness so repeat encounters
 // aren't identical.
-export function sampleDistractors(target, n = 3) {
-  return V2.optionWords([target], WORDS, n + 1).filter(w => w.word !== target.word);
+export function sampleDistractors(content, target, n = 3) {
+  return V2.optionWords([target], content.words, n + 1).filter(w => w.word !== target.word);
 }
 
 export function levenshtein(a, b) {
@@ -122,16 +122,16 @@ export function uniqueStrings(values) {
   });
 }
 
-export function challengeLinkedWords(challenge) {
-  const valid = new Set(WORDS.map((w) => w.word));
+export function challengeLinkedWords(content, challenge) {
+  const valid = new Set(content.words.map((w) => w.word));
   return uniqueStrings(challenge?.linkedWords).filter((word) => valid.has(word));
 }
 
-export function authoredChallengesForWord(word, type = null) {
-  return CHALLENGES.filter((challenge) => {
+export function authoredChallengesForWord(content, word, type = null) {
+  return content.challenges.filter((challenge) => {
     if (!challenge || !challenge.id) return false;
     if (type && challengeType(challenge) !== type) return false;
-    return challengeLinkedWords(challenge).includes(word.word);
+    return challengeLinkedWords(content, challenge).includes(word.word);
   });
 }
 
@@ -158,9 +158,9 @@ export function isStrongStoryFallback(word) {
   return !leaksAnswer && sentences.length >= 2 && sentences.length <= 4 && situation.split(/\s+/).length >= 18;
 }
 
-export function buildChallengeQuestionUnsafe(challenge) {
+export function buildChallengeQuestionUnsafe(content, challenge) {
   const type = challengeType(challenge);
-  const linkedWords = challengeLinkedWords(challenge);
+  const linkedWords = challengeLinkedWords(content, challenge);
   const answerList = uniqueStrings(challenge.answers);
   const acceptedAnswers = uniqueStrings([
     ...(challenge.answer !== undefined ? [challenge.answer] : []),
@@ -220,12 +220,12 @@ export function buildChallengeQuestionUnsafe(challenge) {
   return { ...common, type: "mcq", options, answer };
 }
 
-export function getAllowedModes(word) {
+export function getAllowedModes(content, word) {
   const base = ["meaning", "gap", "gapTyping", "situation", "typing"];
   if (isStrongStoryFallback(word)) base.push("story");
   if (word?.opposite || Math.random() < OPPOSITE_TRAP_RATE) base.push("opposite");
   if (canBuildWhoAmI(word)) base.push("whoami");
-  if (canBuildTwoPerson(word)) base.push("twopeople", "selecttwo");
+  if (canBuildTwoPerson(content, word)) base.push("twopeople", "selecttwo");
   if (isIdiom(word)) base.push("idiomDetective");
   if (["phrasal", "fyi"].includes(word?.type) && word?.transformExample) base.push("phrasalTransform");
   if (word?.skipTyping) return base.filter((m) => !["typing", "gapTyping", "phrasalTransform"].includes(m));
@@ -255,10 +255,10 @@ export function getStrongConfusion(word, confusions = {}) {
     .sort((a, b) => b.count - a.count || b.lastAt - a.lastAt)[0] || null;
 }
 
-export function selectAdaptiveMode(word, masteryStats, context = {}) {
+export function selectAdaptiveMode(content, word, masteryStats, context = {}) {
   const stats = normalizeMasteryRecord(masteryStats);
   const stage = getMasteryStage(stats, { kind: "word", obj: word });
-  const allowed = new Set(getAllowedModes(word));
+  const allowed = new Set(getAllowedModes(content, word));
   const confusion = context.confusion || null;
   const hasProduction = getProductionCorrect(stats) > 0;
   const weakModes = Object.entries(stats.modes)
@@ -364,11 +364,11 @@ export function safeOppositeDistractor(wordObj, answerObj, d) {
   return d.word !== wordObj.word && d.word !== answerObj?.word && !areOpposites(wordObj, d) && (!answerObj || V2.compatible(answerObj, d));
 }
 // Mode A — direct match: word shown, pick its opposite from 4 options.
-export function buildOppositeDirect(wordObj) {
-  const answerObj = findWordByLabel(wordObj.opposite);
-  const distractors = sampleDistractors(wordObj, 5).filter((d) => safeOppositeDistractor(wordObj, answerObj, d)).slice(0, 3);
+export function buildOppositeDirect(content, wordObj) {
+  const answerObj = findWordByLabel(content, wordObj.opposite);
+  const distractors = sampleDistractors(content, wordObj, 5).filter((d) => safeOppositeDistractor(wordObj, answerObj, d)).slice(0, 3);
   while (distractors.length < 3) {
-    const extra = shuffle(WORDS.filter((w) => safeOppositeDistractor(wordObj, answerObj, w) && !distractors.includes(w)))[0];
+    const extra = shuffle(content.words.filter((w) => safeOppositeDistractor(wordObj, answerObj, w) && !distractors.includes(w)))[0];
     if (!extra) break;
     distractors.push(extra);
   }
@@ -380,9 +380,9 @@ export function buildOppositeDirect(wordObj) {
 // Mode B — pick the side of the sentence: the word's gap sentence (written
 // for the word, not its opposite) becomes a two-option choice between the
 // word and its opposite.
-export function buildOppositeSentence(wordObj) {
+export function buildOppositeSentence(content, wordObj) {
   const context = contextSentence(wordObj);
-  if (!context) return buildOppositeDirect(wordObj);
+  if (!context) return buildOppositeDirect(content, wordObj);
   const target = { ...wordObj, key: wordObj.word, label: wordObj.word, explanation: `${wordObj.word} ↔ ${wordObj.opposite}` };
   const options = shuffle([wordObj.word, wordObj.opposite]);
   return { target, prompt: context, options, answer: wordObj.word, type: "mcq" };
@@ -391,19 +391,19 @@ export function buildOppositeSentence(wordObj) {
 // Mode C — "Opposite or not?": two words, judge whether they're a real pair.
 // True half the time (the real opposite); false half the time (a plausible
 // but wrong same-category word), so "No" isn't just the safe guess.
-export function buildOppositePairJudgment(wordObj) {
+export function buildOppositePairJudgment(content, wordObj) {
   const isTruePair = Math.random() < 0.5;
   let partner;
   if (isTruePair) {
     partner = wordObj.opposite;
   } else {
-    const sameGroup = WORDS.filter(
+    const sameGroup = content.words.filter(
       (w) => w.word !== wordObj.word && !areOpposites(wordObj, w) && w.category === wordObj.category && w.type === wordObj.type
     );
-    const pool = sameGroup.length ? sameGroup : WORDS.filter((w) => w.word !== wordObj.word && !areOpposites(wordObj, w));
+    const pool = sameGroup.length ? sameGroup : content.words.filter((w) => w.word !== wordObj.word && !areOpposites(wordObj, w));
     partner = shuffle(pool)[0]?.word;
   }
-  if (!partner) return buildOppositeDirect(wordObj);
+  if (!partner) return buildOppositeDirect(content, wordObj);
   const answer = isTruePair ? "Yes, opposites" : "No, not opposites";
   const target = {
     ...wordObj,
@@ -422,8 +422,8 @@ export function buildOppositePairJudgment(wordObj) {
 
 // Mode E — the trap: not every word has a clean opposite, and knowing that
 // is part of the skill. Only ever used for words with no `opposite` field.
-export function buildOppositeTrap(wordObj) {
-  const distractors = sampleDistractors(wordObj, 3);
+export function buildOppositeTrap(content, wordObj) {
+  const distractors = sampleDistractors(content, wordObj, 3);
   const target = {
     ...wordObj,
     key: wordObj.word,
@@ -434,12 +434,12 @@ export function buildOppositeTrap(wordObj) {
   return { target, prompt: wordObj.word, options, answer: "No clear opposite", type: "mcq" };
 }
 
-export function buildOppositeQuestion(wordObj) {
-  if (!wordObj.opposite) return buildOppositeTrap(wordObj);
+export function buildOppositeQuestion(content, wordObj) {
+  if (!wordObj.opposite) return buildOppositeTrap(content, wordObj);
   const r = Math.random();
-  if (r < 0.34) return buildOppositeDirect(wordObj);
-  if (r < 0.67) return buildOppositeSentence(wordObj);
-  return buildOppositePairJudgment(wordObj);
+  if (r < 0.34) return buildOppositeDirect(content, wordObj);
+  if (r < 0.67) return buildOppositeSentence(content, wordObj);
+  return buildOppositePairJudgment(content, wordObj);
 }
 
 // --- Who Am I? — the word narrates its own meaning in first person. ---
@@ -459,9 +459,9 @@ export function canBuildWhoAmI(w) {
   return w?.type === "vocab" && firstPersonify(w.meaning) !== null;
 }
 
-export function buildWhoAmIQuestion(wordObj) {
+export function buildWhoAmIQuestion(content, wordObj) {
   const riddle = firstPersonify(wordObj.meaning);
-  const distractors = sampleDistractors(wordObj, 3);
+  const distractors = sampleDistractors(content, wordObj, 3);
   const target = { ...wordObj, key: wordObj.word, label: wordObj.word, explanation: wordObj.meaning };
   const options = shuffle([wordObj.word, ...distractors.map((d) => d.word)]);
   return { target, prompt: `${riddle} Who am I?`, options, answer: wordObj.word, type: "mcq" };
@@ -472,9 +472,9 @@ export function buildWhoAmIQuestion(wordObj) {
 // content. A "companion" word from the same category supplies the second.
 // `ctx` picks the sentence for a word (default: its first gap sentence);
 // practice passes one that returns only sentences the learner hasn't seen.
-export function pickCompanion(wordObj, ctx = contextSentence) {
+export function pickCompanion(content, wordObj, ctx = contextSentence) {
   const source = normalizeAnswerText(ctx(wordObj));
-  const pool = WORDS.filter((w) =>
+  const pool = content.words.filter((w) =>
     w.word !== wordObj.word &&
     w.category === wordObj.category &&
     ctx(w) &&
@@ -485,14 +485,14 @@ export function pickCompanion(wordObj, ctx = contextSentence) {
   return pool.length ? shuffle(pool)[0] : null;
 }
 
-export function canBuildTwoPerson(wordObj) {
-  return !!contextSentence(wordObj) && pickCompanion(wordObj) !== null;
+export function canBuildTwoPerson(content, wordObj) {
+  return !!contextSentence(wordObj) && pickCompanion(content, wordObj) !== null;
 }
 
-export function fillToFour(base, exclude) {
+export function fillToFour(content, base, exclude) {
   const options = [...base];
   if (options.length >= 4) return options.slice(0, 4);
-  const more = shuffle(WORDS.filter((w) => !exclude.has(w.word) && !options.includes(w.word)));
+  const more = shuffle(content.words.filter((w) => !exclude.has(w.word) && !options.includes(w.word)));
   for (const w of more) {
     if (options.length >= 4) break;
     options.push(w.word);
@@ -500,14 +500,14 @@ export function fillToFour(base, exclude) {
   return options;
 }
 
-export function buildTwoPeopleQuestion(wordObj, ctx = contextSentence) {
+export function buildTwoPeopleQuestion(content, wordObj, ctx = contextSentence) {
   const mine = ctx(wordObj);
-  const companion = mine ? pickCompanion(wordObj, ctx) : null;
+  const companion = mine ? pickCompanion(content, wordObj, ctx) : null;
   if (!companion) return null;
   const theirs = ctx(companion);
   const askFirst = Math.random() < 0.5;
-  const distractors = sampleDistractors(wordObj, 3).filter((d) => d.word !== companion.word);
-  const options = shuffle(fillToFour([wordObj.word, companion.word, ...distractors.map((d) => d.word)], new Set([wordObj.word, companion.word])));
+  const distractors = sampleDistractors(content, wordObj, 3).filter((d) => d.word !== companion.word);
+  const options = shuffle(fillToFour(content, [wordObj.word, companion.word, ...distractors.map((d) => d.word)], new Set([wordObj.word, companion.word])));
   const prompt = askFirst
     ? `Person A: "${mine}"\n\nPerson B: "${theirs}"\n\nWhich word belongs to Person A?`
     : `Person A: "${theirs}"\n\nPerson B: "${mine}"\n\nWhich word belongs to Person B?`;
@@ -515,12 +515,12 @@ export function buildTwoPeopleQuestion(wordObj, ctx = contextSentence) {
   return { target, prompt, options, answer: wordObj.word, type: "mcq", sentences: [mine, theirs] };
 }
 
-export function buildSelectTwoQuestion(wordObj, ctx = contextSentence) {
+export function buildSelectTwoQuestion(content, wordObj, ctx = contextSentence) {
   const mine = ctx(wordObj);
-  const companion = mine ? pickCompanion(wordObj, ctx) : null;
+  const companion = mine ? pickCompanion(content, wordObj, ctx) : null;
   if (!companion) return null;
-  const distractors = sampleDistractors(wordObj, 3).filter((d) => d.word !== companion.word);
-  const options = shuffle(fillToFour([wordObj.word, companion.word, ...distractors.map((d) => d.word)], new Set([wordObj.word, companion.word])));
+  const distractors = sampleDistractors(content, wordObj, 3).filter((d) => d.word !== companion.word);
+  const options = shuffle(fillToFour(content, [wordObj.word, companion.word, ...distractors.map((d) => d.word)], new Set([wordObj.word, companion.word])));
   const target = {
     ...wordObj,
     key: wordObj.word,
@@ -553,9 +553,9 @@ export function speedStats(answers = []) {
   }
   return { points, correct, answered, combo, bestCombo };
 }
-export function buildSpeedQuestion(pool) {
+export function buildSpeedQuestion(content, pool) {
   for(const w of shuffle(pool)) {
-    const choices=V2.optionWords([w],WORDS,4).map(x=>x.word);
+    const choices=V2.optionWords([w],content.words,4).map(x=>x.word);
     const prompts=[w.meaning,...(/_{2,}/.test(w.gap)?[w.gap]:[])].filter(text=>text&&text.length<=180&&!V2.norm(text).includes(V2.norm(w.word)));
     if(choices.length>=2&&prompts.length)return {target:{...w,key:w.word,label:w.word},prompt:shuffle(prompts)[0],options:choices,answer:w.word,type:"mcq"};
   }
@@ -563,47 +563,47 @@ export function buildSpeedQuestion(pool) {
 }
 
 
-export function findWordByLabel(label) {
+export function findWordByLabel(content, label) {
   const key = String(label || "").trim().toLowerCase();
-  return WORDS.find((w) => String(w.word || "").trim().toLowerCase() === key) || null;
+  return content.words.find((w) => String(w.word || "").trim().toLowerCase() === key) || null;
 }
 
-export function hardDistractors(target, count = 3) { return sampleDistractors(target, count); }
+export function hardDistractors(content, target, count = 3) { return sampleDistractors(content, target, count); }
 
-export function buildImpostorQuestion(wordObj, _difficulty = 2) {
-  const authored = authoredChallengesForWord(wordObj, "impostor");
+export function buildImpostorQuestion(content, wordObj, _difficulty = 2) {
+  const authored = authoredChallengesForWord(content, wordObj, "impostor");
   if (!authored.length) return null;
-  return buildChallengeQuestion(shuffle(authored)[0]);
+  return buildChallengeQuestion(content, shuffle(authored)[0]);
 }
 
-export function safeLegacyQuestion(q) {
+export function safeLegacyQuestion(content, q) {
   if (!q) return q;
   const lists = [q.options, ...(q.steps || []).map(step => step.options)].filter(Array.isArray);
   let invalid = false;
   for (const list of lists) {
     if (list.length < 2 || new Set(list.map(V2.norm)).size !== list.length) invalid = true;
-    const refs = list.map(label => WORDS.find(w => V2.norm(w.word) === V2.norm(label) || V2.norm(w.meaning) === V2.norm(label))).filter(Boolean);
+    const refs = list.map(label => content.words.find(w => V2.norm(w.word) === V2.norm(label) || V2.norm(w.meaning) === V2.norm(label))).filter(Boolean);
     if (refs.some((w, i) => refs.slice(i + 1).some(other => !V2.compatible(w, other)))) invalid = true;
   }
   return invalid ? { ...q, type: "unavailable", prompt: "This authored question conflicts with option exclusions or has too few unique options. Report it or continue; no mastery credit is awarded." } : q;
 }
-export function buildQuestion(...args) { return safeLegacyQuestion(buildQuestionUnsafe(...args)); }
-export function buildChallengeQuestion(...args) { return safeLegacyQuestion(buildChallengeQuestionUnsafe(...args)); }
+export function buildQuestion(content, ...args) { return safeLegacyQuestion(content, buildQuestionUnsafe(content, ...args)); }
+export function buildChallengeQuestion(content, ...args) { return safeLegacyQuestion(content, buildChallengeQuestionUnsafe(content, ...args)); }
 
-export function buildQuestionUnsafe(modeId, wordObj, pools, options = {}) {
+export function buildQuestionUnsafe(content, modeId, wordObj, pools, options = {}) {
   const difficulty = Math.max(1, Number(options.difficulty || 1));
   const confusionPartner = options.confusionPartner || null;
-  if (modeId === "opposite") return { ...buildOppositeQuestion(wordObj), modeId, difficulty };
-  if (modeId === "whoami") return { ...buildWhoAmIQuestion(wordObj), modeId, difficulty };
-  if (modeId === "twopeople") return { ...(buildTwoPeopleQuestion(wordObj) || buildQuestion("situation", wordObj, pools, options)), modeId, difficulty };
-  if (modeId === "selecttwo") return { ...(buildSelectTwoQuestion(wordObj) || buildQuestion("situation", wordObj, pools, options)), modeId, difficulty };
-  if (modeId === "impostor") return buildImpostorQuestion(wordObj, difficulty) || buildQuestion("situation", wordObj, pools, { ...options, difficulty: Math.min(2, difficulty) });
+  if (modeId === "opposite") return { ...buildOppositeQuestion(content, wordObj), modeId, difficulty };
+  if (modeId === "whoami") return { ...buildWhoAmIQuestion(content, wordObj), modeId, difficulty };
+  if (modeId === "twopeople") return { ...(buildTwoPeopleQuestion(content, wordObj) || buildQuestion(content, "situation", wordObj, pools, options)), modeId, difficulty };
+  if (modeId === "selecttwo") return { ...(buildSelectTwoQuestion(content, wordObj) || buildQuestion(content, "situation", wordObj, pools, options)), modeId, difficulty };
+  if (modeId === "impostor") return buildImpostorQuestion(content, wordObj, difficulty) || buildQuestion(content, "situation", wordObj, pools, { ...options, difficulty: Math.min(2, difficulty) });
 
   if (modeId === "story") {
-    const authored = authoredChallengesForWord(wordObj, "story");
-    if (authored.length) return buildChallengeQuestion(shuffle(authored)[0]);
+    const authored = authoredChallengesForWord(content, wordObj, "story");
+    if (authored.length) return buildChallengeQuestion(content, shuffle(authored)[0]);
     if (isStrongStoryFallback(wordObj)) {
-      const distractors = hardDistractors(wordObj, 3, confusionPartner);
+      const distractors = hardDistractors(content, wordObj, 3, confusionPartner);
       const target = { ...wordObj, key: wordObj.word, label: wordObj.word, explanation: wordObj.meaning };
       return {
         target,
@@ -615,7 +615,7 @@ export function buildQuestionUnsafe(modeId, wordObj, pools, options = {}) {
         answer: wordObj.word,
       };
     }
-    return buildQuestion("situation", wordObj, pools, options);
+    return buildQuestion(content, "situation", wordObj, pools, options);
   }
 
   const target = { ...wordObj, key: wordObj.word, label: wordObj.word, explanation: wordObj.meaning };
@@ -623,16 +623,16 @@ export function buildQuestionUnsafe(modeId, wordObj, pools, options = {}) {
     return { target, modeId, difficulty, type: "typing", prompt: `Use “${wordObj.word}”: ${wordObj.transformExample.before}`, answer: wordObj.transformExample.after, acceptedAnswers: [wordObj.transformExample.after], modelOnly: true, freeformKind: "phrasalTransform" };
   }
   if (modeId === "phrasalTransform") {
-    if (!isPhrasal(wordObj)) return buildQuestion("gapTyping", wordObj, pools, options);
-    const authored = authoredChallengesForWord(wordObj, "phrasalTransform");
-    return authored.length ? buildChallengeQuestion(shuffle(authored)[0]) : buildQuestion("gapTyping", wordObj, pools, options);
+    if (!isPhrasal(wordObj)) return buildQuestion(content, "gapTyping", wordObj, pools, options);
+    const authored = authoredChallengesForWord(content, wordObj, "phrasalTransform");
+    return authored.length ? buildChallengeQuestion(content, shuffle(authored)[0]) : buildQuestion(content, "gapTyping", wordObj, pools, options);
   }
   if (modeId === "idiomDetective") {
-    if (!isIdiom(wordObj)) return buildQuestion("situation", wordObj, pools, options);
+    if (!isIdiom(wordObj)) return buildQuestion(content, "situation", wordObj, pools, options);
     if (difficulty <= 2) {
       const context = contextSentence(wordObj);
-      if (!context) return buildQuestion("gap", wordObj, pools, options);
-      const distractors = hardDistractors(wordObj, 3, confusionPartner);
+      if (!context) return buildQuestion(content, "gap", wordObj, pools, options);
+      const distractors = hardDistractors(content, wordObj, 3, confusionPartner);
       return { target, modeId, difficulty, type: "mcq", prompt: context, options: shuffle([wordObj.word, ...distractors.map((d) => d.word)]), answer: wordObj.word };
     }
     return { target, modeId, difficulty, type: "freeform", prompt: `In this situation, what does “${wordObj.word}” mean?\n${wordObj.situation}`, answer: wordObj.meaning, freeformKind: "idiomMeaning" };
@@ -645,10 +645,10 @@ export function buildQuestionUnsafe(modeId, wordObj, pools, options = {}) {
   let activeItem = pickActiveItem(wordPools, poolMode);
   if (poolMode === "situation" && situationLeaks(wordObj, activeItem.text)) { poolMode = "gap"; activeItem = pickActiveItem(wordPools, "gap"); }
   const common = { target, modeId, difficulty, poolType: poolMode, poolItemId: activeItem.id };
-  const distractors = difficulty >= 3 ? hardDistractors(wordObj, 3, confusionPartner) : sampleDistractors(wordObj, 3);
+  const distractors = difficulty >= 3 ? hardDistractors(content, wordObj, 3, confusionPartner) : sampleDistractors(content, wordObj, 3);
 
   if (modeId === "meaning" && difficulty >= 2) {
-    const hard = difficulty >= 3 ? hardDistractors(wordObj, 3, confusionPartner) : distractors;
+    const hard = difficulty >= 3 ? hardDistractors(content, wordObj, 3, confusionPartner) : distractors;
     return { ...common, prompt: activeItem.text, options: shuffle([wordObj.word, ...hard.map((d) => d.word)]), answer: wordObj.word, type: "mcq", direction: "meaningToWord" };
   }
   if (modeId === "meaning") {
@@ -676,22 +676,22 @@ export function buildGrammarQuestion(g) {
   return { target, modeId: "grammarCourt", prompt: q.prompt, options: shuffle(q.options), answer: q.answer, type: "mcq", court: true };
 }
 
-export function buildEntryQuestion(entry, pools) {
-  if (entry.kind === "word") return buildQuestion(entry.mode, entry.wordObj, pools, { difficulty: entry.difficulty, confusionPartner: entry.confusionPartner });
+export function buildEntryQuestion(content, entry, pools) {
+  if (entry.kind === "word") return buildQuestion(content, entry.mode, entry.wordObj, pools, { difficulty: entry.difficulty, confusionPartner: entry.confusionPartner });
   if (entry.kind === "grammar") return buildGrammarQuestion(entry.obj);
-  if (entry.kind === "challenge") return buildChallengeQuestion(entry.obj);
+  if (entry.kind === "challenge") return buildChallengeQuestion(content, entry.obj);
   return null;
 }
 
 // Adaptive builders remain question factories, but all questions are
 // normalized into one V2 session/answer contract. There is no second runner.
-export function legacyQuestionToV2(question, entry, idSuffix = "0") {
+export function legacyQuestionToV2(content, question, entry, idSuffix = "0") {
   if (!question) return [];
   const mode = question.modeId || (entry.kind === "challenge" ? challengeType(entry.obj) : entry.kind);
-  const linkedWords = entry.kind === "word" ? [entry.wordObj.word] : entry.kind === "challenge" ? challengeLinkedWords(entry.obj) : [];
+  const linkedWords = entry.kind === "word" ? [entry.wordObj.word] : entry.kind === "challenge" ? challengeLinkedWords(content, entry.obj) : [];
   const progressKeys = entry.kind === "word" ? linkedWords : entry.kind === "grammar" ? [`grammar:${entry.obj.id}`] : entry.kind === "pun" ? [`pun:${entry.obj.id}`] : [`challenge:${entry.obj.id}`, ...linkedWords];
   const base = { id:`v2:${entry.kind}:${entry.obj?.id||entry.wordObj?.word||idSuffix}:${idSuffix}`, mode, targets:linkedWords, progressKeys, prompt:question.prompt, explanation:question.explanation||question.target?.explanation||"", difficulty:question.difficulty||entry.difficulty||1, poolType:question.poolType, poolItemId:question.poolItemId, challengeId:question.challengeId };
-  if (question.type === "multiStage") return question.steps.flatMap((step,index)=>legacyQuestionToV2({...question,type:step.type,prompt:step.prompt,options:step.options,answer:step.acceptedAnswers?.[0],acceptedAnswers:step.acceptedAnswers,explanation:step.explanation||question.explanation,steps:undefined},entry,`${idSuffix}-step-${index+1}`));
+  if (question.type === "multiStage") return question.steps.flatMap((step,index)=>legacyQuestionToV2(content, {...question,type:step.type,prompt:step.prompt,options:step.options,answer:step.acceptedAnswers?.[0],acceptedAnswers:step.acceptedAnswers,explanation:step.explanation||question.explanation,steps:undefined},entry,`${idSuffix}-step-${index+1}`));
   if (question.type === "unavailable") return [{...base,type:"mcq",options:["Skip this invalid question"],answers:["Skip this invalid question"],noMastery:true,noTelemetry:true}];
   if (question.type === "selfCheck") return [{...base,type:"typing",answers:[question.exampleAnswer||question.answer||""],objectiveTerms:question.requiredWords||linkedWords,noMastery:true}];
   if (question.type === "multi") return [{...base,type:"multi",options:question.options||[],answers:question.correctAnswers||question.acceptedAnswers||[]}];
@@ -701,8 +701,8 @@ export function legacyQuestionToV2(question, entry, idSuffix = "0") {
 
 export let poolsSnapshotForSession = {};
 export function setPoolsSnapshotForSession(pools) { poolsSnapshotForSession = pools; }
-export function v2SessionFromEntries(entries, {kind,title,idPrefix=kind}) {
-  const queue=entries.flatMap((entry,index)=>legacyQuestionToV2(buildEntryQuestion(entry,poolsSnapshotForSession),entry,String(index)));
+export function v2SessionFromEntries(content, entries, {kind,title,idPrefix=kind}) {
+  const queue=entries.flatMap((entry,index)=>legacyQuestionToV2(content, buildEntryQuestion(content, entry,poolsSnapshotForSession),entry,String(index)));
   return {id:`${idPrefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,kind,title,queue,introductions:[],index:0,answers:[],initialLength:queue.length};
 }
 

@@ -1,5 +1,4 @@
 import { V2 } from "./v2";
-import { WORDS } from "./data";
 import { getWordPools, levenshtein, situationLeaks } from "./questions";
 import { normalizeAnswerText } from "./text";
 import { callAiText } from "../lib/ai";
@@ -42,11 +41,12 @@ async function validateGeneratedContentImpl(requests, generated, operationOption
   }
 }
 
-async function generateContentImpl(batch, pools, operationOptions = {}) {
-  const wordByName = Object.fromEntries(WORDS.map((w) => [w.word, w]));
+// `words` is the game's current word list (engine/catalog.js).
+async function generateContentImpl(words, batch, pools, operationOptions = {}) {
+  const wordByName = Object.fromEntries(words.map((w) => [w.word, w]));
   const requests = batch.map(({ word, poolType }) => {
     const w = wordByName[word];
-    const siblings = WORDS.filter((x) => x.category === w.category && x.word !== w.word)
+    const siblings = words.filter((x) => x.category === w.category && x.word !== w.word)
       .map((x) => `${x.word} = ${x.meaning}`)
       .join(" | ");
     const existing = getWordPools(pools, w)[poolType].map((it) => it.text);
@@ -484,13 +484,14 @@ export function grammarSentenceIsGrounded(promptSentence, answer, storyText) {
   return norm(storyText).includes(norm(filled));
 }
 
-async function generateStoryImpl(targetWords, selectedCategories=[], grammarRules=[], attempt=1, _leakyWords=new Set(), operationOptions = {}) {
+// `words` is the game's current word list (engine/catalog.js); a leaked target is swapped for another of them.
+async function generateStoryImpl(words, targetWords, selectedCategories=[], grammarRules=[], attempt=1, _leakyWords=new Set(), operationOptions = {}) {
   // On retry, swap out any word that leaked in a previous attempt with a
   // fresh candidate of the same type from the same category pool.
   const activeTargets = targetWords.map(w => {
     if (!_leakyWords.has(V2.norm(w.word))) return w;
     // pick a different word of the same type from the same category
-    const alt = WORDS.filter(c => c.category === w.category && c.type === w.type && V2.norm(c.word) !== V2.norm(w.word) && !targetWords.some(t => V2.norm(t.word) === V2.norm(c.word))).sort(() => Math.random() - 0.5)[0];
+    const alt = words.filter(c => c.category === w.category && c.type === w.type && V2.norm(c.word) !== V2.norm(w.word) && !targetWords.some(t => V2.norm(t.word) === V2.norm(c.word))).sort(() => Math.random() - 0.5)[0];
     return alt || w; // fall back to original if no swap available
   });
 
@@ -509,7 +510,7 @@ async function generateStoryImpl(targetWords, selectedCategories=[], grammarRule
   for (const w of activeTargets)
     if (storyTextLeaksWord(w.word, `${raw.title} ${raw.text}`)) leakyWords.add(V2.norm(w.word));
   if (leakyWords.size > 0) {
-    if (attempt < 3) return generateStory(targetWords, selectedCategories, grammarRules, attempt + 1, leakyWords, operationOptions);
+    if (attempt < 3) return generateStory(words, targetWords, selectedCategories, grammarRules, attempt + 1, leakyWords, operationOptions);
     const names = activeTargets.filter(w => leakyWords.has(V2.norm(w.word))).map(w => w.word).join(", ");
     throw new Error(`Story leaks target word(s) after ${attempt} attempts: ${names}`);
   }
@@ -715,7 +716,7 @@ async function explainWrongLeadImpl(question, chosenWord, correctWord, operation
 
 // Manage validation, retries and cancellation as one job, not just one HTTP call.
 export const validateGeneratedContent = managedAiFunction("Check new practice sentences", validateGeneratedContentImpl, 2, { background: true, timeoutMs: 50000 });
-export const generateContent = managedAiFunction("Write new practice sentences", generateContentImpl, 2, { background: true, timeoutMs: 100000 });
+export const generateContent = managedAiFunction("Write new practice sentences", generateContentImpl, 3, { background: true, timeoutMs: 100000 });
 export const askAiForWord = managedAiFunction("Ask AI about a word", askAiForWordImpl, 2, { background: false, timeoutMs: 50000 });
 export const aiFixImportJson = managedAiFunction("Fix an import file", aiFixImportJsonImpl, 2, { background: false, timeoutMs: 50000 });
 export const suggestReportFix = managedAiFunction("Suggest a fix for a report", suggestReportFixImpl, 3, { background: false, timeoutMs: 50000 });
@@ -723,7 +724,7 @@ export const reviewReportedQuestion = managedAiFunction("Review a reported quest
 export const aiFixWordBatch = managedAiFunction("Content health fix", aiFixWordBatchImpl, 3, { background: false, timeoutMs: 50000 });
 export const suggestCategoryMerges = managedAiFunction("Suggest category merges", suggestCategoryMergesImpl, 1, { background: false, timeoutMs: 50000 });
 export const regenerateWordExplanation = managedAiFunction("Rewrite a word", regenerateWordExplanationImpl, 1, { background: false, timeoutMs: 50000 });
-export const generateStory = managedAiFunction("Write a story", generateStoryImpl, 5, { background: false, timeoutMs: 150000 });
+export const generateStory = managedAiFunction("Write a story", generateStoryImpl, 6, { background: false, timeoutMs: 150000 });
 export const evaluateFreeForm = managedAiFunction("Check a written answer", evaluateFreeFormImpl, 2, { background: false, timeoutMs: 50000 });
 export const evaluateAlternativeGap = managedAiFunction("Check another word in a gap", evaluateAlternativeGapImpl, 2, { background: false, timeoutMs: 50000 });
 export const generateComboVariant = managedAiFunction("New combo question", generateComboVariantImpl, 1, { background: true, timeoutMs: 50000 });

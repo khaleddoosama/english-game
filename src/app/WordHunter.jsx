@@ -7,7 +7,7 @@ import { unlockAudioOnFirstTouch } from "../lib/sound";
 unlockAudioOnFirstTouch(); // the first tap lets answer sounds play on phones
 import { SessionView } from "../features/session/SessionView";
 import { Splash } from "../features/auth/LoginPage";
-import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, RECENT_RESULT_LIMIT, WORDS, confusionCount, getMasteryStage, isWordKey, courseLevelGroups, levelItemKey, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
+import { currentCatalog, BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, RECENT_RESULT_LIMIT, WORDS, confusionCount, getMasteryStage, isWordKey, courseLevelGroups, levelItemKey, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, v2SessionFromEntries } from "../engine/questions";
 import { evaluateFinalReport } from "../engine/ai";
 import { normalizeAnswerText } from "../engine/text";
@@ -126,7 +126,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   // One extra question style per word for Level Practice, built with the
   // adaptive-engine builders and converted to the V2 question shape.
   function buildPracticeExtra(wordObj, stage, rng = Math.random) {
-    const allowed = new Set(getAllowedModes(wordObj));
+    const allowed = new Set(getAllowedModes(currentCatalog(), wordObj));
     const byStage = stage === "Familiar" ? ["whoami", "idiomDetective", "story", "opposite"] : ["whoami", "idiomDetective", "story", "opposite", "twopeople", "selecttwo"];
     const clues = V2.outsideAntonyms(wordObj, WORDS);
     // Word Partners / Word Family come from collocations and wordFamily;
@@ -159,12 +159,12 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       if (mode === "twopeople" || mode === "selecttwo") {
         const seen = progressExtrasRef.current.seenSentences || {};
         const fresh = (w) => V2.poolItems(w, "gap", poolsRef.current?.[w.word]?.gap).map((it) => it.text).find((t) => t && /_{2,}/.test(t) && !situationLeaks(w, t) && !V2.seenRecently(seen, t, Infinity)) || null;
-        const pair = mode === "twopeople" ? buildTwoPeopleQuestion(wordObj, fresh) : buildSelectTwoQuestion(wordObj, fresh);
+        const pair = mode === "twopeople" ? buildTwoPeopleQuestion(currentCatalog(), wordObj, fresh) : buildSelectTwoQuestion(currentCatalog(), wordObj, fresh);
         if (!pair) return null;
         raw = { ...pair, modeId: mode, difficulty: 2 };
-      } else raw = buildQuestion(mode, wordObj, poolsRef.current, { difficulty: 2 });
+      } else raw = buildQuestion(currentCatalog(), mode, wordObj, poolsRef.current, { difficulty: 2 });
       // Multi-step authored challenges don't fit a single practice slot.
-      const built = legacyQuestionToV2(raw, { kind: "word", wordObj }, mode);
+      const built = legacyQuestionToV2(currentCatalog(), raw, { kind: "word", wordObj }, mode);
       const q = built.length === 1 ? { ...built[0], ...(raw.sentences ? { sentences: raw.sentences } : {}) } : null;
       if (!q || q.noMastery || !q.targets?.length) return null;
       // Last line of defence: never show a prompt that spells out an answer.
@@ -449,7 +449,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         applyProgressData(data);
         // A new player starts with the admin's defaults (Admin -> Settings).
         setSettings(normalizeSettings(raw?.settings ? data.settings : { ...getAppSettings().newPlayerDefaults }));
-        seenBadgesRef.current = new Set(BADGES.filter((b) => getBadgeProgress(b, { mastery: data.mastery, bestStreak: data.bestStreak }).earned).map((b) => b.id));
+        seenBadgesRef.current = new Set(BADGES.filter((b) => getBadgeProgress(b, { mastery: data.mastery, bestStreak: data.bestStreak, levels: LEVELS }).earned).map((b) => b.id));
       } catch (e) {
         console.error("Could not read progress:", e);
         seenBadgesRef.current = new Set();
@@ -536,7 +536,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   useEffect(() => {
     if (!loaded || !seenBadgesRef.current) return;
     for (const badge of BADGES) {
-      const { earned } = getBadgeProgress(badge, { mastery, bestStreak });
+      const { earned } = getBadgeProgress(badge, { mastery, bestStreak, levels: LEVELS });
       if (earned && !seenBadgesRef.current.has(badge.id)) {
         seenBadgesRef.current.add(badge.id);
         setToast({ kind: "badge", text: badge.label });
@@ -601,9 +601,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     if (!picked.length) return;
     let lastMode = null;
     const queue = picked.map(({ word, stats }) => {
-      let mode = pickWeakMode(word, stats, confusionsRef.current, reportQuarantine);
+      let mode = pickWeakMode(currentCatalog(), word, stats, confusionsRef.current, reportQuarantine);
       if (mode === lastMode && !getWeakWordCandidates([word], { [word.word]: stats }, confusionsRef.current)[0]?.weakModes?.includes(mode)) {
-        mode = selectAdaptiveMode(word, stats, { sessionType: "weak", confusion: getStrongConfusion(word, confusionsRef.current), lastMode, quarantine: reportQuarantine });
+        mode = selectAdaptiveMode(currentCatalog(), word, stats, { sessionType: "weak", confusion: getStrongConfusion(word, confusionsRef.current), lastMode, quarantine: reportQuarantine });
       }
       const entry = { kind: "word", wordObj: word, mode, difficulty: getAdaptiveDifficulty(word, stats, mode), confusionPartner: getStrongConfusion(word, confusionsRef.current)?.partner || null };
       lastMode = mode;
@@ -611,7 +611,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     }).filter((entry, i, arr) => i === 0 || entry.wordObj.word !== arr[i - 1].wordObj.word);
     setCurrentLevelIndex(null);
     setPoolsSnapshotForSession(poolsRef.current);
-    launchSession(v2SessionFromEntries(queue,{kind:"weak",title:"Weak Evidence",idPrefix:"weak"}));
+    launchSession(v2SessionFromEntries(currentCatalog(), queue,{kind:"weak",title:"Weak Evidence",idPrefix:"weak"}));
   }
 
   function startFinalCase(index) {
@@ -632,14 +632,14 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     setFinalRecallSummary(null);
     setFinalCaseResult(null);
     setPoolsSnapshotForSession(poolsRef.current);
-    launchSession(v2SessionFromEntries(selectedWords.map((wordObj)=>({kind:"word",wordObj,mode:"gapTyping",difficulty:4})),{kind:"finalRecall",title:`Final Case — ${level.title}`,idPrefix:"final"}));
+    launchSession(v2SessionFromEntries(currentCatalog(), selectedWords.map((wordObj)=>({kind:"word",wordObj,mode:"gapTyping",difficulty:4})),{kind:"finalRecall",title:`Final Case — ${level.title}`,idPrefix:"final"}));
   }
 
   function backToLevels() { setScreen("levels"); setCurrentLevelIndex(null); }
 
 
   function trackConfusion(targetWord, selectedValue) {
-    const selectedWord = findWordByLabel(selectedValue);
+    const selectedWord = findWordByLabel(currentCatalog(), selectedValue);
     if (!targetWord || !selectedWord || selectedWord.word === targetWord.word) return;
     const key = `${targetWord.word}|${selectedWord.word}`;
     const prevAll = confusionsRef.current || {};
@@ -704,7 +704,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     for (let i = 0; i < SPEED_QUEUE_SIZE; i++) {
       // Never the same word twice in a row.
       let raw = null;
-      for (let tries = 0; tries < 6; tries++) { raw = buildSpeedQuestion(masteredOnlyWords); if (!raw || raw.answer !== queue.at(-1)?.answers[0]) break; }
+      for (let tries = 0; tries < 6; tries++) { raw = buildSpeedQuestion(currentCatalog(), masteredOnlyWords); if (!raw || raw.answer !== queue.at(-1)?.answers[0]) break; }
       if (!raw) break;
       queue.push(speedQuestionV2(raw, i));
     }
@@ -753,7 +753,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const contentCounts = { words: WORDS.length, grammar: GRAMMAR.length, challenges: CHALLENGES.length, stories: customStories.length, combos: customCombos.length, categories: LEVEL_ORDER.length };
   const dataTools = { exportFile, checkImport, applyImport, aiFixImport, contentCounts, progressCounts: { score, words: Object.keys(mastery).filter(isWordKey).length, mastered: masteredCountFor(mastery), sessions: sessionLogs.length }, onResetProgress: () => setConfirmAction("reset"), onWipeEverything: () => setConfirmAction("wipe") };
 
-  const earnedBadgesCount = BADGES.filter((b) => getBadgeProgress(b, { mastery, bestStreak }).earned).length;
+  const earnedBadgesCount = BADGES.filter((b) => getBadgeProgress(b, { mastery, bestStreak, levels: LEVELS }).earned).length;
   const totalLevelsCleared = levelsCleared.length;
   const finalEvidenceUsed = finalCaseWords.filter((word) => { const n = normalizeAnswerText(finalReportText); return n.includes(normalizeAnswerText(word.word)); }).length;
 
@@ -850,7 +850,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
             </div>
             <div className="wh-badges-grid">
               {BADGES.map((b) => {
-                const { done, total, earned } = getBadgeProgress(b, { mastery, bestStreak });
+                const { done, total, earned } = getBadgeProgress(b, { mastery, bestStreak, levels: LEVELS });
                 return (
                   <div key={b.id} className={`wh-badge ${earned ? "earned" : ""}`}>
                     {earned ? <Award size={16} /> : <Lock size={14} />}
@@ -928,7 +928,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         {/* Gateway (admin): the course's levels (A1.2 …) from every lesson, each split into its sessions. */}
         {screen === "levels" && section === "practice" && waitingForLibrary && (homeView === "course" || homeView === "lesson") && <ScreenSkeleton />}
         {screen === "levels" && section === "practice" && !waitingForLibrary && homeView === "course" && (() => {
-          const { levels, none } = limitHome ? courseLevelGroups(WORDS.filter((w) => libraryKeys.words.has(w.word)), GRAMMAR.filter((g) => libraryKeys.rules.has(g.id))) : courseLevelGroups();
+          const { levels, none } = limitHome ? courseLevelGroups(WORDS.filter((w) => libraryKeys.words.has(w.word)), GRAMMAR.filter((g) => libraryKeys.rules.has(g.id))) : courseLevelGroups(WORDS, GRAMMAR);
           return <CourseLevelsView levels={levels} none={none} mastery={mastery} limited={limitHome} onPlay={startItemsPractice} onStartLevel={startCourseLevel} />;
         })()}
 
@@ -958,7 +958,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage social={social} libraryOn={library.status === "ready"} libraryInbox={libraryInbox} onSignOut={onSignOut ? logOut : null} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: BADGES.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
         {(screen === "join" || screen === "catalog" || screen === "library") && (
           <LibraryRoutes screen={screen} library={library} route={route} fallback={<ScreenSkeleton />} isAdmin={isAdmin} words={WORDS} grammar={GRAMMAR}
-            levels={screen === "library" ? courseLevelGroups().levels : []} friendsApi={friendsApi} onPractice={startViewPractice} onAskWord={openAskAi} onInboxChanged={refreshLibraryInbox}
+            levels={screen === "library" ? courseLevelGroups(WORDS, GRAMMAR).levels : []} friendsApi={friendsApi} onPractice={startViewPractice} onAskWord={openAskAi} onInboxChanged={refreshLibraryInbox}
             onJoined={(out, open) => { refreshLibraryInbox(); if (open) { setSettings((prev) => ({ ...prev, levelView: out?.view ? `view:${out.view}` : "lesson" })); navigate("/"); } }} />
         )}
         {screen === "friends" && <Suspense fallback={<ScreenSkeleton />}><FriendsPage api={friendsApi} onChanged={refreshSocial} local={friendsApi.mode === "local"} /></Suspense>}

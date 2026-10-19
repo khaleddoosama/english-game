@@ -5,7 +5,7 @@
 import { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mergeCustomData } from "../src/engine/data";
+import { WORDS, mergeCustomData } from "../src/engine/data";
 
 const generateStory = vi.fn();
 const cancelAiTasks = vi.fn();
@@ -66,7 +66,8 @@ describe("asking for a story", () => {
     generateStory.mockResolvedValue(story());
     await pick("Weather", "Hotel");
     await run(() => api.generate());
-    const [targets, categories, rules] = generateStory.mock.calls[0];
+    const [words, targets, categories, rules] = generateStory.mock.calls[0];
+    expect(words).toBe(WORDS);
     expect(targets.length).toBe(5);
     expect(categories).toEqual(["Weather", "Hotel"]);
     expect(rules).toEqual([]);
@@ -149,7 +150,7 @@ describe("the preview's buttons", () => {
     generateStory.mockResolvedValueOnce(story("Again"));
     await run(() => button("Regenerate").click());
     expect(generateStory).toHaveBeenCalledTimes(2);
-    expect(generateStory.mock.calls[1][1]).toEqual(["Weather", "Hotel"]);
+    expect(generateStory.mock.calls[1][2]).toEqual(["Weather", "Hotel"]);
     expect(api.state.title).toBe("Again");
   });
 });

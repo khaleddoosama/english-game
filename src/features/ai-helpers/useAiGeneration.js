@@ -23,7 +23,7 @@ export function useAiGeneration({ liveContent, poolsRef, setPools, seenSentences
     if (!filtered.length) return;
     filtered.forEach((b) => pendingRef.current.add(`${b.word}::${b.poolType}`));
     try {
-      const results = await generateContent(filtered, poolsSnapshot);
+      const results = await generateContent(WORDS, filtered, poolsSnapshot);
       setPools((prev) => withGeneratedTexts(prev, results, WORDS));
     } catch (e) {
       console.error("Content generation failed:", e);
