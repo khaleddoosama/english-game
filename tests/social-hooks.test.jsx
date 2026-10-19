@@ -32,22 +32,32 @@ describe("useSocial", () => {
   function Probe({ hook, args }) { out = hook(args); return null; }
   const SAM = { id: "u-sam", name: "sam_01" };
 
-  it("online: the database's counts become the badges; the Live API is not asked for", async () => {
+  // A client with the database functions and a Realtime part that records the channels opened and closed.
+  const onlineClient = (calls, data) => ({
+    rpc: async (fn) => { calls.push(fn); return { data, error: null }; },
+    realtime: { setAuth: async () => {} },
+    channel: (name, opts) => { calls.push(`open ${name} ${JSON.stringify(opts.config)}`); const ch = { name, on: () => ch, subscribe: () => ch }; return ch; },
+    removeChannel: (ch) => calls.push(`close ${ch.name}`),
+  });
+
+  it("online: the database's counts become the badges; the player's own channel is opened; the Live API is not asked for", async () => {
     const useSocial = await load();
     const calls = [];
-    env.client = { rpc: async (fn) => { calls.push(fn); return { data: { requests: 2, invites: 4 }, error: null }; } };
+    env.client = onlineClient(calls, { requests: 2, invites: 4 });
     const liveFor = vi.fn();
     await mount(<Probe hook={useSocial} args={{ player: SAM, enabled: true, liveFor }} />); await tick();
     expect([out.friendsApi.mode, out.counts, out.badges, liveFor.mock.calls.length]).toEqual(["online", { requests: 2, invites: 4 }, { live: 4, profile: 2 }, 0]);
-    expect(calls).toEqual(["social_counts"]);
+    expect(calls).toEqual(["social_counts", 'open user:u-sam {"private":true}']);
+    await act(async () => root.unmount()); root = undefined;
+    expect(calls.at(-1)).toBe("close user:u-sam");
   });
 
   it("not counted before the game has loaded", async () => {
     const useSocial = await load();
-    const rpc = vi.fn(async () => ({ data: { requests: 1, invites: 1 }, error: null }));
-    env.client = { rpc };
+    const calls = [];
+    env.client = onlineClient(calls, { requests: 1, invites: 1 });
     await mount(<Probe hook={useSocial} args={{ player: SAM, enabled: false, liveFor: vi.fn() }} />); await tick();
-    expect([out.counts, out.badges, rpc.mock.calls.length]).toEqual([{ requests: 0, invites: 0 }, { live: 0, profile: 0 }, 0]);
+    expect([out.counts, out.badges, calls]).toEqual([{ requests: 0, invites: 0 }, { live: 0, profile: 0 }, []]);
   });
 
   it("local mode: the friends API gets the Live API for this player, and counts the requests in this browser", async () => {

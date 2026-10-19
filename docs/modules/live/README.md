@@ -43,9 +43,10 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
 - Screens: [LiveChallenge](../../../src/features/live/LiveChallenge.jsx) (home, create form, invite page, lobby, ready, race, waiting, results), [LiveFriends](../../../src/features/live/LiveFriends.jsx).
 - Logic: [liveEngine.js](../../../src/features/live/liveEngine.js) (question building), [liveRules.js](../../../src/features/live/liveRules.js) (rules shared with the local backend), [liveApi.js](../../../src/features/live/liveApi.js), [transport.js](../../../src/features/live/transport.js), [liveSetup.js](../../../src/features/live/liveSetup.js) and [useLivePlayer.js](../../../src/features/live/useLivePlayer.js) (who plays, the limits, fresh gap sentences).
 - Tables: `live_challenges`, `live_answer_keys` (not readable by players), `live_players`, `live_answers`, `live_results`; `live_invites` (owned by social).
+- Signals from the database (migration 0043): triggers `live_players_signal`, `live_challenges_signal` (and, for social, `friendships_signal`, `live_invites_signal`) with their functions; policy "players read their own signals" on `realtime.messages`.
 - Functions: `live_create`, `live_view`, `live_join`, `live_start`, `live_begin`, `live_answer`, `live_end`, `live_leave`, `live_remove_player`, `live_set_next`, `live_mine`, `live_settle`, `live_finalize`, `is_live_member`, `bump_live_counters` (trigger), `admin_live_matches`, `admin_live_challenges`; invitations: `live_invite_friends`, `live_my_invites`, `live_invite_dismiss`, `live_invites_sent`.
 - Realtime: private channel `live:<code>` (members only); local mode uses `BroadcastChannel`.
-- Migrations 0008, 0009, 0012, 0020, 0023, 0024.
+- Migrations 0008, 0009, 0012, 0020, 0023, 0024, 0043 (rollback: `supabase/rollback/0043_down.sql`).
 
 ## 4. Business rules and permissions
 
@@ -65,13 +66,19 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
 
 1. The host's browser builds questions from the content lists (and pools), and calls `live_create`. The function splits each question into the public part and the private key.
 2. Players open `/live/<code>`; `view` returns what they may see; the realtime channel tells them to refresh; polling covers a missing channel.
-   - The channel carries only signals ("joined", "left", "start", "progress", "end") and presence (who has the
-     challenge open). The players' browsers send them, not the database. A player who gets a signal asks the server
-     again (`view`); a "progress" signal updates that player's row directly. Answers, keys and ranks always come from
-     the server.
+   - The channel carries only signals ("joined", "left", "start", "progress", "end", "rematch") and presence (who has
+     the challenge open). A player who gets a signal asks the server again (`view`); a "progress" signal updates that
+     player's row directly. Answers, keys and ranks always come from the server.
+   - Who sends them: the database, from triggers, after the change is written (migration 0043): a player added
+     ("joined") or removed ("left"); a change of a player's start, answers, right answers, time or finish
+     ("progress", with those numbers); the challenge started ("start"), ended ("end"), or a rematch linked
+     ("rematch"). The players' browsers still send their own "joined", "left", "start", "progress" and "end" too
+     (so the game keeps working on a database without 0043); a duplicate is harmless (an older "progress" is
+     ignored; the others only make the screen ask again). Signals carry no question, option, answer or username.
    - Polling: every 20 seconds while the channel works, every 4 seconds when it does not; a finished challenge is
      checked every 8 seconds for a rematch (for half an hour). The Live home checks invitations every 30 seconds; the
-     navigation badges every 45 seconds ([social](../social/README.md)). Invitations use no channel.
+     navigation badges every 45 seconds ([social](../social/README.md)). Online, an invitation also reaches the
+     invited player at once on their own channel (`user:<id>`, see social), and the Live home's list asks again.
    - A signal sent before the channel is subscribed (right after opening it, or while it reconnects) waits and goes
      out once it is. After the channel gives up, signals go to the Supabase library, which sends them over HTTP when
      the channel is not joined.
@@ -95,6 +102,7 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
 | --- | --- |
 | Rules, local backend, ranking, settling, judging | [tests/live.test.js](../../../tests/live.test.js) |
 | Review and rematch | [tests/live-review.test.js](../../../tests/live-review.test.js) |
+| The database's signals: joined, left, progress (with the numbers, nothing of the questions), start, end, rematch; nothing for a change that moves no number or state; who may read or send on which topic | [supabase/tests/realtime_signals.sql](../../../supabase/tests/realtime_signals.sql) |
 | The realtime channel with a fake client: signals sent before it is subscribed or while it reconnects go out once it is, retries, status, events and presence, closing | [tests/live-transport.test.js](../../../tests/live-transport.test.js) |
 | Question variety and freshness | [tests/live-variety.test.js](../../../tests/live-variety.test.js) |
 | Server rules | [supabase/tests/live_challenges.sql](../../../supabase/tests/live_challenges.sql), [live_fairness.sql](../../../supabase/tests/live_fairness.sql), [live_review.sql](../../../supabase/tests/live_review.sql) |
@@ -121,17 +129,22 @@ Dana (synthetic) challenges two friends.
   channel existed), so the host saw a new player only through presence or the next poll. Signals now wait for the
   channel (`tests/live-transport.test.js` failed before the fix).
 
+- 2026-10-19: signals sent by the database (migration 0043): a signal can no longer be lost with a player's
+  browser, and invitations reach the invited player at once. **In the code; it takes effect once 0043 is applied to
+  the database** (until then the browsers' own signals and the polling work as before).
+
 **Planned**
 
-- Realtime from the database (proposed, not built): the database sends the signals (a trigger on joins, start,
-  answers and end), so a signal cannot be lost with a player's browser; and a personal channel per player for
-  invitations and friend requests, so they arrive in about a second instead of up to 30–45 seconds. Polling would
-  stay as a slower safety net. Needs a migration and a check of the Supabase plan's Realtime limits.
+- Once 0043 is applied everywhere, the browsers' own signals can be removed (each broadcast is billed once sent and
+  once per receiver, so the duplicates double the messages; Supabase Free plan: 2 million a month, 100 a second,
+  200 connections at once).
 
 **Known Issues**
 
 - `MT-05` the local backend is a second copy of the server rules with no differential test.
-- Signals come from the players' browsers: one that is lost (a browser closes or drops at that moment) is not sent
-  again, and the others see the change at their next poll (up to 20 seconds). Invitations wait for the 30-second
-  check (Live home) or the 45-second badge check.
+- Without migration 0043 on the database: signals come from the players' browsers only, so one that is lost (a
+  browser closes or drops at that moment) is not sent again, and the others see the change at their next poll (up
+  to 20 seconds); invitations wait for the 30-second check (Live home) or the 45-second badge check.
+- The real Supabase Realtime service is not run by any test: the SQL test checks what the triggers write to
+  `realtime.messages` (on stand-ins for Supabase's schemas) and the unit tests use a fake client.
 - Assumption (not tested): the server checks the shape of the host's questions and that the answer is among the options, but not that it is the correct answer to the prompt; a careless or malicious host can create wrong keys. This affects only that match.

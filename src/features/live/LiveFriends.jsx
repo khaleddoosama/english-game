@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, UserPlus, Users } from "lucide-react";
 import { navigate } from "../../lib/router";
+import { onSocialSignal } from "../social";
 
 // Friends inside Live Challenge: pick friends when creating, invite more from
 // the waiting room, and answer the invitations that were sent to me.
@@ -101,7 +102,9 @@ export function Invitations({ friendsApi, api, onOpenCode, onSocialChanged }) {
     const t = setInterval(load, 30000);
     const onShow = () => { if (document.visibilityState === "visible") load(); };
     document.addEventListener("visibilitychange", onShow);
-    return () => { clearInterval(t); document.removeEventListener("visibilitychange", onShow); };
+    // A new invitation signalled by the database (online) shows at once.
+    const stopSignals = onSocialSignal((event) => { if (event === "invite") load(); });
+    return () => { clearInterval(t); document.removeEventListener("visibilitychange", onShow); stopSignals(); };
   }, [load]);
   if (!friendsApi || !list?.length) return null;
   async function join(inv) {

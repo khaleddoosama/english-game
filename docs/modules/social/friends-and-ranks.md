@@ -16,6 +16,7 @@ Other modules use only [index.js](../../../src/features/social/index.js) (the sh
 | `useSocial({ player, enabled, liveFor })` | the shell | `{ friendsApi, counts, refresh, badges }`: the friends API for the player, the waiting counts and the navigation badges. `liveFor(me)` gives the Live API; it is called only in local mode (local invitations look at the challenge), so social does not import Live. |
 | `ranksShown(app, isAdmin)`, `ranksHiddenFromPlayers(app, isAdmin)` | the shell | the Ranks tab and `/leaderboard`; the admin's note |
 | `AddFriendButton`, `useFriendStatus` | Live's results | the add-friend button and the friends list behind it |
+| `onSocialSignal` | Live's invitations list | listens to the database's signals to this player |
 | `LOCAL_PEOPLE` | the shell, for the library | who is friends with whom in local mode, read from this browser |
 | `FriendsPage`, `Leaderboard`, `ProfilePage` | the shell | the screens, each loaded on demand |
 
@@ -42,6 +43,12 @@ Inside the module:
 - `useSocialCounts` asks `counts()` (online: `social_counts`) when the game has loaded, every 45 seconds, when the tab
   comes back into view or gets focus, and in local mode when another tab changes friends or Live data (`storage`
   keys starting `friends1:` or `live3:`). A failed check keeps the last numbers; before the game has loaded both are 0.
+- Online, the player's own private channel `user:<id>` ([socialSignals.js](../../../src/features/social/socialSignals.js),
+  opened by `useSocial` once the game has loaded) brings the database's signals (migration 0043): "friends" when a
+  request is sent, answered or ended (to both players) and "invite" when the player is invited to a challenge. On a
+  signal the badges are counted again at once, the Friends page reads its lists again, and the Live home reads its
+  invitations again. A failed channel is tried again after 1, 3 and 8 seconds, then the checks above carry on alone.
+  Nobody but the database can send on these channels, and a player can read only their own.
 - The Live tab shows the waiting invitations, the Profile tab the waiting friend requests; above 9 the badge says
   "9+". The Profile page's Friends button shows the requests too.
 
@@ -117,6 +124,8 @@ tooltip.
 | --- | --- |
 | Everything above in a browser with the app built for online mode and a fake Supabase: the badges, the four tabs (what each reads, order, values, notes, empty and failed reads), the add-friend button, the Friends page's actions and messages (offline too), the Live history, Ranks off for players and the admin, local mode's text | `e2e/specs/social.cjs` |
 | The rules | `tests/social-rules.test.js` |
+| The player's channel and its listeners (private `user:<id>`, both signals, retries, closing, nothing in local mode; the badges and Live's invitations ask again) | `tests/social-signals.test.jsx` |
+| What the database sends and who may read it | `supabase/tests/realtime_signals.sql` |
 | The hooks: the friends API and badges (online, local, before loading), a tab's rows (a late answer dropped, the Friends tab), the Friends page's actions, the Live history | `tests/social-hooks.test.jsx` |
 | Social in no loop, not importing Live, reached only through its index (by the shell and Live) | `tests/architecture.test.js` |
 | Local friends rules and messages | `tests/friends.test.js` |
@@ -133,9 +142,10 @@ statuses, counts, texts, who sees Ranks; one-off, not kept). Deliberate breaks (
 - `PE-01`: the practice numbers on Ranks are as honest as the game that sent them.
 - The week boundary uses each player's local clock.
 - Positions on Ranks are row numbers: two players with the same value get different places.
-- Found by `social.cjs` (kept as is): accepting a request with the add-friend button (Ranks, Live's results) does not
-  count the badges again; they catch up at the next check (45 seconds, focus or view). The Friends page does count
-  them again.
+- Found by `social.cjs`: accepting a request with the add-friend button (Ranks, Live's results) does not count the
+  badges again itself. Online with migration 0043 the database's "friends" signal now counts them again within about a
+  second; in local mode, or without 0043, they catch up at the next check (45 seconds, focus or view). The spec's
+  fake Supabase has no Realtime, so it still sees the wait.
 - `getFriendsApi` keeps the first API it makes for the rest of the page's life (its `me` is the first player). Online
   it does not use `me` (the server knows the account); in local mode the player is the tab's player, which does not
   change.

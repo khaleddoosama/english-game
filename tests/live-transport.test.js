@@ -162,9 +162,10 @@ describe("live channel: status, events and presence", () => {
     const [ch] = env.client.channels;
     ch.emit("broadcast", "start", { payload: {} });
     ch.emit("broadcast", "progress", { payload: { user_id: "u-ada", answered: 4 } });
+    ch.emit("broadcast", "rematch", { payload: { next_code: "B2C3D4" } });
     ch.presence = { "u-ada": [{ id: "u-ada", name: "ada" }], "u-sam": [{ id: SAM.id, name: SAM.name }] };
     ch.emit("presence", "sync");
-    expect(calls.events).toEqual([["start", {}], ["progress", { user_id: "u-ada", answered: 4 }]]);
+    expect(calls.events).toEqual([["start", {}], ["progress", { user_id: "u-ada", answered: 4 }], ["rematch", { next_code: "B2C3D4" }]]);
     expect(calls.presence).toEqual([[{ id: "u-ada", name: "ada" }, { id: SAM.id, name: SAM.name }]]);
   });
 });

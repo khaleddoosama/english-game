@@ -5,7 +5,8 @@
 // Local mode uses BroadcastChannel so several tabs can play together.
 import { isLocalMode, supabase } from "../../lib/supabase";
 
-export const LIVE_EVENTS = ["joined", "left", "start", "progress", "end"];
+// The same names come from the database too (migration 0043), which also sends "rematch" when a rematch is linked.
+export const LIVE_EVENTS = ["joined", "left", "start", "progress", "end", "rematch"];
 const RETRY_MS = [1000, 3000, 8000];
 
 // Returns { send(event, payload), close() }. onStatus gets "connecting",
