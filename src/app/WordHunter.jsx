@@ -5,10 +5,9 @@ import { V2 } from "../engine/v2";
 import { imageLinkOk } from "../features/media/media";
 import { unlockAudioOnFirstTouch } from "../lib/sound";
 unlockAudioOnFirstTouch(); // the first tap lets answer sounds play on phones
-import { isEmbeddedImage, storeEmbeddedImages } from "../lib/images";
 import { SessionView } from "../features/session/SessionView";
 import { Splash } from "../features/auth/LoginPage";
-import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, RECENT_RESULT_LIMIT, WORDS, confusionCount, getMasteryStage, isWordKey, courseLevelGroups, levelItemKey, mergeCustomData, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
+import { BADGES, CHALLENGES, GRAMMAR, LEVELS, LEVEL_ORDER, MASTERY_STAGE, RECENT_RESULT_LIMIT, WORDS, confusionCount, getMasteryStage, isWordKey, courseLevelGroups, levelItemKey, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, v2SessionFromEntries } from "../engine/questions";
 import { evaluateFinalReport } from "../engine/ai";
 import { normalizeAnswerText } from "../engine/text";
@@ -22,6 +21,7 @@ import { LibraryRoutes, MyViewsHome, homeLimits, keepInLibrary, scopeIsEmpty, sc
 import { useSocialCounts } from "../features/social/useSocialCounts";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
 import { useDataTransfer } from "../features/data";
+import { useContentLists, useContentSave } from "../features/content";
 import { AskAiDrawer, StoryBuilder, contextCategoryOf, useAiGeneration, useAskAi, useStoryGeneration } from "../features/ai-helpers";
 import CourseLevelsView from "../features/home/CourseLevelsView";
 import HomeTabs from "../features/home/HomeTabs";
@@ -75,8 +75,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const { counts: social, refresh: refreshSocial } = useSocialCounts(friendsApi, loaded);
   // My library (views inside views); off until the dictionary has been moved to the new tables.
   const library = useLibrary({ enabled: loaded, me: livePlayer.id, knownWord: (k) => WORDS.some((w) => w.word === k), people: LOCAL_PEOPLE });
-  const [customCombos, setCustomCombos] = useState([]);
-  const [customStories, setCustomStories] = useState([]);
+  const contentLists = useContentLists();
+  const { customWords, setCustomWords, customGrammar, setCustomGrammar, customChallenges, setCustomChallenges, customCombos, setCustomCombos, customStories, setCustomStories, contentNoteRef, setContent, applySavedContent } = contentLists;
   const aiViewEpoch=useRef(0);
 
   const [activeSession, setActiveSession] = useState(null);
@@ -107,7 +107,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   // /play resumes the open session or goes home.
   useEffect(() => { if (route.screen !== "play" && playScreen !== "session") setPlayScreen("session"); }, [route.screen]);
   const progressExtrasRef = useRef({});
-  const contentNoteRef = useRef("");
   function liveContent() { return { words: WORDS, grammar: GRAMMAR, challenges: CHALLENGES, combos: customCombos, stories: customStories, note: contentNoteRef.current }; }
   // Home shows one view at a time; My views needs the library, so without it Gateway shows.
   // A player (not the admin) sees only the words and rules in their own library on Home;
@@ -320,9 +319,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [confirmAction, setConfirmAction] = useState(null); // null | 'reset' | 'wipe'
   const [deleteCategoryTarget, setDeleteCategoryTarget] = useState(null); // null | level object
 
-  const [customWords, setCustomWords] = useState([]);
-  const [customGrammar, setCustomGrammar] = useState([]);
-  const [customChallenges, setCustomChallenges] = useState([]);
   const [, setQuickBackupCopied] = useState(false);
   const [showFreshCopyPrompt, setShowFreshCopyPrompt] = useState(false);
   const [levelsCleared, setLevelsCleared] = useState([]);
@@ -436,7 +432,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   // progress, which the next save would otherwise write over the real one.
   useEffect(() => {
     (async () => {
-      let levelOrder = LEVEL_ORDER;
       let hadAnyData = false;
       let custom = null, raw = null;
       try {
@@ -446,16 +441,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         setLoadError(e?.message || "Network error");
         return;
       }
-      if (custom) {
-        hadAnyData = true;
-        custom = V2.withoutRemovedFields(custom);
-        setCustomCombos(custom.combos || []); setCustomStories(custom.stories || []); contentNoteRef.current=custom.note||"";
-        setCustomWords(custom.words || []);
-        setCustomGrammar(custom.grammar || []);
-        setCustomChallenges(Array.isArray(custom.challenges) ? custom.challenges : []);
-        levelOrder = custom.levelOrder || LEVEL_ORDER;
-        mergeCustomData(custom.words || [], custom.grammar || [], custom.challenges || [], levelOrder);
-      }
+      if (applySavedContent(custom)) hadAnyData = true;
 
       try {
         if (raw) hadAnyData = true;
@@ -541,52 +527,10 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     return () => { off(); document.removeEventListener("visibilitychange", check); window.removeEventListener("focus", check); };
   }, [loaded, repo]);
 
-  // Save content whenever it changes (admin only — players read content,
-  // they never write it). Separate from progress so a progress reset never
-  // touches imported vocabulary.
-  // Content edits are single clicks (save, delete, import), not typing, so
-  // the wait is short: it only folds together changes made in one go.
-  const contentSavingRef = useRef(Promise.resolve());
-  useEffect(() => {
-    if (!loaded || !isAdmin) return;
-    contentWritesRef.current++;
-    let counted = true;
-    const settle = () => { if (counted) { counted = false; contentWritesRef.current--; } };
-    const cancel = debouncedSave("content", () => {
-      const content = { note: contentNoteRef.current, combos: customCombos, stories: customStories, words: customWords, grammar: customGrammar, challenges: customChallenges, levelOrder: LEVEL_ORDER };
-      const renames = takePendingRenames();
-      return contentSavingRef.current = contentSavingRef.current.then(() => repo.saveContent(content, { renames })).catch((e) => {
-        console.error("Could not save content:", e);
-        returnPendingRenames(renames);
-        setStorageWarning(e?.conflict ? e.message : "Content could not be saved to the server. Check your connection; your last change will be saved with the next edit. Take a Full Backup if this keeps happening.");
-      }).finally(settle);
-    }, 150);
-    return () => { cancel(); if (pendingSavesRef.current.content === undefined) return; settle(); };
-  }, [loaded, customCombos, customStories, customWords, customGrammar, customChallenges, dataVersion]);
-
-  // A picture that came inside the content (an import, or a copy made in
-  // local mode) moves to the word-images bucket: as a link it isn't sent to
-  // every player with every content load. Only the values still unchanged
-  // are swapped, so an edit made meanwhile wins; one that can't be stored
-  // now is tried again with the next content change.
-  const movingPicturesRef = useRef(false);
-  const latestContentRef = useRef(null);
-  latestContentRef.current = { grammar: customGrammar, challenges: customChallenges };
-  useEffect(() => {
-    if (!loaded || !isAdmin || repo.mode !== "supabase" || movingPicturesRef.current) return;
-    const embedded = customWords.map((w) => w.image).filter(isEmbeddedImage);
-    if (!embedded.length) return;
-    movingPicturesRef.current = true;
-    storeEmbeddedImages(embedded).then((stored) => {
-      if (!stored.size) return;
-      setCustomWords((current) => {
-        const next = current.map((w) => (stored.has(w.image) ? { ...w, image: stored.get(w.image) } : w));
-        mergeCustomData(next, latestContentRef.current.grammar, latestContentRef.current.challenges, LEVEL_ORDER);
-        return next;
-      });
-      setDataVersion((value) => value + 1);
-    }).finally(() => { movingPicturesRef.current = false; });
-  }, [loaded, customWords]);
+  // Save content whenever it changes (admin only — players read content, they never write it), and move pictures
+  // stored inside the content to the word-images bucket. Separate from progress so a progress reset never touches
+  // imported vocabulary.
+  useContentSave({ loaded, isAdmin, repo, lists: contentLists, dataVersion, setDataVersion, saves: { debouncedSave, pendingSavesRef, contentWritesRef }, renames: { takePendingRenames, returnPendingRenames }, setStorageWarning });
 
   // Detect newly earned badges and surface a small celebration toast
   useEffect(() => {
@@ -803,7 +747,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   // ---- Import & export (/data, and Admin -> Data & backup), and the Profile page's backups -------------
   const { exportFile, checkImport, applyImport, aiFixImport, downloadBackup, handleQuickBackup, wipeEverything } = useDataTransfer({
     isAdmin, exportedBy: profile?.username || "local", liveContent, backupPayload, contentNoteRef,
-    setContent: (c) => { setCustomWords(c.words); setCustomGrammar(c.grammar); setCustomChallenges(c.challenges); setCustomCombos(c.combos); setCustomStories(c.stories); },
+    setContent,
     migrateRenamedProgress, applyRestoredProgress, resetProgress: handleReset, wipeContent: () => repo.wipeContent(), set: { setDataVersion, setShowFreshCopyPrompt, setToast, setQuickBackupCopied },
   });
   const contentCounts = { words: WORDS.length, grammar: GRAMMAR.length, challenges: CHALLENGES.length, stories: customStories.length, combos: customCombos.length, categories: LEVEL_ORDER.length };
