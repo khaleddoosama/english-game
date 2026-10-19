@@ -1,6 +1,5 @@
-import { BookOpen, Scale, Sparkles } from "lucide-react";
 import { V2 } from "./v2";
-import { CHALLENGES, CHALLENGE_MODE_META, DISABLED_MODES, LAST_CHALLENGE_ID, MASTERY_STAGE, MASTERY_STAGE_RANK, MODE_META, RUNTIME_DISABLED_MODES, WORDS, confusionCount, dedupeBy, getMasteryStage, getProductionCorrect, levelItemKey, normalizeMasteryRecord } from "./data";
+import { CHALLENGES, CHALLENGE_MODE_META, DISABLED_MODES, MASTERY_STAGE, RUNTIME_DISABLED_MODES, WORDS, confusionCount, getMasteryStage, getProductionCorrect, normalizeMasteryRecord } from "./data";
 import { normalizeAnswerText } from "./text";
 /* --------------------------------- HELPERS --------------------------------- */
 
@@ -100,10 +99,6 @@ export function isIdiom(word) {
   return word?.type === "idiom" || word?.type === "binomial" || word?.type === "fyi";
 }
 
-export function isStrictIdiom(word) {
-  return word?.type === "idiom";
-}
-
 export function challengeType(challenge) {
   const raw = String(challenge?.type || "").trim();
   const aliases = {
@@ -161,21 +156,6 @@ export function isStrongStoryFallback(word) {
   const sentences = situation.split(/(?<=[.!?])\s+/).filter(Boolean);
   const leaksAnswer = normalizeAnswerText(situation).includes(normalizeAnswerText(word?.word));
   return !leaksAnswer && sentences.length >= 2 && sentences.length <= 4 && situation.split(/\s+/).length >= 18;
-}
-
-export function challengeProgressEligible(challenge, mastery = {}) {
-  const linked = challengeLinkedWords(challenge);
-  if (!linked.length) return true;
-  const stages = linked.map((word) => {
-    const obj = WORDS.find((item) => item.word === word);
-    return obj ? MASTERY_STAGE_RANK[getMasteryStage(mastery[word], { kind: "word", obj })] : 0;
-  });
-  const type = challengeType(challenge);
-  const production = type === "phrasalTransform";
-  const threshold = production && Number(challenge.difficulty || 1) >= 3
-    ? MASTERY_STAGE_RANK[MASTERY_STAGE.LEARNED]
-    : MASTERY_STAGE_RANK[MASTERY_STAGE.FAMILIAR];
-  return stages.every((stage) => stage >= threshold);
 }
 
 export function buildChallengeQuestionUnsafe(challenge) {
@@ -238,47 +218,6 @@ export function buildChallengeQuestionUnsafe(challenge) {
     return { ...common, type: "multi", options, correctAnswers: answerList };
   }
   return { ...common, type: "mcq", options, answer };
-}
-
-export function challengeValidationIssues(challenge, wordSource = WORDS) {
-  const issues = [];
-  if (!challenge || typeof challenge !== "object") return ["challenge must be an object"];
-  if (!String(challenge.id || "").trim()) issues.push("missing stable id");
-  if (!String(challenge.prompt || "").trim()) issues.push("missing prompt");
-  const type = challengeType(challenge);
-  const options = uniqueStrings(challenge.options);
-  const answers = uniqueStrings([
-    ...(challenge.answer !== undefined ? [challenge.answer] : []),
-    ...(Array.isArray(challenge.answers) ? challenge.answers : []),
-  ]);
-  if (Array.isArray(challenge.options) && options.length !== challenge.options.length) issues.push("duplicate or blank options");
-  if (options.length && answers.some((answer) => !options.some((option) => normalizeAnswerText(option) === normalizeAnswerText(answer)))) issues.push("answer is missing from options");
-  if (["story", "idiomStory", "reverseIdiomStory", "impostor", "reverseImpostor"].includes(type) && options.length !== 4) issues.push(`${type} requires four unique options`);
-  if ((type === "story" || type === "idiomStory") && challenge.answer && normalizeAnswerText(challenge.prompt).includes(normalizeAnswerText(challenge.answer))) issues.push("prompt leaks the answer");
-  if ((type === "impostor" || type === "reverseImpostor") && !challenge.relationship) issues.push("impostor relationship is not stored");
-  if (type === "impostor" && options.length !== 4) issues.push("impostor requires four options");
-  if (type === "reverseImpostor" && options.length !== 4) issues.push("reverse impostor requires four options");
-  if (type === "idiomStory") {
-    const optionWords = options.map((option) => wordSource.find((word) => normalizeAnswerText(word.word) === normalizeAnswerText(option)));
-    if (options.length && optionWords.some((word) => !isStrictIdiom(word))) issues.push("idiom challenge options must all be loaded idioms");
-  }
-  if (type === "idiomStory" || type === "reverseIdiomStory") {
-    const linked = uniqueStrings(challenge.linkedWords).map((label) => wordSource.find((word) => word.word === label));
-    if (linked.some((word) => !isStrictIdiom(word))) issues.push("idiom challenge links must use type idiom");
-  }
-  if (type === "phrasalTransform") {
-    const linked = uniqueStrings(challenge.linkedWords).map((label) => wordSource.find((word) => word.word === label));
-    if (!linked.length || linked.some((word) => !isPhrasal(word))) issues.push("phrasal transform must link loaded phrasal entries");
-  }
-  if (Array.isArray(challenge.steps)) {
-    challenge.steps.forEach((step, index) => {
-      const stepOptions = uniqueStrings(step.options);
-      const stepAnswers = uniqueStrings([...(step.answer !== undefined ? [step.answer] : []), ...(Array.isArray(step.answers) ? step.answers : []), ...(Array.isArray(step.acceptedAnswers) ? step.acceptedAnswers : [])]);
-      if (!stepAnswers.length) issues.push(`step ${index + 1} has no answer`);
-      if (stepOptions.length && stepAnswers.some((answer) => !stepOptions.some((option) => normalizeAnswerText(option) === normalizeAnswerText(answer)))) issues.push(`step ${index + 1} answer is missing from options`);
-    });
-  }
-  return issues;
 }
 
 export function getAllowedModes(word) {
@@ -362,49 +301,6 @@ export function selectAdaptiveMode(word, masteryStats, context = {}) {
     .filter(([modeId]) => allowed.has(modeId) && !(context.quarantine && context.quarantine.has(`${String(word.word||"").trim().toLowerCase()}|${modeId}`)))
     .map(([value, weight]) => ({ value, weight }));
   return weightedChoice(weighted) || (allowed.has("situation") ? "situation" : [...allowed][0] || "meaning");
-}
-
-export function buildAdaptiveRound(level, mastery = {}, confusions = {}, sessionType = "level") {
-  const allUnique = dedupeBy(level.items, levelItemKey);
-  let unique = allUnique;
-  if (sessionType === "level") {
-    const filtered = allUnique.filter((item) => {
-      if (item.kind === "challenge") return challengeProgressEligible(item.obj, mastery);
-      if (item.kind !== "word") return true;
-      const stats = mastery[item.obj.word];
-      const mastered = getMasteryStage(stats, item) === MASTERY_STAGE.MASTERED;
-      return !mastered || Math.random() < 0.18;
-    });
-    unique = filtered.length ? filtered : shuffle(allUnique).slice(0, Math.min(6, allUnique.length));
-  }
-  const result = [];
-  let lastMode = null;
-  const shuffledItems = shuffle(unique);
-  if (LAST_CHALLENGE_ID && shuffledItems.length > 1 && shuffledItems[0]?.kind === "challenge" && shuffledItems[0].obj.id === LAST_CHALLENGE_ID) {
-    const swapIndex = shuffledItems.findIndex((item, index) => index > 0 && !(item.kind === "challenge" && item.obj.id === LAST_CHALLENGE_ID));
-    if (swapIndex > 0) [shuffledItems[0], shuffledItems[swapIndex]] = [shuffledItems[swapIndex], shuffledItems[0]];
-  }
-  for (const item of shuffledItems) {
-    if (item.kind === "challenge") {
-      result.push({ kind: "challenge", obj: item.obj });
-      continue;
-    }
-    if (item.kind !== "word") {
-      result.push(item.kind === "grammar" ? { kind: "grammar", obj: item.obj } : { kind: "pun", obj: item.obj });
-      continue;
-    }
-    const stats = mastery[item.obj.word];
-    const confusion = getStrongConfusion(item.obj, confusions);
-    const mode = selectAdaptiveMode(item.obj, stats, { sessionType, confusion, lastMode });
-    const difficulty = getAdaptiveDifficulty(item.obj, stats, mode);
-    result.push({ kind: "word", wordObj: item.obj, mode, difficulty, confusionPartner: confusion?.partner || null });
-    lastMode = mode;
-  }
-  return result;
-}
-
-export function buildRound(level, mastery = {}, confusions = {}, sessionType = "level") {
-  return buildAdaptiveRound(level, mastery, confusions, sessionType);
 }
 
 /* --------------------------------- POOLS ----------------------------------- */
@@ -641,14 +537,6 @@ export function buildSelectTwoQuestion(wordObj, ctx = contextSentence) {
   };
 }
 
-// --- Speed Round: a standalone timed mode for reviewing words already
-// mastered — not for first learning. Picks a random mastered word and a
-// fast MCQ style (never typing/multi, which take too long under a clock),
-// reusing whatever content is currently active in that word's pools
-// read-only, so nothing here touches pool locks, mastery, or triggers
-// regeneration the way a normal round answer would.
-export const SPEED_MODES = ["meaning", "gap", "situation"];
-
 export const SPEED_SECONDS = 60, SPEED_QUEUE_SIZE = 80;
 // The legacy speed builder's shape → a SessionView question.
 export function speedQuestionV2(raw, i) {
@@ -829,9 +717,3 @@ export function v2SessionFromEntries(entries, {kind,title,idPrefix=kind}) {
   return {id:`${idPrefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,kind,title,queue,introductions:[],index:0,answers:[],initialLength:queue.length};
 }
 
-export function entryFileMeta(entry) {
-  if (entry.kind === "word") return MODE_META[entry.mode];
-  if (entry.kind === "grammar") return { label: "Grammar Court", icon: Scale };
-  if (entry.kind === "challenge") return CHALLENGE_MODE_META[challengeType(entry.obj)] || { label: "Challenge", icon: BookOpen };
-  return { label: "Puns", icon: Sparkles };
-}
