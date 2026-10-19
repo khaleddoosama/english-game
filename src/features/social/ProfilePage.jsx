@@ -1,18 +1,13 @@
-import { useEffect, useState } from "react";
 import { navigate } from "../../lib/router";
-import { formatMs } from "../live/liveRules";
 import { Award, BookCopy, BookOpen, Copy, Download, LogOut, SlidersHorizontal, Users } from "lucide-react";
 import { ChangePassword, useAuth } from "../auth";
 import { isLocalMode } from "../../lib/supabase";
-import { fetchLiveHistory } from "./socialApi";
+import { useLiveHistory } from "./useLiveHistory";
+import { historyPlace, historyScore } from "./socialRules";
 
 export default function ProfilePage({ libraryOn = false, libraryInbox = 0, stats, social = { requests: 0, invites: 0 }, onCopyBackup, onDownloadBackup, onOpenStats, onSignOut }) {
   const auth = useAuth();
-  const [history, setHistory] = useState(null);
-  useEffect(() => {
-    if (!auth.user || isLocalMode) { setHistory([]); return; }
-    fetchLiveHistory(auth.user.id).then(setHistory).catch(() => setHistory([]));
-  }, [auth.user?.id]);
+  const history = useLiveHistory(auth.user?.id);
 
   const tiles = [
     ["Score", stats.score],
@@ -45,8 +40,8 @@ export default function ProfilePage({ libraryOn = false, libraryInbox = 0, stats
         <ul className="ui-history">
           {history.map((h) => (
             <li key={`${h.room_code}-${h.played_at}`} onClick={() => navigate(`/live/${h.room_code}`)} role="link" tabIndex={0} className="clickable">
-              <span><b>{h.rank === 1 && h.players > 1 ? "🏆 " : `#${h.rank} `}</b>{h.title}<small>{new Date(h.played_at).toLocaleDateString()} · {h.players} players</small></span>
-              <span><b>{h.correct}/{h.total}</b> right<small>{h.total_ms ? formatMs(h.total_ms) : `${h.points} pts`}{h.finished === false ? " · unfinished" : ""}</small></span>
+              <span><b>{historyPlace(h)}</b>{h.title}<small>{new Date(h.played_at).toLocaleDateString()} · {h.players} players</small></span>
+              <span><b>{h.correct}/{h.total}</b> right<small>{historyScore(h)}</small></span>
             </li>
           ))}
         </ul>

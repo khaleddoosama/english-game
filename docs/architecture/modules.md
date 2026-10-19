@@ -156,7 +156,7 @@ Order is by how self-contained the cluster is and how well it is covered.
   `normalizeAnswerText` to `engine/text.js`.)
 - A **module dependency cycle** is about folders: module A has a file that imports a file of module B, and B has a
   file that imports a file of A, with no file loop at all. Nothing fails at run time, but A and B can no longer be
-  understood or changed one without the other. **Today: two**, listed below. My Library is in none of them.
+  understood or changed one without the other. **Today: one**, listed below. My Library is in none of them.
 
 So "0 file cycles" does not mean "no cycles between modules": the second kind is what the remaining work is about.
 
@@ -164,7 +164,7 @@ Known debts the guards list (outside My Library; module cycles, not file cycles)
 
 - ~~loop `engine/ai` <-> `engine/questions`~~ fixed: `normalizeAnswerText` moved to `engine/text.js`
 - loop `engine` <-> `lib` (`lib` imports the engine, and the engine imports `lib`); the media part is fixed: since `MT-02` the picture check (`checkImageLinks`) is called by the content module, so the engine imports no feature
-- loop `features/social` <-> `features/live`
+- ~~loop `features/social` <-> `features/live`~~ fixed 2026-10-19: social no longer imports Live (the shell passes `getLiveApi` in, used for local invitations; `formatMs` moved to `lib/format.js`), and Live imports social only through its index
 
 ## What was not verified
 

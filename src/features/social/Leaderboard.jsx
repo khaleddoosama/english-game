@@ -1,34 +1,15 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Trophy } from "lucide-react";
 import { isLocalMode } from "../../lib/supabase";
 import { navigate } from "../../lib/router";
-import { weekStart } from "../../lib/repo";
-import { fetchFriendsBoard, fetchLeaderboard } from "./socialApi";
 import { AddFriendButton, useFriendStatus } from "./AddFriendButton";
-
-// Practice points are counted by each player's game and sent with their
-// progress; Live answers are checked by the server. Each tab says which.
-const TABS = [
-  { id: "friends", label: "Friends", value: (p) => (p.week_start === weekStart() ? p.week_score : 0), unit: "pts", extra: (p) => `${p.score} all time`, note: "You and your friends, by this week's practice points." },
-  { id: "week", label: "This week", value: (p) => p.week_score, unit: "pts", note: "Practice points, counted by each player's game. For fun between friends; Live wins are checked by the server." },
-  { id: "all", label: "All time", value: (p) => p.score, unit: "pts", note: "Practice points, counted by each player's game. For fun between friends; Live wins are checked by the server." },
-  { id: "live", label: "Live wins", value: (p) => p.live_wins, unit: "wins", extra: (p) => `${p.live_played} played`, note: "Answers checked and timed by the server. A challenge's creator made its questions, so their own result doesn't count as a win." },
-];
+import { useLeaderboard } from "./useLeaderboard";
+import { FIRST_RANK_TAB, RANK_TABS as TABS, emptyRanksText } from "./socialRules";
 
 export default function Leaderboard({ me, hiddenForPlayers = false, friendsApi = null }) {
-  const [tab, setTab] = useState("week");
+  const [tab, setTab] = useState(FIRST_RANK_TAB);
   const friends = useFriendStatus(friendsApi, !isLocalMode);
-  const [rows, setRows] = useState(null);
-  const [error, setError] = useState(null);
-  useEffect(() => {
-    let stale = false;
-    setRows(null); setError(null);
-    const load = tab === "friends"
-      ? friendsApi.list().then((l) => fetchFriendsBoard([me, ...l.friends.map((f) => f.id)]))
-      : fetchLeaderboard(tab);
-    load.then((r) => { if (!stale) setRows(r); }).catch((e) => { if (!stale) setError(e.message); });
-    return () => { stale = true; };
-  }, [tab, me, friendsApi]);
+  const { rows, error } = useLeaderboard(tab, me, friendsApi);
   const t = TABS.find((x) => x.id === tab);
   return (
     <section className="ui-page">
@@ -41,7 +22,7 @@ export default function Leaderboard({ me, hiddenForPlayers = false, friendsApi =
       {error && <p className="wh-import-error">{error}</p>}
       {!rows && !error && !isLocalMode && <ol className="ui-rank-list">{[0, 1, 2, 3, 4].map((i) => <li key={i} className="ui-skeleton-row" />)}</ol>}
       {rows && tab === "friends" && rows.length <= 1 && <p className="ui-muted">Add friends to compare your week with theirs. <button className="ui-row-btn" onClick={() => navigate("/friends")}>Find friends</button></p>}
-      {rows && !rows.length && tab !== "friends" && <p className="ui-muted">{tab === "week" ? "No points yet this week — play a round to take first place." : tab === "live" ? "No live matches yet." : "Nobody has scored yet."}</p>}
+      {rows && !rows.length && tab !== "friends" && <p className="ui-muted">{emptyRanksText(tab)}</p>}
       {!isLocalMode && <p className="ui-muted ui-rank-note">{t.note}</p>}
       {rows && rows.length > 0 && <ol className="ui-rank-list">
         {rows.map((p, i) => (

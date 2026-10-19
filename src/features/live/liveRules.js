@@ -118,9 +118,5 @@ export function splitQuestions(questions) {
   };
 }
 
-export function formatMs(ms) {
-  const s = Math.max(0, Math.round(Number(ms || 0) / 100) / 10);
-  if (s < 60) return `${s.toFixed(1)}s`;
-  const m = Math.floor(s / 60);
-  return `${m}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
-}
+// Moved to lib (social shows Live times too); offered here as before.
+export { formatMs } from "../../lib/format";

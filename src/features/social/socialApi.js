@@ -2,6 +2,7 @@
 // summary numbers to other players (see RLS in migration 0001).
 import { isLocalMode, supabase } from "../../lib/supabase";
 import { weekStart } from "../../lib/repo";
+import { friendsBoardOrder } from "./socialRules";
 
 const COLS = "id, username, score, week_score, week_start, mastered_count, study_streak, best_study_streak, live_wins, live_played";
 
@@ -21,9 +22,7 @@ export async function fetchFriendsBoard(ids) {
   if (isLocalMode || !ids.length) return [];
   const { data, error } = await supabase.from("profiles").select(COLS).in("id", ids);
   if (error) throw new Error(error.message);
-  const week = weekStart();
-  const points = (p) => (p.week_start === week ? p.week_score : 0);
-  return data.slice().sort((a, b) => points(b) - points(a) || b.score - a.score);
+  return friendsBoardOrder(data);
 }
 
 export async function fetchLiveHistory(userId, limit = 10) {

@@ -25,7 +25,7 @@ flowchart LR
   admin --> engine & lib & data & media
   library --> engine & lib & home & social
   live --> engine & lib & library & social & media
-  social --> lib & live
+  social --> lib
   session --> engine & lib & media
   engine --> lib
   lib --> engine
@@ -35,7 +35,7 @@ flowchart LR
 What this shows (**Current**):
 
 - `app/WordHunter.jsx` imports almost everything and holds the cross-module logic.
-- Cycles exist: `engine` and `lib` import each other (the repo uses the engine's mastery rules; the AI prompts in the engine call the AI client in `lib`); `live` and `social` import each other (friend invitations need the Live API); `engine` imported `features/media` until 2026-10-19 (the picture check now runs in the content module, `MT-02`).
+- Cycles exist: `engine` and `lib` import each other (the repo uses the engine's mastery rules; the AI prompts in the engine call the AI client in `lib`); `live` and `social` imported each other until 2026-10-19 (social now gets the Live API from the app, for local invitations, and Live uses social's index for the add-friend button); `engine` imported `features/media` until 2026-10-19 (the picture check now runs in the content module, `MT-02`).
 - `features/admin` reaches into `engine` 16 times (it edits content using engine helpers).
 - `features/library` imports `features/home` and `features/social` (shared helpers and the friends list).
 

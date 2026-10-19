@@ -1,6 +1,6 @@
 # Module: social
 
-Friends, friend requests, the leaderboard, the profile page, and the numbers behind the navigation badges. Proposed boundary, see [module-map.md](../../architecture/module-map.md).
+Friends, friend requests, the leaderboard, the profile page, and the numbers behind the navigation badges. Proposed boundary, see [module-map.md](../../architecture/module-map.md). What the player sees, step by step, and the module's public surface (`index.js`): [friends-and-ranks.md](friends-and-ranks.md).
 
 ## 1. Purpose and scope
 
@@ -41,7 +41,9 @@ The friends API in [friendsApi.js](../../../src/features/social/friendsApi.js).
 ## 3. Files, screens and database objects
 
 - Screens: [FriendsPage](../../../src/features/social/FriendsPage.jsx), [Leaderboard](../../../src/features/social/Leaderboard.jsx), [ProfilePage](../../../src/features/social/ProfilePage.jsx), [AddFriendButton](../../../src/features/social/AddFriendButton.jsx).
-- Logic: [friendsApi.js](../../../src/features/social/friendsApi.js), [socialApi.js](../../../src/features/social/socialApi.js), [useSocialCounts.js](../../../src/features/social/useSocialCounts.js).
+- Public surface: [index.js](../../../src/features/social/index.js) (see [friends-and-ranks.md](friends-and-ranks.md#files-and-interface)).
+- Rules and hooks: [socialRules.js](../../../src/features/social/socialRules.js), [useSocial.js](../../../src/features/social/useSocial.js), [useSocialCounts.js](../../../src/features/social/useSocialCounts.js), [useLeaderboard.js](../../../src/features/social/useLeaderboard.js), [useFriendsList.js](../../../src/features/social/useFriendsList.js), [useLiveHistory.js](../../../src/features/social/useLiveHistory.js).
+- Data: [friendsApi.js](../../../src/features/social/friendsApi.js), [socialApi.js](../../../src/features/social/socialApi.js).
 - Tables: `friendships`, `live_invites`, `profiles` (leaderboard columns), `live_results`.
 - Functions: `friend_request`, `friend_respond`, `friend_remove`, `friends_list`, `are_friends`, `friend_count`, `social_counts`, `live_invite_friends`, `live_my_invites`, `live_invite_dismiss`, `live_invites_sent`, `leaderboard_visible`.
 - Migrations 0013, 0024, 0025.
@@ -76,8 +78,10 @@ The friends API in [friendsApi.js](../../../src/features/social/friendsApi.js).
 | Rank visibility | [supabase/tests/ranks.sql](../../../supabase/tests/ranks.sql) |
 | Profile page with the catalog link | [tests/profile-catalog.test.jsx](../../../tests/profile-catalog.test.jsx) |
 | Two tabs: ask, accept, invite, join | [e2e/specs/friendslive.cjs](../../../e2e/specs/friendslive.cjs) |
+| Badges, Ranks, the add-friend button, the Friends page and the Live history, online with a fake Supabase | [e2e/specs/social.cjs](../../../e2e/specs/social.cjs) |
+| Rules and hooks | [tests/social-rules.test.js](../../../tests/social-rules.test.js), [tests/social-hooks.test.jsx](../../../tests/social-hooks.test.jsx) |
 
-**Gaps.** The leaderboard screens and `socialApi` have no tests; the weekly board boundary across time zones is untested; local and online friends implementations are not compared (`MT-05`).
+**Gaps.** The leaderboard is tested against a fake Supabase, not the real database (its rules: `ranks.sql`); the weekly board boundary across time zones is untested; local and online friends implementations are not compared (`MT-05`).
 
 ## 8. Example journey
 
@@ -89,11 +93,12 @@ Dana (synthetic) adds Omar as a friend.
 
 ## 9. Status
 
-**Implemented.** Everything above.
+**Implemented.** Everything above. Since 2026-10-19 this module does not import Live: the app passes the Live API
+in (`useSocial({ liveFor })`), which the local invitations use; the invitation functions stay here (they live in the
+friends API and the `social_counts` function counts them with the requests). This ended the `live`/`social` loop.
 
 **Planned**
 
-- Phase 4: no import of Live code from this module (the cycle is removed by moving invitations to `live`).
 - Phase 3: leaderboard numbers bounded or computed on the server.
 
 **Known Issues**
