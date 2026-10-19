@@ -2,7 +2,6 @@
 // apply it, and send a failed file to the AI for a repair. The steps with no state are in importPlan.js and
 // transfer.js; this hook applies them to the shell's state, as the shell always did. Docs:
 // docs/modules/admin/import-export.md.
-import { LEVEL_ORDER, WORDS, mergeCustomData } from "../../engine/data";
 import { aiFixImportJson } from "../../engine/ai";
 import { importModeError, inspectImport } from "./transfer";
 import { contentImportPlan, exportFileOf, importDoneText, restoredProgressOf } from "./importPlan";
@@ -18,12 +17,12 @@ import { contentImportPlan, exportFileOf, importDoneText, restoredProgressOf } f
 // resetProgress()         "Reset progress" (the shell; it clears every progress field)
 // wipeContent()           the repo's wipeContent: online an empty content save, locally the content key deleted
 // set                     { setDataVersion, setShowFreshCopyPrompt, setToast, setQuickBackupCopied }
-export function useDataTransfer({ isAdmin, exportedBy, liveContent, backupPayload, contentNoteRef, setContent, migrateRenamedProgress, applyRestoredProgress, resetProgress, wipeContent, set }) {
+export function useDataTransfer({ isAdmin, gameContent, setGameContent, exportedBy, liveContent, backupPayload, contentNoteRef, setContent, migrateRenamedProgress, applyRestoredProgress, resetProgress, wipeContent, set }) {
   const { setDataVersion, setShowFreshCopyPrompt, setToast, setQuickBackupCopied } = set;
 
   // Files: a full backup (progress + content), content only (admin), or the words as a spreadsheet (admin).
   function exportFile(kind) {
-    return exportFileOf(kind, { content: liveContent(), words: WORDS, backup: kind === "backup" ? backupPayload() : null, exportedBy });
+    return exportFileOf(kind, { content: liveContent(), words: gameContent().words, backup: kind === "backup" ? backupPayload() : null, exportedBy });
   }
   function downloadBackup() {
     const file = exportFile("backup");
@@ -53,9 +52,9 @@ export function useDataTransfer({ isAdmin, exportedBy, liveContent, backupPayloa
     const refused = importModeError(check, mode, isAdmin);
     if (refused) throw new Error(refused);
     if (mode !== "progress") {
-      const { content, order, note, renames } = contentImportPlan(raw, mode, liveContent(), LEVEL_ORDER);
+      const { content, order, note, renames } = contentImportPlan(raw, mode, liveContent(), gameContent().levelOrder);
       contentNoteRef.current = note || contentNoteRef.current;
-      mergeCustomData(content.words, content.grammar, content.challenges, order);
+      setGameContent(content.words, content.grammar, content.challenges, order);
       setContent(content);
       if (renames) migrateRenamedProgress(renames);
     }
@@ -76,7 +75,7 @@ export function useDataTransfer({ isAdmin, exportedBy, liveContent, backupPayloa
   // and the level order they built.
   async function wipeEverything() {
     await resetProgress();
-    mergeCustomData([], [], [], [], []);
+    setGameContent([], [], [], [], []);
     setContent({ words: [], grammar: [], challenges: [], combos: [], stories: [] });
     setDataVersion((v) => v + 1);
     try { await wipeContent(); } catch (e) { console.error("Could not clear content:", e); }

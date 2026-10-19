@@ -6,6 +6,7 @@ import { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LEVEL_ORDER, mergeCustomData } from "../src/engine/data";
+import { gameContent, setGameContent } from "../src/features/content";
 
 const aiFixImportJson = vi.fn();
 vi.mock("../src/engine/ai", async (original) => ({ ...(await original()), aiFixImportJson: (...a) => aiFixImportJson(...a) }));
@@ -29,7 +30,7 @@ function Probe() {
   const [copied, setQuickBackupCopied] = useState(false);
   state = { lists, dataVersion, freshCopy, toast, copied };
   api = useDataTransfer({
-    isAdmin, exportedBy: "tester", liveContent: () => ({ ...lists, note: contentNoteRef.current }), backupPayload, contentNoteRef,
+    isAdmin, gameContent, setGameContent, exportedBy: "tester", liveContent: () => ({ ...lists, note: contentNoteRef.current }), backupPayload, contentNoteRef,
     setContent: (c) => setLists({ words: c.words, grammar: c.grammar, challenges: c.challenges, combos: c.combos, stories: c.stories }),
     migrateRenamedProgress, applyRestoredProgress, resetProgress, wipeContent, set: { setDataVersion, setShowFreshCopyPrompt, setToast, setQuickBackupCopied },
   });

@@ -3,7 +3,6 @@
 // docs/modules/ai-media/ask-ai.md.
 import { useEffect, useRef, useState } from "react";
 import { V2 } from "../../engine/v2";
-import { LEVEL_ORDER, WORDS, mergeCustomData } from "../../engine/data";
 import { askAiForWord } from "../../engine/ai";
 import { cancelAiTasks } from "../../lib/aiOperations";
 import { aiWordEntry, aiWordProblem, askTerm } from "./askAiRules";
@@ -16,7 +15,7 @@ const TASK = "Ask AI about a word";
 // set              { setCustomWords, setDataVersion, setToast }
 // contextCategory  the category the player is on (contextCategoryOf), or null
 // onWordAdded(entry)   after a word is added (the shell keeps it in the admin's library)
-export function useAskAi({ isAdmin, liveContent, content, set, contextCategory, onWordAdded }) {
+export function useAskAi({ isAdmin, gameContent, setGameContent, liveContent, content, set, contextCategory, onWordAdded }) {
   const { customWords, customGrammar, customChallenges } = content;
   const { setCustomWords, setDataVersion, setToast } = set;
   const [open, setOpen] = useState(false);
@@ -48,10 +47,10 @@ export function useAskAi({ isAdmin, liveContent, content, set, contextCategory, 
     cancelAiTasks([TASK]);
     setBusy(true); setError(null); setResult(null);
     try {
-      const existing = V2.findWord(WORDS, clean);
+      const existing = V2.findWord(gameContent().words, clean);
       const answer = await askAiForWord(clean, existing);
       if (mine !== epoch.current) return;
-      setResult({ ...answer, alreadyInCollection: !!(existing || V2.findWord(WORDS, answer.word)) });
+      setResult({ ...answer, alreadyInCollection: !!(existing || V2.findWord(gameContent().words, answer.word)) });
     } catch (e) {
       if (mine !== epoch.current) return;
       console.error("Ask AI failed", e);
@@ -65,7 +64,7 @@ export function useAskAi({ isAdmin, liveContent, content, set, contextCategory, 
     const problem = aiWordProblem(entry, liveContent());
     if (problem) { setError(problem); return; }
     const next = [...customWords, entry];
-    mergeCustomData(next, customGrammar, customChallenges, LEVEL_ORDER);
+    setGameContent(next, customGrammar, customChallenges, gameContent().levelOrder);
     setCustomWords(next); setDataVersion((v) => v + 1);
     setResult((previous) => ({ ...previous, alreadyInCollection: true }));
     setToast({ kind: "import", text: `${entry.word} added to your collection` });

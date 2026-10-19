@@ -6,6 +6,7 @@ import { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WORDS, mergeCustomData } from "../src/engine/data";
+import { gameContent, setGameContent } from "../src/features/content";
 
 const askAiForWord = vi.fn();
 const cancelAiTasks = vi.fn();
@@ -24,7 +25,7 @@ function Probe() {
   const [toast, setToast] = useState(null);
   state = { customWords, dataVersion, toast };
   ask = useAskAi({
-    isAdmin, liveContent: () => ({ words: customWords, grammar: [], challenges: [], combos: [], stories: [] }),
+    isAdmin, gameContent, setGameContent, liveContent: () => ({ words: customWords, grammar: [], challenges: [], combos: [], stories: [] }),
     content: { customWords, customGrammar: [], customChallenges: [] }, set: { setCustomWords, setDataVersion, setToast }, contextCategory, onWordAdded,
   });
   return <AskAiDrawer ask={ask} isAdmin={isAdmin} />;

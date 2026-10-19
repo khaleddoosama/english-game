@@ -1,6 +1,6 @@
 import { V2 } from "../../engine/v2";
 import { imageLinkOk } from "../media/media";
-import { WORDS, currentCatalog, levelGroups } from "../../engine/data";
+import { levelGroups } from "../../engine/data";
 import { buildQuestion, canBuildWhoAmI, legacyQuestionToV2 } from "../../engine/questions";
 // Live Challenge question building (rules and scoring: liveRules.js;
 // server calls: liveApi.js; the screens: LiveChallenge.jsx).
@@ -31,8 +31,9 @@ export const liveKey = (kind, name) => V2.sentence(`live ${kind} ${String(name).
 // mostly definitions. Fresh first: a question nobody on this device read
 // recently beats one read long ago, which beats one read in the last 20
 // hours, and a word asked in the last 20 hours (any type) waits behind words
-// that weren't. `grammar` is a list of grammar rules to draw questions from.
-export function liveQuestions(words, count, { pools = null, seen = {}, rng = Math.random, kinds = null, grammar = [] } = {}) {
+// that weren't. `grammar` is a list of grammar rules to draw questions from;
+// `content` is the game's copy ({ words, challenges }) the wrong options come from.
+export function liveQuestions(words, count, { content, pools = null, seen = {}, rng = Math.random, kinds = null, grammar = [] } = {}) {
   const allowed = new Set(kinds?.length ? kinds : LIVE_KINDS.map((k) => k.id));
   const shuffle = (list) => V2.shuffleCopy(list, rng);
   const now = Date.now(), window = V2.SEEN_FRESH_HOURS * 3600000;
@@ -43,7 +44,7 @@ export function liveQuestions(words, count, { pools = null, seen = {}, rng = Mat
   // A question from the practice builders (Who am I?, Opposites): a single
   // multiple-choice question that doesn't spell out its own answer.
   const fromLegacy = (kind, w) => {
-    const built = legacyQuestionToV2(currentCatalog(), buildQuestion(currentCatalog(), kind, w, pools, { difficulty: 2 }), { kind: "word", wordObj: w }, kind);
+    const built = legacyQuestionToV2(content, buildQuestion(content, kind, w, pools, { difficulty: 2 }), { kind: "word", wordObj: w }, kind);
     const q = built.length === 1 ? built[0] : null;
     if (!q || q.type !== "mcq" || q.noMastery) return null;
     if ((q.answers || []).some((a) => String(a).length > 2 && V2.norm(q.prompt).includes(V2.norm(a)))) return null;
@@ -52,25 +53,25 @@ export function liveQuestions(words, count, { pools = null, seen = {}, rng = Mat
   };
   // Opposite clue: an antonym from outside the game points at this word.
   const antonym = (w) => {
-    const clues = V2.outsideAntonyms(w, WORDS);
+    const clues = V2.outsideAntonyms(w, content.words);
     if (!clues.length) return null;
     const clue = clues[Math.floor(rng() * clues.length)];
     // The word itself stays; the others must not also be opposites of the clue.
-    const others = V2.optionWords([w], WORDS, 6, rng).filter((x) => x.word !== w.word && !V2.antonymsOf(x).some((a) => V2.norm(a) === V2.norm(clue))).slice(0, 3).map((x) => x.word);
+    const others = V2.optionWords([w], content.words, 6, rng).filter((x) => x.word !== w.word && !V2.antonymsOf(x).some((a) => V2.norm(a) === V2.norm(clue))).slice(0, 3).map((x) => x.word);
     if (others.length < 2) return null;
     const options = shuffle([w.word, ...others]);
     return { mode: "antonym", type: "mcq", prompt: `The opposite of “${clue}” is…`, options, answers: [w.word], explanation: `${w.word} ↔ ${clue}. ${w.meaning || ""}`.trim() };
   };
   const build = (w, kind) => {
     try {
-      return kind === "picture" ? V2.pictureQuestion(w, WORDS, rng, false, imageLinkOk)
-        : kind === "collocation" ? V2.collocationQuestion(w, WORDS, rng, false)
+      return kind === "picture" ? V2.pictureQuestion(w, content.words, rng, false, imageLinkOk)
+        : kind === "collocation" ? V2.collocationQuestion(w, content.words, rng, false)
         : kind === "family" ? V2.familyQuestion(w, rng, false)
         : kind === "whoami" ? (canBuildWhoAmI(w) ? fromLegacy("whoami", w) : null)
         : kind === "opposite" ? (w.opposite ? fromLegacy("opposite", w) : null)
         : kind === "antonym" ? antonym(w)
         : kind === "gap" && !/_{2,}/.test(w.gap || "") && !(pools?.[w.word]?.gap || []).length ? null
-        : kind === "meaning" || kind === "reverse" || kind === "gap" ? V2.makeQuestion(w, kind, WORDS, rng, 2, pools, null, seen)
+        : kind === "meaning" || kind === "reverse" || kind === "gap" ? V2.makeQuestion(w, kind, content.words, rng, 2, pools, null, seen)
         : null;
     } catch { return null; }
   };

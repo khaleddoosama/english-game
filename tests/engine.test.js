@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { V2 } from "../src/engine/v2";
 import { LEVELS, WORDS, mergeCustomData } from "../src/engine/data";
+import { gameContent } from "../src/features/content";
 import { migrateProgressData } from "../src/engine/progress";
 import { liveQuestions } from "../src/features/live/liveEngine";
 
@@ -63,7 +64,7 @@ describe("progress", () => {
 describe("live challenge", () => {
   it("builds multiple-choice questions that carry their answer", () => {
     const words = LEVELS[1].items.filter((it) => it.kind === "word").map((it) => it.obj);
-    const qs = liveQuestions(words, 10, { rng: seeded(3) });
+    const qs = liveQuestions(words, 10, { content: gameContent(), rng: seeded(3) });
     expect(qs.length).toBe(10);
     for (const q of qs) {
       expect(q.options.length).toBeGreaterThanOrEqual(3);
@@ -73,7 +74,7 @@ describe("live challenge", () => {
 
   it("builds only the question types asked for", () => {
     const words = LEVELS[1].items.filter((it) => it.kind === "word").map((it) => it.obj);
-    const qs = liveQuestions(words, 8, { rng: seeded(5), kinds: ["meaning"] });
+    const qs = liveQuestions(words, 8, { content: gameContent(), rng: seeded(5), kinds: ["meaning"] });
     expect(qs.length).toBeGreaterThan(0);
     for (const q of qs) expect(q.mode).toBe("meaning");
   });

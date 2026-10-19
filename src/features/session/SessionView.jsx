@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Flame, Sparkles, Volume2, VolumeX, Zap } from "lucide-react";
 import { V2 } from "../../engine/v2";
 import { PronunciationModal, WordPicture } from "../media/media";
-import { MODE_META, WORDS } from "../../engine/data";
+import { MODE_META } from "../../engine/data";
 import { SPEED_SECONDS, speedStats } from "../../engine/questions";
 import { evaluateAlternativeGap, evaluateFreeForm, regenerateWordExplanation } from "../../engine/ai";
 import { preloadImage } from "../../lib/images";
@@ -15,8 +15,8 @@ const { grade, sentence } = V2;
 
 // One answer control for Practice, Stories and Chains. The draft lives in player state.
 // Other meanings of the same word (each one is its own entry, e.g. "Cast" and "Cast (to throw)").
-function OtherMeanings({word}){
-  const others=V2.sensesOf(WORDS,word);
+function OtherMeanings({word,words}){
+  const others=V2.sensesOf(words,word);
   if(!others.length)return null;
   return <div className="wh-senses"><p className="wh-senses-title">Other meanings of “{V2.bareWord(word.word)}”</p>
     <ul>{others.map(o=><li key={o.word}><b>{o.word}</b> — {o.meaning}</li>)}</ul></div>;
@@ -206,7 +206,7 @@ function SessionView({session:s,onChange,onFinish,onBack,words,onIntroduce,onRep
       </div>
       {/* Outside the card, so it doesn't flip it. Works on both sides. */}
       <div className="wh-flashcard-listen"><button className="wh-back-btn" onClick={()=>setYouglishTerm(V2.bareWord(w.word))}><Volume2 size={12}/> Listen</button></div>
-      {flipped&&<OtherMeanings word={w}/>}
+      {flipped&&<OtherMeanings word={w} words={words}/>}
       {flipped&&<div className="wh-regen-area">
         {!regenState&&onUpdateWord&&<button className="wh-back-btn wh-nav-btn" onClick={handleRegenerate}>Regenerate meaning &amp; example</button>}
         {regenState==='loading'&&<p className="wh-regen-status">Generating a new version…</p>}

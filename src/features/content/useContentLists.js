@@ -1,9 +1,9 @@
 // The shared content the game holds: the five lists (words, grammar rules, challenges, combos, stories) and the
-// content note. Loading a saved copy rebuilds the game's own copy (mergeCustomData). Docs:
+// content note. Loading a saved copy rebuilds the game's own copy (setGameContent). Docs:
 // docs/modules/content/content-sync.md.
 import { useRef, useState } from "react";
+import { gameContent, setGameContent } from "./gameContent";
 import { V2 } from "../../engine/v2";
-import { LEVEL_ORDER, mergeCustomData } from "../../engine/data";
 
 export function useContentLists() {
   const [customWords, setCustomWords] = useState([]);
@@ -25,8 +25,8 @@ export function useContentLists() {
     setCustomWords(custom.words || []);
     setCustomGrammar(custom.grammar || []);
     setCustomChallenges(Array.isArray(custom.challenges) ? custom.challenges : []);
-    const levelOrder = custom.levelOrder || LEVEL_ORDER;
-    mergeCustomData(custom.words || [], custom.grammar || [], custom.challenges || [], levelOrder);
+    const levelOrder = custom.levelOrder || gameContent().levelOrder;
+    setGameContent(custom.words || [], custom.grammar || [], custom.challenges || [], levelOrder);
     return true;
   }
 

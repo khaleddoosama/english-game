@@ -1,7 +1,6 @@
 // Story generation (admin): the chosen categories, the story being written, its preview, and Add / Discard. The
 // choice of targets is in storyRules.js. Docs: docs/modules/ai-media/story-generation.md.
 import { useEffect, useRef, useState } from "react";
-import { GRAMMAR, WORDS } from "../../engine/data";
 import { generateStory } from "../../engine/ai";
 import { cancelAiTasks } from "../../lib/aiOperations";
 import { storyPlan } from "./storyRules";
@@ -11,7 +10,7 @@ const TASK = "Write a story";
 // stories, setStories   the custom stories (Add appends to them; the content save follows)
 // mastery, confusions   the player's progress (weak words first)
 // viewKey               changes when the screen or address changes: a story still loading is dropped
-export function useStoryGeneration({ stories, setStories, mastery, confusions, viewKey }) {
+export function useStoryGeneration({ stories, setStories, mastery, confusions, viewKey, gameContent }) {
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState("");
   const [state, setState] = useState(null); // null | "loading" | "error" | {title,text,targetWords,questions}
@@ -27,8 +26,8 @@ export function useStoryGeneration({ stories, setStories, mastery, confusions, v
     setState("loading");
     setError("");
     try {
-      const { targets, grammarRules } = storyPlan({ words: WORDS, grammar: GRAMMAR, categories, stories, mastery, confusions });
-      const story = await generateStory(WORDS, targets, categories, grammarRules);
+      const { targets, grammarRules } = storyPlan({ words: gameContent().words, grammar: gameContent().grammar, categories, stories, mastery, confusions });
+      const story = await generateStory(gameContent().words, targets, categories, grammarRules);
       if (mine !== epoch.current) return;
       setState(story);
     } catch (e) {

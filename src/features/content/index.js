@@ -2,3 +2,4 @@
 // docs/modules/content/content-sync.md.
 export { useContentLists } from "./useContentLists";
 export { useContentSave } from "./useContentSave";
+export { gameContent, setGameContent } from "./gameContent";
