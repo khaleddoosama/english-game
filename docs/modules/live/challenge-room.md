@@ -6,7 +6,19 @@ the README, the channel's signals in its data flow.
 
 Status: **Implemented** (current code). Written down from `ChallengeRoom` in
 [LiveChallenge.jsx](../../../src/features/live/LiveChallenge.jsx) before slice 3 of Social & Live moved its logic into
-a hook; the move keeps it (see Tests).
+a hook; the move kept it (see Tests).
+
+## Files and interface
+
+- [roomRules.js](../../../src/features/live/roomRules.js), no state: `keepShown(cur, next)`, `withQuestion(cur, i, q)`,
+  `withProgress(cur, payload)`, `someoneNew(view, present)`, `myRow(view, playerId, localMe)`, `progressSignal(playerId,
+  row)`, `roomPollMs(channelState)`, `watchesRematch(view, now)`, `REMATCH_POLL_MS`, `REMATCH_WATCH_MS`,
+  `roomScreen(view, me)`.
+- [useChallengeRoom.js](../../../src/features/live/useChallengeRoom.js): `useChallengeRoom({ api, code, player })`
+  returns `{ view, loadError, error, busy, online, channelState, me, isHost, refresh, addQuestion, setLocalMe, send,
+  act, openNext }`. It reads the challenge, opens the channel for members, polls, and runs the actions.
+- `ChallengeRoom` in [LiveChallenge.jsx](../../../src/features/live/LiveChallenge.jsx) uses the hook and draws the
+  screens (it also loads the questions' pictures ahead). Both stay inside the Live module (not in its index).
 
 ## Loading
 
@@ -66,9 +78,14 @@ finished; the last answer of the challenge also sends "end". A failed answer (af
 | What | Where |
 | --- | --- |
 | A whole room in two tabs (local mode): the link, the host seeing the guest arrive, starting together, questions in order, the race, a reload in the middle, waiting, results, a rematch, removing, leaving, cancelling | `e2e/specs/liveroom.cjs` |
+| The rules and the hook: questions kept, the next question, my row, signals and presence, polling, the rematch check, actions, opening a rematch | `tests/live-room.test.jsx` |
 | The channel itself (signals, retries, status) | `tests/live-transport.test.js` |
 | Invitations from friends, joining from them | `e2e/specs/friendslive.cjs` |
 | The server's rules | `tests/live.test.js`, `supabase/tests/live_*.sql` |
+
+How the behaviour was kept: `liveroom.cjs` passes on the code before the move and after it (with `friendslive`,
+`livelib` and `livesetup`). The rules were moved unchanged and compared with the old inline code on random made-up
+rooms (31,754 checks; one-off, not kept). Deliberate breaks (18) each make `live-room.test.jsx` fail.
 
 ## Known Issues
 
