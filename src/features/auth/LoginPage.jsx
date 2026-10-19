@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "../../lib/auth";
+import { useAuth } from "./AuthProvider";
 import { parseRoute, useLocation } from "../../lib/router";
 import { useAppSettings } from "../../lib/appSettings";
 

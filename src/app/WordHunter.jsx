@@ -6,7 +6,7 @@ import { imageLinkOk } from "../features/media/media";
 import { unlockAudioOnFirstTouch } from "../lib/sound";
 unlockAudioOnFirstTouch(); // the first tap lets answer sounds play on phones
 import { SessionView } from "../features/session/SessionView";
-import { Splash } from "../features/auth/LoginPage";
+import { Splash } from "../features/auth";
 import { MASTERY_STAGE, RECENT_RESULT_LIMIT, confusionCount, getMasteryStage, isWordKey, courseLevelGroups, levelItemKey, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, v2SessionFromEntries } from "../engine/questions";
 import { evaluateFinalReport } from "../engine/ai";

@@ -4,7 +4,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../src/lib/auth", () => ({ useAuth: () => ({ user: null }) }));
+vi.mock("../src/features/auth", () => ({ useAuth: () => ({ user: null }) }));
 import ProfilePage from "../src/features/social/ProfilePage.jsx";
 
 let root, host;

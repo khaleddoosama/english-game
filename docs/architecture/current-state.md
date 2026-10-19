@@ -100,7 +100,7 @@ There is no state library. State lives in these layers, from most global to most
 | Layer | Where | Holds | Notes |
 | --- | --- | --- | --- |
 | URL | [router.js](../../src/lib/router.js) (`useSyncExternalStore`) | screen, section, filters | Refresh and shared links work. |
-| Auth | [auth.jsx](../../src/lib/auth.jsx) context | session user, profile, sign-in/up/out | Profile cached in localStorage for an offline start. |
+| Auth | [AuthProvider](../../src/features/auth/AuthProvider.jsx) context | session user, profile, sign-in/up/out | Profile cached in localStorage for an offline start. |
 | App settings | [appSettings.js](../../src/lib/appSettings.js) external store | sign-ups, maintenance, announcement, AI, Live limits, ranks, defaults | Loaded once at start; cached; read on the login page too. |
 | Game state | `useState` and `useRef` inside `WordHunter` | content lists, mastery, pools, confusions, session, settings, reports, score, streaks, library keys, UI flags | About 90 `useState` hooks in one component. Refs mirror some values for use inside callbacks. |
 | Game's copy of the content | [features/content/gameContent.js](../../src/features/content/gameContent.js) module value | one object: words, grammar, challenges, level order, levels, badges | Replaced by `setGameContent` with a new object built by `buildCatalog` ([engine/catalog.js](../../src/engine/catalog.js)); only the shell imports it and passes `gameContent()` / `setGameContent` to the features; the engine takes it as an argument. A `dataVersion` counter forces a re-render. `MT-02` fixed. |
@@ -177,7 +177,7 @@ sequenceDiagram
 | Item | Detail |
 | --- | --- |
 | Screen | [LoginPage](../../src/features/auth/LoginPage.jsx), the splash, and the load-error screen in WordHunter |
-| Client | [auth.jsx](../../src/lib/auth.jsx): username check (3 to 20 of `a-z0-9_`), password of 6+ characters, placeholder email from [supabase.js](../../src/lib/supabase.js), profile fetch with a cached fallback |
+| Client | [features/auth](../../src/features/auth) (`authRules.js`, `AuthProvider.jsx`): username check (3 to 20 of `a-z0-9_`), password of 6+ characters, placeholder email, profile fetch with a cached fallback |
 | Server | `register_player` (versions in 0002, 0012, 0022): sign-ups open or closed, per-network and global rate limits, always creates a `player`; `handle_new_user` trigger; `is_admin()` |
 | Tables | `auth.users`, `profiles`, `signup_log`, `app_settings` |
 | Failure | A wrong password gives "Wrong username or password". A failed profile load signs the user out with a message. Maintenance mode shows a waiting screen to players only (client side, `PE-03`). A challenge link keeps its address through login. |

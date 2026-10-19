@@ -1,9 +1,10 @@
+// The sign-in state for the whole app: the session, the profile (cached for an offline start), and the account
+// actions. The rules with no state are in authRules.js. Docs: docs/modules/accounts/sign-in.md.
 import { createContext, useContext, useEffect, useState } from "react";
-import { USERNAME_RE, emailFor, isLocalMode, supabase } from "./supabase";
+import { isLocalMode, supabase } from "../../lib/supabase";
+import { LOCAL_PROFILE, PROFILE_LOAD_ERROR, cleanUsername, emailFor, passwordProblem, profileCacheKey, signInErrorText, usernameProblem } from "./authRules";
 
 const AuthContext = createContext(null);
-const LOCAL_PROFILE = { id: "local", username: "local", role: "admin" };
-const profileCacheKey = (id) => `wh-profile:${id}`;
 
 async function fetchProfile(userId) {
   try {
@@ -35,7 +36,7 @@ export function AuthProvider({ children }) {
         const profile = await fetchProfile(id);
         if (!stopped && currentId === id) setState({ loading: false, user: session.user, profile, error: null });
       } catch (e) {
-        if (!stopped && currentId === id) setState({ loading: false, user: null, profile: null, error: "Couldn't load your account. Check your connection and try again." });
+        if (!stopped && currentId === id) setState({ loading: false, user: null, profile: null, error: PROFILE_LOAD_ERROR });
       }
     };
     supabase.auth.getSession().then(({ data }) => apply(data.session));
@@ -48,15 +49,16 @@ export function AuthProvider({ children }) {
     ...state,
     isAdmin: state.profile?.role === "admin",
     async signIn(username, password) {
-      const name = String(username || "").trim().toLowerCase();
-      if (!USERNAME_RE.test(name)) throw new Error("Usernames are 3–20 letters, numbers or _.");
+      const name = cleanUsername(username);
+      const problem = usernameProblem(name);
+      if (problem) throw new Error(problem);
       const { error } = await supabase.auth.signInWithPassword({ email: emailFor(name), password });
-      if (error) throw new Error(/invalid login/i.test(error.message) ? "Wrong username or password." : error.message);
+      if (error) throw new Error(signInErrorText(error.message));
     },
     async signUp(username, password) {
-      const name = String(username || "").trim().toLowerCase();
-      if (!USERNAME_RE.test(name)) throw new Error("Usernames are 3–20 letters, numbers or _.");
-      if (String(password || "").length < 6) throw new Error("Passwords need at least 6 characters.");
+      const name = cleanUsername(username);
+      const problem = usernameProblem(name) || passwordProblem(password);
+      if (problem) throw new Error(problem);
       const { error } = await supabase.rpc("register_player", { p_username: name, p_password: password });
       if (error) throw new Error(error.message);
       await api.signIn(name, password);
@@ -66,7 +68,8 @@ export function AuthProvider({ children }) {
       await supabase.auth.signOut();
     },
     async changePassword(password) {
-      if (String(password || "").length < 6) throw new Error("Passwords need at least 6 characters.");
+      const problem = passwordProblem(password);
+      if (problem) throw new Error(problem);
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw new Error(error.message);
     },
@@ -80,10 +83,3 @@ export function AuthProvider({ children }) {
 }
 
 export const useAuth = () => useContext(AuthContext);
-
-// Access token for calls to our own /api functions.
-export async function accessToken() {
-  if (isLocalMode) return null;
-  const { data } = await supabase.auth.getSession();
-  return data.session?.access_token || null;
-}

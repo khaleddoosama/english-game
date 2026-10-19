@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { navigate } from "../../lib/router";
 import { formatMs } from "../live/liveRules";
 import { Award, BookCopy, BookOpen, Copy, Download, KeyRound, LogOut, SlidersHorizontal, Users } from "lucide-react";
-import { useAuth } from "../../lib/auth";
+import { useAuth } from "../auth";
 import { isLocalMode } from "../../lib/supabase";
 import { fetchLiveHistory } from "./socialApi";
 
