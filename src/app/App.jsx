@@ -1,8 +1,7 @@
 import { useEffect, useMemo } from "react";
-import { AuthProvider, useAuth } from "../lib/auth";
+import { AuthProvider, LoginPage, Splash, useAuth } from "../features/auth";
 import { isLocalMode } from "../lib/supabase";
 import { createLocalRepo, createSupabaseRepo } from "../lib/repo";
-import { LoginPage, Splash } from "../features/auth/LoginPage";
 import WordHunter from "./WordHunter";
 import { loadAppSettings } from "../lib/appSettings";
 import { AiProgress } from "../features/media/AiProgress";

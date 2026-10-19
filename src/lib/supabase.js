@@ -10,8 +10,3 @@ export const supabase = url && key
   : null;
 
 export const isLocalMode = !supabase;
-
-// Accounts are username + password; Supabase Auth needs an email, so each
-// username maps to a placeholder address on the reserved .test domain.
-export const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
-export const emailFor = (username) => `${String(username).trim().toLowerCase()}@wordhunter.test`;

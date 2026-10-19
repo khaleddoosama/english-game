@@ -98,6 +98,15 @@ describe("no new loops between modules", () => {
     expect(Object.entries(modules).filter(([, tos]) => tos.includes("features/content")).map(([from]) => from)).toEqual(["app"]);
   });
 
+  it("the accounts module is in no loop, uses only lib, and is reached through its index (by the shell and the Profile page)", () => {
+    expect(cycles(modules).flat()).not.toContain("features/auth");
+    expect(modules["features/auth"]).toEqual(["lib"]);
+    const outside = Object.entries(graph).filter(([file, tos]) => !file.startsWith("features/auth/") && tos.some((t) => t.startsWith("features/auth/") && t !== "features/auth/index"));
+    expect(outside.map(([file]) => file)).toEqual([]);
+    expect(Object.entries(modules).filter(([, tos]) => tos.includes("features/auth")).map(([from]) => from)).toEqual(["app", "features/social"]);
+    expect(modules.lib).not.toContain("features/auth");
+  });
+
   it("the engine is below the features: it imports none (the picture check moved to the content module with MT-02)", () => {
     expect(modules.engine).toEqual(["lib"]);
   });
