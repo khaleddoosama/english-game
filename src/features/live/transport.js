@@ -15,9 +15,15 @@ export function openLiveChannel(code, me, { onEvent, onPresence, onStatus = () =
 }
 
 function realtimeChannel(code, me, onEvent, onPresence, onStatus) {
-  let channel = null, closed = false, attempt = 0, timer = null;
+  let channel = null, closed = false, attempt = 0, timer = null, ready = false, gaveUp = false;
+  // Messages sent before the channel is subscribed (right after opening it, or while it reconnects) wait here and
+  // go out once it is. Before, one sent right after opening ("joined") was lost: there was no channel yet.
+  let waiting = [];
+  const push = (event, payload) => channel.send({ type: "broadcast", event, payload }).catch(() => {});
+  const flush = () => { const out = waiting; waiting = []; out.forEach(([event, payload]) => push(event, payload)); };
   const connect = async () => {
     if (closed) return;
+    ready = false;
     onStatus("connecting");
     try { await supabase.realtime.setAuth(); } catch {}
     channel = supabase.channel(`live:${code}`, { config: { private: true, broadcast: { self: false }, presence: { key: me.id } } });
@@ -25,21 +31,27 @@ function realtimeChannel(code, me, onEvent, onPresence, onStatus) {
     channel.on("presence", { event: "sync" }, () => onPresence(Object.values(channel.presenceState()).map((metas) => metas[0]).filter(Boolean)));
     channel.subscribe(async (status, err) => {
       if (closed) return;
-      if (status === "SUBSCRIBED") { attempt = 0; onStatus("live"); await channel.track({ id: me.id, name: me.name }); return; }
+      if (status === "SUBSCRIBED") { attempt = 0; ready = true; onStatus("live"); flush(); await channel.track({ id: me.id, name: me.name }); return; }
       if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
         // e.g. "MissingPartition" on a project's very first connection, or
         // a dropped network: try again a few times, then rely on polling.
+        ready = false;
         console.warn("Live channel:", status, err?.message || "");
         supabase.removeChannel(channel);
         if (attempt < RETRY_MS.length) { timer = setTimeout(connect, RETRY_MS[attempt++]); onStatus("connecting"); }
-        else onStatus("offline");
+        // Gave up: messages go to the library as before (it sends them over HTTP when the channel is not joined).
+        else { gaveUp = true; onStatus("offline"); flush(); }
       }
     });
   };
   connect();
   return {
-    send(event, payload) { if (channel && !closed) channel.send({ type: "broadcast", event, payload }).catch(() => {}); },
-    close() { closed = true; clearTimeout(timer); if (channel) supabase.removeChannel(channel); },
+    send(event, payload) {
+      if (closed) return;
+      if (ready || gaveUp) push(event, payload);
+      else waiting.push([event, payload]);
+    },
+    close() { closed = true; waiting = []; clearTimeout(timer); if (channel) supabase.removeChannel(channel); },
   };
 }
 

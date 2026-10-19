@@ -64,6 +64,16 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
 
 1. The host's browser builds questions from the content lists (and pools), and calls `live_create`. The function splits each question into the public part and the private key.
 2. Players open `/live/<code>`; `view` returns what they may see; the realtime channel tells them to refresh; polling covers a missing channel.
+   - The channel carries only signals ("joined", "left", "start", "progress", "end") and presence (who has the
+     challenge open). The players' browsers send them, not the database. A player who gets a signal asks the server
+     again (`view`); a "progress" signal updates that player's row directly. Answers, keys and ranks always come from
+     the server.
+   - Polling: every 20 seconds while the channel works, every 4 seconds when it does not; a finished challenge is
+     checked every 8 seconds for a rematch (for half an hour). The Live home checks invitations every 30 seconds; the
+     navigation badges every 45 seconds ([social](../social/README.md)). Invitations use no channel.
+   - A signal sent before the channel is subscribed (right after opening it, or while it reconnects) waits and goes
+     out once it is. After the channel gives up, signals go to the Supabase library, which sends them over HTTP when
+     the channel is not joined.
 3. Each answer is one `live_answer` call; the response carries the next question.
 4. When the last started player finishes (or the time ends) the server settles the challenge, writes `live_results` and a trigger updates the `live_played` and `live_wins` counters on each profile.
 5. After the end, `view` returns all questions, the key and all answers for review. "Retry challenge" creates a new challenge and calls `set_next` so others are offered it.
@@ -72,7 +82,8 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
 
 - Offline: the module needs a connection. Messages say so ("You're offline. Live Challenge needs a connection.").
 - `answer` is retried up to 3 times with growing waits when the network fails; a server refusal (an error code) is not retried.
-- Realtime failure: up to three reconnect attempts (1 s, 3 s, 8 s), then the screen relies on polling.
+- Realtime failure: up to three reconnect attempts (1 s, 3 s, 8 s), then the screen relies on polling. The screen
+  does not show whether the channel works (only a console warning "Live channel: …").
 - Leaving before pressing Start removes the player (the host leaving an unstarted lobby removes the challenge); after Start a player cannot leave.
 - The host can end the challenge or remove a player who has not started.
 - A closed tab mid-challenge: the player returns to `/live/<code>` and continues from the next unanswered question; the clock between answers is the server's.
@@ -83,6 +94,7 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
 | --- | --- |
 | Rules, local backend, ranking, settling, judging | [tests/live.test.js](../../../tests/live.test.js) |
 | Review and rematch | [tests/live-review.test.js](../../../tests/live-review.test.js) |
+| The realtime channel with a fake client: signals sent before it is subscribed or while it reconnects go out once it is, retries, status, events and presence, closing | [tests/live-transport.test.js](../../../tests/live-transport.test.js) |
 | Question variety and freshness | [tests/live-variety.test.js](../../../tests/live-variety.test.js) |
 | Server rules | [supabase/tests/live_challenges.sql](../../../supabase/tests/live_challenges.sql), [live_fairness.sql](../../../supabase/tests/live_fairness.sql), [live_review.sql](../../../supabase/tests/live_review.sql) |
 | Two players in two tabs, with friends and invitations | [e2e/specs/friendslive.cjs](../../../e2e/specs/friendslive.cjs), [e2e/specs/livelib.cjs](../../../e2e/specs/livelib.cjs) |
@@ -102,11 +114,24 @@ Dana (synthetic) challenges two friends.
 
 **Implemented.** Everything above.
 
+**Fixed**
+
+- 2026-10-19: the "joined" signal a player sends on opening the channel was always lost (it was sent before the
+  channel existed), so the host saw a new player only through presence or the next poll. Signals now wait for the
+  channel (`tests/live-transport.test.js` failed before the fix).
+
 **Planned**
 
 - Phase 4: remove the cycle with `social` (invitations belong here; the friend list comes from `social`).
+- Realtime from the database (proposed, not built): the database sends the signals (a trigger on joins, start,
+  answers and end), so a signal cannot be lost with a player's browser; and a personal channel per player for
+  invitations and friend requests, so they arrive in about a second instead of up to 30–45 seconds. Polling would
+  stay as a slower safety net. Needs a migration and a check of the Supabase plan's Realtime limits.
 
 **Known Issues**
 
 - `MT-05` the local backend is a second copy of the server rules with no differential test.
+- Signals come from the players' browsers: one that is lost (a browser closes or drops at that moment) is not sent
+  again, and the others see the change at their next poll (up to 20 seconds). Invitations wait for the 30-second
+  check (Live home) or the 45-second badge check.
 - Assumption (not tested): the server checks the shape of the host's questions and that the answer is among the options, but not that it is the correct answer to the prompt; a careless or malicious host can create wrong keys. This affects only that match.
