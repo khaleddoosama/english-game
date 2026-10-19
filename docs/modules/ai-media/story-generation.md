@@ -2,7 +2,7 @@
 
 The admin's "Generate a mixed-category story" on the Stories page (`/stories`): pick categories, let the AI write a
 short story that hides chosen words, preview it, then add it to the stories or discard it. Part of the
-[AI & Media](README.md) module. The AI call is `generateStory` in [engine/ai.js](../../../src/engine/ai.js) (task
+[AI & Media](README.md) module. The AI call is `generateStory(words, targets, categories, rules)` in [engine/ai.js](../../../src/engine/ai.js) (the hook passes the game's words; task
 "Write a story", admin only on the server; it checks the story, retries when a target word leaks into the text, and
 checks each grammar question is really in the story).
 

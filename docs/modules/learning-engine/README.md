@@ -32,7 +32,8 @@ The rules of learning: how a round is picked, how questions are built, how an an
 | `V2.sessionEvidence(mastery, session, now)` | mastery map, finished session | a new mastery map |
 | `V2.stage(record)` | one mastery record | New, Familiar, Learned or Mastered |
 | `getMasteryStage(record, item)` | record, item kind | the stage as the game shows it |
-| `getWeakWordCandidates`, `pickWeakMode`, `deriveLearningInsights` | words, mastery, confusions | ranked weak words, a mode, insight numbers |
+| `getWeakWordCandidates`, `pickWeakMode`, `deriveLearningInsights` | words, mastery, confusions (`pickWeakMode` also takes the game's copy first) | ranked weak words, a mode, insight numbers |
+| `buildQuestion(content, …)` and the other builders in `questions.js` | the game's copy `{ words, challenges }` first, then their own arguments | a question (see [content-catalog.md](../content/content-catalog.md#who-reads-it)) |
 | `migrateProgressData(raw)` / `emptyProgressData()` / `normalizeSettings(raw)` | saved data | normalised data of the current schema (`SCHEMA_VERSION` 6) |
 | `V2.validateContent`, `prepareImport`, `mergeContent`, `normalizeV3`, `applyRenames`, `withoutRemovedFields` | files and content | issues, prepared data, merged lists (used by [content](../content/README.md)) |
 
