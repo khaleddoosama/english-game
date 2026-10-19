@@ -17,10 +17,11 @@ Status: **Implemented** (current code). The behaviour below was written down bef
   pronunciation window. Reached only through [index.js](../../../src/features/ai-helpers/index.js)
   (`tests/architecture.test.js`).
 
-`useAskAi({ isAdmin, liveContent, content, set, contextCategory, onWordAdded })` returns `{ open, setOpen, term, setTerm,
+`useAskAi({ isAdmin, gameContent, setGameContent, liveContent, content, set, contextCategory, onWordAdded })` returns `{ open, setOpen, term, setTerm,
 listenTerm, setListenTerm, result, busy, error, openAskAi, runAskAi, addAiWord }`. The shell keeps the header's ask
 bar (it uses `term`, `openAskAi` and `setListenTerm`), passes `openAskAi` to the round and to My Library as before,
 passes `contextCategoryOf(currentLevel, activeSession)` and, as `onWordAdded`, `keepInLibrary(library, entry)`.
+The game's copy comes through `gameContent` / `setGameContent` from the shell ([content-catalog.md](../content/content-catalog.md)).
 Depends on the engine (`v2`, `data`, `ai`), `features/media` (`PronunciationModal`) and `lib` (`aiOperations`).
 
 ## Where it opens
@@ -62,7 +63,7 @@ The "Add to Collection" button is shown to the admin only, and not when the word
   `commonMistake` (when given) and `_aiAdded: true`.
 - Refused, with the reason in the drawer: any Arabic letter in the entry ("The generated card contains non-English
   text…"), or the first problem from `V2.validateContent` against the live content ("Cannot add this card: …").
-- Otherwise the word is added to the custom words, the game's content is rebuilt (`mergeCustomData`), `dataVersion` is
+- Otherwise the word is added to the custom words, the game's content is rebuilt (`setGameContent`), `dataVersion` is
   bumped (the content save follows), the card switches to "Already in your collection", a toast says
   "<word> added to your collection", and the word is kept in the admin's library (`keepInLibrary`, best effort).
 

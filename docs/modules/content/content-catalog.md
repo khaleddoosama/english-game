@@ -17,7 +17,8 @@ Status: **Implemented** (current code). The behaviour below was written down bef
 - [engine/data.js](../../../src/engine/data.js) keeps the current copy: `mergeCustomData(words, grammar, challenges,
   levelOrder)` adds the built-in lists (off), calls `buildCatalog`, makes the old variables (`WORDS`, `GRAMMAR`,
   `CHALLENGES`, `LEVEL_ORDER`, `LEVELS`, `BADGES`) point at the new copy's parts, and checks the picture links.
-  `currentCatalog()` returns the copy as one object (a new object after each call); the shell and the live engine pass it to the engine.
+  `currentCatalog()` returns the copy as one object (a new object after each call). Outside the engine it is reached
+  only as `gameContent()` of [features/content](../../../src/features/content/gameContent.js) (step 3).
 - The old exports `rebuildDerived()` and the no-argument `buildLevel(title)` of `engine/data` are gone; nothing
   outside that file called them.
 
@@ -67,16 +68,27 @@ reads the copy and schedules the content save.
 - `engine/ai`: `generateContent(words, batch, pools)` and `generateStory(words, targets, categories, rules)`.
 - `engine/data`: `courseLevelGroups(words, grammar)` (no defaults any more).
 
-**The callers still read the variables** (step 3 changes this): the shell and the live engine pass `currentCatalog()`
-or `LEVELS`; the AI helpers pass `WORDS`. Other readers import them directly: `WORDS` (shell, the live engine, the
-session view, the AI helpers, question reports, import and export), `GRAMMAR` (shell, story generation),
-`CHALLENGES` (shell), `LEVEL_ORDER` (shell, content load and save, content admin, Ask AI, story builder, import),
-`LEVELS` and `BADGES` (shell).
+**The features get it from the content module** (`MT-02` step 3). [features/content](../../../src/features/content/gameContent.js)
+offers `gameContent()` (the current copy) and `setGameContent(words, grammar, challenges, levelOrder)` (rebuilds it;
+the same as `mergeCustomData`). Outside the engine, nothing else imports the variables, `currentCatalog` or
+`mergeCustomData` (`tests/architecture.test.js`). The shell imports the two from the content module and passes them:
+
+| Feature | Gets |
+| --- | --- |
+| Content admin (`useContentAdmin`), Ask AI (`useAskAi`), import and export (`useDataTransfer`) | `gameContent`, `setGameContent` |
+| Story generation (`useStoryGeneration`, `StoryBuilder`), pool generation (`useAiGeneration`), question reports (`useQuestionReports`) | `gameContent` |
+| Live (`LiveChallenge`, down to the create form) | `gameContent`; `liveQuestions(words, count, { content, … })` takes the copy |
+| The round (`SessionView`) | the `words` it already took (other meanings of a word now use it too) |
+
+Every place that read a variable now calls `gameContent()` at the same moment (in a render, a handler or after an
+answer arrives), so it sees the same copy as before. The shell reads it the same way.
 
 ## Known Issues
 
-- `MT-02`: the copy is replaced by reassigning module variables. Nothing can be tested or rendered with a different
-  copy without calling `mergeCustomData` first, and a test that calls it changes the copy for the rest of its file.
+- `MT-02`: the copy is still kept in module variables of `engine/data` (one per part, plus `currentCatalog()`); step
+  4 removes them. The engine and the features can now be tested with any copy they are given, but the shell and the
+  content module's own hooks still use the one kept there, and a test that calls `mergeCustomData` changes it for the
+  rest of its file.
 - Changing the copy and re-rendering are two separate steps (`mergeCustomData`, then a `dataVersion` bump). Every
   writer above does both today; a new one that forgets the bump would leave screens showing the old copy until the
   next render.
@@ -96,6 +108,8 @@ session view, the AI helpers, question reports, import and export), `GRAMMAR` (s
 | `engine/catalog` imports only `engine/v2`; only `engine/data` imports it | `tests/architecture.test.js` |
 | Questions, mode choice, badges and course levels from a given copy, with the variables left empty | `tests/engine-content-argument.test.js` |
 | `engine/questions`, `engine/progress` and `engine/ai` import none of the content variables | `tests/architecture.test.js` |
+| Live questions, story generation and pool generation from a given `gameContent`, with the variables left empty | `tests/feature-content-argument.test.jsx` |
+| Outside the engine, only the content module imports the variables, `currentCatalog` or `mergeCustomData` | `tests/architecture.test.js` |
 | The AI calls get the words they were given | `tests/ai-generation-hook.test.jsx`, `tests/story-generation-hook.test.jsx`, `tests/ai-operations.test.js` |
 | Opposites, de-duplication and levels through the engine | `tests/engine.test.js`, `tests/senses.test.js` |
 | Course levels from given lists | `tests/course-levels.test.js` |
@@ -116,5 +130,8 @@ kept); `gamecopy.cjs` passes on the build before the move and after it. Delibera
    before and after; deliberate breaks (11) each make `engine-content-argument.test.js` fail. One small difference:
    when a story is retried because a target word leaked, the swap now comes from the words of the first request,
    not from the words at the time of the retry.
-3. **Planned**: the features and the shell get it from the content module instead of importing the variables.
+3. **Implemented**: the features and the shell get it from the content module instead of importing the variables (see
+   "Who reads it"). Kept: every read happens at the same moment as before, through a function that returns the same
+   copy; the unit tests (962) and the browser specs pass; deliberate breaks of the features' reads (8) each make
+   `feature-content-argument.test.jsx` fail.
 4. **Planned**: remove the old variables, with a guard that nothing imports them.

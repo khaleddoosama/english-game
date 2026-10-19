@@ -28,7 +28,7 @@ The shared course that every player plays from: words, grammar rules, challenges
 | `repo.loadContent()` | none | content object (lists plus `levelOrder`, `note`) or `null` when the course is empty | Falls back to the cache when the server cannot be reached. |
 | `repo.saveContent(content, {renames})` | full content, rename list `[{kind: word or category, from, to}]` | resolves; throws with `conflict: true` when someone else saved first | Admin only; a non-admin repo ignores the call. |
 | `repo.wipeContent()` | none | resolves | Saves an empty course (admin). |
-| `mergeCustomData(words, grammar, challenges, levelOrder)` | lists, order | none | Builds the game's copy (`buildCatalog`), replaces the module variables with it, and checks word picture links in the background. `currentCatalog()` returns the copy as one object. |
+| `mergeCustomData(words, grammar, challenges, levelOrder)` | lists, order | none | Builds the game's copy (`buildCatalog`), replaces the module variables with it, and checks word picture links in the background. `currentCatalog()` returns the copy as one object. Outside the engine, only through `gameContent()` / `setGameContent` of `features/content`. |
 | `inspectImport(text, current)` | file text, current content | what applying it would change: counts added, updated, unchanged; renames; warnings; progress summary | Throws an error with a list of issues when the file cannot be used. |
 | `importModeError(check, mode, isAdmin)` | check result, mode, role | reason or `null` | Players may restore only their own progress. |
 | `wordsCsv(words)` | word list | CSV text with a byte-order mark | |
