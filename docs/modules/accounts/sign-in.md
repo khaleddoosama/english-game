@@ -3,15 +3,20 @@
 How a person gets into the game and out again, and what the rest of the app learns about them. Part of the
 [accounts](README.md) module. Decision: [ADR 0001](../../adr/0001-username-accounts.md) (username accounts).
 
-Status: **Implemented** (current code), written down before the accounts code was moved or tested.
+Status: **Implemented** (current code). The behaviour below was written down before the code moved from
+`src/lib/auth.jsx` to `src/features/auth`; the move kept it (see Tests).
 
 ## Files and interface
 
-- [lib/auth.jsx](../../../src/lib/auth.jsx): `AuthProvider` (the sign-in state for the whole app), `useAuth()`, and
-  `accessToken()` (used by the AI and picture calls in `lib`).
-- [lib/supabase.js](../../../src/lib/supabase.js): the Supabase client (none in local mode), `isLocalMode`,
-  `USERNAME_RE`, `emailFor(username)`.
+- [features/auth/authRules.js](../../../src/features/auth/authRules.js), no state: `USERNAME_RE`, `emailFor(username)`,
+  `cleanUsername`, `usernameProblem`, `passwordProblem`, `signInErrorText`, `PROFILE_LOAD_ERROR`, `LOCAL_PROFILE`,
+  `profileCacheKey`.
+- [features/auth/AuthProvider.jsx](../../../src/features/auth/AuthProvider.jsx): `AuthProvider` (the sign-in state
+  for the whole app) and `useAuth()`.
 - [features/auth/LoginPage.jsx](../../../src/features/auth/LoginPage.jsx): the login page and the `Splash`.
+- Reached only through [features/auth/index.js](../../../src/features/auth/index.js) (the shell and the Profile page).
+- [lib/auth.js](../../../src/lib/auth.js): `accessToken()`, used by the AI and picture calls in `lib`.
+- [lib/supabase.js](../../../src/lib/supabase.js): the Supabase client (none in local mode) and `isLocalMode`.
 - [app/App.jsx](../../../src/app/App.jsx): `Gate` picks the screen; `Game` builds the account's repo.
 
 `useAuth()` returns `{ loading, user, profile, error, isAdmin, signIn, signUp, signOut, changePassword,
@@ -82,12 +87,20 @@ is no Log out button, and `accessToken()` returns `null`. The browser specs run 
 
 | What | Where |
 | --- | --- |
+| The login page in a browser, with the app built for online mode and a fake Supabase: bad username, wrong password, another refusal, a taken name, a new account, the Admin tab for the admin only, the session across a reload, the offline start with and without the cached profile, sign-ups closed, a Live link, signing out | `e2e/specs/signin.cjs` |
+| The rules: usernames, passwords, the placeholder email, the messages | `tests/auth-rules.test.js` |
+| The sign-in state with a fake client: loading, the profile and its cache, the offline start, a refreshed token, a late answer for an older user, unsubscribing, every action and message, local mode, the access token | `tests/auth-provider.test.jsx` |
+| Only through the index, no loop, uses only `lib` | `tests/architecture.test.js` |
 | The account's database rules (sign-ups open or closed, limits, role) | `supabase/tests/signup_limits.sql` |
 
-**Gaps (`MT-04`).** Nothing tests `AuthProvider`, the login page or these messages; the browser specs run in local
-mode, so the login page is never seen.
+How the behaviour was kept: the rules were moved unchanged and the old and new code were compared on 3,000 random
+made-up sign-in, sign-up and password changes (the same messages and the same calls to Supabase; one-off, not kept);
+`signin.cjs` passes on the build before the move and after it. Deliberate breaks (15) each make a test fail.
+
+**Gaps.** The real Supabase Auth is not run by any test (the browser spec answers its calls itself). The password form
+on the Profile page and the sign-out wait for saves are in slice 2.
 
 ## Known Issues
 
-- `MT-04` (above).
+- `MT-04`: the sign-in part is covered now (above); the session lifecycle part remains.
 - A cached profile can show an old role while offline; the server still decides what the account may do.

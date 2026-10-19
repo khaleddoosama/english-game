@@ -24,17 +24,17 @@ Proposed boundary, see [module-map.md](../../architecture/module-map.md). Decisi
 
 | Operation | Input | Output | Notes |
 | --- | --- | --- | --- |
-| `useAuth()` | none | `{ loading, user, profile, error, isAdmin, signIn, signUp, signOut, changePassword, refreshProfile }` | From [auth.jsx](../../../src/lib/auth.jsx). |
+| `useAuth()` | none | `{ loading, user, profile, error, isAdmin, signIn, signUp, signOut, changePassword, refreshProfile }` | From [features/auth](../../../src/features/auth/index.js) (`AuthProvider.jsx`; guide [sign-in.md](sign-in.md)). |
 | `signIn(username, password)` | text, text | resolves, or throws a readable error | Username is trimmed and lowercased, checked against the pattern, then mapped to the placeholder email. |
 | `signUp(username, password)` | text, text | resolves after signing in | Calls `register_player`, then `signIn`. |
 | `signOut()` | none | resolves | No-op in local mode. |
 | `changePassword(password)` | text | resolves or throws | Minimum 6 characters. |
-| `accessToken()` | none | token or `null` | Used by [lib/ai.js](../../../src/lib/ai.js) and [lib/images.js](../../../src/lib/images.js). |
+| `accessToken()` | none | token or `null` | In [lib/auth.js](../../../src/lib/auth.js); used by [lib/ai.js](../../../src/lib/ai.js) and [lib/images.js](../../../src/lib/images.js). |
 | `register_player(p_username, p_password)` | text, text | nothing, or an error with a readable message | Database function; the only way an account is created. |
 
 ## 3. Files and database objects
 
-- Files: [lib/auth.jsx](../../../src/lib/auth.jsx), [lib/supabase.js](../../../src/lib/supabase.js), [features/auth/LoginPage.jsx](../../../src/features/auth/LoginPage.jsx) (also exports `Splash`), the `Gate` in [app/App.jsx](../../../src/app/App.jsx).
+- Files: [features/auth](../../../src/features/auth) (`AuthProvider.jsx`: the sign-in state; `authRules.js`: usernames, passwords, the placeholder email, the messages; `LoginPage.jsx` with `Splash`; reached through `index.js`), [lib/auth.js](../../../src/lib/auth.js) (`accessToken`), [lib/supabase.js](../../../src/lib/supabase.js) (the client, `isLocalMode`), the `Gate` in [app/App.jsx](../../../src/app/App.jsx). Guide: [sign-in.md](sign-in.md).
 - Screens: login page, splash, the account error shown on the login page, the password form on [ProfilePage](../../../src/features/social/ProfilePage.jsx).
 - Tables: `auth.users`, `auth.identities`, `profiles` (identity columns: id, username, role), `signup_log`.
 - Functions: `register_player` (migrations 0002, 0012, 0022), `handle_new_user` (trigger), `is_admin`, `require_admin`, `request_ip`; admin-side: `admin_set_role`, `admin_set_password`, `admin_delete_player`.
@@ -52,7 +52,7 @@ Proposed boundary, see [module-map.md](../../architecture/module-map.md). Decisi
 
 ## 5. Data flow
 
-1. [AuthProvider](../../../src/lib/auth.jsx) reads the Supabase session, then fetches the profile row. It saves the profile in localStorage as `wh-profile:<id>`.
+1. [AuthProvider](../../../src/features/auth/AuthProvider.jsx) reads the Supabase session, then fetches the profile row. It saves the profile in localStorage as `wh-profile:<id>`.
 2. A token refresh does not rebuild the game: state changes only when the user id changes.
 3. `Gate` renders the splash while loading, the login page with no user, and `Game` (keyed by user id) with a user.
 4. `Game` builds the repo for the account and renders [WordHunter](../app-shell/README.md).
@@ -74,8 +74,11 @@ Proposed boundary, see [module-map.md](../../architecture/module-map.md). Decisi
 | Sign-up open/closed, per-network and global limits, role always player, one at a time | [supabase/tests/signup_limits.sql](../../../supabase/tests/signup_limits.sql) |
 | Profile visibility with ranks on and off | [supabase/tests/ranks.sql](../../../supabase/tests/ranks.sql) |
 | Every other SQL test creates players with `register_player` | `supabase/tests/*.sql` |
+| The login page, its messages, sign-up, the session across a reload, the offline start, the Admin tab, sign-out, in a browser against a fake Supabase | `e2e/specs/signin.cjs` |
+| The rules (usernames, passwords, messages) and the sign-in state with a fake client | `tests/auth-rules.test.js`, `tests/auth-provider.test.jsx` |
+| The module is in no loop, uses only `lib`, and is reached through its index | `tests/architecture.test.js` |
 
-**Gaps.** No automated test for `AuthProvider`, `LoginPage` or the error messages; the browser specs run in local mode, so sign-in is never exercised. `MT-04`.
+**Gaps.** The real Supabase Auth (GoTrue) is not run by any test: the browser spec answers its calls itself.
 
 ## 8. Example journey
 
@@ -94,9 +97,9 @@ Sam (synthetic user `sam_01`) gets a Live link, `/live/K7M2QX`, from a friend an
 
 **Planned** (from the [roadmap](../../architecture/roadmap.md))
 
-- Phase 0: automated tests for sign-in and sign-up messages with a fake client.
+- ~~Phase 0: automated tests for sign-in and sign-up messages with a fake client.~~ Done 2026-10-19 (above).
 
 **Known Issues**
 
-- `MT-04`: no automated auth tests (above).
+- `MT-04`: the sign-in part is covered now (above); the session lifecycle part remains ([practice](../practice/README.md)).
 - `PE-03`: maintenance mode is checked in the browser only (see [app-shell](../app-shell/README.md)).
