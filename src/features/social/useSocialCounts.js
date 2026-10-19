@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { NO_COUNTS, nextCounts, socialStorageKey } from "./socialRules";
+import { onSocialSignal } from "./socialSignals";
 
 // How many friend requests and Live invitations are waiting, for the badges
 // on the navigation. Checked when the game opens, every 45 seconds, when the
@@ -8,7 +9,8 @@ import { NO_COUNTS, nextCounts, socialStorageKey } from "./socialRules";
 export const SOCIAL_POLL_MS = 45000;
 
 // Calls `refresh` every 45 seconds, when the tab comes back into view or gets
-// focus, and when another tab changes friends or Live data (local mode).
+// focus, when another tab changes friends or Live data (local mode), and at
+// once when the database signals a friend request or an invitation (online).
 export function useRefreshOnActivity(refresh, enabled = true) {
   useEffect(() => {
     if (!enabled) return undefined;
@@ -18,7 +20,9 @@ export function useRefreshOnActivity(refresh, enabled = true) {
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("focus", refresh);
     window.addEventListener("storage", onStorage);
+    const stopSignals = onSocialSignal(() => refresh());
     return () => {
+      stopSignals();
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", refresh);
