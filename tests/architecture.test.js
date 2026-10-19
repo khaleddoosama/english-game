@@ -61,6 +61,12 @@ describe("no new loops between modules", () => {
     expect(outside.map(([file]) => file)).toEqual([]);
   });
 
+  it("the dictionary rules import nothing (pure), and the rest of the app reaches them through V2", () => {
+    expect(graph["engine/dictionary"]).toEqual([]);
+    const importers = Object.entries(graph).filter(([, tos]) => tos.includes("engine/dictionary")).map(([file]) => file);
+    expect(importers).toEqual(["engine/v2"]);
+  });
+
   it("the engine is below the features: its one import of a feature is the known debt (engine/data uses media's checkImageLinks)", () => {
     expect(modules.engine).toEqual(["features/media", "lib"]);
   });
