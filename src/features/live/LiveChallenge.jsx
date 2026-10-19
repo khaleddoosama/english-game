@@ -9,7 +9,7 @@ import { getLiveApi, withRetry } from "./liveApi";
 import { openLiveChannel } from "./transport";
 import { navigate, useQueryParam } from "../../lib/router";
 import { useMyViews, useViewScope } from "../library";
-import { AddFriendButton, useFriendStatus } from "../social/AddFriendButton";
+import { AddFriendButton, useFriendStatus } from "../social";
 import { FriendPicker, InviteFriends, Invitations } from "./LiveFriends";
 import "../../styles/live.css";
 

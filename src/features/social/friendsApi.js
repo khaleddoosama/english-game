@@ -3,7 +3,6 @@
 // interface over localStorage, so two tabs can try it and the tests can run
 // it; the local side mirrors the server's rules and messages.
 import { isLocalMode, supabase } from "../../lib/supabase";
-import { getLiveApi } from "../live/liveApi";
 
 export class FriendsError extends Error {
   constructor(message, code) { super(message); this.code = code; }
@@ -32,6 +31,12 @@ export function localFriendSince(storage, x, y) {
 export function localNameOf(storage, id) {
   try { return JSON.parse(storage.getItem("friends1:users") || "null")?.[id] || "player"; } catch { return "player"; }
 }
+// The same three answers for the library (which does not import this module), read at call time.
+export const LOCAL_PEOPLE = {
+  areFriends: (a, b) => localAreFriends(window.localStorage, a, b),
+  friendSince: (a, b) => localFriendSince(window.localStorage, a, b),
+  nameOf: (id) => localNameOf(window.localStorage, id),
+};
 export const normalizeUsername = (s) => String(s ?? "").trim().toLowerCase();
 
 /* ------------------------------------------------------------ online */
@@ -217,11 +222,13 @@ export function createLocalFriendsApi({ storage, me, live, now = () => Date.now(
   };
 }
 
+// liveFor(me): the Live API for this player, passed in by the app (this module does not import Live); used in
+// local mode only, to look at a challenge from the player's side.
 let current = null;
-export function getFriendsApi(me) {
+export function getFriendsApi(me, liveFor) {
   if (current) return current;
   current = isLocalMode
-    ? createLocalFriendsApi({ storage: window.localStorage, me, live: getLiveApi(me) })
+    ? createLocalFriendsApi({ storage: window.localStorage, me, live: liveFor(me) })
     : supabaseApi(supabase);
   return current;
 }

@@ -16,9 +16,9 @@ import { useContentAdmin } from "../features/content-admin";
 import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, emptyProgressData, getBadgeProgress, getWeakWordCandidates, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
-import { getFriendsApi, localAreFriends, localFriendSince, localNameOf } from "../features/social/friendsApi";
+import { FriendsPage, LOCAL_PEOPLE, Leaderboard, ProfilePage, ranksHiddenFromPlayers, ranksShown, useSocial } from "../features/social";
+import { getLiveApi } from "../features/live/liveApi";
 import { LibraryRoutes, MyViewsHome, homeLimits, keepInLibrary, scopeIsEmpty, scopeOfView, useLibrary, useLibraryHome } from "../features/library";
-import { useSocialCounts } from "../features/social/useSocialCounts";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
 import { useDataTransfer } from "../features/data";
 import { gameContent, setGameContent, useContentLists, useContentSave } from "../features/content";
@@ -46,13 +46,8 @@ function localTabPlayer() {
 const lastAdminPath = () => { try { const p = localStorage.getItem("wh-admin-path"); return p && p.startsWith("/admin") ? p : "/admin"; } catch { return "/admin"; } };
 const masteredCountFor = (m) => Object.entries(m || {}).filter(([k, v]) => isWordKey(k) && V2.stage(v) === "Mastered").length;
 const PLAY_SCREENS = new Set(["session", "finalReport", "finalResults", "speed", "speedResults"]);
-// Who the player's friends are in local mode, for the library's sharing (the library does not import the friends module).
-const LOCAL_PEOPLE = { areFriends: (a, b) => localAreFriends(window.localStorage, a, b), friendSince: (a, b) => localFriendSince(window.localStorage, a, b), nameOf: (id) => localNameOf(window.localStorage, id) };
 const AdminPanel = lazy(() => import("../features/admin/AdminPanel").then((m) => ({ default: m.AdminPanel })));
 const LiveChallenge = lazy(() => import("../features/live/LiveChallenge").then((m) => ({ default: m.LiveChallenge })));
-const Leaderboard = lazy(() => import("../features/social/Leaderboard"));
-const ProfilePage = lazy(() => import("../features/social/ProfilePage"));
-const FriendsPage = lazy(() => import("../features/social/FriendsPage"));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage"));
 const ImportExport = lazy(() => import("../features/data/ImportExport"));
 const StudyDashboard = lazy(() => import("../features/stats/StudyDashboard"));
@@ -71,9 +66,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     ? { id: profile.id, name: profile.username }
     : localTabPlayer()), [profile?.id, profile?.username]);
   // Friends: the badges on the navigation (requests waiting, invitations waiting).
-  const friendsApi = useMemo(() => getFriendsApi(() => livePlayer), [livePlayer]);
-  const { counts: social, refresh: refreshSocial } = useSocialCounts(friendsApi, loaded);
-  // My library (views inside views); off until the dictionary has been moved to the new tables.
+  const { friendsApi, counts: social, refresh: refreshSocial, badges: socialBadges } = useSocial({ player: livePlayer, enabled: loaded, liveFor: getLiveApi });
+  // My library (views inside views); off until the dictionary has been moved to the new tables. In local mode it
+  // asks social who is friends with whom (LOCAL_PEOPLE).
   const library = useLibrary({ enabled: loaded, me: livePlayer.id, knownWord: (k) => gameContent().words.some((w) => w.word === k), people: LOCAL_PEOPLE });
   const contentLists = useContentLists();
   const { customWords, setCustomWords, customGrammar, setCustomGrammar, customChallenges, setCustomChallenges, customCombos, setCustomCombos, customStories, setCustomStories, contentNoteRef, setContent, applySavedContent } = contentLists;
@@ -758,7 +753,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   useEffect(() => {
     if (!loaded) return;
     const nothingToPlay = route.screen === "play" && playScreen === "session" && (!activeSession || activeSession.completed);
-    const hiddenBoard = route.screen === "leaderboard" && !app.leaderboard && !isAdmin;
+    const hiddenBoard = route.screen === "leaderboard" && !ranksShown(app, isAdmin);
     if (route.screen === "notFound" || (route.screen === "admin" && !isAdmin) || nothingToPlay || hiddenBoard) navigate("/", { replace: true });
   }, [loaded, route, playScreen, activeSession, isAdmin, app.leaderboard]);
 
@@ -939,7 +934,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge gameContent={gameContent} player={livePlayer} friendsApi={friendsApi} onSocialChanged={refreshSocial} library={library.status === "ready" ? library : null} levels={gameContent().levels} code={route.code} sound={settings.sound} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} limits={{ maxPlayers: isAdmin ? 10 : app.liveMaxPlayers, canCreate: isAdmin || app.liveCreate !== "admin", defaultCount: settings.liveQuestions ?? app.liveDefaultQuestions, defaultSeconds: settings.liveSeconds ?? app.liveDefaultSeconds, maxHours: isAdmin ? 168 : app.liveMaxHours }} /></Suspense>}
         {screen === "data" && <Suspense fallback={<ScreenSkeleton />}><ImportExport variant="game" isAdmin={isAdmin} tools={dataTools} onBack={backToLevels} /></Suspense>}
         {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} isAdmin={isAdmin} /></Suspense>}
-        {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} friendsApi={friendsApi} hiddenForPlayers={isAdmin && !app.leaderboard} /></Suspense>}
+        {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} friendsApi={friendsApi} hiddenForPlayers={ranksHiddenFromPlayers(app, isAdmin)} /></Suspense>}
         {screen === "profile" && <Suspense fallback={<ScreenSkeleton />}><ProfilePage social={social} libraryOn={library.status === "ready"} libraryInbox={libraryInbox} onSignOut={onSignOut ? logOut : null} stats={{ score, mastered: masteredWordCount, studyStreak, bestStudyStreak, attempted, badges: earnedBadgesCount, badgesTotal: gameContent().badges.length }} onCopyBackup={handleQuickBackup} onDownloadBackup={downloadBackup} onOpenStats={() => setScreen("stats")} /></Suspense>}
         {(screen === "join" || screen === "catalog" || screen === "library") && (
           <LibraryRoutes screen={screen} library={library} route={route} fallback={<ScreenSkeleton />} isAdmin={isAdmin} words={gameContent().words} grammar={gameContent().grammar}
@@ -950,7 +945,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
         {screen === "speedResults" && <SpeedResults score={speedScore} correct={speedCorrect} answered={speedAnswered} bestCombo={speedBestCombo} best={bestSpeedScore} onAgain={startSpeedRound} onBack={backToLevels} />}
       </div>
-      {showNav && <BottomNav screen={screen === "friends" || screen === "library" || screen === "catalog" ? "profile" : screen === "join" ? "levels" : screen} badges={{ live: social.invites, profile: social.requests }} isAdmin={isAdmin} showRanks={isAdmin || app.leaderboard} onNavigate={(id) => setScreen(id)} />}
+      {showNav && <BottomNav screen={screen === "friends" || screen === "library" || screen === "catalog" ? "profile" : screen === "join" ? "levels" : screen} badges={socialBadges} isAdmin={isAdmin} showRanks={ranksShown(app, isAdmin)} onNavigate={(id) => setScreen(id)} />}
     </div>
   );
 }

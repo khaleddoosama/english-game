@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, UserPlus } from "lucide-react";
+import { friendStatusOf } from "./socialRules";
 import "../../styles/friends.css";
 
 // Who is already a friend, who was asked, and who asked me: one list for a
@@ -11,13 +12,7 @@ export function useFriendStatus(api, enabled = true) {
     try { setData(await api.list()); } catch { setData((old) => old || { friends: [], incoming: [], outgoing: [] }); }
   }, [api, enabled]);
   useEffect(() => { load(); }, [load]);
-  const statusOf = useCallback((id) => {
-    if (!data) return "unknown";
-    if (data.friends.some((p) => p.id === id)) return "friend";
-    if (data.outgoing.some((p) => p.id === id)) return "sent";
-    if (data.incoming.some((p) => p.id === id)) return "incoming";
-    return "none";
-  }, [data]);
+  const statusOf = useCallback((id) => friendStatusOf(data, id), [data]);
   return { data, statusOf, reload: load };
 }
 

@@ -1,6 +1,6 @@
 // The shape of src/: no loops between files, no loops between modules, and
-// the library module stays out of any loop. Two loops
-// exist today and are listed as known debts (docs/architecture/modules.md,
+// the library module stays out of any loop. One loop
+// exists today and is listed as a known debt (docs/architecture/modules.md,
 // "Plan"); this test fails when a new one appears, and also when a listed one
 // is fixed, so the list can only get shorter.
 import { readFileSync } from "node:fs";
@@ -17,8 +17,8 @@ describe("no new loops between files", () => {
 });
 
 describe("no new loops between modules", () => {
-  it("only the known two: the engine and lib use each other; social and live use each other", () => {
-    expect(cycles(modules)).toEqual([["engine", "lib"], ["features/live", "features/social"]]);
+  it("only the known one: the engine and lib use each other (social and live no longer do)", () => {
+    expect(cycles(modules)).toEqual([["engine", "lib"]]);
   });
 
   it("My Library is in none, and depends only on what the module document lists", () => {
@@ -105,6 +105,14 @@ describe("no new loops between modules", () => {
     expect(outside.map(([file]) => file)).toEqual([]);
     expect(Object.entries(modules).filter(([, tos]) => tos.includes("features/auth")).map(([from]) => from)).toEqual(["app", "features/social"]);
     expect(modules.lib).not.toContain("features/auth");
+  });
+
+  it("social is in no loop, does not import Live (the shell passes the Live API in), and is reached through its index (by the shell and Live)", () => {
+    expect(cycles(modules).flat()).not.toContain("features/social");
+    expect(modules["features/social"]).toEqual(["features/auth", "lib", "styles"]);
+    const outside = Object.entries(graph).filter(([file, tos]) => !file.startsWith("features/social/") && tos.some((t) => t.startsWith("features/social/") && t !== "features/social/index"));
+    expect(outside.map(([file]) => file)).toEqual([]);
+    expect(Object.entries(modules).filter(([, tos]) => tos.includes("features/social")).map(([from]) => from)).toEqual(["app", "features/live"]);
   });
 
   it("the engine is below the features: it imports none (the picture check moved to the content module with MT-02)", () => {
