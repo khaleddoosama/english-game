@@ -61,6 +61,13 @@ describe("no new loops between modules", () => {
     expect(outside.map(([file]) => file)).toEqual([]);
   });
 
+  it("loading and saving the content is in no loop, uses only the engine and lib, and is reached through its index", () => {
+    expect(cycles(modules).flat()).not.toContain("features/content");
+    expect(modules["features/content"]).toEqual(["engine", "lib"]);
+    const outside = Object.entries(graph).filter(([file, tos]) => !file.startsWith("features/content/") && tos.some((t) => t.startsWith("features/content/") && t !== "features/content/index"));
+    expect(outside.map(([file]) => file)).toEqual([]);
+  });
+
   it("the dictionary rules import nothing (pure), and the rest of the app reaches them through V2", () => {
     expect(graph["engine/dictionary"]).toEqual([]);
     const importers = Object.entries(graph).filter(([, tos]) => tos.includes("engine/dictionary")).map(([file]) => file);
