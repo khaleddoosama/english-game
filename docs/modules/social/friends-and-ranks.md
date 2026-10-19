@@ -5,22 +5,37 @@ and how the navigation badges are counted. Part of the [social](README.md) modul
 waiting weeks, who may read what) are in the README and in `supabase/tests/friends.sql` and `ranks.sql`.
 
 Status: **Implemented** (current code). Written down from the code before slice 1 of Social & Live moved it; the
-move keeps it (see Tests).
+move kept it (see Tests).
 
 ## Files and interface
 
-- [friendsApi.js](../../../src/features/social/friendsApi.js): `getFriendsApi(me)` (one API for the app: the
-  database functions online, `localStorage` in local mode), `createLocalFriendsApi`, `FriendsError`, the limits, and
-  the local helpers `localAreFriends`, `localFriendSince`, `localNameOf` (the library uses them in local mode).
-- [socialApi.js](../../../src/features/social/socialApi.js): `fetchLeaderboard(kind)`, `fetchFriendsBoard(ids)`,
-  `fetchLiveHistory(userId, limit)`.
-- [useSocialCounts.js](../../../src/features/social/useSocialCounts.js): `useSocialCounts(api, enabled)` returns
-  `{ counts: { requests, invites }, refresh }`; `useRefreshOnActivity(refresh, enabled)`.
+Other modules use only [index.js](../../../src/features/social/index.js) (the shell and Live):
+
+| Export | For | What |
+| --- | --- | --- |
+| `useSocial({ player, enabled, liveFor })` | the shell | `{ friendsApi, counts, refresh, badges }`: the friends API for the player, the waiting counts and the navigation badges. `liveFor(me)` gives the Live API; it is called only in local mode (local invitations look at the challenge), so social does not import Live. |
+| `ranksShown(app, isAdmin)`, `ranksHiddenFromPlayers(app, isAdmin)` | the shell | the Ranks tab and `/leaderboard`; the admin's note |
+| `AddFriendButton`, `useFriendStatus` | Live's results | the add-friend button and the friends list behind it |
+| `LOCAL_PEOPLE` | the shell, for the library | who is friends with whom in local mode, read from this browser |
+| `FriendsPage`, `Leaderboard`, `ProfilePage` | the shell | the screens, each loaded on demand |
+
+Inside the module:
+
+- [socialRules.js](../../../src/features/social/socialRules.js), no state: `RANK_TABS`, `FIRST_RANK_TAB`,
+  `thisWeekPoints`, `emptyRanksText`, `friendsBoardOrder`, `friendStatusOf`, `NO_COUNTS`, `nextCounts`, `navBadges`,
+  `socialStorageKey`, `requestDoneText`, `historyPlace`, `historyScore`, and the two Ranks rules above.
+- Hooks: [useSocial.js](../../../src/features/social/useSocial.js), [useSocialCounts.js](../../../src/features/social/useSocialCounts.js)
+  (`useSocialCounts(api, enabled)`, `useRefreshOnActivity`), [useLeaderboard.js](../../../src/features/social/useLeaderboard.js)
+  (`useLeaderboard(tab, me, friendsApi)` returns `{ rows, error }`), [useFriendsList.js](../../../src/features/social/useFriendsList.js)
+  (the Friends page's list, busy state, message and actions), [useLiveHistory.js](../../../src/features/social/useLiveHistory.js).
+- Data: [friendsApi.js](../../../src/features/social/friendsApi.js) (`getFriendsApi(me, liveFor)`: the database
+  functions online, `localStorage` in local mode; `createLocalFriendsApi`, `FriendsError`, the limits, the local
+  helpers), [socialApi.js](../../../src/features/social/socialApi.js) (`fetchLeaderboard`, `fetchFriendsBoard`,
+  `fetchLiveHistory`).
 - Screens: [FriendsPage](../../../src/features/social/FriendsPage.jsx), [Leaderboard](../../../src/features/social/Leaderboard.jsx),
-  [ProfilePage](../../../src/features/social/ProfilePage.jsx), [AddFriendButton](../../../src/features/social/AddFriendButton.jsx)
-  (`AddFriendButton`, `useFriendStatus`; Live's results table uses them too).
-- The shell ([WordHunter.jsx](../../../src/app/WordHunter.jsx)) makes the friends API for the player, counts the
-  badges, hides Ranks, and places the three screens (each loads on demand).
+  [ProfilePage](../../../src/features/social/ProfilePage.jsx), [AddFriendButton](../../../src/features/social/AddFriendButton.jsx).
+- Times like "42.5s" come from `formatMs` in [lib/format.js](../../../src/lib/format.js) (Live uses it too; `liveRules`
+  still offers it).
 
 ## The navigation badges
 
@@ -100,16 +115,27 @@ tooltip.
 
 | What | Where |
 | --- | --- |
+| Everything above in a browser with the app built for online mode and a fake Supabase: the badges, the four tabs (what each reads, order, values, notes, empty and failed reads), the add-friend button, the Friends page's actions and messages (offline too), the Live history, Ranks off for players and the admin, local mode's text | `e2e/specs/social.cjs` |
+| The rules | `tests/social-rules.test.js` |
+| The hooks: the friends API and badges (online, local, before loading), a tab's rows (a late answer dropped, the Friends tab), the Friends page's actions, the Live history | `tests/social-hooks.test.jsx` |
+| Social in no loop, not importing Live, reached only through its index (by the shell and Live) | `tests/architecture.test.js` |
 | Local friends rules and messages | `tests/friends.test.js` |
 | Two tabs in local mode: ask, accept, invite, join | `e2e/specs/friendslive.cjs` |
 | Profile page with the catalog link | `tests/profile-catalog.test.jsx` |
 | The server's rules | `supabase/tests/friends.sql`, `supabase/tests/ranks.sql` |
+
+How the behaviour was kept: `social.cjs` passes on the code before the move and after it. The rules were moved
+unchanged and compared with the old inline code on random made-up inputs (88,260 checks: tabs, the friends board,
+statuses, counts, texts, who sees Ranks; one-off, not kept). Deliberate breaks (20) each make a unit test fail.
 
 ## Known Issues
 
 - `PE-01`: the practice numbers on Ranks are as honest as the game that sent them.
 - The week boundary uses each player's local clock.
 - Positions on Ranks are row numbers: two players with the same value get different places.
+- Found by `social.cjs` (kept as is): accepting a request with the add-friend button (Ranks, Live's results) does not
+  count the badges again; they catch up at the next check (45 seconds, focus or view). The Friends page does count
+  them again.
 - `getFriendsApi` keeps the first API it makes for the rest of the page's life (its `me` is the first player). Online
   it does not use `me` (the server knows the account); in local mode the player is the tab's player, which does not
   change.

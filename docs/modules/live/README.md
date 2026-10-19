@@ -13,7 +13,7 @@ Live Challenge: one player makes a set of questions, up to nine friends answer t
 - Server-side judging and timing; answer keys never reach players before they answer.
 - Ranking, results, review of everyone's answers after the end, rematch ("Retry challenge").
 - Realtime presence and change events, with polling as a fallback.
-- Invitations to friends from a challenge ([social](../social/README.md) provides the friend list and the invitation tables).
+- Invitations to friends from a challenge ([social](../social/README.md) provides the friend list and the invitation tables). Live uses social only through its index (the add-friend button on the results); social does not import Live (the app passes it the Live API), so the two are no longer a loop.
 - A local backend for tabs of one browser.
 
 **Out of scope**
@@ -122,7 +122,6 @@ Dana (synthetic) challenges two friends.
 
 **Planned**
 
-- Phase 4: remove the cycle with `social` (invitations belong here; the friend list comes from `social`).
 - Realtime from the database (proposed, not built): the database sends the signals (a trigger on joins, start,
   answers and end), so a signal cannot be lost with a player's browser; and a personal channel per player for
   invitations and friend requests, so they arrive in about a second instead of up to 30–45 seconds. Polling would
