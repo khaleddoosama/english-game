@@ -1,11 +1,11 @@
 // The shape of src/: no loops between files, no loops between modules, and
-// the library module stays out of any loop. Two loops and one upward import
+// the library module stays out of any loop. Two loops
 // exist today and are listed as known debts (docs/architecture/modules.md,
 // "Plan"); this test fails when a new one appears, and also when a listed one
 // is fixed, so the list can only get shorter.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { SRC, cycles, fileGraph, key, moduleGraph, walk } from "./importGraph.js";
+import { cycles, fileGraph, moduleGraph } from "./importGraph.js";
 
 const graph = fileGraph();
 const modules = moduleGraph(graph);
@@ -17,8 +17,8 @@ describe("no new loops between files", () => {
 });
 
 describe("no new loops between modules", () => {
-  it("only the known two: the engine, media and lib use each other; social and live use each other", () => {
-    expect(cycles(modules)).toEqual([["engine", "features/media", "lib"], ["features/live", "features/social"]]);
+  it("only the known two: the engine and lib use each other; social and live use each other", () => {
+    expect(cycles(modules)).toEqual([["engine", "lib"], ["features/live", "features/social"]]);
   });
 
   it("My Library is in none, and depends only on what the module document lists", () => {
@@ -62,9 +62,9 @@ describe("no new loops between modules", () => {
     expect(outside.map(([file]) => file)).toEqual([]);
   });
 
-  it("loading and saving the content is in no loop, uses only the engine and lib, and is reached through its index", () => {
+  it("the content module is in no loop, uses only the engine, media (picture checks) and lib, and is reached through its index", () => {
     expect(cycles(modules).flat()).not.toContain("features/content");
-    expect(modules["features/content"]).toEqual(["engine", "lib"]);
+    expect(modules["features/content"]).toEqual(["engine", "features/media", "lib"]);
     const outside = Object.entries(graph).filter(([file, tos]) => !file.startsWith("features/content/") && tos.some((t) => t.startsWith("features/content/") && t !== "features/content/index"));
     expect(outside.map(([file]) => file)).toEqual([]);
   });
@@ -75,10 +75,10 @@ describe("no new loops between modules", () => {
     expect(importers).toEqual(["engine/v2"]);
   });
 
-  it("the game's copy of the content is built with no state (only V2), and only engine/data keeps it", () => {
+  it("the game's copy of the content is built with no state (only V2); the content module keeps it (engine/data only offers dedupeBy again)", () => {
     expect(graph["engine/catalog"]).toEqual(["engine/v2"]);
     const importers = Object.entries(graph).filter(([, tos]) => tos.includes("engine/catalog")).map(([file]) => file);
-    expect(importers).toEqual(["engine/data"]);
+    expect(importers).toEqual(["engine/data", "features/content/gameContent"]);
   });
 
   it("the question, progress and AI engine take the content as an argument: they import none of the content variables", () => {
@@ -90,22 +90,16 @@ describe("no new loops between modules", () => {
     }
   });
 
-  it("outside the engine, only the content module reaches the game's copy (engine/data's variables, currentCatalog, mergeCustomData)", () => {
-    const GUARDED = ["WORDS", "GRAMMAR", "CHALLENGES", "LEVEL_ORDER", "LEVELS", "BADGES", "currentCatalog", "mergeCustomData"];
-    const offenders = [];
-    for (const path of walk(SRC).filter((p) => /\.jsx?$/.test(p))) {
-      const file = key(path);
-      if (file.startsWith("engine/") || file.startsWith("features/content/")) continue;
-      const text = readFileSync(path, "utf8");
-      for (const m of text.matchAll(/import\s*\{([^}]*)\}\s*from\s*"[./]*engine\/data"/g)) {
-        for (const name of m[1].split(",").map((x) => x.trim().split(/\s+as\s+/)[0])) if (GUARDED.includes(name)) offenders.push(`${file}: ${name}`);
-      }
+  it("the engine keeps no copy of the content, and only the shell imports the content module (features get the copy passed in)", () => {
+    const data = readFileSync(new URL("../src/engine/data.js", import.meta.url), "utf8");
+    for (const name of ["WORDS", "GRAMMAR", "CHALLENGES", "LEVEL_ORDER", "LEVELS", "BADGES", "currentCatalog", "mergeCustomData"]) {
+      expect(new RegExp(`export\\s+(let|const|function)\\s+${name}\\b`).test(data), name).toBe(false);
     }
-    expect(offenders).toEqual([]);
+    expect(Object.entries(modules).filter(([, tos]) => tos.includes("features/content")).map(([from]) => from)).toEqual(["app"]);
   });
 
-  it("the engine is below the features: its one import of a feature is the known debt (engine/data uses media's checkImageLinks)", () => {
-    expect(modules.engine).toEqual(["features/media", "lib"]);
+  it("the engine is below the features: it imports none (the picture check moved to the content module with MT-02)", () => {
+    expect(modules.engine).toEqual(["lib"]);
   });
 
   it("nothing but the app shell imports the app shell, and features do not import the app", () => {

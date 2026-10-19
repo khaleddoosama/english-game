@@ -1,6 +1,6 @@
 // The game's copy of the content, built in one step from the lists: words one per text, grammar rules and challenges
-// one per id, opposites linked, one level per name in the level order, and the badges. No state; engine/data.js keeps
-// the current copy (mergeCustomData). Docs: docs/modules/content/content-catalog.md.
+// one per id, opposites linked, one level per name in the level order, and the badges. No state; the content module
+// keeps the current copy (features/content/gameContent.js). Docs: docs/modules/content/content-catalog.md.
 import { V2 } from "./v2";
 
 // Keeps only the first entry for each key — a safety net so a word can never

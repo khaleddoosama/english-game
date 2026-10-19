@@ -5,7 +5,6 @@
 import { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { LEVEL_ORDER, mergeCustomData } from "../src/engine/data";
 import { gameContent, setGameContent } from "../src/features/content";
 import { useContentAdmin } from "../src/features/content-admin";
 
@@ -53,7 +52,7 @@ beforeEach(async () => {
     confusionsRef: { current: { "Chilly|Lobby": 2 } },
   };
   const c = startContent();
-  mergeCustomData(c.words, c.grammar, c.challenges, ["Weather", "Hotel"]);
+  setGameContent(c.words, c.grammar, c.challenges, ["Weather", "Hotel"]);
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
 });
 afterEach(async () => { await act(async () => root.unmount()); host.remove(); });
@@ -97,7 +96,7 @@ describe("categories and levels", () => {
     await mount();
     await run(() => api.mergeCategories("Places", ["Weather", "Hotel"]));
     expect([...state.customWords, ...state.customGrammar, ...state.customChallenges, ...state.customCombos, ...state.customStories].every((x) => x.category === "Places")).toBe(true);
-    expect(LEVEL_ORDER).toEqual(["Places"]);
+    expect(gameContent().levelOrder).toEqual(["Places"]);
     expect(state.levelStats).toEqual({ "cat-Places": { plays: 3 } });
     expect(state.levelsCleared).toEqual(["cat-Places"]);
     expect(api.takePendingRenames()).toEqual([{ kind: "category", from: "Weather", to: "Places" }, { kind: "category", from: "Hotel", to: "Places" }]);
@@ -107,16 +106,16 @@ describe("categories and levels", () => {
     await mount();
     await run(() => api.mergeCategories("Weather", ["Weather"]));
     expect(state.dataVersion).toBe(0);
-    expect(LEVEL_ORDER).toEqual(["Weather", "Hotel"]);
+    expect(gameContent().levelOrder).toEqual(["Weather", "Hotel"]);
   });
   it("removing empty levels returns how many went; none to remove changes nothing", async () => {
     const c = startContent();
-    mergeCustomData(c.words, c.grammar, c.challenges, ["Empty", "Weather", "Hotel"]);
+    setGameContent(c.words, c.grammar, c.challenges, ["Empty", "Weather", "Hotel"]);
     await mount();
     let removed;
     await run(() => { removed = api.removeEmptyLevels(); });
     expect(removed).toBe(1);
-    expect(LEVEL_ORDER).toEqual(["Weather", "Hotel"]);
+    expect(gameContent().levelOrder).toEqual(["Weather", "Hotel"]);
     expect(state.dataVersion).toBe(1);
     await run(() => { removed = api.removeEmptyLevels(); });
     expect(removed).toBe(0);
@@ -128,14 +127,14 @@ describe("categories and levels", () => {
     expect(state.customWords.map((w) => w.word)).toEqual(["Lobby"]);
     expect(state.customChallenges).toEqual([]);
     expect(state.customCombos).toEqual([]);
-    expect(LEVEL_ORDER).toEqual(["Hotel"]);
+    expect(gameContent().levelOrder).toEqual(["Hotel"]);
     expect(api.takePendingRenames()).toEqual([]);
   });
   it("renaming a level in the levels editor moves its items and its progress", async () => {
     await mount();
     await run(() => api.updateAdminContent("levels", [{ id: "cat-Weather", title: "Climate" }, { id: "cat-Hotel", title: "Hotel" }]));
     expect(state.customWords[0].category).toBe("Climate");
-    expect(LEVEL_ORDER).toEqual(["Climate", "Hotel"]);
+    expect(gameContent().levelOrder).toEqual(["Climate", "Hotel"]);
     expect(state.levelStats).toEqual({ "cat-Climate": { plays: 3 } });
     expect(api.takePendingRenames()).toEqual([{ kind: "category", from: "Weather", to: "Climate" }]);
   });

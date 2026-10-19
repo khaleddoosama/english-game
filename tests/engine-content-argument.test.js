@@ -1,9 +1,10 @@
-// MT-02 step 2: the engine builds questions, picks modes and counts badges from the content it is given, not from the
-// module variables of engine/data.js. Nothing here calls mergeCustomData, so those variables stay empty: every result
-// can only come from the argument. Made-up content. Docs: docs/modules/content/content-catalog.md.
+// MT-02 step 2: the engine builds questions, picks modes and counts badges from the content it is given (the engine
+// keeps no copy). Nothing here calls setGameContent, so the content module's copy stays empty: every result can only
+// come from the argument. Made-up content. Docs: docs/modules/content/content-catalog.md.
 import { describe, expect, it } from "vitest";
+import { gameContent } from "../src/features/content";
 import { buildCatalog } from "../src/engine/catalog";
-import { WORDS, courseLevelGroups } from "../src/engine/data";
+import { courseLevelGroups } from "../src/engine/data";
 import { buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, findWordByLabel, getAllowedModes, legacyQuestionToV2, selectAdaptiveMode, v2SessionFromEntries } from "../src/engine/questions";
 import { getBadgeProgress, pickWeakMode } from "../src/engine/progress";
 
@@ -17,8 +18,8 @@ const content = buildCatalog(
 const gust = content.words[0];
 const names = content.words.map((w) => w.word);
 
-it("the module variables really are empty in this file", () => {
-  expect(WORDS).toEqual([]);
+it("the content module's copy stays empty in this file", () => {
+  expect(gameContent().words).toEqual([]);
 });
 
 describe("questions come from the given words", () => {

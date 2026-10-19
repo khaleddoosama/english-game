@@ -6,8 +6,7 @@
 import { act, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { WORDS, mergeCustomData } from "../src/engine/data";
-import { gameContent } from "../src/features/content";
+import { gameContent, setGameContent } from "../src/features/content";
 
 const generateContent = vi.fn(), generateComboVariant = vi.fn(), generateGrammarVariant = vi.fn();
 vi.mock("../src/engine/ai", async (original) => ({ ...(await original()),
@@ -34,7 +33,7 @@ beforeEach(async () => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   seen = {};
   generateContent.mockReset(); generateComboVariant.mockReset(); generateGrammarVariant.mockReset();
-  mergeCustomData(WORDS_IN, [rule], [], ["Travel"]);
+  setGameContent(WORDS_IN, [rule], [], ["Travel"]);
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
   await act(async () => root.render(<Probe />));
 });
@@ -46,7 +45,7 @@ describe("new sentences for word pools", () => {
   it("the AI's sentences are added to the end of each word's pool", async () => {
     generateContent.mockResolvedValue([{ word: "Ferry", poolType: "gap", text: "The ______ left at noon." }]);
     await run(() => api.triggerGeneration([{ word: "Ferry", poolType: "gap" }], {}));
-    expect(generateContent).toHaveBeenCalledWith(WORDS, [{ word: "Ferry", poolType: "gap" }], {});
+    expect(generateContent).toHaveBeenCalledWith(gameContent().words, [{ word: "Ferry", poolType: "gap" }], {});
     expect(generateContent.mock.calls[0][0].map((w) => w.word)).toEqual(WORDS_IN.map((w) => w.word));
     expect(texts("Ferry", "gap")).toEqual(["We saw the ______.", "The ______ left at noon."]);
   });
@@ -55,7 +54,7 @@ describe("new sentences for word pools", () => {
     generateContent.mockReturnValueOnce(pending.promise).mockResolvedValue([]);
     await act(async () => { api.triggerGeneration([{ word: "Ferry", poolType: "gap" }], {}); });
     await run(() => api.triggerGeneration([{ word: "Ferry", poolType: "gap" }, { word: "Harbour", poolType: "gap" }], {}));
-    expect(generateContent).toHaveBeenLastCalledWith(WORDS, [{ word: "Harbour", poolType: "gap" }], {});
+    expect(generateContent).toHaveBeenLastCalledWith(gameContent().words, [{ word: "Harbour", poolType: "gap" }], {});
     await run(() => api.triggerGeneration([{ word: "Ferry", poolType: "gap" }], {}));
     expect(generateContent).toHaveBeenCalledTimes(2);
     await run(async () => { pending.resolve([]); });

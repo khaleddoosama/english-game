@@ -1,4 +1,4 @@
-// The game's copy of the content (engine/data.js, mergeCustomData) in a real browser, local mode, made-up content
+// The game's copy of the content (built by engine/catalog.js, kept by features/content) in a real browser, local mode, made-up content
 // stored as a saved copy: the levels follow the level order (an empty name makes an empty level, a category outside
 // the order makes none), words are one per text (case and spaces ignored, the first wins), grammar rules one per id,
 // antonyms that name another word become opposites both ways, and there is one badge per level plus four fixed ones.

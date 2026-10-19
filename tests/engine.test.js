@@ -3,24 +3,23 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { V2 } from "../src/engine/v2";
-import { LEVELS, WORDS, mergeCustomData } from "../src/engine/data";
-import { gameContent } from "../src/features/content";
+import { gameContent, setGameContent } from "../src/features/content";
 import { migrateProgressData } from "../src/engine/progress";
 import { liveQuestions } from "../src/features/live/liveEngine";
 
 const backup = JSON.parse(readFileSync(new URL("../word-hunter-backup.json", import.meta.url), "utf8"));
 const content = V2.withoutRemovedFields(backup);
-mergeCustomData(content.words, content.grammar, content.challenges, content.levelOrder);
+setGameContent(content.words, content.grammar, content.challenges, content.levelOrder);
 
 // Small seeded RNG so question building is repeatable.
 const seeded = (seed = 7) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 
 describe("content", () => {
   it("loads every backup word into levels", () => {
-    expect(WORDS.length).toBe(content.words.length);
-    expect(LEVELS.length).toBe(backup.levelOrder.length);
-    const inLevels = LEVELS.flatMap((l) => l.items).filter((it) => it.kind === "word").length;
-    expect(inLevels).toBe(WORDS.length);
+    expect(gameContent().words.length).toBe(content.words.length);
+    expect(gameContent().levels.length).toBe(backup.levelOrder.length);
+    const inLevels = gameContent().levels.flatMap((l) => l.items).filter((it) => it.kind === "word").length;
+    expect(inLevels).toBe(gameContent().words.length);
   });
 
   it("normalizes a v3 import without errors", () => {
@@ -38,11 +37,11 @@ describe("grading", () => {
     expect(V2.grade(q, "  Campaign ").correct).toBe(true);
   });
   it("flags a one-letter slip as spelling, not correct", () => {
-    const r = V2.grade(q, "campaing", WORDS);
+    const r = V2.grade(q, "campaing", gameContent().words);
     expect(r.correct).toBe(false);
   });
   it("rejects a different word", () => {
-    expect(V2.grade(q, "budget", WORDS).correct).toBe(false);
+    expect(V2.grade(q, "budget", gameContent().words).correct).toBe(false);
   });
 });
 
@@ -55,7 +54,7 @@ describe("progress", () => {
 
   it("builds a practice session from real content", () => {
     const data = migrateProgressData(backup);
-    const s = V2.practice(content, data.mastery, LEVELS[1].title, seeded(), null, { pools: data.pools });
+    const s = V2.practice(content, data.mastery, gameContent().levels[1].title, seeded(), null, { pools: data.pools });
     expect(s.queue.length).toBeGreaterThan(0);
     for (const q of s.queue) expect(Array.isArray(q.answers)).toBe(true);
   });
@@ -63,7 +62,7 @@ describe("progress", () => {
 
 describe("live challenge", () => {
   it("builds multiple-choice questions that carry their answer", () => {
-    const words = LEVELS[1].items.filter((it) => it.kind === "word").map((it) => it.obj);
+    const words = gameContent().levels[1].items.filter((it) => it.kind === "word").map((it) => it.obj);
     const qs = liveQuestions(words, 10, { content: gameContent(), rng: seeded(3) });
     expect(qs.length).toBe(10);
     for (const q of qs) {
@@ -73,7 +72,7 @@ describe("live challenge", () => {
   });
 
   it("builds only the question types asked for", () => {
-    const words = LEVELS[1].items.filter((it) => it.kind === "word").map((it) => it.obj);
+    const words = gameContent().levels[1].items.filter((it) => it.kind === "word").map((it) => it.obj);
     const qs = liveQuestions(words, 8, { content: gameContent(), rng: seeded(5), kinds: ["meaning"] });
     expect(qs.length).toBeGreaterThan(0);
     for (const q of qs) expect(q.mode).toBe("meaning");

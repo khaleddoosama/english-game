@@ -1,8 +1,7 @@
 import { Angry, ArrowLeftRight, BookOpen, Compass, HelpCircle, Keyboard, ListChecks, Newspaper, PenLine, Scale, Search, ShoppingBag, Target, Users, Users2 } from "lucide-react";
 import { V2 } from "./v2";
-import { checkImageLinks } from "../features/media/media";
 import { PRODUCTION_GATE_STEP } from "./constants";
-import { buildCatalog, dedupeBy } from "./catalog";
+import { dedupeBy } from "./catalog";
 /* ---------------------------------- DATA ---------------------------------- */
 
 export const BUILTIN_WORDS = [];
@@ -21,17 +20,9 @@ export const BUILTIN_CHALLENGES = [];
 // are re-derived every time that merge happens — so these live as mutable
 // module-level bindings rather than one-time constants.
 
-export let WORDS = BUILTIN_WORDS;
-export let GRAMMAR = BUILTIN_GRAMMAR;
-export let CHALLENGES = BUILTIN_CHALLENGES;
-
-// Explicit level ordering: the 5 built-in topics, plus any new topics or
-// capacity-overflow continuations ("Media II") created by imports, inserted
-// right after their base topic so related levels stay grouped together.
-// Starts empty now that built-in seed data is gone — real categories come
-// in entirely from imported content (see mergeCustomData, which reassigns
-// this once content loads).
-export let LEVEL_ORDER = [];
+// The game's copy of the content (words, grammar, challenges, level order,
+// levels, badges) is built by buildCatalog (engine/catalog.js) and kept by
+// the content module (features/content/gameContent.js); the engine keeps none.
 
 /* --------------------------------- LEVELS ---------------------------------- */
 // Each level is one topic (matching the original Anki topic tags), mixing
@@ -307,19 +298,9 @@ export const CHALLENGE_MODE_META = {
   grammarCourt: { label: "Advanced Grammar Court", icon: Scale },
 };
 
-export let LEVELS = [];
-export let BADGES = [];
 export let LAST_CHALLENGE_ID = null;
 export function setLastChallengeId(id) { LAST_CHALLENGE_ID = id; }
 
-// The current copy as one object (engine/catalog.js); the variables above follow it.
-let catalog;
-export const currentCatalog = () => catalog;
-function install(next) {
-  catalog = next;
-  ({ words: WORDS, grammar: GRAMMAR, challenges: CHALLENGES, levelOrder: LEVEL_ORDER, levels: LEVELS, badges: BADGES } = next);
-}
-install(buildCatalog(WORDS, GRAMMAR, CHALLENGES, LEVEL_ORDER));
 export { dedupeBy };
 
 // The original ~64 words / 15 grammar cards / 6 puns were only ever seed
@@ -329,15 +310,3 @@ export { dedupeBy };
 // them back into every level, or import the export as regular content to
 // selectively resurrect specific ones as fully-editable custom entries.
 export const INCLUDE_BUILTIN_IN_PLAY = false;
-
-// Merges freshly imported content into the live data and rebuilds
-// LEVELS/BADGES, in one step (buildCatalog, engine/catalog.js). Called once on
-// load (with anything saved from a previous import) and again right after a
-// new import completes.
-export function mergeCustomData(customWords, customGrammar, customChallenges, levelOrder) {
-  const baseWords = INCLUDE_BUILTIN_IN_PLAY ? BUILTIN_WORDS : [];
-  const baseGrammar = INCLUDE_BUILTIN_IN_PLAY ? BUILTIN_GRAMMAR : [];
-  const baseChallenges = INCLUDE_BUILTIN_IN_PLAY ? BUILTIN_CHALLENGES : [];
-  install(buildCatalog([...baseWords, ...customWords], [...baseGrammar, ...customGrammar], [...baseChallenges, ...(Array.isArray(customChallenges) ? customChallenges : [])], levelOrder));
-  checkImageLinks(WORDS);
-}

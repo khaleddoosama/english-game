@@ -5,8 +5,7 @@
 import { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { WORDS, mergeCustomData } from "../src/engine/data";
-import { gameContent } from "../src/features/content";
+import { gameContent, setGameContent } from "../src/features/content";
 
 const generateStory = vi.fn();
 const cancelAiTasks = vi.fn();
@@ -31,7 +30,7 @@ beforeEach(async () => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   isAdmin = true; viewKey = "levels /stories";
   generateStory.mockReset(); cancelAiTasks.mockReset();
-  mergeCustomData(WORDS_IN, [], [], ["Weather", "Hotel", "Food"]);
+  setGameContent(WORDS_IN, [], [], ["Weather", "Hotel", "Food"]);
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
   await act(async () => root.render(<Probe />));
 });
@@ -68,7 +67,7 @@ describe("asking for a story", () => {
     await pick("Weather", "Hotel");
     await run(() => api.generate());
     const [words, targets, categories, rules] = generateStory.mock.calls[0];
-    expect(words).toBe(WORDS);
+    expect(words).toBe(gameContent().words);
     expect(targets.length).toBe(5);
     expect(categories).toEqual(["Weather", "Hotel"]);
     expect(rules).toEqual([]);

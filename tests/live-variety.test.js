@@ -4,16 +4,15 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { V2 } from "../src/engine/v2";
-import { mergeCustomData, WORDS } from "../src/engine/data";
-import { gameContent } from "../src/features/content";
+import { gameContent, setGameContent } from "../src/features/content";
 import { firstPersonify } from "../src/engine/questions";
 import { LIVE_KINDS, liveKey, liveOption, liveQuestions } from "../src/features/live/liveEngine";
 
 const backup = JSON.parse(readFileSync(new URL("../word-hunter-backup.json", import.meta.url), "utf8"));
 const content = V2.withoutRemovedFields(backup);
-mergeCustomData(content.words, content.grammar, content.challenges, content.levelOrder);
+setGameContent(content.words, content.grammar, content.challenges, content.levelOrder);
 const seeded = (seed = 7) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-const words = WORDS.filter((w) => w.category === "People-Relationships").slice(0, 80);
+const words = gameContent().words.filter((w) => w.category === "People-Relationships").slice(0, 80);
 const counts = (qs) => qs.reduce((m, q) => ({ ...m, [q.mode]: (m[q.mode] || 0) + 1 }), {});
 // What the server's live_create checks.
 const serverOk = (q) => q.prompt && Array.isArray(q.options) && q.options.length >= 2 && q.options.length <= 8 && q.answer && q.options.some((o) => o.trim().toLowerCase() === q.answer.trim().toLowerCase());
@@ -117,7 +116,7 @@ describe("grammar", () => {
 
 describe("what the player is asked", () => {
   it("an Opposites question says what to pick (Live shows only the prompt)", () => {
-    const withOpposite = WORDS.filter((w) => w.opposite);
+    const withOpposite = gameContent().words.filter((w) => w.opposite);
     expect(withOpposite.length).toBeGreaterThan(3);
     const qs = liveQuestions(withOpposite, 8, { content: gameContent(), rng: seeded(3), kinds: ["opposite"] });
     expect(qs.length).toBeGreaterThan(0);
@@ -125,7 +124,7 @@ describe("what the player is asked", () => {
   });
 
   it("an outside antonym becomes a clue that points at the word", () => {
-    const w = { ...WORDS.find((x) => x.type === "vocab" && !x.opposite), antonyms: ["blorple"] };
+    const w = { ...gameContent().words.find((x) => x.type === "vocab" && !x.opposite), antonyms: ["blorple"] };
     const qs = liveQuestions([w], 1, { content: gameContent(), rng: seeded(5), kinds: ["antonym"] });
     expect(qs).toHaveLength(1);
     expect(qs[0].prompt).toBe("The opposite of “blorple” is…");

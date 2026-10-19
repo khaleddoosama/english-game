@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 // MT-02 step 3: the features read the game's copy of the content through the gameContent() they are given (the
-// shell passes the content module's), not from the module variables. Nothing here calls mergeCustomData, so those
-// variables stay empty: every result can only come from the given copy. The AI calls are mocked; made-up content.
+// shell passes the content module's). Nothing here calls setGameContent, so the content module's own copy stays
+// empty: every result can only come from the given copy. The AI calls are mocked; made-up content.
 // Docs: docs/modules/content/content-catalog.md.
 import { act, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { gameContent as keptCopy } from "../src/features/content";
 import { buildCatalog } from "../src/engine/catalog";
-import { WORDS } from "../src/engine/data";
 import { liveQuestions } from "../src/features/live/liveEngine";
 
 const generateStory = vi.fn(), generateContent = vi.fn();
@@ -25,8 +25,8 @@ afterEach(async () => { await act(async () => root.unmount()); host.remove(); })
 const render = (el) => act(async () => root.render(el));
 const run = (fn) => act(async () => { await fn(); });
 
-it("the module variables really are empty in this file", () => {
-  expect(WORDS).toEqual([]);
+it("the content module's own copy stays empty in this file", () => {
+  expect(keptCopy().words).toEqual([]);
 });
 
 describe("Live questions", () => {

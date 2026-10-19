@@ -5,7 +5,6 @@
 import { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { WORDS, mergeCustomData } from "../src/engine/data";
 import { gameContent, setGameContent } from "../src/features/content";
 
 const askAiForWord = vi.fn();
@@ -35,7 +34,7 @@ beforeEach(async () => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   isAdmin = true; contextCategory = null; onWordAdded = vi.fn();
   askAiForWord.mockReset(); cancelAiTasks.mockReset();
-  mergeCustomData([ferry], [], [], ["Travel"]);
+  setGameContent([ferry], [], [], ["Travel"]);
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
   await act(async () => root.render(<Probe />));
 });
@@ -49,7 +48,7 @@ describe("opening and asking", () => {
     await run(() => ask.openAskAi("  ferry  "));
     expect(drawer()).not.toBeNull();
     expect(ask.term).toBe("ferry");
-    expect(askAiForWord).toHaveBeenCalledWith("ferry", WORDS.find((w) => w.word === "Ferry"));
+    expect(askAiForWord).toHaveBeenCalledWith("ferry", gameContent().words.find((w) => w.word === "Ferry"));
     expect(cancelAiTasks).toHaveBeenCalledWith(["Ask AI about a word"]);
     expect(ask.result.alreadyInCollection).toBe(true);
     expect(drawer().textContent).toContain("Already in your collection");
@@ -115,7 +114,7 @@ describe("adding the word", () => {
     await run(() => ask.addAiWord());
     const added = state.customWords.find((w) => w.word === "Lantern");
     expect(added).toMatchObject({ category: "Hotel", _aiAdded: true });
-    expect(WORDS.some((w) => w.word === "Lantern")).toBe(true);
+    expect(gameContent().words.some((w) => w.word === "Lantern")).toBe(true);
     expect(state.dataVersion).toBe(1);
     expect(state.toast).toEqual({ kind: "import", text: "Lantern added to your collection" });
     expect(onWordAdded).toHaveBeenCalledWith(added);
