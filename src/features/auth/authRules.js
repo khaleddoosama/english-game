@@ -15,3 +15,11 @@ export const signInErrorText = (message) => (/invalid login/i.test(message) ? "W
 export const PROFILE_LOAD_ERROR = "Couldn't load your account. Check your connection and try again.";
 export const LOCAL_PROFILE = { id: "local", username: "local", role: "admin" };
 export const profileCacheKey = (id) => `wh-profile:${id}`;
+
+// Maintenance (Admin -> Settings): players wait, the admin plays on.
+export const maintenanceBlocks = (app, isAdmin) => app.maintenance && !isAdmin;
+export const maintenanceText = (app) => app.maintenanceMessage || "We're improving the game. Please come back a little later.";
+
+// Signing out waits for running saves, but not longer than this.
+export const SIGN_OUT_WAIT_MS = 5000;
+export const signOutFailedText = (e) => `Couldn't log out: ${e.message}`;

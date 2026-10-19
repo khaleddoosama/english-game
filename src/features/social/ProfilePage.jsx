@@ -1,27 +1,18 @@
 import { useEffect, useState } from "react";
 import { navigate } from "../../lib/router";
 import { formatMs } from "../live/liveRules";
-import { Award, BookCopy, BookOpen, Copy, Download, KeyRound, LogOut, SlidersHorizontal, Users } from "lucide-react";
-import { useAuth } from "../auth";
+import { Award, BookCopy, BookOpen, Copy, Download, LogOut, SlidersHorizontal, Users } from "lucide-react";
+import { ChangePassword, useAuth } from "../auth";
 import { isLocalMode } from "../../lib/supabase";
 import { fetchLiveHistory } from "./socialApi";
 
 export default function ProfilePage({ libraryOn = false, libraryInbox = 0, stats, social = { requests: 0, invites: 0 }, onCopyBackup, onDownloadBackup, onOpenStats, onSignOut }) {
   const auth = useAuth();
   const [history, setHistory] = useState(null);
-  const [pw, setPw] = useState("");
-  const [pwState, setPwState] = useState(null); // null | busy | done | error text
   useEffect(() => {
     if (!auth.user || isLocalMode) { setHistory([]); return; }
     fetchLiveHistory(auth.user.id).then(setHistory).catch(() => setHistory([]));
   }, [auth.user?.id]);
-
-  async function changePassword(e) {
-    e.preventDefault();
-    setPwState("busy");
-    try { await auth.changePassword(pw); setPw(""); setPwState("done"); }
-    catch (problem) { setPwState(problem.message); }
-  }
 
   const tiles = [
     ["Score", stats.score],
@@ -69,13 +60,7 @@ export default function ProfilePage({ libraryOn = false, libraryInbox = 0, stats
       </div>
 
       {!isLocalMode && <>
-        <h3 className="ui-section-title"><KeyRound size={16} /> Change password</h3>
-        <form className="ui-inline-form" onSubmit={changePassword}>
-          <input type="password" value={pw} onChange={(e) => { setPw(e.target.value); setPwState(null); }} minLength={6} placeholder="New password (6+ characters)" autoComplete="new-password" />
-          <button className="ui-row-btn" disabled={pwState === "busy" || pw.length < 6}>{pwState === "busy" ? "Saving…" : "Save"}</button>
-        </form>
-        {pwState === "done" && <p className="ui-ok">Password changed.</p>}
-        {pwState && !["busy", "done"].includes(pwState) && <p className="wh-import-error">{pwState}</p>}
+        <ChangePassword />
         <button className="ui-row-btn ui-danger" onClick={() => (onSignOut ? onSignOut() : auth.signOut())}><LogOut size={16} /> Sign out</button>
       </>}
     </section>
