@@ -1,0 +1,651 @@
+{
+  "schemaVersion": 3,
+  "kind": "content",
+  "note": "Chores, content v3 (10 words). Category Home Daily Life, unit Chores. Level is a plain A2 difficulty — no course level yet.",
+  "categories": [
+    {
+      "id": "home-daily-life",
+      "title": "Home Daily Life",
+      "subCategories": [
+        {
+          "id": "bedroom",
+          "title": "Bedroom"
+        },
+        {
+          "id": "cleaning-floors",
+          "title": "Cleaning floors"
+        },
+        {
+          "id": "cleaning-surfaces",
+          "title": "Cleaning surfaces"
+        },
+        {
+          "id": "home-and-garden",
+          "title": "Home and garden"
+        },
+        {
+          "id": "kitchen",
+          "title": "Kitchen"
+        },
+        {
+          "id": "laundry",
+          "title": "Laundry"
+        }
+      ]
+    }
+  ],
+  "words": [
+    {
+      "id": "vacuum",
+      "word": "Vacuum",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb",
+        "noun"
+      ],
+      "category": "home-daily-life",
+      "subCategory": "cleaning-floors",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To clean carpets and floors with an electric machine that sucks up dust and dirt.",
+      "situations": [
+        "Every Saturday, Ali plugs in the noisy machine and pushes it over the living-room carpet to suck up crumbs.",
+        "The cat hides under the bed whenever the loud cleaning machine is switched on."
+      ],
+      "gaps": [
+        "I need to ______ the carpet — there are crumbs everywhere.",
+        "Can you ______ the stairs while I clean the kitchen?",
+        "She ______s the bedroom every weekend."
+      ],
+      "hints": [
+        "Cleaning with an electric machine that sucks up dirt.",
+        "Six letters with a double 'u'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I vacuumed the floor with a broom.",
+          "correction": "I swept the floor with a broom. / I vacuumed the floor.",
+          "why": "You 'vacuum' with an electric machine; with a broom you 'sweep'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "vacuum cleaner",
+          "pos": "noun"
+        },
+        {
+          "word": "hoover",
+          "pos": "verb"
+        }
+      ],
+      "collocations": [
+        "vacuum the carpet",
+        "vacuum the house",
+        "vacuum cleaner"
+      ],
+      "synonyms": [
+        "hoover"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "sweep",
+          "mop-the-floor"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Chores"
+      ]
+    },
+    {
+      "id": "iron",
+      "word": "Iron",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb",
+        "noun"
+      ],
+      "category": "home-daily-life",
+      "subCategory": "laundry",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To make clothes smooth and remove creases using a hot, flat electric tool.",
+      "situations": [
+        "Before the job interview, Omar pressed his shirt with the hot tool on the board until it was smooth.",
+        "My mum always presses my school uniform on Sunday night so it has no creases."
+      ],
+      "gaps": [
+        "I have to ______ my shirt before the meeting — it's full of creases.",
+        "Don't ______ that silk dress on a high heat!",
+        "He ______s his clothes every Sunday evening."
+      ],
+      "hints": [
+        "Make clothes smooth with a hot tool.",
+        "Same word as a strong grey metal."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I ironed my clothes in the washing machine.",
+          "correction": "I washed my clothes in the washing machine, then ironed them.",
+          "why": "You 'iron' clothes with a hot iron after washing them."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "ironing",
+          "pos": "noun"
+        },
+        {
+          "word": "ironing board",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "iron a shirt",
+        "do the ironing",
+        "ironing board"
+      ],
+      "synonyms": [
+        "press"
+      ],
+      "antonyms": [
+        "crease",
+        "crumple"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "do-the-laundry"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Chores"
+      ]
+    },
+    {
+      "id": "mop-the-floor",
+      "word": "Mop the floor",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "home-daily-life",
+      "subCategory": "cleaning-floors",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To clean a hard floor with water, using a stick with a wet head of cloth or strings.",
+      "situations": [
+        "After the juice spilled on the kitchen tiles, Sara got a bucket of soapy water and wiped them clean with a wet stick.",
+        "The cleaner pushes a wet stick with strings across the shop's tiles every evening."
+      ],
+      "gaps": [
+        "Someone spilled juice in the kitchen, so I need to ______.",
+        "After sweeping, don't forget to ______ with soapy water.",
+        "The cleaner will ______ before the shop opens."
+      ],
+      "hints": [
+        "Clean hard floors with water and a wet stick.",
+        "Three words: a cleaning tool used as a verb + 'the floor'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I mopped the carpet.",
+          "correction": "I vacuumed the carpet.",
+          "why": "You mop hard floors with water; carpets are vacuumed."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "mop",
+          "pos": "noun"
+        },
+        {
+          "word": "bucket",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "mop the floor",
+        "mop up a spill"
+      ],
+      "synonyms": [
+        "wash the floor"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "sweep",
+          "vacuum"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Chores"
+      ]
+    },
+    {
+      "id": "sweep",
+      "word": "Sweep",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "home-daily-life",
+      "subCategory": "cleaning-floors",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To clean dust and dirt from a floor by brushing it with a broom.",
+      "situations": [
+        "After the party, Dad brushed all the crumbs and confetti into a pile with a broom and a dustpan.",
+        "Every morning, the shopkeeper brushes the dust and leaves away from his shop's doorstep."
+      ],
+      "gaps": [
+        "Can you ______ the kitchen floor? There's sand everywhere.",
+        "He ______s the yard every morning with an old broom.",
+        "______ the dust into the dustpan and throw it away."
+      ],
+      "hints": [
+        "Brush dirt off the floor with a broom.",
+        "Five letters; past tense 'swept'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I sweeped the floor.",
+          "correction": "I swept the floor.",
+          "why": "The past tense of 'sweep' is 'swept'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "broom",
+          "pos": "noun"
+        },
+        {
+          "word": "swept",
+          "pos": "verb"
+        }
+      ],
+      "collocations": [
+        "sweep the floor",
+        "sweep up the leaves"
+      ],
+      "synonyms": [
+        "brush"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "vacuum",
+          "mop-the-floor"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Chores"
+      ]
+    },
+    {
+      "id": "dust-the-furniture",
+      "word": "Dust the furniture",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "home-daily-life",
+      "subCategory": "cleaning-surfaces",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To wipe the thin grey powder off tables, shelves and other furniture with a cloth or duster.",
+      "situations": [
+        "Mona wiped the thin grey layer off the bookshelves and the TV table with a soft cloth.",
+        "Before the guests came, Grandma ran a soft cloth over every shelf and table until they shone."
+      ],
+      "gaps": [
+        "The shelves look grey — it's time to ______.",
+        "Can you ______ in the living room before the guests arrive?",
+        "I ______ with a soft cloth once a week."
+      ],
+      "hints": [
+        "Wipe the grey powder off tables and shelves.",
+        "Three words: a word for grey powder (as a verb) + 'the furniture'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I dusted off the floor with a mop.",
+          "correction": "I dusted the furniture with a cloth.",
+          "why": "You dust furniture with a cloth or duster; floors are swept or mopped."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "duster",
+          "pos": "noun"
+        },
+        {
+          "word": "dusty",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "dust the shelves",
+        "feather duster"
+      ],
+      "synonyms": [
+        "wipe down the furniture"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Chores"
+      ]
+    },
+    {
+      "id": "do-the-dishes",
+      "word": "Do the dishes",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "home-daily-life",
+      "subCategory": "kitchen",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To wash the plates, cups, pots and cutlery after a meal.",
+      "situations": [
+        "After dinner, my brother fills the sink with hot soapy water and washes every plate and glass.",
+        "There's a pile of dirty pots and cups in the sink — whose turn is it?"
+      ],
+      "gaps": [
+        "You cooked, so I'll ______ tonight.",
+        "Whose turn is it to ______ after lunch?",
+        "He never helps me ______ — the sink is always full."
+      ],
+      "hints": [
+        "Wash everything you ate and cooked with.",
+        "Three words: 'do the' + a word for plates."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I'll make the dishes.",
+          "correction": "I'll do the dishes.",
+          "why": "We 'do' the dishes, not 'make' them ('make' is for cooking)."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "dishwasher",
+          "pos": "noun"
+        },
+        {
+          "word": "washing-up",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "do the dishes",
+        "wash the dishes"
+      ],
+      "synonyms": [
+        "wash up",
+        "do the washing-up"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Chores"
+      ]
+    },
+    {
+      "id": "make-the-bed",
+      "word": "Make the bed",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "home-daily-life",
+      "subCategory": "bedroom",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To pull the sheets and covers straight and tidy on a bed after sleeping in it.",
+      "situations": [
+        "Every morning, Lina straightens her blanket, puts her pillows in place and smooths the cover.",
+        "The hotel cleaner tidied the covers and fluffed the pillows while we were at breakfast."
+      ],
+      "gaps": [
+        "______ before you go to school, please.",
+        "In the army, you must ______ perfectly every morning.",
+        "I always ______ as soon as I get up."
+      ],
+      "hints": [
+        "Tidy your blanket and pillows after sleeping.",
+        "Three words: 'make the' + where you sleep."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I did my bed this morning.",
+          "correction": "I made my bed this morning.",
+          "why": "We 'make' the bed, not 'do' it."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "bedding",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "make your bed",
+        "make the bed every morning"
+      ],
+      "synonyms": [
+        "tidy the bed"
+      ],
+      "antonyms": [
+        "unmake the bed"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "change-the-sheets"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Chores"
+      ]
+    },
+    {
+      "id": "change-the-sheets",
+      "word": "Change the sheets",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "home-daily-life",
+      "subCategory": "bedroom",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To take the dirty sheets off a bed and put clean ones on.",
+      "situations": [
+        "Every Sunday, Ahmed pulls off the old bedding, puts it in the wash and puts fresh, clean ones on.",
+        "The guest is coming tomorrow, so Mum is putting fresh bedding on the spare bed."
+      ],
+      "gaps": [
+        "The bed smells a bit — it's time to ______.",
+        "Hotels ______ every day for new guests.",
+        "I ______ once a week and wash the old ones."
+      ],
+      "hints": [
+        "Put clean bedding on the bed.",
+        "Three words: 'change the' + the cloth you sleep on."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I changed the bed sheet clean.",
+          "correction": "I changed the sheets.",
+          "why": "Just say 'change the sheets' — it already means putting clean ones on."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "sheet",
+          "pos": "noun"
+        },
+        {
+          "word": "bedding",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "change the sheets",
+        "clean sheets"
+      ],
+      "synonyms": [
+        "change the bedding"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "make-the-bed"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Chores"
+      ]
+    },
+    {
+      "id": "water-the-plants",
+      "word": "Water the plants",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "home-daily-life",
+      "subCategory": "home-and-garden",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To give flowers and plants water so they can grow.",
+      "situations": [
+        "Before going on holiday, Sara asked her neighbour to give her flowers a drink every two days.",
+        "Grandpa fills his green can every evening and gives each pot on the balcony a drink."
+      ],
+      "gaps": [
+        "Can you ______ while I'm on holiday?",
+        "The leaves are brown — did you forget to ______?",
+        "I ______ on the balcony every evening."
+      ],
+      "hints": [
+        "Give green things in pots a drink.",
+        "Three words: 'water the' + things that grow in pots."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I watered on the plants.",
+          "correction": "I watered the plants.",
+          "why": "'Water' is a verb here — no 'on'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "watering can",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "water the plants",
+        "water the garden",
+        "watering can"
+      ],
+      "synonyms": [
+        "give the plants water"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Chores"
+      ]
+    },
+    {
+      "id": "do-the-laundry",
+      "word": "Do the laundry",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "home-daily-life",
+      "subCategory": "laundry",
+      "level": "A2",
+      "register": "neutral",
+      "meaning": "To wash, dry and fold your dirty clothes and towels.",
+      "situations": [
+        "On Saturdays, Omar sorts his dirty clothes by colour, puts them in the machine and hangs them up to dry.",
+        "The basket of dirty clothes is full, so Mona carries it to the washing machine."
+      ],
+      "gaps": [
+        "I have no clean socks — I need to ______.",
+        "My roommate and I take turns to ______ every week.",
+        "She uses the machines downstairs to ______."
+      ],
+      "hints": [
+        "Wash and dry your dirty clothes.",
+        "Three words: 'do the' + a word for dirty clothes."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I need to make the laundry.",
+          "correction": "I need to do the laundry.",
+          "why": "We 'do' the laundry, not 'make' it."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "laundry basket",
+          "pos": "noun"
+        },
+        {
+          "word": "laundromat",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "do the laundry",
+        "laundry basket",
+        "fold the laundry"
+      ],
+      "synonyms": [
+        "do the washing",
+        "wash the clothes"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "iron"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Chores"
+      ]
+    }
+  ]
+}
