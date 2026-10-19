@@ -76,7 +76,7 @@ Routing is a small History API router ([router.js](../../src/lib/router.js)). `p
 
 | Path | Screen id | Rendered by | Main data |
 | --- | --- | --- | --- |
-| `/`, `/stories` | `levels` | `LessonsView`, `CourseLevelsView`, `HomeTabs`, `MyViewsHome`, `StageCard` under [features/home](../../src/features/home); stories list inline in WordHunter | `LEVELS` (built from content), mastery, library keys, view tree |
+| `/`, `/stories` | `levels` | `LessonsView`, `CourseLevelsView`, `HomeTabs`, `MyViewsHome`, `StageCard` under [features/home](../../src/features/home); stories list inline in WordHunter | the levels (built from content), mastery, library keys, view tree |
 | `/play` | `play` (inner: `session`, `results`, `finalReport`, `speedResults`...) | [SessionView](../../src/features/session/SessionView.jsx), [ResultScreens](../../src/features/results/ResultScreens.jsx) | the active session in progress state |
 | `/stats` | `stats` | [StudyDashboard](../../src/features/stats/StudyDashboard.jsx) | session logs, daily history, mastery |
 | `/badges` | `badges` | inline panel in WordHunter | mastery, best streak |
@@ -103,7 +103,7 @@ There is no state library. State lives in these layers, from most global to most
 | Auth | [auth.jsx](../../src/lib/auth.jsx) context | session user, profile, sign-in/up/out | Profile cached in localStorage for an offline start. |
 | App settings | [appSettings.js](../../src/lib/appSettings.js) external store | sign-ups, maintenance, announcement, AI, Live limits, ranks, defaults | Loaded once at start; cached; read on the login page too. |
 | Game state | `useState` and `useRef` inside `WordHunter` | content lists, mastery, pools, confusions, session, settings, reports, score, streaks, library keys, UI flags | About 90 `useState` hooks in one component. Refs mirror some values for use inside callbacks. |
-| Content globals | [engine/data.js](../../src/engine/data.js) module variables | `WORDS`, `GRAMMAR`, `CHALLENGES`, `LEVELS`, `BADGES`, `LEVEL_ORDER` | Reassigned by `mergeCustomData` from one object built by `buildCatalog` ([engine/catalog.js](../../src/engine/catalog.js)); outside the engine only the content module reaches them (`gameContent()` / `setGameContent`, passed down by the shell). A `dataVersion` counter forces a re-render. See `MT-02`. |
+| Game's copy of the content | [features/content/gameContent.js](../../src/features/content/gameContent.js) module value | one object: words, grammar, challenges, level order, levels, badges | Replaced by `setGameContent` with a new object built by `buildCatalog` ([engine/catalog.js](../../src/engine/catalog.js)); only the shell imports it and passes `gameContent()` / `setGameContent` to the features; the engine takes it as an argument. A `dataVersion` counter forces a re-render. `MT-02` fixed. |
 | Repo | [repo.js](../../src/lib/repo.js) closure | what the server is known to hold, save queue, status | Decides what to send (diffs) and merges on conflict. |
 | Feature hooks | `useLibrary` (called in WordHunter), `useViews`, `useViewScope`, `useSocialCounts` | library API and the key-to-id map, view tree, waiting counts | Local to the screens that use them, except `useLibrary`, whose result WordHunter passes down. |
 | AI operations | [aiOperations.js](../../src/lib/aiOperations.js) external store | running and failed AI jobs, cancellation | Drives the AI progress panel. |
@@ -189,7 +189,7 @@ sequenceDiagram
 
 | Case | Who | Path | Persisted to |
 | --- | --- | --- | --- |
-| Edit or add content | Admin | Admin, Words: `WordEditor` calls `updateWordFields` / `updateAdminContent` in WordHunter, which updates the state and `mergeCustomData`. A debounced effect then calls `repo.saveContent`, which calls `content_save_v2` (big saves go through `content_drafts`, then publish). `apply_content_changes` writes `content_items`; triggers write `admin_audit`. The browser then calls `dictionary_sync` without waiting. | `content_items`, `content_meta`, `admin_audit`; then `senses` and friends |
+| Edit or add content | Admin | Admin, Words: `WordEditor` calls `updateWordFields` / `updateAdminContent` in WordHunter, which updates the state and the game's copy (`setGameContent`). A debounced effect then calls `repo.saveContent`, which calls `content_save_v2` (big saves go through `content_drafts`, then publish). `apply_content_changes` writes `content_items`; triggers write `admin_audit`. The browser then calls `dictionary_sync` without waiting. | `content_items`, `content_meta`, `admin_audit`; then `senses` and friends |
 | Import | Admin (content or full backup); a player may restore only their own progress | Import and Export: `inspectImport` validates (`V2.validateContent`, course-level and sense warnings), `applyImport` merges, then the same save path | same |
 | Ask AI, "Add to Collection" | Admin only (the button is hidden for players) | `addAiWord` validates the card, adds it to the content, and also calls `library.api.createWord` (`sense_create`) | content as above, plus a private `senses` row owned by the admin |
 | Add to my library | Player (and admin) | Library, Add words: pick from the dictionary or paste a list; keys map to ids; `library_add` | `library_entries` |
@@ -293,7 +293,7 @@ Live results do not change mastery. Questions and answer keys come from the host
 | Entity | Source of truth | Copies and derived data | Sync mechanism and risk |
 | --- | --- | --- | --- |
 | Account | `auth.users` + `profiles` | `wh-profile:<id>` in localStorage | Cache for an offline start. Low risk. |
-| Words, grammar, challenges, stories, combos | `content_items` (admin writes) | IndexedDB `content-cache`; in-memory `WORDS`, `GRAMMAR`...; `senses` / `grammar_rules` / `collections` (official part) | The cache is refreshed when `content_meta.version` changes (incremental by `updated_at`). The new tables are refreshed by `dictionary_sync`, called by the admin's browser after a content save, ignoring failures (`DP-03`). |
+| Words, grammar, challenges, stories, combos | `content_items` (admin writes) | IndexedDB `content-cache`; in-memory game's copy (`gameContent()`); `senses` / `grammar_rules` / `collections` (official part) | The cache is refreshed when `content_meta.version` changes (incremental by `updated_at`). The new tables are refreshed by `dictionary_sync`, called by the admin's browser after a content save, ignoring failures (`DP-03`). |
 | Word identity | The word text (legacy key) | `senses.legacy_key`; the id map in the browser | A rename moves progress but not library links (`DP-01`; fixed by 0037, in production since 2026-10-18). |
 | Personal library and views | `library_entries`, `library_rules`, `collections*` | Local mode: `library1:<user>` in localStorage | Two implementations behind one interface, checked by a differential test and by contract tests against the real SQL. |
 | Progress (counters, pools, history, settings) | `progress` sections | Browser state; IndexedDB snapshot `progress:<userId>`; `profiles` numbers | Revisioned sections with merge; the snapshot is an offline buffer. |

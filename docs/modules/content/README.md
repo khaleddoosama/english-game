@@ -10,7 +10,7 @@ The shared course that every player plays from: words, grammar rules, challenges
 
 - Load the course for a player: version check, incremental download, IndexedDB cache.
 - Save the course for the admin: differences only, ordered positions, big saves staged and published in one step, renames applied to every player's progress in the same transaction.
-- Build the in-memory course used by the game (`WORDS`, `GRAMMAR`, `CHALLENGES`, `LEVELS`, `BADGES`) from the loaded lists.
+- Build and keep the in-memory course used by the game (words, grammar, challenges, level order, levels, badges) from the loaded lists (`gameContent()` / `setGameContent`, [content-catalog.md](content-catalog.md)).
 - Import and export: content files, full backups, progress-only files, the words spreadsheet, validation, warnings, optional AI repair.
 - Keep `senses`, `grammar_rules` and the official views in step with the course (`dictionary_sync`).
 
@@ -28,7 +28,7 @@ The shared course that every player plays from: words, grammar rules, challenges
 | `repo.loadContent()` | none | content object (lists plus `levelOrder`, `note`) or `null` when the course is empty | Falls back to the cache when the server cannot be reached. |
 | `repo.saveContent(content, {renames})` | full content, rename list `[{kind: word or category, from, to}]` | resolves; throws with `conflict: true` when someone else saved first | Admin only; a non-admin repo ignores the call. |
 | `repo.wipeContent()` | none | resolves | Saves an empty course (admin). |
-| `mergeCustomData(words, grammar, challenges, levelOrder)` | lists, order | none | Builds the game's copy (`buildCatalog`), replaces the module variables with it, and checks word picture links in the background. `currentCatalog()` returns the copy as one object. Outside the engine, only through `gameContent()` / `setGameContent` of `features/content`. |
+| `setGameContent(words, grammar, challenges, levelOrder)` / `gameContent()` | lists, order / none | none / the copy `{ words, grammar, challenges, levelOrder, levels, badges }` | `setGameContent` builds a new copy (`buildCatalog`), keeps it, and checks word picture links in the background. Only the shell imports them; it passes them to the features. |
 | `inspectImport(text, current)` | file text, current content | what applying it would change: counts added, updated, unchanged; renames; warnings; progress summary | Throws an error with a list of issues when the file cannot be used. |
 | `importModeError(check, mode, isAdmin)` | check result, mode, role | reason or `null` | Players may restore only their own progress. |
 | `wordsCsv(words)` | word list | CSV text with a byte-order mark | |
@@ -37,7 +37,7 @@ The shared course that every player plays from: words, grammar rules, challenges
 
 ## 3. Files and database objects
 
-- Files: the content store [lib/repo/contentStore.js](../../../src/lib/repo/contentStore.js) and [contentPlan.js](../../../src/lib/repo/contentPlan.js), reached through `loadContent` / `saveContent` of [lib/repo.js](../../../src/lib/repo.js) (layer map: [architecture/repo.md](../../architecture/repo.md)); [lib/saveToLibrary.js](../../../src/lib/saveToLibrary.js) (new items join the admin's library), [engine/data.js](../../../src/engine/data.js) (module variables, `mergeCustomData`, `currentCatalog`) and [engine/catalog.js](../../../src/engine/catalog.js) (`buildCatalog`: the game's copy, levels and badges, in one step; guide [content-catalog.md](content-catalog.md)), [features/data](../../../src/features/data) (`transfer.js`, `importPlan.js`, `useDataTransfer.js`, `ImportExport.jsx`; guide [admin/import-export.md](../admin/import-export.md)), loading and saving in [features/content](../../../src/features/content) (guide [content-sync.md](content-sync.md)), the dictionary rules in [engine/dictionary.js](../../../src/engine/dictionary.js) (names and `findWord`, senses, `compatible`, antonyms and opposites, stubs for missing words, `applyRenames`, `mergeContent`, `withoutRemovedFields`, `contentOnly`; guide [dictionary-rules.md](dictionary-rules.md)), the v3 format and the content checks inside [engine/v2.js](../../../src/engine/v2.js) (`validateContent`, `prepareImport`, `normalizeV3`), [lib/idb.js](../../../src/lib/idb.js).
+- Files: the content store [lib/repo/contentStore.js](../../../src/lib/repo/contentStore.js) and [contentPlan.js](../../../src/lib/repo/contentPlan.js), reached through `loadContent` / `saveContent` of [lib/repo.js](../../../src/lib/repo.js) (layer map: [architecture/repo.md](../../architecture/repo.md)); [lib/saveToLibrary.js](../../../src/lib/saveToLibrary.js) (new items join the admin's library), [features/content/gameContent.js](../../../src/features/content/gameContent.js) (keeps the game's copy: `gameContent`, `setGameContent`) and [engine/catalog.js](../../../src/engine/catalog.js) (`buildCatalog`: the game's copy, levels and badges, in one step; guide [content-catalog.md](content-catalog.md)), [features/data](../../../src/features/data) (`transfer.js`, `importPlan.js`, `useDataTransfer.js`, `ImportExport.jsx`; guide [admin/import-export.md](../admin/import-export.md)), loading and saving in [features/content](../../../src/features/content) (guide [content-sync.md](content-sync.md)), the dictionary rules in [engine/dictionary.js](../../../src/engine/dictionary.js) (names and `findWord`, senses, `compatible`, antonyms and opposites, stubs for missing words, `applyRenames`, `mergeContent`, `withoutRemovedFields`, `contentOnly`; guide [dictionary-rules.md](dictionary-rules.md)), the v3 format and the content checks inside [engine/v2.js](../../../src/engine/v2.js) (`validateContent`, `prepareImport`, `normalizeV3`), [lib/idb.js](../../../src/lib/idb.js).
 - Screens: Import and Export (`/data`, also under Admin), the first-run "Fresh copy detected" banner on Home, and the content editors in Admin ([Words](../../../src/features/admin/sections/Words.jsx), [Categories](../../../src/features/admin/sections/Categories.jsx), [Grammar](../../../src/features/admin/sections/Grammar.jsx), [Stories and more](../../../src/features/admin/sections/Library.jsx)).
 - Tables: `content_items` (kind, key, data, position, deleted, updated_at), `content_meta` (one row: version, level order, note), `content_drafts`, `item_key_aliases`, and the copy tables listed in [library](../library/README.md).
 - Functions: `content_save_v2`, `apply_content_changes`, `apply_item_renames`, `dictionary_sync`, `dictionary_sync_core`; triggers that write `admin_audit`.
@@ -65,7 +65,7 @@ The shared course that every player plays from: words, grammar rules, challenges
 
 **Save** (admin)
 
-1. The admin's edit updates WordHunter state and calls `mergeCustomData`, so the change shows at once.
+1. The admin's edit updates WordHunter state and calls `setGameContent`, so the change shows at once.
 2. A 150 ms debounced effect passes the full lists to `saveContent`, which finds what changed against what the server holds, sends it, and keeps the admin's own cache current.
 3. After a successful publish the browser asks for `dictionary_sync` without waiting for the answer.
 4. Failures are queued behind earlier saves; the pending renames are put back and a warning explains that the last change will be saved with the next edit.
@@ -100,7 +100,7 @@ The shared course that every player plays from: words, grammar rules, challenges
 
 The admin renames the word "Chilly" to "Chilly (cold)" in Admin, Words. (Synthetic data.)
 
-1. The editor calls `renameWord`; state and `LEVELS` update at once. The rename is queued with the next save.
+1. The editor calls `renameWord`; state and the game's levels update at once. The rename is queued with the next save.
 2. 150 ms later `saveContent` sends the new item, the removal of the old key and the rename in one publish. The server writes the item, moves every player's mastery, pools, confusions and reports to the new key, and records an alias.
 3. The browser calls `dictionary_sync`. With migration 0037 the existing sense is renamed (before 0037: the old sense is flagged deleted and a new sense is created).
 4. With 0037, a player who had the old word in their library still sees it there under the new name, and their mastery is intact. Before 0037, the word drops out of their library and Home hides it (`DP-01`). A rename into a name another word has is refused (0039).
@@ -122,4 +122,4 @@ The admin renames the word "Chilly" to "Chilly (cold)" in Admin, Words. (Synthet
 - `DP-02` `sense_create` has one caller; private words cannot be played.
 - `DP-03` best-effort dictionary copy.
 - `DP-07` the committed backup holds real account progress and doubles as a test fixture.
-- `MT-02` mutable global content.
+- ~~`MT-02` mutable global content~~: fixed 2026-10-19, the content module keeps the one copy ([content-catalog.md](content-catalog.md)).

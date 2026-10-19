@@ -8,8 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("../src/engine/ai", async (original) => ({ ...(await original()), reviewReportedQuestion: vi.fn(), locateReportSource: vi.fn(() => "source") }));
 
 import { reviewReportedQuestion, locateReportSource } from "../src/engine/ai";
-import { WORDS, mergeCustomData } from "../src/engine/data";
-import { gameContent } from "../src/features/content";
+import { gameContent, setGameContent } from "../src/features/content";
 import { getWordPools } from "../src/engine/questions";
 import { useQuestionReports } from "../src/features/reports";
 
@@ -123,9 +122,9 @@ describe("resolve, reopen, delete", () => {
 describe("retiring a reported variant", () => {
   // a made-up course word with a gap sentence, so it has a pool to retire a variant from
   const made = { word: "Alpha", type: "vocab", category: "c", meaning: "m", situation: "s", gap: "She ____ it.", gaps: ["She ____ it."] };
-  beforeEach(() => mergeCustomData([made], [], [], []));
-  afterEach(() => mergeCustomData([], [], [], []));
-  const word = () => WORDS.find((w) => w.word === "Alpha");
+  beforeEach(() => setGameContent([made], [], [], []));
+  afterEach(() => setGameContent([], [], [], []));
+  const word = () => gameContent().words.find((w) => w.word === "Alpha");
   it("the variant is flagged and locked for a hundred years, a new one is asked for, and the report is resolved", async () => {
     await mount();
     const item = getWordPools({}, word()).gap[0];

@@ -27,7 +27,7 @@ flowchart LR
   live --> engine & lib & library & social & media
   social --> lib & live
   session --> engine & lib & media
-  engine --> lib & media
+  engine --> lib
   lib --> engine
   media --> engine & lib
 ```
@@ -35,7 +35,7 @@ flowchart LR
 What this shows (**Current**):
 
 - `app/WordHunter.jsx` imports almost everything and holds the cross-module logic.
-- Cycles exist: `engine` and `lib` import each other (the repo uses the engine's mastery rules; the AI prompts in the engine call the AI client in `lib`); `live` and `social` import each other (friend invitations need the Live API); `engine` imports `features/media`.
+- Cycles exist: `engine` and `lib` import each other (the repo uses the engine's mastery rules; the AI prompts in the engine call the AI client in `lib`); `live` and `social` import each other (friend invitations need the Live API); `engine` imported `features/media` until 2026-10-19 (the picture check now runs in the content module, `MT-02`).
 - `features/admin` reaches into `engine` 16 times (it edits content using engine helpers).
 - `features/library` imports `features/home` and `features/social` (shared helpers and the friends list).
 
@@ -126,5 +126,5 @@ In order of lowest risk first. Details and acceptance criteria are in [roadmap.m
 2. Move the session lifecycle (`recordSessionResult`, `completeSession`, `start*`) out of WordHunter into `practice`, with tests.
 3. Split the two halves of `repo.js` into `content` and `progress` behind the same interface. (Started: the content store and several progress parts are in `src/lib/repo/`, see [repo.md](repo.md).)
 4. Break the `live`/`social` and `engine`/`lib` cycles.
-5. Replace the mutable content globals with a content object passed down (or a read-only store).
+5. Replace the mutable content globals with a content object passed down (or a read-only store). **Done** 2026-10-19: the engine takes the content as an argument and the content module keeps it ([content-catalog.md](../modules/content/content-catalog.md)).
 6. Decide the progress model (text keys vs ids) and finish or drop the unused `sense_progress` / `rule_progress` tables.

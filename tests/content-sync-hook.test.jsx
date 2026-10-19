@@ -6,7 +6,7 @@
 import { act, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { LEVEL_ORDER, WORDS, mergeCustomData } from "../src/engine/data";
+import { gameContent, setGameContent } from "../src/features/content";
 
 const storeEmbeddedImages = vi.fn();
 vi.mock("../src/lib/images", async (original) => ({ ...(await original()), storeEmbeddedImages: (...a) => storeEmbeddedImages(...a) }));
@@ -37,7 +37,7 @@ beforeEach(async () => {
   repo = { mode: "local", saveContent: vi.fn(async () => {}) };
   renames = { takePendingRenames: vi.fn(() => [{ kind: "word", from: "Calm", to: "Still" }]), returnPendingRenames: vi.fn() };
   storeEmbeddedImages.mockReset();
-  mergeCustomData([], [], [], []);
+  setGameContent([], [], [], []);
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
   await act(async () => root.render(<Probe />));
 });
@@ -63,8 +63,8 @@ describe("applying a saved copy", () => {
     expect(api.customCombos).toEqual([{ id: "c1" }]);
     expect(api.customStories).toEqual([{ id: "s1" }]);
     expect(api.contentNoteRef.current).toBe("From the admin");
-    expect(WORDS.map((w) => w.word)).toEqual(["Gust"]);
-    expect([...LEVEL_ORDER]).toEqual(["Weather", "Spare"]);
+    expect(gameContent().words.map((w) => w.word)).toEqual(["Gust"]);
+    expect([...gameContent().levelOrder]).toEqual(["Weather", "Spare"]);
   });
   it("setContent sets all five lists", async () => {
     await run(() => api.setContent({ words: [W("Mist")], grammar: [1], challenges: [2], combos: [3], stories: [4] }));
@@ -128,7 +128,7 @@ describe("pictures inside the content", () => {
     await rerender({ loaded: true });
     expect(storeEmbeddedImages).toHaveBeenCalledWith([PNG]);
     expect(api.customWords[0].image).toBe("https://store/gust.png");
-    expect(WORDS.find((w) => w.word === "Gust").image).toBe("https://store/gust.png");
+    expect(gameContent().words.find((w) => w.word === "Gust").image).toBe("https://store/gust.png");
     expect(state.dataVersion).toBe(1);
   });
   it("nothing in local mode, for a player, or with no embedded picture", async () => {

@@ -1,9 +1,11 @@
 // The game's copy of the content, built in one step (src/engine/catalog.js): words one per text, grammar rules and
-// challenges one per id, opposites linked, the levels and the badges; and mergeCustomData keeping it in engine/data.
+// challenges one per id, opposites linked, the levels and the badges; and setGameContent keeping it in the content
+// module (src/features/content/gameContent.js).
 // Made-up content. Docs: docs/modules/content/content-catalog.md.
 import { describe, expect, it } from "vitest";
 import { badgesFor, buildCatalog, buildLevel, dedupeBy } from "../src/engine/catalog";
 import * as Data from "../src/engine/data";
+import { gameContent, setGameContent } from "../src/features/content";
 
 const W = (word, category = "Weather", extra = {}) => ({ word, type: "vocab", category, meaning: `The meaning of ${word}.`, ...extra });
 const words = (list) => list.map((w) => w.word);
@@ -65,19 +67,19 @@ describe("buildCatalog", () => {
   });
 });
 
-describe("mergeCustomData keeps the copy in engine/data", () => {
-  it("one new copy per call; the old names follow it", () => {
-    const before = Data.currentCatalog();
+describe("setGameContent keeps the copy in the content module", () => {
+  it("one new copy per call, built by buildCatalog; the engine keeps none", () => {
+    const before = gameContent();
     const order = ["Weather"];
-    Data.mergeCustomData([W("Gust"), W("gust")], [{ id: "g1", category: "Weather" }], "x", order);
-    const now = Data.currentCatalog();
+    setGameContent([W("Gust"), W("gust")], [{ id: "g1", category: "Weather" }], "x", order);
+    const now = gameContent();
     expect(now).not.toBe(before);
-    expect([Data.WORDS, Data.GRAMMAR, Data.CHALLENGES, Data.LEVEL_ORDER, Data.LEVELS, Data.BADGES]).toEqual([now.words, now.grammar, now.challenges, now.levelOrder, now.levels, now.badges]);
-    expect(Data.WORDS).toBe(now.words);
-    expect(Data.LEVEL_ORDER).toBe(order);
-    expect(words(Data.WORDS)).toEqual(["Gust"]);
-    expect(Data.LEVELS[0].items).toHaveLength(2);
-    Data.mergeCustomData([], [], [], []);
-    expect([Data.WORDS, Data.LEVELS, Data.BADGES.length]).toEqual([[], [], 4]);
+    expect(now).toEqual(buildCatalog([W("Gust"), W("gust")], [{ id: "g1", category: "Weather" }], [], order));
+    expect(now.levelOrder).toBe(order);
+    expect(words(now.words)).toEqual(["Gust"]);
+    expect(now.levels[0].items).toHaveLength(2);
+    for (const name of ["WORDS", "GRAMMAR", "CHALLENGES", "LEVEL_ORDER", "LEVELS", "BADGES", "currentCatalog", "mergeCustomData"]) expect(name in Data, name).toBe(false);
+    setGameContent([], [], [], []);
+    expect([gameContent().words, gameContent().levels, gameContent().badges.length]).toEqual([[], [], 4]);
   });
 });

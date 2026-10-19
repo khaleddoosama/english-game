@@ -5,7 +5,6 @@
 import { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { LEVEL_ORDER, mergeCustomData } from "../src/engine/data";
 import { gameContent, setGameContent } from "../src/features/content";
 
 const aiFixImportJson = vi.fn();
@@ -48,7 +47,7 @@ beforeEach(async () => {
   calls = [];
   resetProgress = vi.fn(async () => { calls.push("reset"); });
   wipeContent = vi.fn(async () => { calls.push("wipe"); });
-  mergeCustomData(startWords(), [], [], ["Travel"]);
+  setGameContent(startWords(), [], [], ["Travel"]);
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
   await act(async () => root.render(<Probe />));
 });
@@ -60,7 +59,7 @@ describe("applying a file", () => {
   it("content: merged into the live content, the level order grows, and the player is told", async () => {
     const text = await apply(contentFile([word("Lantern", "Camping")]), "content");
     expect(words()).toEqual(["Ferry:Travel", "Harbour:Travel", "Lantern:Camping"]);
-    expect([...LEVEL_ORDER]).toEqual(["Travel", "Camping"]);
+    expect([...gameContent().levelOrder]).toEqual(["Travel", "Camping"]);
     expect(text).toBe("Content imported; everyone's progress is kept");
     expect(state.toast).toEqual({ kind: "import", text });
     expect(state.dataVersion).toBe(1);
@@ -84,7 +83,7 @@ describe("applying a file", () => {
   it("full: the content and the level order come from the backup alone, and the progress is replaced", async () => {
     const text = await apply(backupFile([word("Lantern", "Camping")]), "full");
     expect(words()).toEqual(["Lantern:Camping"]);
-    expect([...LEVEL_ORDER]).toEqual(["Camping"]);
+    expect([...gameContent().levelOrder]).toEqual(["Camping"]);
     expect(applyRestoredProgress).toHaveBeenCalledTimes(1);
     expect(applyRestoredProgress.mock.calls[0][0]).toMatchObject({ score: 30, mastery: { Lantern: { total: 2, correct: 1 } } });
     expect(migrateRenamedProgress).not.toHaveBeenCalled();
@@ -94,7 +93,7 @@ describe("applying a file", () => {
   it("progress: only the progress is replaced; the content stays as it is", async () => {
     const text = await apply(backupFile([word("Lantern", "Camping")]), "progress");
     expect(words()).toEqual(["Ferry:Travel", "Harbour:Travel"]);
-    expect([...LEVEL_ORDER]).toEqual(["Travel"]);
+    expect([...gameContent().levelOrder]).toEqual(["Travel"]);
     expect(applyRestoredProgress.mock.calls[0][0]).toMatchObject({ score: 30 });
     expect(text).toBe("Your progress was restored");
   });
@@ -166,7 +165,7 @@ describe("Delete everything", () => {
     await act(async () => { await api.wipeEverything(); });
     expect(calls).toEqual(["reset", "wipe"]);
     expect(state.lists).toEqual({ words: [], grammar: [], challenges: [], combos: [], stories: [] });
-    expect([...LEVEL_ORDER]).toEqual([]);
+    expect([...gameContent().levelOrder]).toEqual([]);
     expect(state.dataVersion).toBe(1);
   });
   it("a failed server wipe is only logged; the content on screen is empty anyway", async () => {
