@@ -27,10 +27,10 @@ save; `renames` is the content admin's `takePendingRenames` / `returnPendingRena
 ## The content the game holds
 
 Five lists in React state: words, grammar rules, challenges, combos, stories; and the content note (a ref). The
-game's own copy for questions and levels is rebuilt from them with `mergeCustomData` (`engine/data.js`), which sets
-the module variables `WORDS`, `GRAMMAR`, `CHALLENGES`, `LEVEL_ORDER`, `LEVELS` and `BADGES` (`MT-02`). After each
-change `dataVersion` is bumped, which re-renders what reads those variables and schedules the save.
-`liveContent()` returns `{ words: WORDS, grammar: GRAMMAR, challenges: CHALLENGES, combos, stories, note }`.
+game's own copy for questions and levels is rebuilt from them with `setGameContent` and read with `gameContent()`
+([content-catalog.md](content-catalog.md), `MT-02`). After each change `dataVersion` is bumped, which re-renders what
+reads the copy and schedules the save. `liveContent()` returns the copy's words, grammar and challenges with the
+combos, stories and note.
 
 ## Loading (once, when the game starts)
 
@@ -48,7 +48,7 @@ change `dataVersion` is bumped, which re-renders what reads those variables and 
 - After the load, and after every change of a list or of `dataVersion`, a save is scheduled 150 ms later (changes in
   that time are saved together). A player's game never saves content. Because `dataVersion` is bumped at the end of
   the load, the admin's game saves its content once right after loading, changed or not.
-- What is saved: the note, the five lists and the current level order (`LEVEL_ORDER`). Renames waiting from the
+- What is saved: the note, the five lists and the current level order (`gameContent().levelOrder`). Renames waiting from the
   content admin are taken and sent with the same save, so every player's progress follows them on the server.
 - Saves run one after another, never two at a time.
 - When a save fails: the renames are put back (they go with the next save), and the storage warning says

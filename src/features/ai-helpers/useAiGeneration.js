@@ -4,14 +4,13 @@
 // Docs: docs/modules/ai-media/pool-generation.md.
 import { useRef } from "react";
 import { V2 } from "../../engine/v2";
-import { WORDS } from "../../engine/data";
 import { generateComboVariant, generateContent, generateGrammarVariant } from "../../engine/ai";
 import { comboVariantFields, grammarVariantAsk, grammarVariantFields, idOfKey, mayRetryVariant, withGeneratedTexts, withVariantItem } from "./generationRules";
 
 // liveContent()      the live content (combos and grammar rules are looked up in it)
 // poolsRef, setPools the question pools
 // seenSentences()    the sentences read recently (to tell whether a grammar rule has anything unseen left)
-export function useAiGeneration({ liveContent, poolsRef, setPools, seenSentences }) {
+export function useAiGeneration({ gameContent, liveContent, poolsRef, setPools, seenSentences }) {
   // "word::poolType" and "variant::poolType::key" while a request for them is running.
   const pendingRef = useRef(new Set());
   // id -> time of the last failed variant try.
@@ -23,8 +22,8 @@ export function useAiGeneration({ liveContent, poolsRef, setPools, seenSentences
     if (!filtered.length) return;
     filtered.forEach((b) => pendingRef.current.add(`${b.word}::${b.poolType}`));
     try {
-      const results = await generateContent(WORDS, filtered, poolsSnapshot);
-      setPools((prev) => withGeneratedTexts(prev, results, WORDS));
+      const results = await generateContent(gameContent().words, filtered, poolsSnapshot);
+      setPools((prev) => withGeneratedTexts(prev, results, gameContent().words));
     } catch (e) {
       console.error("Content generation failed:", e);
     } finally {

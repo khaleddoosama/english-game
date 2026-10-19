@@ -19,7 +19,7 @@ Status: **Implemented** (current code). The behaviour below was written down bef
 migrateRenamedProgress, mergeCategories, removeEmptyLevels, updateAdminContent, deleteLevelCategory,
 takePendingRenames, returnPendingRenames }`. The shell passes the first seven to Admin and the round exactly as before;
 the content save calls `takePendingRenames()` and, when the save fails, `returnPendingRenames(renames)`.
-Depends on the engine only (`data`: `LEVEL_ORDER`, `mergeCustomData`; `wordIdentity`: `renameProblem`; `v2`).
+Reads and rebuilds the game's copy through `gameContent` / `setGameContent`, which the shell passes from the content module ([content-catalog.md](../content/content-catalog.md)). Depends on the engine only (`wordIdentity`: `renameProblem`; `v2`).
 
 ## Operations
 
@@ -33,7 +33,7 @@ Depends on the engine only (`data`: `LEVEL_ORDER`, `mergeCustomData`; `wordIdent
 | `updateAdminContent(field, list)` | Admin editors (`onUpdate`) | `words`, `grammar`, `challenges`, `combos` or `stories` replaced by `list` | the next content save |
 | `deleteLevelCategory(level)` | the delete-category dialog | `updateAdminContent("levels", …)` without that level (so its items are deleted) | the next content save |
 
-After each change the shell rebuilds the game's content (`mergeCustomData`, `src/engine/data.js`) and bumps
+After each change the hook rebuilds the game's content (`setGameContent`, see [content-catalog.md](../content/content-catalog.md)) and bumps
 `dataVersion`, which schedules the content save (debounced, 150 ms).
 
 ## Progress that follows a rename (`migrateRenamedProgress(renames)`)

@@ -5,7 +5,7 @@
 // is fixed, so the list can only get shorter.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { cycles, fileGraph, moduleGraph } from "./importGraph.js";
+import { SRC, cycles, fileGraph, key, moduleGraph, walk } from "./importGraph.js";
 
 const graph = fileGraph();
 const modules = moduleGraph(graph);
@@ -88,6 +88,20 @@ describe("no new loops between modules", () => {
       const imported = [...text.matchAll(/import\s*\{([^}]*)\}\s*from\s*"\.\/data"/g)].flatMap((m) => m[1].split(",").map((x) => x.trim()));
       expect(imported.filter((name) => CONTENT.includes(name)), file).toEqual([]);
     }
+  });
+
+  it("outside the engine, only the content module reaches the game's copy (engine/data's variables, currentCatalog, mergeCustomData)", () => {
+    const GUARDED = ["WORDS", "GRAMMAR", "CHALLENGES", "LEVEL_ORDER", "LEVELS", "BADGES", "currentCatalog", "mergeCustomData"];
+    const offenders = [];
+    for (const path of walk(SRC).filter((p) => /\.jsx?$/.test(p))) {
+      const file = key(path);
+      if (file.startsWith("engine/") || file.startsWith("features/content/")) continue;
+      const text = readFileSync(path, "utf8");
+      for (const m of text.matchAll(/import\s*\{([^}]*)\}\s*from\s*"[./]*engine\/data"/g)) {
+        for (const name of m[1].split(",").map((x) => x.trim().split(/\s+as\s+/)[0])) if (GUARDED.includes(name)) offenders.push(`${file}: ${name}`);
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 
   it("the engine is below the features: its one import of a feature is the known debt (engine/data uses media's checkImageLinks)", () => {

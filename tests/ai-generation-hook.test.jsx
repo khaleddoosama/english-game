@@ -7,6 +7,7 @@ import { act, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WORDS, mergeCustomData } from "../src/engine/data";
+import { gameContent } from "../src/features/content";
 
 const generateContent = vi.fn(), generateComboVariant = vi.fn(), generateGrammarVariant = vi.fn();
 vi.mock("../src/engine/ai", async (original) => ({ ...(await original()),
@@ -25,7 +26,7 @@ function Probe() {
   // Only the hook updates the reference here (the shell also copies pools into it after each render).
   const poolsRef = useRef(pools);
   state = { pools, poolsRef };
-  api = useAiGeneration({ liveContent: () => ({ words: WORDS_IN, grammar: [rule], combos: [combo], challenges: [], stories: [] }), poolsRef, setPools, seenSentences: () => seen });
+  api = useAiGeneration({ gameContent, liveContent: () => ({ words: WORDS_IN, grammar: [rule], combos: [combo], challenges: [], stories: [] }), poolsRef, setPools, seenSentences: () => seen });
   return null;
 }
 

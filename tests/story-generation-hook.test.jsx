@@ -6,6 +6,7 @@ import { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WORDS, mergeCustomData } from "../src/engine/data";
+import { gameContent } from "../src/features/content";
 
 const generateStory = vi.fn();
 const cancelAiTasks = vi.fn();
@@ -22,8 +23,8 @@ let root, host, api, state, isAdmin, viewKey;
 function Probe() {
   const [stories, setStories] = useState([]);
   state = { stories };
-  api = useStoryGeneration({ stories, setStories, mastery: {}, confusions: {}, viewKey });
-  return <StoryBuilder story={api} isAdmin={isAdmin} />;
+  api = useStoryGeneration({ stories, setStories, mastery: {}, confusions: {}, viewKey, gameContent });
+  return <StoryBuilder story={api} isAdmin={isAdmin} gameContent={gameContent} />;
 }
 
 beforeEach(async () => {

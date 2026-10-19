@@ -24,7 +24,8 @@ progress loaded or restored (the caller sets the ref). `followRename(map)`: a wo
 The pool arguments are only for `retire` (it flags the variant and asks for a new one).
 
 ## Dependencies
-`engine` only (`ai`: `reviewReportedQuestion`, `locateReportSource`; `questions`: `getWordPools`; `data`: `WORDS`; `v2`).
+`engine` only (`ai`: `reviewReportedQuestion`, `locateReportSource`; `questions`: `getWordPools`; `v2`). The game's words come
+through the `gameContent` the shell passes ([content-catalog.md](../content/content-catalog.md)).
 In no loop, and nothing but the index is imported from outside (`tests/architecture.test.js`).
 Used by `src/app/WordHunter.jsx`; the screens it feeds are unchanged: the round (`SessionView`, with its report window)
 and Admin (`sections/Reports.jsx`). Saving reports to the server is `src/lib/repo/reportsSync.js` (not part of this module).

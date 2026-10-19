@@ -2,7 +2,6 @@
 // in reportRules.js. The list also lives in progressExtrasRef.current.reports, which is what is saved with the
 // progress; every change writes both, the ref first (as the shell always did). Docs: docs/modules/practice/question-reports.md.
 import { useMemo, useState } from "react";
-import { WORDS } from "../../engine/data";
 import { locateReportSource, reviewReportedQuestion } from "../../engine/ai";
 import { getWordPools } from "../../engine/questions";
 import { V2 } from "../../engine/v2";
@@ -14,7 +13,7 @@ import { buildReport, followRenames, mapReport, quarantineOf, withReport, withou
 // markSentencesSeen  a reported question counts as read: its sentences are not asked again soon
 // touchSession       makes the open round redraw (a resolved report changes what the round may show)
 // poolsRef, setPools, triggerGeneration   the question pools, used only to retire a reported variant
-export function useQuestionReports({ progressExtrasRef, profile, liveContent, markSentencesSeen, touchSession, poolsRef, setPools, triggerGeneration }) {
+export function useQuestionReports({ gameContent, progressExtrasRef, profile, liveContent, markSentencesSeen, touchSession, poolsRef, setPools, triggerGeneration }) {
   const [reports, setReports] = useState([]);
   // Reported (word, mode) pairs are held back from the adaptive question choosers until the report is resolved or retired.
   const quarantine = useMemo(() => quarantineOf(reports), [reports]);
@@ -42,7 +41,7 @@ export function useQuestionReports({ progressExtrasRef, profile, liveContent, ma
   // Takes the reported variant out of play for good (and has a new one made), then resolves the report.
   // A report with no variant, or about a word that is gone, is only resolved.
   function retire(target) {
-    const wordObj = V2.findWord(WORDS, target.targetWords?.[0]);
+    const wordObj = V2.findWord(gameContent().words, target.targetWords?.[0]);
     if (!wordObj || !target.poolType || !target.poolItemId) { resolve(target); return; }
     const snapshot = poolsRef.current, wordPools = getWordPools(snapshot, wordObj);
     const items = wordPools[target.poolType].map((item) => (item.id === target.poolItemId ? { ...item, flagged: true, lockedUntil: Date.now() + 100 * 365 * 86400000 } : item));

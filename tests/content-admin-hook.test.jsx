@@ -6,6 +6,7 @@ import { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LEVEL_ORDER, mergeCustomData } from "../src/engine/data";
+import { gameContent, setGameContent } from "../src/features/content";
 import { useContentAdmin } from "../src/features/content-admin";
 
 let root, host, api, state, refs, followReportRename, isAdmin;
@@ -33,7 +34,7 @@ function Probe() {
   const [levelsCleared, setLevelsCleared] = useState(["cat-Weather", "cat-Hotel"]);
   state = { customWords, customGrammar, customChallenges, customCombos, customStories, dataVersion, toast, mastery, pools, confusions, levelStats, levelsCleared };
   api = useContentAdmin({
-    isAdmin,
+    isAdmin, gameContent, setGameContent,
     content: { customWords, customGrammar, customChallenges, customCombos, customStories },
     set: { setCustomWords, setCustomGrammar, setCustomChallenges, setCustomCombos, setCustomStories, setDataVersion, setToast },
     progress: { ...refs, setMastery, setPools, setConfusions, setLevelStats, setLevelsCleared },

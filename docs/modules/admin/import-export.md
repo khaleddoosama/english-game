@@ -24,7 +24,7 @@ handleQuickBackup, wipeEverything }`. The shell keeps `backupPayload()` (it read
 `applyRestoredProgress(restored)` (it sets every progress field and `restoringRef`) and `handleReset()` (passed as
 `resetProgress`; Reset progress belongs to progress, not to this module); `migrateRenamedProgress` comes from
 [content admin](content-admin.md). The shell passes the first four to the screen as `dataTools`, `downloadBackup` and
-`handleQuickBackup` to Profile, and `wipeEverything` to the Delete everything dialog, exactly as before. Depends on the engine only (`data`: `LEVEL_ORDER`, `WORDS`, `mergeCustomData`; `ai`:
+`handleQuickBackup` to Profile, and `wipeEverything` to the Delete everything dialog, exactly as before. Reads and rebuilds the game's copy through `gameContent` / `setGameContent`, which the shell passes from the content module ([content-catalog.md](../content/content-catalog.md)). Depends on the engine only (`ai`:
 `aiFixImportJson`; `v2`; `progress`).
 
 ## Export (`exportFile(kind)`)

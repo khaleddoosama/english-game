@@ -43,7 +43,7 @@ const rulesText = (v) => [
   v.start_mode === "anytime" ? "start anytime" : "start together",
 ];
 
-export function LiveChallenge({ player, levels, code, onOpenCode, onExit, sound = true, pools = null, getSeen = () => ({}), onSeen = () => {}, onRefresh = () => {}, limits = {}, friendsApi = null, onSocialChanged = () => {}, library = null }) {
+export function LiveChallenge({ gameContent, player, levels, code, onOpenCode, onExit, sound = true, pools = null, getSeen = () => ({}), onSeen = () => {}, onRefresh = () => {}, limits = {}, friendsApi = null, onSocialChanged = () => {}, library = null }) {
   const api = useMemo(() => getLiveApi(() => player), [player]);
   // "Retry challenge": the settings of a finished challenge, carried to the new-challenge form.
   const [retry, setRetry] = useState(null);
@@ -53,14 +53,14 @@ export function LiveChallenge({ player, levels, code, onOpenCode, onExit, sound 
       {code
         ? <ChallengeRoom key={code} api={api} friendsApi={friendsApi} code={code} player={player} sound={sound} onHome={() => onOpenCode(null)} onOpen={onOpenCode} canRetry={canRetry}
             onRetry={(view) => { setRetry(retryDefaults(view, levels)); onOpenCode(null); }} onSeen={onSeen} />
-        : <LiveHome library={library} api={api} friendsApi={friendsApi} onSocialChanged={onSocialChanged} player={player} levels={levels} pools={pools} getSeen={getSeen} onRefresh={onRefresh} onOpenCode={onOpenCode} onExit={onExit} limits={limits} retry={retry} onRetryDone={() => setRetry(null)} />}
+        : <LiveHome library={library} api={api} friendsApi={friendsApi} onSocialChanged={onSocialChanged} player={player} levels={levels} gameContent={gameContent} pools={pools} getSeen={getSeen} onRefresh={onRefresh} onOpenCode={onOpenCode} onExit={onExit} limits={limits} retry={retry} onRetryDone={() => setRetry(null)} />}
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ home */
 
-function LiveHome({ library, api, friendsApi, onSocialChanged, player, levels, pools, getSeen, onRefresh, onOpenCode, onExit, limits, retry, onRetryDone }) {
+function LiveHome({ library, api, friendsApi, onSocialChanged, player, levels, gameContent, pools, getSeen, onRefresh, onOpenCode, onExit, limits, retry, onRetryDone }) {
   // /live?invite=<friend id>: "Challenge" on the Friends page opens the new-challenge form with that friend picked.
   const [inviteId, setInviteId] = useQueryParam("invite");
   const [creating, setCreating] = useState(!!retry || (!!inviteId && limits.canCreate !== false && levels.length > 0));
@@ -73,7 +73,7 @@ function LiveHome({ library, api, friendsApi, onSocialChanged, player, levels, p
     if (!c) { setJoinError("Paste the challenge link, or type its 6-character code."); return; }
     onOpenCode(c);
   };
-  if (creating) return <CreateForm library={library} api={api} friendsApi={friendsApi} presetInvite={inviteId ? [inviteId] : []} levels={levels} pools={pools} getSeen={getSeen} onRefresh={onRefresh} limits={limits} initial={retry}
+  if (creating) return <CreateForm library={library} api={api} friendsApi={friendsApi} presetInvite={inviteId ? [inviteId] : []} levels={levels} gameContent={gameContent} pools={pools} getSeen={getSeen} onRefresh={onRefresh} limits={limits} initial={retry}
     onCancel={() => { setCreating(false); setInviteId(""); onRetryDone(); }}
     onCreated={(code) => {
       // Leave the new code on the finished challenge so the others can join from its results.
@@ -147,7 +147,7 @@ function Segmented({ label, value, options, onChange }) {
   );
 }
 
-function CreateForm({ library = null, api, friendsApi, presetInvite = [], levels, pools, getSeen, onRefresh, onCancel, onCreated, limits, initial = null }) {
+function CreateForm({ library = null, api, friendsApi, presetInvite = [], levels, gameContent, pools, getSeen, onRefresh, onCancel, onCreated, limits, initial = null }) {
   const cap = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, limits.maxPlayers || MAX_PLAYERS));
   // From "Retry challenge": the old settings, each kept only if this form still offers it.
   const init = initial || {};
@@ -190,7 +190,7 @@ function CreateForm({ library = null, api, friendsApi, presetInvite = [], levels
   async function create() {
     setError(null);
     if (!kinds.length) { setError("Pick at least one question type."); return; }
-    const questions = liveQuestions(words, count, { pools, seen: getSeen(), kinds, grammar });
+    const questions = liveQuestions(words, count, { content: gameContent(), pools, seen: getSeen(), kinds, grammar });
     if (questions.length < 3) { setError("Not enough words with safe multiple-choice questions here. Pick more lessons or more question types."); return; }
     setBusy(true);
     try {

@@ -9,6 +9,7 @@ vi.mock("../src/engine/ai", async (original) => ({ ...(await original()), review
 
 import { reviewReportedQuestion, locateReportSource } from "../src/engine/ai";
 import { WORDS, mergeCustomData } from "../src/engine/data";
+import { gameContent } from "../src/features/content";
 import { getWordPools } from "../src/engine/questions";
 import { useQuestionReports } from "../src/features/reports";
 
@@ -17,6 +18,7 @@ beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
   env = {
+    gameContent,
     progressExtrasRef: { current: { seenSentences: { a: 1 }, reports: [] } }, profile: { id: "u1", username: "ann" },
     liveContent: vi.fn(() => ({ words: [] })), markSentencesSeen: vi.fn(), touchSession: vi.fn(),
     poolsRef: { current: {} }, setPools: vi.fn(), triggerGeneration: vi.fn(),

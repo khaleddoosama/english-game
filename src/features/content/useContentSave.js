@@ -1,7 +1,7 @@
 // Saving the shared content (admin only), and moving pictures stored inside it to the word-images bucket. The steps
 // with no state are in contentSyncRules.js. Docs: docs/modules/content/content-sync.md.
 import { useEffect, useRef } from "react";
-import { LEVEL_ORDER, mergeCustomData } from "../../engine/data";
+import { gameContent, setGameContent } from "./gameContent";
 import { storeEmbeddedImages } from "../../lib/images";
 import { contentPayload, contentSaveWarning, embeddedPictures, withStoredPictures } from "./contentSyncRules";
 
@@ -24,7 +24,7 @@ export function useContentSave({ loaded, isAdmin, repo, lists, dataVersion, setD
     let counted = true;
     const settle = () => { if (counted) { counted = false; contentWritesRef.current--; } };
     const cancel = debouncedSave("content", () => {
-      const content = contentPayload({ note: contentNoteRef.current, combos: customCombos, stories: customStories, words: customWords, grammar: customGrammar, challenges: customChallenges }, LEVEL_ORDER);
+      const content = contentPayload({ note: contentNoteRef.current, combos: customCombos, stories: customStories, words: customWords, grammar: customGrammar, challenges: customChallenges }, gameContent().levelOrder);
       const pending = renames.takePendingRenames();
       return contentSavingRef.current = contentSavingRef.current.then(() => repo.saveContent(content, { renames: pending })).catch((e) => {
         console.error("Could not save content:", e);
@@ -50,7 +50,7 @@ export function useContentSave({ loaded, isAdmin, repo, lists, dataVersion, setD
       if (!stored.size) return;
       setCustomWords((current) => {
         const next = withStoredPictures(current, stored);
-        mergeCustomData(next, latestContentRef.current.grammar, latestContentRef.current.challenges, LEVEL_ORDER);
+        setGameContent(next, latestContentRef.current.grammar, latestContentRef.current.challenges, gameContent().levelOrder);
         return next;
       });
       setDataVersion((value) => value + 1);
