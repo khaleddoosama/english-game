@@ -3,6 +3,7 @@
 // exist today and are listed as known debts (docs/architecture/modules.md,
 // "Plan"); this test fails when a new one appears, and also when a listed one
 // is fixed, so the list can only get shorter.
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { cycles, fileGraph, moduleGraph } from "./importGraph.js";
 
@@ -78,6 +79,15 @@ describe("no new loops between modules", () => {
     expect(graph["engine/catalog"]).toEqual(["engine/v2"]);
     const importers = Object.entries(graph).filter(([, tos]) => tos.includes("engine/catalog")).map(([file]) => file);
     expect(importers).toEqual(["engine/data"]);
+  });
+
+  it("the question, progress and AI engine take the content as an argument: they import none of the content variables", () => {
+    const CONTENT = ["WORDS", "GRAMMAR", "CHALLENGES", "LEVEL_ORDER", "LEVELS", "BADGES"];
+    for (const file of ["questions", "progress", "ai"]) {
+      const text = readFileSync(new URL(`../src/engine/${file}.js`, import.meta.url), "utf8");
+      const imported = [...text.matchAll(/import\s*\{([^}]*)\}\s*from\s*"\.\/data"/g)].flatMap((m) => m[1].split(",").map((x) => x.trim()));
+      expect(imported.filter((name) => CONTENT.includes(name)), file).toEqual([]);
+    }
   });
 
   it("the engine is below the features: its one import of a feature is the known debt (engine/data uses media's checkImageLinks)", () => {

@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("../src/lib/ai", () => ({ callAiText: vi.fn(() => new Promise(() => {})) }));
 import { callAiText } from "../src/lib/ai";
 import * as ai from "../src/engine/ai";
-import { mergeCustomData } from "../src/engine/data";
 import { generateGrammarQuestions } from "../src/features/admin/editors/grammarRules.js";
 import { cancelAiOperation, cancelAiTasks, describeAiError, dismissAiOperation, getAiOperations, runAiOperation, updateAiOperation } from "../src/lib/aiOperations.js";
 
@@ -18,14 +17,14 @@ const cases = [
   ["report review", () => ai.reviewReportedQuestion({ prompt: word.gap, answers: [word.word] }, { entity: "words", item: word })],
   ["combo variant", () => ai.generateComboVariant({ words: ["patient", "impatient"] })],
   ["grammar variant", () => ai.generateGrammarVariant({ rule: "present simple", prompt: "He ______ here.", answer: "works", options: ["works", "work"] })],
-  ["practice generation", () => { mergeCustomData([word], [], [], ["Health"]); return ai.generateContent([{ word: word.word, poolType: "gap" }], {}); }],
+  ["practice generation", () => ai.generateContent([word], [{ word: word.word, poolType: "gap" }], {})],
   ["quality validation", () => ai.validateGeneratedContent([{ word: word.word, poolType: "gap" }], [{ text: word.gap }])],
   ["import repair", () => ai.aiFixImportJson('{"words":[]}', "Missing meaning")],
   ["report fix", () => ai.suggestReportFix({ prompt: word.gap }, word, "words")],
   ["category merge", () => ai.suggestCategoryMerges(["Health", "health"])],
   ["health fix", () => ai.aiFixWordBatch("meaning", [word], [word])],
   ["rewrite", () => ai.regenerateWordExplanation(word)],
-  ["story", () => ai.generateStory([word])],
+  ["story", () => ai.generateStory([word], [word])],
   ["grammar writing", () => generateGrammarQuestions({ rule: "present simple" }, ["choose"], 3, [word.word])],
 ];
 afterEach(() => { cancelAiTasks(null, { includeBackground: true }); for (const job of getAiOperations()) dismissAiOperation(job.id); vi.clearAllMocks(); vi.useRealTimers(); });

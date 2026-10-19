@@ -162,7 +162,7 @@ export function levelGroups(level) {
 // sessions is in both), in the order they first appear. Words with no
 // course level are returned apart (`none`). Grammar rules join the level
 // they name.
-export function courseLevelGroups(words = WORDS, grammar = GRAMMAR) {
+export function courseLevelGroups(words, grammar) {
   const levels = new Map();
   const none = [];
   const add = (item) => {

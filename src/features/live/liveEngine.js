@@ -1,6 +1,6 @@
 import { V2 } from "../../engine/v2";
 import { imageLinkOk } from "../media/media";
-import { WORDS, levelGroups } from "../../engine/data";
+import { WORDS, currentCatalog, levelGroups } from "../../engine/data";
 import { buildQuestion, canBuildWhoAmI, legacyQuestionToV2 } from "../../engine/questions";
 // Live Challenge question building (rules and scoring: liveRules.js;
 // server calls: liveApi.js; the screens: LiveChallenge.jsx).
@@ -43,7 +43,7 @@ export function liveQuestions(words, count, { pools = null, seen = {}, rng = Mat
   // A question from the practice builders (Who am I?, Opposites): a single
   // multiple-choice question that doesn't spell out its own answer.
   const fromLegacy = (kind, w) => {
-    const built = legacyQuestionToV2(buildQuestion(kind, w, pools, { difficulty: 2 }), { kind: "word", wordObj: w }, kind);
+    const built = legacyQuestionToV2(currentCatalog(), buildQuestion(currentCatalog(), kind, w, pools, { difficulty: 2 }), { kind: "word", wordObj: w }, kind);
     const q = built.length === 1 ? built[0] : null;
     if (!q || q.type !== "mcq" || q.noMastery) return null;
     if ((q.answers || []).some((a) => String(a).length > 2 && V2.norm(q.prompt).includes(V2.norm(a)))) return null;

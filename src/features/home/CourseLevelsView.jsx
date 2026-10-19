@@ -2,7 +2,7 @@ import StageCard from "./StageCard";
 import { describeItems } from "./homeState";
 
 // The Gateway course: each course level (A1.1 …) with its sessions, from the
-// course content. `levels` and `none` come from courseLevelGroups().
+// course content. `levels` and `none` come from courseLevelGroups(words, grammar).
 //   onPlay(title, items) - practise a card's items (when the player only sees their library)
 //   onStartLevel(level, part) - practise a level or one of its sessions
 export default function CourseLevelsView({ levels, none, mastery, limited = false, onPlay, onStartLevel }) {

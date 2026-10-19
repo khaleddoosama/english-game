@@ -28,7 +28,7 @@ export function useStoryGeneration({ stories, setStories, mastery, confusions, v
     setError("");
     try {
       const { targets, grammarRules } = storyPlan({ words: WORDS, grammar: GRAMMAR, categories, stories, mastery, confusions });
-      const story = await generateStory(targets, categories, grammarRules);
+      const story = await generateStory(WORDS, targets, categories, grammarRules);
       if (mine !== epoch.current) return;
       setState(story);
     } catch (e) {

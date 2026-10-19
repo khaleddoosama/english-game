@@ -97,8 +97,13 @@ Since then (2026-10-18) the reports, content admin, import/export, Ask AI and st
 round engine was removed (`MT-03`), then pool and variant generation moved out; the file is 1,027 lines. After that removal these engine exports may have no
 caller outside the engine: `buildEntryQuestion`, `entryFileMeta`, `uniqueStrings` (questions), `buildContrastiveFeedback`,
 `containsRequiredTerm`, `spellingDistanceInfo` (ai), `deriveLearningInsights` (progress), `setLastChallengeId`,
-`PRODUCTION_MODES`, `MASTERY_STAGE_RANK`, `getStarsForAccuracy`, `formatAccuracy` (data). **Not removed**: check
-their uses inside the engine and its tests first (follow-up).
+`PRODUCTION_MODES`, `MASTERY_STAGE_RANK`, `getStarsForAccuracy`, `formatAccuracy` (data). Checked on 2026-10-19 (with
+`MT-02` step 2): `buildEntryQuestion` and `uniqueStrings` are used inside `questions.js` and stay; `entryFileMeta`,
+`buildContrastiveFeedback` and, with them, `semanticRelation`, `isStrictIdiom`, `challengeProgressEligible`,
+`challengeValidationIssues`, `buildAdaptiveRound`, `buildRound` and `SPEED_MODES` had no caller at all and were
+removed. **Not removed yet** (no caller outside their own file; they do not read the content): `containsRequiredTerm`,
+`spellingDistanceInfo`, `deriveLearningInsights`, `setLastChallengeId` / `LAST_CHALLENGE_ID`, `PRODUCTION_MODES`,
+`MASTERY_STAGE_RANK`, `getStarsForAccuracy`, `formatAccuracy` (follow-up).
 
 | Cluster | Where | Mixed with |
 | --- | --- | --- |

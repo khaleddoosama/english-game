@@ -17,7 +17,7 @@ Status: **Implemented** (current code). The behaviour below was written down bef
 - [engine/data.js](../../../src/engine/data.js) keeps the current copy: `mergeCustomData(words, grammar, challenges,
   levelOrder)` adds the built-in lists (off), calls `buildCatalog`, makes the old variables (`WORDS`, `GRAMMAR`,
   `CHALLENGES`, `LEVEL_ORDER`, `LEVELS`, `BADGES`) point at the new copy's parts, and checks the picture links.
-  `currentCatalog()` returns the copy as one object (a new object after each call; nothing reads it yet).
+  `currentCatalog()` returns the copy as one object (a new object after each call); the shell and the live engine pass it to the engine.
 - The old exports `rebuildDerived()` and the no-argument `buildLevel(title)` of `engine/data` are gone; nothing
   outside that file called them.
 
@@ -54,11 +54,24 @@ reads the copy and schedules the content save.
 
 ## Who reads it
 
-The variables are imported directly: `WORDS` (shell, `engine/questions`, `engine/ai`, the live engine, the session
-view, the AI helpers, question reports, import and export), `GRAMMAR` (shell, `engine/ai`, story generation),
-`CHALLENGES` (shell, `engine/questions`), `LEVEL_ORDER` (shell, content load and save, content admin, Ask AI, story
-builder, import), `LEVELS` (shell, `engine/progress` for badges) and `BADGES` (shell). `courseLevelGroups()` and
-`buildLevel()` in `engine/data` read them too when no lists are given.
+**The engine takes it as an argument** (`MT-02` step 2): it imports none of the variables (`tests/architecture.test.js`).
+
+- `engine/questions`: every function that needs the words or challenges takes the copy (any `{ words, challenges }`)
+  as its first argument: `buildQuestion(content, mode, word, pools, options)`, `buildChallengeQuestion`,
+  `buildTwoPeopleQuestion`, `buildSelectTwoQuestion`, `buildSpeedQuestion`, `findWordByLabel(content, label)`,
+  `getAllowedModes(content, word)`, `selectAdaptiveMode(content, word, stats, context)`,
+  `legacyQuestionToV2(content, question, entry, suffix)`, `v2SessionFromEntries(content, entries, options)`, and
+  the helpers inside the file.
+- `engine/progress`: `pickWeakMode(content, word, stats, confusions, quarantine)`; `getBadgeProgress(badge, {
+  mastery, bestStreak, levels })`.
+- `engine/ai`: `generateContent(words, batch, pools)` and `generateStory(words, targets, categories, rules)`.
+- `engine/data`: `courseLevelGroups(words, grammar)` (no defaults any more).
+
+**The callers still read the variables** (step 3 changes this): the shell and the live engine pass `currentCatalog()`
+or `LEVELS`; the AI helpers pass `WORDS`. Other readers import them directly: `WORDS` (shell, the live engine, the
+session view, the AI helpers, question reports, import and export), `GRAMMAR` (shell, story generation),
+`CHALLENGES` (shell), `LEVEL_ORDER` (shell, content load and save, content admin, Ask AI, story builder, import),
+`LEVELS` and `BADGES` (shell).
 
 ## Known Issues
 
@@ -70,6 +83,8 @@ builder, import), `LEVELS` (shell, `engine/progress` for badges) and `BADGES` (s
 - Found by `gamecopy.cjs` (kept as is): a level with no items counts as finished, so its badge is earned at once
   (a new empty category adds an earned badge); and with no levels at all "Full Case Archive" counts as earned (the
   header shows 1/4 before any content). Both come from `getBadgeProgress` in `engine/progress.js`.
+- Found while testing step 2 (kept as is): in the "opposite" question, when the usual wrong options run short, the
+  fill-up may pick a synonym of the word (the usual wrong options leave synonyms out). It is still a wrong answer.
 - The level order is kept by reference: it is the same list the caller passed (often the current `LEVEL_ORDER`).
 
 ## Tests
@@ -79,6 +94,9 @@ builder, import), `LEVELS` (shell, `engine/progress` for badges) and `BADGES` (s
 | The rules above: one per text or id, opposites, levels, badges, the lists given are not changed; `mergeCustomData` keeping the copy and the old names | `tests/catalog-rules.test.js` |
 | Levels, badges, counts and the exported copy from a saved copy, after an admin edit and after a reload, in a browser | `e2e/specs/gamecopy.cjs` |
 | `engine/catalog` imports only `engine/v2`; only `engine/data` imports it | `tests/architecture.test.js` |
+| Questions, mode choice, badges and course levels from a given copy, with the variables left empty | `tests/engine-content-argument.test.js` |
+| `engine/questions`, `engine/progress` and `engine/ai` import none of the content variables | `tests/architecture.test.js` |
+| The AI calls get the words they were given | `tests/ai-generation-hook.test.jsx`, `tests/story-generation-hook.test.jsx`, `tests/ai-operations.test.js` |
 | Opposites, de-duplication and levels through the engine | `tests/engine.test.js`, `tests/senses.test.js` |
 | Course levels from given lists | `tests/course-levels.test.js` |
 
@@ -90,6 +108,13 @@ kept); `gamecopy.cjs` passes on the build before the move and after it. Delibera
 ## `MT-02` steps
 
 1. **Implemented**: the copy is built in one step with no state and returned as one object (above).
-2. **Planned**: the engine functions take that object (or its lists) as an argument instead of reading the variables.
+2. **Implemented**: the engine functions take the copy (or its lists) as an argument instead of reading the
+   variables (see "Who reads it"). Unused functions found on the way were removed first (listed in
+   [modules.md](../../architecture/modules.md)). Kept: the new code was compared with the old one on 400 random
+   made-up contents with the same random numbers (60,321 checks: every question mode for every word, mode choice,
+   two-person questions, speed questions, sessions, weak modes, badges; one-off, not kept); the browser specs pass
+   before and after; deliberate breaks (11) each make `engine-content-argument.test.js` fail. One small difference:
+   when a story is retried because a target word leaked, the swap now comes from the words of the first request,
+   not from the words at the time of the retry.
 3. **Planned**: the features and the shell get it from the content module instead of importing the variables.
 4. **Planned**: remove the old variables, with a guard that nothing imports them.
