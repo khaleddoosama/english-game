@@ -72,16 +72,31 @@ is no Log out button, and `accessToken()` returns `null`. The browser specs run 
 ## Signed in
 
 - The header says "Hi <username>" (not for the local player). The admin also gets the Admin tab.
-- `changePassword(password)` (Profile page): under 6 characters, "Passwords need at least 6 characters."; otherwise
-  Supabase's message on failure.
 - `refreshProfile()` reads the profile row again.
+
+### Changing the password (Profile page, online only)
+
+- One password field and a Save button. Save is disabled while the field has fewer than 6 characters, and says
+  "Saving…" while the change runs.
+- `changePassword(password)`: under 6 characters, "Passwords need at least 6 characters."; otherwise Supabase is asked
+  to update the user, and its message is shown on failure.
+- Done: the field is emptied and "Password changed." is shown. Typing again clears the message.
+
+## Maintenance (Admin -> Settings)
+
+- While maintenance is on, a player sees, instead of the game, the title, the admin's message (or "We're improving the
+  game. Please come back a little later." when there is none) and a "Try again" button that reloads the page.
+- The admin plays on. Local mode is always the admin, so it never sees this screen.
+- The check is made after the game has loaded (see Known Issues).
 
 ## Signing out
 
-- The Log out button (header, Profile, Admin) first runs any waiting save and waits up to 5 seconds for running ones
-  ([progress](../progress/README.md)); it shows "Logging out…" meanwhile.
-- Then Supabase signs out, the session change shows the login page. A failure shows "Couldn't log out: <message>" and
-  the player stays signed in.
+- The Log out button (header, Admin; "Sign out" on the Profile page) does nothing while a sign-out is already running.
+  It first runs any save still waiting for its 0.6-second pause, then waits for the saves that are running, but not
+  more than 5 seconds ([progress](../progress/README.md)); the header and Admin buttons say "Logging out…" meanwhile.
+  The repo may send a save after an earlier one it is still sending; the sign-out waits for both.
+- Then Supabase signs out and the session change shows the login page. If that call throws, "Couldn't log out:
+  <message>" is shown and the player stays signed in.
 
 ## Tests
 
@@ -103,4 +118,6 @@ on the Profile page and the sign-out wait for saves are in slice 2.
 ## Known Issues
 
 - `MT-04`: the sign-in part is covered now (above); the session lifecycle part remains.
+- `PE-03`: maintenance is enforced only in the browser. Found by `access.cjs` (kept as is): behind the maintenance
+  screen the player's game has already loaded their progress and sent its first save.
 - A cached profile can show an old role while offline; the server still decides what the account may do.
