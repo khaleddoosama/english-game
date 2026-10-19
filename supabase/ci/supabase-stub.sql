@@ -41,5 +41,17 @@ grant select on storage.buckets to anon, authenticated, service_role;
 create table realtime.messages (id bigserial primary key, topic text, extension text, payload jsonb, event text, private boolean);
 alter table realtime.messages enable row level security;
 grant select, insert on realtime.messages to authenticated;
+grant usage on sequence realtime.messages_id_seq to authenticated;
 create function realtime.topic() returns text language sql stable as $$ select current_setting('realtime.topic', true) $$;
 grant execute on function realtime.topic() to authenticated;
+-- Broadcast from the database, as Supabase documents it: realtime.send(payload, event, topic, private) stores the
+-- message in realtime.messages (Realtime then delivers it) and never fails the caller (an error is a warning).
+create function realtime.send(payload jsonb, event text, topic text, private boolean default true) returns void language plpgsql as $$
+begin
+  begin
+    perform set_config('realtime.topic', topic, true);
+    insert into realtime.messages (payload, event, topic, private, extension) values (payload, event, topic, private, 'broadcast');
+  exception when others then
+    raise warning 'ErrorSendingBroadcastMessage: %', sqlerrm;
+  end;
+end $$;
