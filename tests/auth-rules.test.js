@@ -1,5 +1,5 @@
 // The account rules with no state (src/features/auth/authRules.js): usernames, passwords, the placeholder email,
-// the sign-in message, the local player and the profile cache key. Docs: docs/modules/accounts/sign-in.md.
+// the sign-in message, the local player, the profile cache key, maintenance and signing out. Docs: docs/modules/accounts/sign-in.md.
 import { describe, expect, it } from "vitest";
 import * as A from "../src/features/auth/authRules.js";
 
@@ -33,3 +33,16 @@ describe("passwords and messages", () => {
     expect(A.profileCacheKey("u1")).toBe("wh-profile:u1");
   });
 });
+
+describe("access", () => {
+  it("maintenance blocks players only; the admin's message, else the default one", () => {
+    expect([maintenanceCase(true, false), maintenanceCase(true, true), maintenanceCase(false, false)]).toEqual([true, false, false]);
+    expect(A.maintenanceText({ maintenanceMessage: "Back at noon." })).toBe("Back at noon.");
+    expect(A.maintenanceText({ maintenanceMessage: "" })).toBe("We're improving the game. Please come back a little later.");
+  });
+  it("signing out waits 5 seconds at most; a failure says why", () => {
+    expect(A.SIGN_OUT_WAIT_MS).toBe(5000);
+    expect(A.signOutFailedText(new Error("offline"))).toBe("Couldn't log out: offline");
+  });
+});
+const maintenanceCase = (on, isAdmin) => !!A.maintenanceBlocks({ maintenance: on }, isAdmin);

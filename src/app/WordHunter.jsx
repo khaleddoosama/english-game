@@ -1,12 +1,12 @@
 import { cancelAiTasks } from "../lib/aiOperations.js";
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
-import { Award, BarChart3, LogOut, Settings as SettingsIcon, Wrench, CheckCircle2, Flame, HelpCircle, Lock, Play, Target, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
+import { Award, BarChart3, LogOut, Settings as SettingsIcon, CheckCircle2, Flame, HelpCircle, Lock, Play, Target, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
 import { V2 } from "../engine/v2";
 import { imageLinkOk } from "../features/media/media";
 import { unlockAudioOnFirstTouch } from "../lib/sound";
 unlockAudioOnFirstTouch(); // the first tap lets answer sounds play on phones
 import { SessionView } from "../features/session/SessionView";
-import { Splash } from "../features/auth";
+import { MaintenanceScreen, Splash, maintenanceBlocks, maintenanceText, useSignOut } from "../features/auth";
 import { MASTERY_STAGE, RECENT_RESULT_LIMIT, confusionCount, getMasteryStage, isWordKey, courseLevelGroups, levelItemKey, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, v2SessionFromEntries } from "../engine/questions";
 import { evaluateFinalReport } from "../engine/ai";
@@ -491,14 +491,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   }
   // Log out: finish any save first (up to 5 s), so the last answers and
   // edits aren't lost with the session.
-  const [loggingOut, setLoggingOut] = useState(false);
-  async function logOut() {
-    if (!onSignOut || loggingOut) return;
-    setLoggingOut(true);
-    Object.values(pendingSavesRef.current).forEach((run) => run());
-    await Promise.race([Promise.allSettled(Object.values(runningSavesRef.current)), new Promise((r) => setTimeout(r, 5000))]);
-    try { await onSignOut(); } catch (e) { setLoggingOut(false); setToast({ text: `Couldn't log out: ${e.message}` }); }
-  }
+  const { loggingOut, logOut } = useSignOut({ onSignOut, saves: { pendingSavesRef, runningSavesRef }, setToast });
   // A restored backup replaces the saved progress instead of merging with it.
   const restoringRef = useRef(false);
   useEffect(() => {
@@ -780,15 +773,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   );
   if (!loaded) return <Splash />;
   // Maintenance (Admin -> Settings): players wait, the admin plays on.
-  if (app.maintenance && !isAdmin) return (
-    <main className="splash" role="status">
-      <div className="splash-inner">
-        <h1 className="auth-title">Word <span>Hunter</span></h1>
-        <p className="load-error"><Wrench size={16} /> {app.maintenanceMessage || "We're improving the game. Please come back a little later."}</p>
-        <button className="auth-submit" onClick={() => window.location.reload()}>Try again</button>
-      </div>
-    </main>
-  );
+  if (maintenanceBlocks(app, isAdmin)) return <MaintenanceScreen message={maintenanceText(app)} />;
 
   return (
     <div className={`wh-root${showNav ? " has-nav" : ""}${screen === "admin" ? " screen-admin" : ""}${settings.textSize !== "normal" ? ` text-${settings.textSize}` : ""}${settings.shortcuts ? "" : " no-shortcuts"}${settings.reduceMotion ? " reduce-motion" : ""}`}>
