@@ -130,21 +130,26 @@ Dana (synthetic) challenges two friends.
   channel (`tests/live-transport.test.js` failed before the fix).
 
 - 2026-10-19: signals sent by the database (migration 0043): a signal can no longer be lost with a player's
-  browser, and invitations reach the invited player at once. **In the code; it takes effect once 0043 is applied to
-  the database** (until then the browsers' own signals and the polling work as before).
+  browser, and invitations reach the invited player at once. **Applied to the production database on 2026-10-19**,
+  by hand in the Supabase SQL Editor, so it is not in Supabase's migration list (`supabase_migrations`). To check a
+  database: `select tgname from pg_trigger where tgname like '%_signal'` gives the 4 triggers. Checked after the
+  apply (read-only): the 4 triggers, their 4 functions (security definer) and the policy "players read their own
+  signals" are there. Not yet seen with real players: the delivery through Supabase Realtime (see Known Issues).
 
 **Planned**
 
-- Once 0043 is applied everywhere, the browsers' own signals can be removed (each broadcast is billed once sent and
-  once per receiver, so the duplicates double the messages; Supabase Free plan: 2 million a month, 100 a second,
-  200 connections at once).
+- Once the database's signals are seen working with real players, the browsers' own signals can be removed (each
+  broadcast is billed once sent and once per receiver, so the duplicates double the messages; Supabase Free plan:
+  2 million a month, 100 a second, 200 connections at once). Until then they stay as a second path.
 
 **Known Issues**
 
 - `MT-05` the local backend is a second copy of the server rules with no differential test.
-- Without migration 0043 on the database: signals come from the players' browsers only, so one that is lost (a
+- On a database without migration 0043 (a new environment where it was not run): signals come from the players' browsers only, so one that is lost (a
   browser closes or drops at that moment) is not sent again, and the others see the change at their next poll (up
   to 20 seconds); invitations wait for the 30-second check (Live home) or the 45-second badge check.
 - The real Supabase Realtime service is not run by any test: the SQL test checks what the triggers write to
-  `realtime.messages` (on stand-ins for Supabase's schemas) and the unit tests use a fake client.
+  `realtime.messages` (on stand-ins for Supabase's schemas) and the unit tests use a fake client. Whether the
+  production database's signals reach the players is to be seen in a real match (count:
+  `select event, count(*) from realtime.messages where topic like 'live:%' or topic like 'user:%' group by event`).
 - Assumption (not tested): the server checks the shape of the host's questions and that the answer is among the options, but not that it is the correct answer to the prompt; a careless or malicious host can create wrong keys. This affects only that match.
