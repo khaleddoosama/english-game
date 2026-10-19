@@ -3,7 +3,8 @@
 //   const fake = createFakeSupabase();  await fake.build(dir);  await fake.serve(context, dir);
 // fake.state: accounts, settings, switches (profileDown, holdMs per path, reply per path, down per path) and the calls
 // seen. Social specs also use: an account's `stats` (its leaderboard numbers), `pairs` (friendships and requests, by
-// username), `invites` (Live invitations waiting, for the badges) and `liveResults` (rows of live_results).
+// username), `invites` (Live invitations waiting, for the badges) and `liveResults` (rows of live_results). `content`
+// ({ levelOrder, words, grammar }) is the shared course the game loads; without it there is none.
 const fs = require('node:fs');
 const path = require('node:path');
 const { ROOT } = require('./helpers.cjs');
@@ -27,6 +28,7 @@ function createFakeSupabase() {
     pairs: [],    // { a, b, by, status: "pending" | "accepted" | "declined" | "removed" | "cancelled" } (usernames)
     invites: 0,   // Live invitations waiting for each player (social_counts)
     liveResults: [], // rows of live_results (user_id, room_code, title, …)
+    content: null,   // { levelOrder, words, grammar }: the course in content_meta and content_items
   };
   const userOf = (name) => ({ id: state.accounts[name].id, aud: 'authenticated', role: 'authenticated', email: `${name}@wordhunter.test`, app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' });
   const nameOf = (id) => Object.keys(state.accounts).find((n) => state.accounts[n].id === id);
@@ -132,6 +134,11 @@ function createFakeSupabase() {
         }
         if (u.pathname === '/rest/v1/profiles' && !/^eq\./.test(u.searchParams.get('id') || '')) return await json(200, select(Object.keys(state.accounts).map(profileRow), u.searchParams));
         if (u.pathname === '/rest/v1/live_results') return await json(200, select(state.liveResults, u.searchParams));
+        if (u.pathname === '/rest/v1/content_meta' && state.content) return await json(200, { version: 1, level_order: state.content.levelOrder, note: '' });
+        if (u.pathname === '/rest/v1/content_items' && state.content) {
+          const rows = [...(state.content.words || []).map((w) => ['words', w.word, w]), ...(state.content.grammar || []).map((g) => ['grammar', g.id, g])];
+          return await json(200, rows.map(([kind, key, data], i) => ({ kind, key, data, position: (i + 1) * 1000, deleted: false, updated_at: '2026-10-01T00:00:00Z' })));
+        }
         if (u.pathname === '/rest/v1/profiles') {
           if (state.profileDown) return await route.abort('internetdisconnected');
           const name = nameOf(u.searchParams.get('id').replace(/^eq\./, ''));

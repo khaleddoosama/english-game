@@ -39,8 +39,9 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
 
 ## 3. Files, screens and database objects
 
+- Public surface: [index.js](../../../src/features/live/index.js), used only by the shell: `LiveChallenge` (loaded on demand), `getLiveApi`, `useLivePlayer`, `liveLimits`, `gapRefreshBatch` ([live-setup.md](live-setup.md)).
 - Screens: [LiveChallenge](../../../src/features/live/LiveChallenge.jsx) (home, create form, invite page, lobby, ready, race, waiting, results), [LiveFriends](../../../src/features/live/LiveFriends.jsx).
-- Logic: [liveEngine.js](../../../src/features/live/liveEngine.js) (question building), [liveRules.js](../../../src/features/live/liveRules.js) (rules shared with the local backend), [liveApi.js](../../../src/features/live/liveApi.js), [transport.js](../../../src/features/live/transport.js).
+- Logic: [liveEngine.js](../../../src/features/live/liveEngine.js) (question building), [liveRules.js](../../../src/features/live/liveRules.js) (rules shared with the local backend), [liveApi.js](../../../src/features/live/liveApi.js), [transport.js](../../../src/features/live/transport.js), [liveSetup.js](../../../src/features/live/liveSetup.js) and [useLivePlayer.js](../../../src/features/live/useLivePlayer.js) (who plays, the limits, fresh gap sentences).
 - Tables: `live_challenges`, `live_answer_keys` (not readable by players), `live_players`, `live_answers`, `live_results`; `live_invites` (owned by social).
 - Functions: `live_create`, `live_view`, `live_join`, `live_start`, `live_begin`, `live_answer`, `live_end`, `live_leave`, `live_remove_player`, `live_set_next`, `live_mine`, `live_settle`, `live_finalize`, `is_live_member`, `bump_live_counters` (trigger), `admin_live_matches`, `admin_live_challenges`; invitations: `live_invite_friends`, `live_my_invites`, `live_invite_dismiss`, `live_invites_sent`.
 - Realtime: private channel `live:<code>` (members only); local mode uses `BroadcastChannel`.

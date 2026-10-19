@@ -115,6 +115,15 @@ describe("no new loops between modules", () => {
     expect(Object.entries(modules).filter(([, tos]) => tos.includes("features/social")).map(([from]) => from)).toEqual(["app", "features/live"]);
   });
 
+  it("Live is in no loop and is reached only through its index, by the shell; it uses social only through social's index", () => {
+    expect(cycles(modules).flat()).not.toContain("features/live");
+    const outside = Object.entries(graph).filter(([file, tos]) => !file.startsWith("features/live/") && tos.some((t) => t.startsWith("features/live/") && t !== "features/live/index"));
+    expect(outside.map(([file]) => file)).toEqual([]);
+    expect(Object.entries(modules).filter(([, tos]) => tos.includes("features/live")).map(([from]) => from)).toEqual(["app"]);
+    const intoSocial = Object.entries(graph).filter(([file, tos]) => file.startsWith("features/live/") && tos.some((t) => t.startsWith("features/social/") && t !== "features/social/index"));
+    expect(intoSocial.map(([file]) => file)).toEqual([]);
+  });
+
   it("the engine is below the features: it imports none (the picture check moved to the content module with MT-02)", () => {
     expect(modules.engine).toEqual(["lib"]);
   });

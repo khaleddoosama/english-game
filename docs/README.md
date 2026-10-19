@@ -39,7 +39,7 @@ One folder per module under [modules](modules). Each page has the same sections:
 | [practice](modules/practice/README.md) | Home, sessions, results, stories, speed, stats, question reports (guide: [question-reports](modules/practice/question-reports.md)) |
 | [progress](modules/progress/README.md) | A player's saved state, offline snapshot, merge, leaderboard numbers |
 | [library](modules/library/README.md) | My Library: personal library, views, sharing, links, catalog |
-| [live](modules/live/README.md) | Live Challenge |
+| [live](modules/live/README.md) | Live Challenge (guide: [who plays, limits, fresh sentences](modules/live/live-setup.md)) |
 | [social](modules/social/README.md) | Friends, leaderboard, profile, counts (guide: [friends and ranks](modules/social/friends-and-ranks.md)) |
 | [ai-media](modules/ai-media/README.md) | Gemini calls, quota gate, pronunciation, pictures (guides: [Ask AI](modules/ai-media/ask-ai.md), [story generation](modules/ai-media/story-generation.md), [new sentences and variants](modules/ai-media/pool-generation.md)) |
 | [admin](modules/admin/README.md) | Analytics, players, content tools, reports, audit, settings (guides: [content admin](modules/admin/content-admin.md), [import and export](modules/admin/import-export.md)) |

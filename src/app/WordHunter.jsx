@@ -17,7 +17,7 @@ import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, emptyProgressData,
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
 import { FriendsPage, LOCAL_PEOPLE, Leaderboard, ProfilePage, ranksHiddenFromPlayers, ranksShown, useSocial } from "../features/social";
-import { getLiveApi } from "../features/live/liveApi";
+import { LiveChallenge, gapRefreshBatch, getLiveApi, liveLimits, useLivePlayer } from "../features/live";
 import { LibraryRoutes, MyViewsHome, homeLimits, keepInLibrary, scopeIsEmpty, scopeOfView, useLibrary, useLibraryHome } from "../features/library";
 import { getAppSettings, useAppSettings } from "../lib/appSettings";
 import { useDataTransfer } from "../features/data";
@@ -31,23 +31,11 @@ import { FinalReport, FinalResults, SpeedResults } from "../features/results/Res
 import { DeleteCategoryConfirm, ResetConfirm } from "../features/shell/ConfirmDialogs";
 // Screens most players open rarely load on demand, keeping the first
 // download small: Admin (and all its tools), Live, Leaderboard, Profile.
-// Local mode (no accounts): each browser tab is its own player, kept for
-// the tab's life so a refresh doesn't turn you into someone else.
-function localTabPlayer() {
-  try {
-    const saved = JSON.parse(sessionStorage.getItem("wh-live-player") || "null");
-    if (saved?.id) return saved;
-  } catch {}
-  const p = { id: `tab-${Math.random().toString(36).slice(2, 8)}`, name: `Player ${Math.floor(Math.random() * 90 + 10)}` };
-  try { sessionStorage.setItem("wh-live-player", JSON.stringify(p)); } catch {}
-  return p;
-}
 // The Admin tab reopens the admin page (and filters) used last.
 const lastAdminPath = () => { try { const p = localStorage.getItem("wh-admin-path"); return p && p.startsWith("/admin") ? p : "/admin"; } catch { return "/admin"; } };
 const masteredCountFor = (m) => Object.entries(m || {}).filter(([k, v]) => isWordKey(k) && V2.stage(v) === "Mastered").length;
 const PLAY_SCREENS = new Set(["session", "finalReport", "finalResults", "speed", "speedResults"]);
 const AdminPanel = lazy(() => import("../features/admin/AdminPanel").then((m) => ({ default: m.AdminPanel })));
-const LiveChallenge = lazy(() => import("../features/live/LiveChallenge").then((m) => ({ default: m.LiveChallenge })));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage"));
 const ImportExport = lazy(() => import("../features/data/ImportExport"));
 const StudyDashboard = lazy(() => import("../features/stats/StudyDashboard"));
@@ -62,9 +50,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const hideAnnouncement = () => { setAnnouncementHidden(true); try { localStorage.setItem(announcementKey, "1"); } catch {} };
   const [storageWarning, setStorageWarning] = useState(null);
   const [loadError, setLoadError] = useState(null);
-  const livePlayer = useMemo(() => (profile && profile.id !== "local"
-    ? { id: profile.id, name: profile.username }
-    : localTabPlayer()), [profile?.id, profile?.username]);
+  // The player in Live, friends and the library (local mode: one per browser tab).
+  const livePlayer = useLivePlayer(profile);
   // Friends: the badges on the navigation (requests waiting, invitations waiting).
   const { friendsApi, counts: social, refresh: refreshSocial, badges: socialBadges } = useSocial({ player: livePlayer, enabled: loaded, liveFor: getLiveApi });
   // My library (views inside views); off until the dictionary has been moved to the new tables. In local mode it
@@ -181,9 +168,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   // been read get new ones written in the background, for the next matches.
   const [liveSeenTick, setLiveSeenTick] = useState(0);
   function refreshLiveSentences(words) {
-    const seenNow = progressExtrasRef.current.seenSentences || {};
-    const exhausted = words.filter((w) => /_{2,}/.test(w.gap || "") && V2.poolItems(w, "gap", poolsRef.current?.[w.word]?.gap).every((it) => V2.seenRecently(seenNow, it.text))).slice(0, 8);
-    if (exhausted.length) triggerGeneration(exhausted.map((w) => ({ word: w.word, poolType: "gap" })), poolsRef.current);
+    const batch = gapRefreshBatch(words, poolsRef.current, progressExtrasRef.current.seenSentences || {});
+    if (batch.length) triggerGeneration(batch, poolsRef.current);
   }
   function markSentencesSeen(q) {
     const read = V2.questionSentences(q);
@@ -931,7 +917,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         )}
         {screen === "finalResults" && currentLevel && finalCaseResult && <FinalResults level={currentLevel} result={finalCaseResult} onBack={backToLevels} />}
 
-        {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge gameContent={gameContent} player={livePlayer} friendsApi={friendsApi} onSocialChanged={refreshSocial} library={library.status === "ready" ? library : null} levels={gameContent().levels} code={route.code} sound={settings.sound} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} limits={{ maxPlayers: isAdmin ? 10 : app.liveMaxPlayers, canCreate: isAdmin || app.liveCreate !== "admin", defaultCount: settings.liveQuestions ?? app.liveDefaultQuestions, defaultSeconds: settings.liveSeconds ?? app.liveDefaultSeconds, maxHours: isAdmin ? 168 : app.liveMaxHours }} /></Suspense>}
+        {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge gameContent={gameContent} player={livePlayer} friendsApi={friendsApi} onSocialChanged={refreshSocial} library={library.status === "ready" ? library : null} levels={gameContent().levels} code={route.code} sound={settings.sound} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} limits={liveLimits(app, settings, isAdmin)} /></Suspense>}
         {screen === "data" && <Suspense fallback={<ScreenSkeleton />}><ImportExport variant="game" isAdmin={isAdmin} tools={dataTools} onBack={backToLevels} /></Suspense>}
         {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} isAdmin={isAdmin} /></Suspense>}
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} friendsApi={friendsApi} hiddenForPlayers={ranksHiddenFromPlayers(app, isAdmin)} /></Suspense>}
