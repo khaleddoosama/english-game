@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Upgrade and rollback check for migrations 0037-0042. A database as it is before them (0001-0036, with
+# Upgrade and rollback check for migrations 0037-0042, then 0043 on top of them. A database as it is before them (0001-0036, with
 # made-up data in it), then the six migrations, then what must have changed and what must not, then the
 # rollback script, then a comparison of the WHOLE schema (functions with their source hash and who may
 # execute them, tables with RLS and privileges, columns, constraints, indexes, policies, triggers) with the
@@ -83,6 +83,28 @@ verdict BEFORE "after the rollback"
 forward >/dev/null
 fingerprint "$work/schema_again"
 if diff -q "$work/schema_after" "$work/schema_again" >/dev/null; then echo "again: migrations after a rollback give the same schema as the first time"; else echo "again: DIFFERENT"; diff "$work/schema_after" "$work/schema_again" | head -20; exit 1; fi
+
+# 0043 (signals sent by the database) on top of 0042, the same way: it changes the schema as committed, its
+# rollback gives back exactly the 0042 schema, and applying it again gives the same schema. It ends rolled back,
+# so the checks below still start from 0042 (the preflight verdicts are about 0037-0042).
+apply43() { PGOPTIONS='-c client_min_messages=warning' psql "$PGURL" -X -v ON_ERROR_STOP=1 -q -1 -f "$1" >/dev/null; }
+# The fingerprint reads the public schema; 0043 also adds a policy on realtime.messages.
+signal_policy() { q -c "select count(*) from pg_policies where schemaname = 'realtime' and tablename = 'messages' and policyname = 'players read their own signals'"; }
+apply43 supabase/migrations/0043_realtime_signals.sql
+[ "$(signal_policy)" = 1 ] || { echo "0043: the policy on realtime.messages is missing"; exit 1; }
+fingerprint "$work/schema_0043"
+changed=$(diff "$work/schema_after" "$work/schema_0043" | grep -c '^[<>]' || true)
+[ "$changed" -gt 0 ] || { echo "0043: the fingerprint did not see the migration"; exit 1; }
+expect "$work/schema_0043" supabase/ci/expected/schema-after-0043.txt
+echo "0043: applied; the fingerprint sees $changed changed lines (4 functions, 4 triggers), and the policy on realtime.messages is there"
+apply43 supabase/rollback/0043_down.sql
+[ "$(signal_policy)" = 0 ] || { echo "0043 rollback: the policy on realtime.messages is still there"; exit 1; }
+fingerprint "$work/schema_0043_down"
+if diff -q "$work/schema_after" "$work/schema_0043_down" >/dev/null; then echo "0043 rollback: the whole schema is exactly as at 0042, and the policy is gone"; else echo "0043 rollback: the schema is DIFFERENT from 0042:"; diff "$work/schema_after" "$work/schema_0043_down" | head -40; exit 1; fi
+apply43 supabase/migrations/0043_realtime_signals.sql
+fingerprint "$work/schema_0043_again"
+if diff -q "$work/schema_0043" "$work/schema_0043_again" >/dev/null; then echo "0043 again: the same schema as the first time"; else echo "0043 again: DIFFERENT"; diff "$work/schema_0043" "$work/schema_0043_again" | head -20; exit 1; fi
+apply43 supabase/rollback/0043_down.sql
 
 # The comparison looks at the functions, not only at the table: Windows line endings in a body are the same
 # function (production had them), and a body changed by hand is not.

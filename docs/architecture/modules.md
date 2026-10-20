@@ -1,8 +1,21 @@
 # How Word Hunter is divided into modules
 
-Status: pattern proven on one module, **My Library** (`docs/modules/library/README.md`).
-The rest of the app follows the plan at the end. Written from the code on branch
-`ccr-29322d12-v8wkmd`; the numbers are from that day.
+Status (2026-10-20): the pattern, first proven on **My Library** (`docs/modules/library/README.md`), now covers every
+module of the plan at the end (rows 1-7 done; see each row for its guide). `WordHunter.jsx` is 471 lines (about 2,100
+when this page was first written on branch `ccr-29322d12-v8wkmd`; the sections below keep those first numbers, marked
+as such). Still left: Home is drawn by the shell; the progress engine in `repo.js` stays one piece on purpose; the
+`engine` <-> `lib` module loop; a few unused engine exports (below).
+
+### Behaviour changes made during this work
+
+Most PRs moved code without changing what players see (each kept by a browser spec that passed before and after the
+move). These did change behaviour on purpose, each in its own PR:
+
+- Save, rename and sharing fixes found by the database tests (migrations 0037-0042; `docs/migrations/review-0037-0042.md`).
+- #58: a Live "joined" signal sent before the channel was ready was lost; it now waits for the channel.
+- #61: the database sends Live and social signals (migration 0043); invitations and friend requests arrive at once.
+- #64: the browsers stopped sending their own Live signals online (the database sends them).
+- #66: the Final Case and the weak-words review were removed (on the owner's request).
 
 Practice selection now has a [current-code guide](../modules/learning-engine/practice-selection.md)
 and a [work record](../work-tracking/practice-baseline.md). Its word-question

@@ -115,9 +115,22 @@ REALSTACK_JWT_SECRET=super-secret-jwt-token-with-at-least-32-characters-long \
 ```
 
 Without the variables the tests are skipped. The last test rolls 0037-0042 back and forward on that database.
-Not in the stack: Realtime, Storage, Studio, the Vercel functions, the app's screens. The migrations need two things from
-Realtime and Storage (`realtime.messages`, the `buckets` columns): `up.sh` creates them by hand. This is still not a
-real project: see `docs/migrations/review-0037-0042.md`, "Not verified".
+Not in the stack: Realtime, Storage, Studio, the Vercel functions, the app's screens. The migrations need some things from
+Realtime and Storage (`realtime.messages`, `realtime.topic()`, `realtime.send()` for the signals of migration 0043, the
+`buckets` columns): `up.sh` creates them by hand, the same way as `supabase/ci/supabase-stub.sql` (keep the two in step).
+`realtime.send()` was missing there until 2026-10-20, so on a fresh real stack the 0043 triggers failed; the SQL block was
+checked on its own after the fix, the whole stack (Docker) was not run again. Real stack is not part of CI. This is still
+not a real project: see `docs/migrations/review-0037-0042.md`, "Not verified".
+
+## Upgrade and rollback check
+
+`supabase/ci/check-upgrade.sh` (CI job `database`) builds a database at 0036 with made-up data, applies 0037-0042,
+checks data and behaviour, rolls them back and compares the whole schema with the one before, applies them again,
+and then does the same for **0043** on top of 0042: the schema changes as committed
+(`supabase/ci/expected/schema-after-0043.txt`), `supabase/rollback/0043_down.sql` gives back exactly the 0042 schema,
+the policy on `realtime.messages` (outside the fingerprint, which reads `public`) is there and then gone, and 0043
+applied again gives the same schema. The read-only comparison for a real project (`preflight-compare.sh`) still knows
+the 0037-0042 states only.
 
 The browser spec `e2e/specs/saveclose.cjs` (real Chromium tab closed during a save, the repo bundled for the browser, real
 IndexedDB, PostgreSQL behind the harness) needs `PGURL` and is skipped without it; CI runs it in the `database` job.
