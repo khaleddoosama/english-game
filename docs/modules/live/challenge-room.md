@@ -38,7 +38,8 @@ a hook; the move kept it (see Tests).
 - **The channel** (only once the player has joined): signals from others make the room read the challenge again,
   except "progress", which updates that player's row in place (only if it is not older than what the screen has) and
   reads again only when that player has finished. Presence (who has the room open) is shown as a dot; someone present
-  who is not in the list makes the room read again. On opening the channel the player sends "joined".
+  who is not in the list makes the room read again. On opening the channel the player sends "joined" (local mode;
+  online the database sends the signals).
 - **Polling**, while the challenge is not over: every 20 seconds while the channel works, every 4 seconds while it
   does not (connecting, or given up).
 - **A rematch**: a finished challenge that this player is in, with no rematch yet, is read every 8 seconds for half an
@@ -49,6 +50,9 @@ a hook; the move kept it (see Tests).
 
 Each action disables the buttons while it runs ("busy"), shows the server's message if it fails, and puts the
 challenge it returns (if any) on screen.
+
+"Sends" below reaches the other tabs in local mode only; online the browser sends nothing and the database sends the
+same signal once the change is written ([README](README.md), data flow).
 
 | Action | Who | Then |
 | --- | --- | --- |

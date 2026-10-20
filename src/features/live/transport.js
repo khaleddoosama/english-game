@@ -1,30 +1,26 @@
 // Live Challenge realtime channel: presence (who has the challenge open)
 // and small "something changed" events (joined, left, start, progress,
-// end). The game itself runs through liveApi RPCs, so if the channel can't
-// connect the challenge still works; the screen just refreshes by polling.
-// Local mode uses BroadcastChannel so several tabs can play together.
+// end, rematch). The game itself runs through liveApi RPCs, so if the channel
+// can't connect the challenge still works; the screen just refreshes by polling.
+// Online the database sends the events (migration 0043) and the browser only
+// listens; local mode uses BroadcastChannel, where the tabs send them.
 import { isLocalMode, supabase } from "../../lib/supabase";
 
-// The same names come from the database too (migration 0043), which also sends "rematch" when a rematch is linked.
+// The names the database sends (migration 0043).
 export const LIVE_EVENTS = ["joined", "left", "start", "progress", "end", "rematch"];
 const RETRY_MS = [1000, 3000, 8000];
 
-// Returns { send(event, payload), close() }. onStatus gets "connecting",
-// "live" or "offline" (gave up; polling only).
+// Returns { send(event, payload), close() }. send() reaches the other tabs in
+// local mode and does nothing online (the database has sent it already).
+// onStatus gets "connecting", "live" or "offline" (gave up; polling only).
 export function openLiveChannel(code, me, { onEvent, onPresence, onStatus = () => {} }) {
   return isLocalMode ? localChannel(code, me, onEvent, onPresence, onStatus) : realtimeChannel(code, me, onEvent, onPresence, onStatus);
 }
 
 function realtimeChannel(code, me, onEvent, onPresence, onStatus) {
-  let channel = null, closed = false, attempt = 0, timer = null, ready = false, gaveUp = false;
-  // Messages sent before the channel is subscribed (right after opening it, or while it reconnects) wait here and
-  // go out once it is. Before, one sent right after opening ("joined") was lost: there was no channel yet.
-  let waiting = [];
-  const push = (event, payload) => channel.send({ type: "broadcast", event, payload }).catch(() => {});
-  const flush = () => { const out = waiting; waiting = []; out.forEach(([event, payload]) => push(event, payload)); };
+  let channel = null, closed = false, attempt = 0, timer = null;
   const connect = async () => {
     if (closed) return;
-    ready = false;
     onStatus("connecting");
     try { await supabase.realtime.setAuth(); } catch {}
     channel = supabase.channel(`live:${code}`, { config: { private: true, broadcast: { self: false }, presence: { key: me.id } } });
@@ -32,27 +28,23 @@ function realtimeChannel(code, me, onEvent, onPresence, onStatus) {
     channel.on("presence", { event: "sync" }, () => onPresence(Object.values(channel.presenceState()).map((metas) => metas[0]).filter(Boolean)));
     channel.subscribe(async (status, err) => {
       if (closed) return;
-      if (status === "SUBSCRIBED") { attempt = 0; ready = true; onStatus("live"); flush(); await channel.track({ id: me.id, name: me.name }); return; }
+      if (status === "SUBSCRIBED") { attempt = 0; onStatus("live"); await channel.track({ id: me.id, name: me.name }); return; }
       if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
         // e.g. "MissingPartition" on a project's very first connection, or
         // a dropped network: try again a few times, then rely on polling.
-        ready = false;
         console.warn("Live channel:", status, err?.message || "");
         supabase.removeChannel(channel);
         if (attempt < RETRY_MS.length) { timer = setTimeout(connect, RETRY_MS[attempt++]); onStatus("connecting"); }
-        // Gave up: messages go to the library as before (it sends them over HTTP when the channel is not joined).
-        else { gaveUp = true; onStatus("offline"); flush(); }
+        else onStatus("offline");
       }
     });
   };
   connect();
   return {
-    send(event, payload) {
-      if (closed) return;
-      if (ready || gaveUp) push(event, payload);
-      else waiting.push([event, payload]);
-    },
-    close() { closed = true; waiting = []; clearTimeout(timer); if (channel) supabase.removeChannel(channel); },
+    // The database sends every signal after the change is written (migration 0043), so the browser sends none.
+    // Before 2026-10-20 it sent its own too, which doubled the billed messages.
+    send() {},
+    close() { closed = true; clearTimeout(timer); if (channel) supabase.removeChannel(channel); },
   };
 }
 

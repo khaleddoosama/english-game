@@ -282,7 +282,7 @@ Defects: the leaderboard score is trusted from the client (`PE-01`, confirmed); 
 | Create | The host's browser builds multiple-choice questions ([liveEngine.js](../../src/features/live/liveEngine.js)) from all words, a lesson or a view, with a grammar mix. `live_create` splits each question into a public part and a private answer key (`live_answer_keys`). Limits: 3 to 50 questions, 2 to 10 players, up to 168 hours. |
 | Share | A link `/live/<code>` (copy or the browser's share sheet) or friend invitations (`live_invite_friends`). A signed-out visitor sees the login page with the code and lands in the challenge afterwards. |
 | Play | `live_join`, `live_start` (together mode) or `live_begin`, then `live_answer` one question at a time. The server judges and times each answer, tolerates network delay with a slack, and returns the same result if an answer is retried. `live_end`, `live_leave`, `live_remove_player`, `live_set_next` (rematch). |
-| Realtime | A private channel `live:<code>` carries presence and "something changed" events. If it cannot connect, the screen polls. Local mode uses `BroadcastChannel`. |
+| Realtime | A private channel `live:<code>` carries presence and "something changed" events, sent by database triggers (migration 0043); a private `user:<id>` channel carries friend and invitation signals. If it cannot connect, the screen polls. Local mode uses `BroadcastChannel`. |
 | Results | `live_settle` ranks by correct answers, then total time; `live_results` rows and profile Live counters are written by a trigger. Everyone sees everyone's answers only after the challenge ends. |
 | Offline | Live needs a connection. Answers are retried 3 times with growing waits; a server refusal is not retried. |
 

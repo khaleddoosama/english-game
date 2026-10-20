@@ -1,8 +1,7 @@
 // The Live realtime channel (src/features/live/transport.js), online side, with a fake Supabase Realtime client:
-// messages sent before the channel is subscribed (the "joined" sent right after opening it) or while it reconnects
-// wait and go out once it is (after giving up they go to the library, which sends them over HTTP); the status goes
+// the browser sends no signal (the database sends them, migration 0043), whatever the channel's state; the status goes
 // connecting -> live, with three retries (1 s, 3 s, 8 s) before "offline"; events and presence from others reach
-// the screen; closing drops what is waiting. Made-up players. NOT proven: the real Supabase Realtime service.
+// the screen; closing removes the channel and stops the retries. Made-up players. NOT proven: the real Supabase Realtime service.
 // Docs: docs/modules/live/README.md.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -35,7 +34,6 @@ function fakeClient() {
 
 const SAM = { id: "u-sam", name: "sam_01" };
 const settle = () => vi.advanceTimersByTimeAsync(0);
-const sentEvents = (ch) => ch.sent.map((m) => [m.event, m.payload]);
 
 function open(handlers = {}) {
   const calls = { events: [], presence: [], status: [] };
@@ -52,80 +50,47 @@ beforeEach(() => { vi.useFakeTimers(); env.client = fakeClient(); vi.spyOn(conso
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe("live channel: sending", () => {
-  it("a message sent right after opening the channel goes out once it is subscribed", async () => {
+  it("online the browser sends no signal, before or after the channel is subscribed (the database sends them)", async () => {
     const { link } = open();
     link.send("joined", { user_id: SAM.id });
     await settle();
     const [ch] = env.client.channels;
-    expect(ch.name).toBe("live:K7M2QX");
-    expect(ch.sent).toEqual([]);
     await ch.status("SUBSCRIBED");
-    expect(sentEvents(ch)).toEqual([["joined", { user_id: SAM.id }]]);
-  });
-
-  it("waiting messages go out once each, in the order they were sent", async () => {
-    const { link } = open();
-    link.send("joined", { user_id: SAM.id });
+    for (const event of ["joined", "left", "start", "end"]) link.send(event, { user_id: SAM.id });
     link.send("progress", { user_id: SAM.id, answered: 1 });
-    await settle();
-    const [ch] = env.client.channels;
-    await ch.status("SUBSCRIBED");
-    link.send("end", {});
-    expect(sentEvents(ch)).toEqual([["joined", { user_id: SAM.id }], ["progress", { user_id: SAM.id, answered: 1 }], ["end", {}]]);
-  });
-
-  it("a message sent while the channel reconnects goes out on the new channel", async () => {
-    const { link } = open();
-    await settle();
-    const [first] = env.client.channels;
-    await first.status("SUBSCRIBED");
-    first.status("CHANNEL_ERROR", { message: "dropped" });
-    link.send("progress", { user_id: SAM.id, answered: 2 });
-    await vi.advanceTimersByTimeAsync(1000);
-    const second = env.client.channels[1];
-    expect(env.client.removed).toContain(first);
-    expect(first.sent).toEqual([]);
-    await second.status("SUBSCRIBED");
-    expect(sentEvents(second)).toEqual([["progress", { user_id: SAM.id, answered: 2 }]]);
-  });
-
-  it("nothing is sent after closing", async () => {
-    const { link } = open();
-    await settle();
-    const [ch] = env.client.channels;
-    await ch.status("SUBSCRIBED");
-    link.close();
-    link.send("progress", { user_id: SAM.id, answered: 5 });
+    await vi.advanceTimersByTimeAsync(20000);
     expect(ch.sent).toEqual([]);
   });
 
-  it("closing drops the waiting messages", async () => {
-    const { link } = open();
-    link.send("joined", { user_id: SAM.id });
-    await settle();
-    const [ch] = env.client.channels;
-    link.close();
-    await ch.status("SUBSCRIBED");
-    expect(ch.sent).toEqual([]);
-    expect(env.client.removed).toContain(ch);
-  });
-
-  it("after giving up, waiting and new messages go to the library on the last channel, as before", async () => {
+  it("nor while it reconnects, nor after giving up", async () => {
     const { link, calls } = open();
     await settle();
-    link.send("joined", { user_id: SAM.id });
     for (const wait of [1000, 3000, 8000]) {
       env.client.channels.at(-1).status("TIMED_OUT");
+      link.send("progress", { user_id: SAM.id, answered: 2 });
       await vi.advanceTimersByTimeAsync(wait);
     }
-    const last = env.client.channels.at(-1);
-    expect(env.client.channels.flatMap((ch) => ch.sent)).toEqual([]);
-    last.status("TIMED_OUT");
+    env.client.channels.at(-1).status("TIMED_OUT");
     expect(calls.status.at(-1)).toBe("offline");
-    link.send("progress", { user_id: SAM.id, answered: 3 });
+    link.send("end", {});
     await vi.advanceTimersByTimeAsync(20000);
     expect(env.client.channels).toHaveLength(4);
-    expect(sentEvents(last)).toEqual([["joined", { user_id: SAM.id }], ["progress", { user_id: SAM.id, answered: 3 }]]);
+    expect(env.client.channels.flatMap((ch) => ch.sent)).toEqual([]);
+  });
+
+  it("closing removes the channel, and stops the retries", async () => {
+    const first = open();
+    await settle();
+    const [ch] = env.client.channels;
+    await ch.status("SUBSCRIBED");
+    first.link.close();
+    expect(env.client.removed).toEqual([ch]);
+    const second = open();
+    await settle();
+    env.client.channels.at(-1).status("CHANNEL_ERROR", { message: "dropped" });
+    second.link.close();
+    await vi.advanceTimersByTimeAsync(20000);
+    expect(env.client.channels).toHaveLength(2);
   });
 });
 
