@@ -13,13 +13,26 @@ U=postgres://supabase_admin:postgres@127.0.0.1:54331/postgres
 for i in $(seq 1 60); do psql $U -X -q -A -t -c "select 1" >/dev/null 2>&1 && break; sleep 1; done
 psql $U -X -q -c "alter role supabase_auth_admin with password 'postgres'" -c "alter role authenticator with password 'postgres'" -c "alter role postgres with password 'postgres'" >/dev/null
 docker run -d --name whauth --network host -e GOTRUE_API_HOST=127.0.0.1 -e GOTRUE_API_PORT=54332 -e API_EXTERNAL_URL=http://127.0.0.1:54330 -e GOTRUE_DB_DRIVER=postgres -e GOTRUE_DB_DATABASE_URL="postgres://supabase_auth_admin:postgres@127.0.0.1:54331/postgres" -e GOTRUE_SITE_URL=http://127.0.0.1:4176 -e GOTRUE_JWT_SECRET=$SECRET -e GOTRUE_JWT_EXP=3600 -e GOTRUE_JWT_AUD=authenticated -e GOTRUE_DISABLE_SIGNUP=false -e GOTRUE_EXTERNAL_EMAIL_ENABLED=true -e GOTRUE_MAILER_AUTOCONFIRM=true -e GOTRUE_EXTERNAL_PHONE_ENABLED=false supabase/gotrue:v2.172.1 >/dev/null
-# What the Realtime service would create (the migrations put policies on it); same two objects as supabase-stub.sql.
+# What the Realtime service would create (the migrations put policies on it, and migration 0043's triggers call
+# realtime.send); the same objects as supabase/ci/supabase-stub.sql - keep the two in step.
 psql $U -X -q -v ON_ERROR_STOP=1 <<'SQL'
 create table realtime.messages (id bigserial primary key, topic text, extension text, payload jsonb, event text, private boolean);
 alter table realtime.messages enable row level security;
 grant select, insert on realtime.messages to authenticated;
+grant usage on sequence realtime.messages_id_seq to authenticated;
 create function realtime.topic() returns text language sql stable as $$ select current_setting('realtime.topic', true) $$;
 grant execute on function realtime.topic() to authenticated;
+-- Broadcast from the database: stores the message (the real service then delivers it); never fails the caller.
+create function realtime.send(payload jsonb, event text, topic text, private boolean default true) returns void language plpgsql as $$
+begin
+  begin
+    perform set_config('realtime.topic', topic, true);
+    insert into realtime.messages (payload, event, topic, private, extension) values (payload, event, topic, private, 'broadcast');
+  exception when others then
+    raise warning 'ErrorSendingBroadcastMessage: %', sqlerrm;
+  end;
+end $$;
+alter function realtime.send(jsonb, text, text, boolean) owner to postgres;
 alter table realtime.messages owner to postgres;
 -- and the columns the Storage service's own migrations add to buckets
 alter table storage.buckets add column if not exists public boolean default false, add column if not exists file_size_limit bigint, add column if not exists allowed_mime_types text[];

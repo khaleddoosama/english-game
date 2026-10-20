@@ -66,10 +66,29 @@ describe.skipIf(!PGURL)("admin operations are refused to everyone else", () => {
     expect(save.error).toMatchObject({ code: "42501" });
     expect((await ann.client.from("content_items").insert({ kind: "words", key: `${tag}Y`, data: { word: `${tag}Y` } })).error).toMatchObject({ code: "42501" });
     expect((await ann.client.from("content_meta").update({ note: "hacked" }).eq("id", 1).select()).data).toEqual([]);          // a row the policy hides cannot be updated
-    expect((await ann.client.from("app_settings").update({ value: "false" }).eq("key", "signupsOpen").select()).data ?? []).toEqual([]);
+    // The settings row (id 1, one jsonb "data"): readable by everyone, written only through admin_save_settings.
+    // A direct update reaches no row (no update policy) and an insert is refused; the row stays the same.
+    const settings = () => superuser.rows("select data from public.app_settings where id = 1");
+    const settingsBefore = settings();
+    const direct = await ann.client.from("app_settings").update({ data: { ...settingsBefore[0].data, signupsOpen: false } }).eq("id", 1).select();
+    expect([direct.error, direct.data]).toEqual([null, []]);
+    expect((await ann.client.from("app_settings").insert({ id: 1, data: {} })).error).toMatchObject({ code: "42501" });
+    expect(settings()).toEqual(settingsBefore);
     expect(version()).toBe(before);
     expect(superuser.rows(`select 1 from public.content_items where key like '${tag}%'`)).toEqual([]);
     expect(superuser.rows("select 1 from public.content_meta where note = 'hacked'")).toEqual([]);
+  });
+
+  it("the admin changes the settings through admin_save_settings (so the refusal above is about who is asking)", async () => {
+    const settings = () => superuser.rows("select data from public.app_settings where id = 1")[0].data;
+    const old = settings();
+    const saved = await admin.client.rpc("admin_save_settings", { p_data: { ...old, announcement: `${tag} notice` } });
+    expect(saved.error).toBeNull();
+    expect(settings().announcement).toBe(`${tag} notice`);
+    expect((await ann.client.rpc("admin_save_settings", { p_data: { ...old, announcement: "hacked" } })).error).toMatchObject({ code: "42501" });
+    expect(settings().announcement).toBe(`${tag} notice`);
+    expect((await admin.client.rpc("admin_save_settings", { p_data: old })).error).toBeNull();
+    expect(settings().announcement).toBe(old.announcement ?? "");   // saved settings are normalized: no announcement is ""
   });
 
   it("a player cannot read what only the admin may: the audit log and other players' details", async () => {

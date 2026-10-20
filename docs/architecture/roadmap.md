@@ -1,6 +1,9 @@
 # Word Hunter: roadmap
 
-Ranked problems and a step-by-step plan. Everything here is a **Planned** proposal. Nothing in this file has been done, and writing it changed no behaviour and no database schema.
+Ranked problems and a step-by-step plan, written as a **Planned** proposal. Since then parts were done; the
+"Evidence" column of the register says what (for example `MT-01`, `MT-03`, `MT-04`) and the module work is tracked in
+[modules.md](modules.md). Treat a row as **Implemented** only where its evidence says so; everything else here is still
+**Planned**.
 
 - How the app works today: [current-state.md](current-state.md)
 - Proposed module boundaries: [module-map.md](module-map.md)
