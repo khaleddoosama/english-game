@@ -100,4 +100,4 @@ two test files fail.
 ## Known Issues
 
 - A lesson with no words gives its badge at once, and "Full Case Archive" is earned with no lessons (`every` of an
-  empty list). Kept as is; to be decided.
+  empty list). Kept as is; steps and the proposed behaviour in [known-bugs.md](../../work-tracking/known-bugs.md).

@@ -90,10 +90,10 @@ the moment it needs the copy (in a render, a handler or after an answer arrives)
   two separate steps (`setGameContent`, then a `dataVersion` bump). Every writer above does both today; a new one
   that forgets the bump would leave screens showing the old copy until the next render. A test that calls
   `setGameContent` changes the copy for the rest of its file.
-- Found by `gamecopy.cjs` (kept as is): a level with no items counts as finished, so its badge is earned at once
+- Found by `gamecopy.cjs` (kept as is; listed with steps in [known-bugs.md](../../work-tracking/known-bugs.md)): a level with no items counts as finished, so its badge is earned at once
   (a new empty category adds an earned badge); and with no levels at all "Full Case Archive" counts as earned (the
   header shows 1/4 before any content). Both come from `getBadgeProgress` in `engine/progress.js`.
-- Found while testing step 2 (kept as is): in the "opposite" question, when the usual wrong options run short, the
+- Found while testing step 2 (kept as is; [known-bugs.md](../../work-tracking/known-bugs.md)): in the "opposite" question, when the usual wrong options run short, the
   fill-up may pick a synonym of the word (the usual wrong options leave synonyms out). It is still a wrong answer.
 - The level order is kept by reference: it is the same list the caller passed (often the current
   `gameContent().levelOrder`).
