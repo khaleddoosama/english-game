@@ -1,4 +1,4 @@
-import { MASTERY_STAGE, MAX_CONFUSIONS, PRODUCTION_GATE_STEP, confusionCount, getAccuracy, getMasteryStage, getProductionCorrect, isWordKey, levelMasteredCount, localDateKey, normalizeMasteryRecord } from "./data";
+import { MAX_CONFUSIONS, PRODUCTION_GATE_STEP, confusionCount, getAccuracy, getProductionCorrect, isWordKey, levelMasteredCount, localDateKey, normalizeMasteryRecord } from "./data";
 import { getStrongConfusion } from "./questions";
 export function pruneConfusions(confusions) {
   const entries = Object.entries(confusions || {}).sort((a, b) => {
@@ -31,28 +31,6 @@ export function getWeakWordCandidates(words, mastery, confusions = {}, _now = Da
     if (failedSentence) priority += 5;
     return { word, stats, accuracy, lastWrong, lowAccuracy, weakModes, spelling, missingProduction, confusion, failedSentence, priority };
   }).filter(Boolean).sort((a, b) => b.priority - a.priority || a.accuracy - b.accuracy || Number(a.stats.lastReviewedAt || 0) - Number(b.stats.lastReviewedAt || 0));
-}
-
-export function deriveLearningInsights(words, mastery, confusions = {}, _now = Date.now()) {
-  const modeTotals = {};
-  words.forEach((word) => {
-    const stats = normalizeMasteryRecord(mastery[word.word]);
-    Object.entries(stats.modes).forEach(([id, m]) => {
-      const agg = modeTotals[id] || { correct: 0, total: 0 };
-      agg.correct += m.correct; agg.total += m.total; modeTotals[id] = agg;
-    });
-  });
-  const weakest = Object.entries(modeTotals).filter(([, x]) => x.total >= 3).sort((a, b) => (a[1].correct/a[1].total) - (b[1].correct/b[1].total))[0];
-  const confusionEntry = Object.entries(confusions || {}).filter(([, v]) => confusionCount(v) >= 2).sort((a,b)=>confusionCount(b[1])-confusionCount(a[1]))[0];
-  const closeToMastery = words.filter((w) => {
-    const stats = normalizeMasteryRecord(mastery[w.word]);
-    return getMasteryStage(stats, {kind:"word",obj:w}) === MASTERY_STAGE.LEARNED && stats.total >= 4 && getAccuracy(stats) >= 75;
-  }).length;
-  return {
-    weakestMode: weakest ? { id: weakest[0], accuracy: (weakest[1].correct/weakest[1].total)*100 } : null,
-    topConfusion: confusionEntry ? { pair: confusionEntry[0].split("|"), count: Number(confusionEntry[1]?.count || confusionEntry[1] || 0) } : null,
-    closeToMastery,
-  };
 }
 
 // `levels` is the game's current levels (engine/catalog.js).
@@ -141,11 +119,6 @@ export function normalizeSettings(raw) {
     liveSeconds: s.liveSeconds != null && [0, 10, 15, 20, 30, 45, 60].includes(Number(s.liveSeconds)) ? Number(s.liveSeconds) : null,
   };
 }
-export const STORAGE_KEY = "progress-v6";
-export const LEGACY_V5_STORAGE_KEY = "progress-v5";
-export const LEGACY_V4_STORAGE_KEY = "progress-v4";
-export const LEGACY_V3_STORAGE_KEY = "progress-v3";
-export const CUSTOM_CONTENT_KEY = "custom-content-v1";
 
 export function normalizeLevelStats(levelStats = {}, levelsCleared = []) {
   const out = {};

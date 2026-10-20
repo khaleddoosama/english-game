@@ -1,5 +1,5 @@
 import { V2 } from "./v2";
-import { getWordPools, levenshtein, situationLeaks } from "./questions";
+import { getWordPools, situationLeaks } from "./questions";
 import { normalizeAnswerText } from "./text";
 import { callAiText } from "../lib/ai";
 import { managedAiFunction, isAiCancelled, updateAiOperation } from "../lib/aiOperations.js";
@@ -630,23 +630,6 @@ async function generateGrammarVariantImpl(g, avoid = [], operationOptions = {}) 
   // The format of the example: a blank stays a blank.
   if (/_{2,}/.test(g.prompt || "") && (prompt.match(/_{2,}/g) || []).length !== 1) throw new Error("AI variant lost its blank.");
   return { prompt, options, answer, explanation };
-}
-
-export function containsRequiredTerm(text, term) {
-  const clean = (value) => normalizeAnswerText(value).replace(/[^a-z0-9']+/g, " ").replace(/\s+/g, " ").trim();
-  const haystack = clean(text);
-  const needle = clean(term);
-  return !!needle && ` ${haystack} `.includes(` ${needle} `);
-}
-
-export function spellingDistanceInfo(guess, expected) {
-  const a = normalizeAnswerText(guess);
-  const b = normalizeAnswerText(expected);
-  const distance = levenshtein(a, b);
-  const compactLength = Math.max(a.replace(/\s/g, "").length, b.replace(/\s/g, "").length);
-  const maxMinor = compactLength <= 4 ? 1 : compactLength <= 8 ? 2 : 3;
-  const close = a !== b && distance > 0 && distance <= maxMinor && distance / Math.max(1, compactLength) <= 0.28;
-  return { distance, close, exact: a === b };
 }
 
 async function evaluateGrammarCorrectionImpl(question, correction, operationOptions = {}) {

@@ -111,10 +111,10 @@ not relax repetition constraints or fill unused slots with invented questions.
 The shell owns learner state in React state/refs; older factories read mutable
 `data.js` exports and some use ambient `Math.random`. `buildPracticeExtra`
 also reads pool/seen refs and image eligibility. Thus the whole UI path is not
-made deterministic just by passing an RNG to `V2.practice`. The separate
-`poolsSnapshotForSession` in `questions.js` serves entry-based sessions such as
-the Speed Round's questions, not this main Practice call (Weak Evidence and Final Recall used it
-until they were removed on 2026-10-20).
+made deterministic just by passing an RNG to `V2.practice`. Entry-based sessions such as
+the Speed Round's questions are built with `poolsSnapshotForSession` in `questions.js`, which is always an empty
+object: nothing has set it since Weak Evidence and Final Recall were removed on 2026-10-20, and its setter was
+removed with the unused exports. So those questions are built without the generated pools.
 
 After building the session, the shell may request fresh text in the background
 and update a toast. Saving, AI requests, media checks, Library scope retrieval,

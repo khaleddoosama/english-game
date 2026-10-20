@@ -55,23 +55,6 @@ export function sampleDistractors(content, target, n = 3) {
   return V2.optionWords([target], content.words, n + 1).filter(w => w.word !== target.word);
 }
 
-export function levenshtein(a, b) {
-  a = a.toLowerCase();
-  b = b.toLowerCase();
-  const m = [];
-  for (let i = 0; i <= b.length; i++) m[i] = [i];
-  for (let j = 0; j <= a.length; j++) m[0][j] = j;
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      m[i][j] =
-        b.charAt(i - 1) === a.charAt(j - 1)
-          ? m[i - 1][j - 1]
-          : Math.min(m[i - 1][j - 1] + 1, m[i][j - 1] + 1, m[i - 1][j] + 1);
-    }
-  }
-  return m[b.length][a.length];
-}
-
 export const OPPOSITE_TRAP_RATE = 0.12;
 
 export function weightedChoice(items) {
@@ -84,11 +67,6 @@ export function weightedChoice(items) {
     if (roll <= 0) return item.value;
   }
   return valid[valid.length - 1].value;
-}
-
-export function modeAccuracy(stats, modeId) {
-  const mode = normalizeMasteryRecord(stats).modes[modeId];
-  return mode?.total ? (mode.correct / mode.total) * 100 : null;
 }
 
 export function isPhrasal(word) {
@@ -230,21 +208,6 @@ export function getAllowedModes(content, word) {
   if (["phrasal", "fyi"].includes(word?.type) && word?.transformExample) base.push("phrasalTransform");
   if (word?.skipTyping) return base.filter((m) => !["typing", "gapTyping", "phrasalTransform"].includes(m));
   return [...new Set(base)].filter((m) => !DISABLED_MODES.has(m) && !RUNTIME_DISABLED_MODES.has(m));
-}
-
-export function getAdaptiveDifficulty(word, stats, modeId) {
-  const s = normalizeMasteryRecord(stats);
-  const stage = getMasteryStage(s, { kind: "word", obj: word });
-  const recent = s.recentResults.slice(-4);
-  const recentCorrect = recent.filter((r) => r.correct).length;
-  const acc = modeAccuracy(s, modeId);
-  let difficulty = stage === MASTERY_STAGE.NEW ? 1 : stage === MASTERY_STAGE.FAMILIAR ? 2 : stage === MASTERY_STAGE.LEARNED ? 3 : 4;
-  if (recent.length >= 2 && recentCorrect <= 1) difficulty -= 1;
-  if (recent.length >= 3 && recentCorrect === recent.length) difficulty += 1;
-  if (acc !== null && acc < 50) difficulty -= 1;
-  if (acc !== null && acc >= 85 && s.modes[modeId]?.total >= 2) difficulty += 1;
-  if ((modeId === "typing" || modeId === "gapTyping") && s.spellingMisses > 0) difficulty = Math.min(difficulty, 3);
-  return Math.max(1, Math.min(modeId === "gap" || modeId === "gapTyping" ? 5 : 4, difficulty));
 }
 
 export function getStrongConfusion(word, confusions = {}) {
@@ -696,7 +659,6 @@ export function legacyQuestionToV2(content, question, entry, idSuffix = "0") {
 }
 
 export let poolsSnapshotForSession = {};
-export function setPoolsSnapshotForSession(pools) { poolsSnapshotForSession = pools; }
 export function v2SessionFromEntries(content, entries, {kind,title,idPrefix=kind}) {
   const queue=entries.flatMap((entry,index)=>legacyQuestionToV2(content, buildEntryQuestion(content, entry,poolsSnapshotForSession),entry,String(index)));
   return {id:`${idPrefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,kind,title,queue,introductions:[],index:0,answers:[],initialLength:queue.length};
