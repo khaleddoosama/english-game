@@ -1,6 +1,8 @@
-// What Home shows, decided without any screen: the open tab, the tabs, and what a player who only sees their own library gets.
+// What Home shows, decided without any screen: the open tab, the tabs, what a player who only sees their own library
+// gets, today's goal, the order of the stories, and the Speed Round card. Made-up words and stories.
+// Docs: docs/modules/practice/home.md.
 import { describe, expect, it } from "vitest";
-import { describeItems, homeTabs, inLibrary, itemsScope, limitLessons, resolveHomeView } from "../src/features/home/homeState.js";
+import { describeItems, goalView, homeTabs, inLibrary, itemsScope, limitLessons, resolveHomeView, speedCard, storyList } from "../src/features/home/homeState.js";
 
 const roots = [{ id: "a", name: "Gateway" }, { id: "b", name: "Unit" }];
 const base = { isAdmin: false, libraryReady: true, roots };
@@ -66,5 +68,40 @@ describe("describeItems", () => {
     expect(describeItems([{ kind: "word" }, { kind: "grammar" }, { kind: "grammar" }])).toBe("1 word · 2 grammar rules");
     expect(describeItems([{ kind: "word" }, { kind: "word" }])).toBe("2 words");
     expect(describeItems([])).toBe("");
+  });
+});
+
+describe("today's goal", () => {
+  it("answered of the goal and the accuracy; none before the first answer", () => {
+    expect(goalView({ answered: 3, correct: 2 }, 5)).toEqual({ done: false, answered: 3, goal: 5, accuracy: 67, width: 60, bonus: 0 });
+    expect(goalView({ answered: 0, correct: 0 }, 20).accuracy).toBe(null);
+  });
+  it("reached at the goal; the questions past it are a bonus; the bar stops at 100%", () => {
+    expect(goalView({ answered: 5, correct: 5 }, 5)).toMatchObject({ done: true, bonus: 0, width: 100 });
+    expect(goalView({ answered: 7, correct: 6 }, 5)).toMatchObject({ done: true, bonus: 2, width: 100, accuracy: 86 });
+  });
+});
+
+describe("the stories", () => {
+  const words = ["A", "B", "C"].map((word) => ({ word }));
+  const find = (list, w) => list.find((x) => x.word === w) || null;
+  const known = (r) => !!r?.known;
+  const story = (id, targetWords) => ({ id, targetWords });
+  it("fewest new words first (a stable order for equal counts), each with its new words and best result", () => {
+    const list = storyList([story("s1", ["A", "B", "C"]), story("s2", ["A"]), story("s3", ["B"])], words, { A: { known: true } }, [{ id: "s1", correct: 2, total: 3 }], find, known);
+    expect(list.map((e) => [e.story.id, e.fresh, e.record?.correct ?? null])).toEqual([["s2", 0, null], ["s3", 1, null], ["s1", 2, 2]]);
+  });
+  it("a target word missing from the content counts as new; the stories given are not reordered", () => {
+    const stories = [story("s1", ["Z"]), story("s2", [])];
+    expect(storyList(stories, words, {}, [], find, known).map((e) => [e.story.id, e.fresh])).toEqual([["s2", 0], ["s1", 1]]);
+    expect(stories.map((st) => st.id)).toEqual(["s1", "s2"]);
+  });
+});
+
+describe("the Speed Round card", () => {
+  it("locked with how many more words to master; then the pool and the bests", () => {
+    expect(speedCard(4, 5, 0, 0)).toEqual({ locked: true, text: "Master 1 more word to unlock" });
+    expect(speedCard(0, 5, 0, 0).text).toBe("Master 5 more words to unlock");
+    expect(speedCard(5, 5, 40, 3)).toEqual({ locked: false, text: "5 mastered words in the pool · best 40 pts, x3 combo" });
   });
 });

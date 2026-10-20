@@ -140,6 +140,14 @@ describe("no new loops between modules", () => {
     expect(Object.entries(modules).filter(([, tos]) => tos.includes("features/practice")).map(([from]) => from)).toEqual(["app"]);
   });
 
+  it("Home is in no loop, uses only the engine, and is reached only through its index, by the shell and the library's views", () => {
+    expect(cycles(modules).flat()).not.toContain("features/home");
+    expect(modules["features/home"]).toEqual(["engine"]);
+    const outside = Object.entries(graph).filter(([file, tos]) => !file.startsWith("features/home/") && tos.some((t) => t.startsWith("features/home/") && t !== "features/home/index"));
+    expect(outside.map(([file]) => file)).toEqual([]);
+    expect(Object.entries(modules).filter(([, tos]) => tos.includes("features/home")).map(([from]) => from)).toEqual(["app", "features/library"]);
+  });
+
   it("the engine is below the features: it imports none (the picture check moved to the content module with MT-02)", () => {
     expect(modules.engine).toEqual(["lib"]);
   });

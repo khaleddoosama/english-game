@@ -1,6 +1,6 @@
 import { cancelAiTasks } from "../lib/aiOperations.js";
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
-import { Award, BarChart3, LogOut, Settings as SettingsIcon, CheckCircle2, Flame, HelpCircle, Lock, Play, Target, Trophy, Upload, Users, Volume2, X, Zap } from "lucide-react";
+import { Award, BarChart3, LogOut, Settings as SettingsIcon, CheckCircle2, Flame, HelpCircle, Lock, Trophy, Upload, Volume2, X } from "lucide-react";
 import { V2 } from "../engine/v2";
 import { imageLinkOk } from "../features/media/media";
 import { unlockAudioOnFirstTouch } from "../lib/sound";
@@ -22,10 +22,7 @@ import { getAppSettings, useAppSettings } from "../lib/appSettings";
 import { useDataTransfer } from "../features/data";
 import { gameContent, setGameContent, useContentLists, useContentSave } from "../features/content";
 import { AskAiDrawer, StoryBuilder, contextCategoryOf, useAiGeneration, useAskAi, useStoryGeneration } from "../features/ai-helpers";
-import CourseLevelsView from "../features/home/CourseLevelsView";
-import HomeTabs from "../features/home/HomeTabs";
-import LessonsView from "../features/home/LessonsView";
-import { homeTabs, itemsScope, limitLessons, resolveHomeView } from "../features/home/homeState";
+import { HomeScreen, homeTabs, itemsScope, limitLessons, resolveHomeView } from "../features/home";
 import { SpeedResults } from "../features/results/ResultScreens";
 import { DeleteCategoryConfirm, ResetConfirm } from "../features/shell/ConfirmDialogs";
 // Screens most players open rarely load on demand, keeping the first
@@ -373,81 +370,25 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
           studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} today={todayProgress(dailyProgress)} dailyGoal={settings.dailyGoal}
           onPlayLevel={(i) => startLevel(i)} onBack={backToLevels} /></Suspense>}
 
-        {screen === "levels" && <>
-          {app.announcement && !announcementHidden && <div className={`wh-announcement ${app.announcementTone}`} role="status"><p>{app.announcement}</p><button aria-label="Hide this message" onClick={hideAnnouncement}><X size={15} /></button></div>}
-          {showFreshCopyPrompt && <div className="wh-fresh-copy-banner">
-            <p><b>Fresh copy detected.</b> No saved progress or content found here — if you have a backup from a previous version, restore it now before you start playing.</p>
-            <div className="wh-regen-actions">
-              <button className="wh-level-btn" onClick={()=>{setShowFreshCopyPrompt(false);setScreen("data");}}>Open Import &amp; Export</button>
-              <button className="wh-back-btn wh-nav-btn" onClick={()=>setShowFreshCopyPrompt(false)}>Dismiss</button>
-            </div>
-          </div>}
-          <nav className="wh-v2-nav" aria-label="Game sections">{[["practice","Practice"],["stories","Stories"]].map(([id,label])=><button key={id} aria-pressed={section===id} onClick={()=>setSection(id)}>{label}</button>)}</nav>
-          {activeSession&&!activeSession.completed&&<button className="wh-level-btn" onClick={()=>setScreen("session")}>Resume {activeSession.title} ({Math.min(activeSession.index+1,activeSession.queue.length)}/{activeSession.queue.length})</button>}
-          {section==="practice"&&(()=>{const day=todayProgress(dailyProgress);const goal=settings.dailyGoal;const done=day.answered>=goal;return <div className={`wh-daily-goal ${done?"done":""}`}><div className="wh-daily-goal-head"><b>{done?<><CheckCircle2 size={15}/> Daily goal reached</>:<><Target size={15}/> Today's goal</>}</b><span>{day.answered} / {goal} questions{day.answered?` · ${Math.round(day.correct/day.answered*100)}% correct`:""}</span></div><div className="wh-daily-goal-bar"><span style={{width:`${Math.min(100,day.answered/goal*100)}%`}}/></div>{done&&day.answered>goal&&<small>+{day.answered-goal} bonus questions today</small>}</div>;})()}
-          {section==="stories"&&<div className="wh-panel"><h2>Stories</h2>
-            <StoryBuilder story={storyApi} isAdmin={isAdmin} gameContent={gameContent} />
-            {!customStories.length&&<p>No authored stories loaded. Import a Content v2 file to add them.</p>}{[...customStories].sort((a,b)=>a.targetWords.filter(w=>!V2.known(mastery[V2.findWord(gameContent().words,w)?.word])).length-b.targetWords.filter(w=>!V2.known(mastery[V2.findWord(gameContent().words,w)?.word])).length).map(story=>{const fresh=story.targetWords.filter(w=>!V2.known(mastery[V2.findWord(gameContent().words,w)?.word])).length;const record=solvedStories.find(e=>e.id===story.id);return <article className="wh-v2-learn" key={story.id}><strong>{story.title}{record&&<span className="wh-story-solved-flag"><CheckCircle2 size={13}/> Solved · {record.correct}/{record.total}</span>}</strong><p>{story.questions.length}{story.grammarQuestions?.length?` + ${story.grammarQuestions.length} grammar`:""} questions · {fresh?`${fresh} new words: preview first`:"Ready for review"}</p><button className="wh-level-btn" onClick={()=>launchStory(story)}>{record?"Play again":"Open story"}</button></article>;})}</div>}
-        </>}
+        {screen === "levels" && <HomeScreen
+          notices={{ announcement: app.announcement && !announcementHidden ? { text: app.announcement, tone: app.announcementTone } : null, onHideAnnouncement: hideAnnouncement,
+            freshCopy: showFreshCopyPrompt, onOpenData: () => { setShowFreshCopyPrompt(false); setScreen("data"); }, onDismissFresh: () => setShowFreshCopyPrompt(false) }}
+          section={section} onSection={setSection}
+          resume={{ session: activeSession, onResume: () => setScreen("session") }}
+          goal={{ today: todayProgress(dailyProgress), goal: settings.dailyGoal }}
+          stories={{ stories: customStories, words: gameContent().words, mastery, solved: solvedStories, builder: <StoryBuilder story={storyApi} isAdmin={isAdmin} gameContent={gameContent} />, onOpen: launchStory }}
+          speed={{ mastered: masteredOnlyWords.length, min: MIN_MASTERED_FOR_SPEED, bestScore: bestSpeedScore, bestCombo: bestSpeedCombo, onPlay: () => practice.startSpeedRound(masteredOnlyWords) }}
+          onLive={() => setScreen("live")}
+          views={{
+            show: gameContent().levels.length > 0 || library.status === "ready", tabs: homeTabs({ isAdmin, libraryReady: library.status === "ready", roots: libraryRoots }), active: homeView, libraryReady: library.status === "ready",
+            onSelect: (id) => setSettings((prev) => ({ ...prev, levelView: id })), onNew: () => navigate("/library?new=1"), onCatalog: () => navigate("/catalog"),
+            waiting: waitingForLibrary, skeleton: <ScreenSkeleton />,
+            course: { words: gameContent().words, grammar: gameContent().grammar, keys: libraryKeys, limited: limitHome, mastery, onPlay: startItemsPractice, onStartLevel: startCourseLevel },
+            myViews: openRoot && library.status === "ready" ? <Suspense fallback={<ScreenSkeleton />}><MyViewsHome key={openRoot} rootId={openRoot} api={library.api} offers={libraryInbox} onPractice={startViewPractice} ids={library.ids} mastery={mastery} words={gameContent().words} grammar={gameContent().grammar} /></Suspense> : null,
+            lessons: { levels: homeLevels, indexOf: (level) => gameContent().levels.findIndex((l) => l.id === level.id), mastery, isAdmin, emptyLibrary: limitHome && !homeLevels.length,
+              isUnlocked: isLevelUnlocked, clearedSet, starsOf: getLevelStars, onStart: startLevel, onDelete: setDeleteCategoryTarget, onOpenLibrary: () => navigate("/library"), onOpenCatalog: () => navigate("/catalog") },
+          }} />}
         {screen === "session" && <SessionView session={activeSession} onChange={setActiveSession} onFinish={completeSession} onBack={()=>setScreen("levels")} words={gameContent().words} onIntroduce={introduceWords} onReport={questionReportsApi.report} onReviewReport={questionReportsApi.review} onWithdrawReport={questionReportsApi.remove} onUpdateWord={isAdmin?updateWordFields:undefined} sound={settings.sound} prefs={{ autoAdvanceMs: settings.autoAdvanceMs, hints: settings.hints, speakWord: settings.speakWord }} onToggleSound={()=>setSettings(prev=>({...prev,sound:!prev.sound}))} onResult={recordSessionResult} onAskWord={openAskAi}/>}
-
-
-        {screen === "levels" && section === "practice" && (
-          <div className={`wh-speed-card ${masteredOnlyWords.length < MIN_MASTERED_FOR_SPEED ? "locked" : ""}`}>
-            <div className="wh-speed-card-icon"><Zap size={22} /></div>
-            <div className="wh-speed-card-info">
-              <div className="wh-speed-card-title">Speed Round</div>
-              <div className="wh-speed-card-meta">
-                {masteredOnlyWords.length < MIN_MASTERED_FOR_SPEED
-                  ? `Master ${MIN_MASTERED_FOR_SPEED - masteredOnlyWords.length} more word${MIN_MASTERED_FOR_SPEED - masteredOnlyWords.length === 1 ? "" : "s"} to unlock`
-                  : `${masteredOnlyWords.length} mastered words in the pool · best ${bestSpeedScore} pts, x${bestSpeedCombo} combo`}
-              </div>
-            </div>
-            <button
-              className="wh-speed-card-btn"
-              disabled={masteredOnlyWords.length < MIN_MASTERED_FOR_SPEED}
-              onClick={() => practice.startSpeedRound(masteredOnlyWords)}
-            >
-              <Play size={13} /> Play
-            </button>
-          </div>
-        )}
-
-        {screen === "levels" && section === "practice" && (
-          <div className="wh-speed-card wh-live-card">
-            <div className="wh-speed-card-icon"><Users size={22} /></div>
-            <div className="wh-speed-card-info">
-              <div className="wh-speed-card-title">Live Challenge</div>
-              <div className="wh-speed-card-meta">Send a link to 1–9 friends · same questions, everyone at their own pace</div>
-            </div>
-            <button className="wh-speed-card-btn" onClick={() => setScreen("live")}><Play size={13} /> Play</button>
-          </div>
-        )}
-
-        {screen === "levels" && section === "practice" && (gameContent().levels.length > 0 || library.status === "ready") && (
-          <HomeTabs tabs={homeTabs({ isAdmin, libraryReady: library.status === "ready", roots: libraryRoots })} active={homeView} libraryReady={library.status === "ready"}
-            onSelect={(id) => setSettings((prev) => ({ ...prev, levelView: id }))} onNew={() => navigate("/library?new=1")} onCatalog={() => navigate("/catalog")} />
-        )}
-
-        {/* Gateway (admin): the course's levels (A1.2 …) from every lesson, each split into its sessions. */}
-        {screen === "levels" && section === "practice" && waitingForLibrary && (homeView === "course" || homeView === "lesson") && <ScreenSkeleton />}
-        {screen === "levels" && section === "practice" && !waitingForLibrary && homeView === "course" && (() => {
-          const { levels, none } = limitHome ? courseLevelGroups(gameContent().words.filter((w) => libraryKeys.words.has(w.word)), gameContent().grammar.filter((g) => libraryKeys.rules.has(g.id))) : courseLevelGroups(gameContent().words, gameContent().grammar);
-          return <CourseLevelsView levels={levels} none={none} mastery={mastery} limited={limitHome} onPlay={startItemsPractice} onStartLevel={startCourseLevel} />;
-        })()}
-
-        {/* My views: read only. Editing happens in the library page (Profile › My library). */}
-        {screen === "levels" && section === "practice" && openRoot && library.status === "ready" && (
-          <Suspense fallback={<ScreenSkeleton />}>
-            <MyViewsHome key={openRoot} rootId={openRoot} api={library.api} offers={libraryInbox} onPractice={startViewPractice} ids={library.ids} mastery={mastery} words={gameContent().words} grammar={gameContent().grammar} />
-          </Suspense>
-        )}
-
-        {screen === "levels" && section === "practice" && !waitingForLibrary && homeView === "lesson" && (
-          <LessonsView levels={homeLevels} indexOf={(level) => gameContent().levels.findIndex((l) => l.id === level.id)} mastery={mastery} isAdmin={isAdmin} emptyLibrary={limitHome && !homeLevels.length}
-            isUnlocked={isLevelUnlocked} clearedSet={clearedSet} starsOf={getLevelStars} onStart={startLevel} onDelete={setDeleteCategoryTarget}
-            onOpenLibrary={() => navigate("/library")} onOpenCatalog={() => navigate("/catalog")} />
-        )}
 
 
 
