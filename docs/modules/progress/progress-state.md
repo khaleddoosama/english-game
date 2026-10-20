@@ -67,7 +67,7 @@ backup file. What answers and rounds record is in [answer-recording.md](answer-r
 
 ## Study days
 
-- A finished round, a Speed Round with answers, new words introduced, or a Final Case report counts today as a study
+- A finished round, a Speed Round with answers, or new words introduced counts today as a study
   day. The first one each day adds one to the days in a row if the last was yesterday; otherwise the count starts at 1.
   The best count is kept.
 
@@ -92,7 +92,7 @@ backup file. What answers and rounds record is in [answer-recording.md](answer-r
 | The hooks with a fake repo: opening (saved, new, unreadable), saving (not before opening, one per burst, reports and extras, page hide and leave, asking during a content write, a failed save), restore, reset (also offline), study days, badges, another device's changes | `tests/progress-hooks.test.jsx` |
 | How a save reaches the server | see the [README](README.md#7-tests) |
 
-How the behaviour was kept: `progress.cjs` passes on the code before the move and after it (with `finalcase`,
+How the behaviour was kept: `progress.cjs` passes on the code before the move and after it (with `finalcase` (since removed),
 `startover`, `importexport`, `signin`, `contentsave`, `livelib`). The rules were moved unchanged and compared with the
 old inline code on random made-up progress (20,000 checks; one-off, not kept). Deliberate breaks (36) each make the
 two test files fail.

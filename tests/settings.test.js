@@ -43,8 +43,10 @@ describe("player settings", () => {
     expect(normalizeSettings({ autoAdvanceMs: 2000, textSize: "xlarge", speedSeconds: 90 })).toMatchObject({ autoAdvanceMs: 2000, textSize: "xlarge", speedSeconds: 90 });
   });
   it("keeps older saved settings working", () => {
-    const old = { questionsPerRound: 20, newWordsPerRound: 0, weakReviewSize: 8, enablePairModes: false, sound: false, dailyGoal: 40, levelView: "lesson" };
+    const old = { questionsPerRound: 20, newWordsPerRound: 0, enablePairModes: false, sound: false, dailyGoal: 40, levelView: "lesson" };
     expect(normalizeSettings(old)).toMatchObject(old);
+    // The weak-words review was removed (2026-10-20): its old setting is read without error and dropped.
+    expect(normalizeSettings({ ...old, weakReviewSize: 8 })).toEqual(normalizeSettings(old));
     expect(normalizeSettings({ ...old, levelView: "view:abc-123" }).levelView).toBe("view:abc-123");   // a biggest view as the home tab
     expect(normalizeSettings({ ...old, levelView: "view:" }).levelView).toBe("lesson");
     expect(normalizeSettings({ ...old, levelView: "group" }).levelView).toBe("lesson");   // By unit became part of By lesson

@@ -9,7 +9,7 @@ The rules of learning: how a round is picked, how questions are built, how an an
 **Responsibilities (Implemented)**
 
 - Pick a round: new words, known words in rotation, words missed last time first, weak words, narrowing by lesson, unit, course level or a personal view, and avoiding sentences read recently ([v2.js](../../../src/engine/v2.js) `practice`; the word-question order is the private helper `selectPracticeQuestions`). Detailed guide: [practice-selection.md](practice-selection.md).
-- Build questions: many modes (meaning, gap, typing, reverse, picture, opposite, collocation, family, grammar choose / judge / fix, grammar court, story and combo questions, Final Case) and the older builders used by Live and the Speed Round ([questions.js](../../../src/engine/questions.js)).
+- Build questions: many modes (meaning, gap, typing, reverse, picture, opposite, collocation, family, grammar choose / judge / fix, grammar court, story and combo questions) and the older builders used by Live and the Speed Round ([questions.js](../../../src/engine/questions.js)).
 - Make distractors that are safe: words with several meanings never appear together, confusable pairs and the player's own mistakes come first.
 - Grade an answer (`V2.grade`): normalised text comparison, one-letter typo detection ("spelling"), `unverified` for free-writing questions.
 - Turn a finished session into mastery changes (`V2.sessionEvidence`) and decide the stage (`V2.stage`, `getMasteryStage`).
@@ -32,7 +32,7 @@ The rules of learning: how a round is picked, how questions are built, how an an
 | `V2.sessionEvidence(mastery, session, now)` | mastery map, finished session | a new mastery map |
 | `V2.stage(record)` | one mastery record | New, Familiar, Learned or Mastered |
 | `getMasteryStage(record, item)` | record, item kind | the stage as the game shows it |
-| `getWeakWordCandidates`, `pickWeakMode`, `deriveLearningInsights` | words, mastery, confusions (`pickWeakMode` also takes the game's copy first) | ranked weak words, a mode, insight numbers |
+| `getWeakWordCandidates`, `deriveLearningInsights` | words, mastery, confusions | ranked weak words (stories put them first), insight numbers |
 | `buildQuestion(content, …)` and the other builders in `questions.js` | the game's copy `{ words, challenges }` first, then their own arguments | a question (see [content-catalog.md](../content/content-catalog.md#who-reads-it)) |
 | `migrateProgressData(raw)` / `emptyProgressData()` / `normalizeSettings(raw)` | saved data | normalised data of the current schema (`SCHEMA_VERSION` 6) |
 | `V2.validateContent`, `prepareImport`, `mergeContent`, `normalizeV3`, `applyRenames`, `withoutRemovedFields` | files and content | issues, prepared data, merged lists (used by [content](../content/README.md)) |

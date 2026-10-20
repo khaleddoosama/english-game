@@ -4,7 +4,7 @@
 // Level filter, search and the open level live in the address:
 // /stats?show=started&q=fork&level=cat-Media
 import { useMemo } from "react";
-import { ArrowLeft, Award, CheckCircle2, ChevronDown, ChevronRight, Flame, Play, RotateCcw, Search, Star, Target, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowLeft, Award, CheckCircle2, ChevronDown, ChevronRight, Flame, Play, Search, Star, Target, TrendingDown, TrendingUp } from "lucide-react";
 import { useQuery } from "../../lib/router";
 import { LEVEL_FILTERS, STAGES, filterLevels, studyStats } from "./studyStats";
 import "../../styles/stats.css";
@@ -13,7 +13,7 @@ const pct = (r) => (r == null ? "—" : `${Math.round(r * 100)}%`);
 const num = (n) => (Number(n) || 0).toLocaleString("en-US");
 const dayLabel = (iso, opts) => new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, opts);
 
-export default function StudyDashboard({ levels, mastery, sessionLogs, dailyHistory, confusions, levelStats, studyStreak, bestStudyStreak, today, dailyGoal, weakReviewCount, onWeakReview, onPlayLevel, onBack }) {
+export default function StudyDashboard({ levels, mastery, sessionLogs, dailyHistory, confusions, levelStats, studyStreak, bestStudyStreak, today, dailyGoal, onPlayLevel, onBack }) {
   const s = useMemo(() => studyStats({ levels, mastery, sessionLogs, dailyHistory, confusions, levelStats }), [levels, mastery, sessionLogs, dailyHistory, confusions, levelStats]);
   const [query, setQuery] = useQuery({ show: "", q: "", level: "" });
   const shown = useMemo(() => filterLevels(s.levels, query.show, query.q), [s.levels, query.show, query.q]);
@@ -62,7 +62,7 @@ export default function StudyDashboard({ levels, mastery, sessionLogs, dailyHist
 
       <div className="sd-grid">
         <article className="sd-card">
-          <div className="sd-card-head"><h3>Needs work</h3>{weakReviewCount > 0 && <button className="sd-btn gold" onClick={onWeakReview}><RotateCcw size={14} /> Review {weakReviewCount}</button>}</div>
+          <div className="sd-card-head"><h3>Needs work</h3></div>
           {s.weak.length ? <ul className="sd-bars">
             {s.weak.map((w) => <li key={w.key}><span title={w.level}>{w.name}</span><Bar value={w.accuracy} tone="bad" /><small>{w.correct}/{w.total}</small></li>)}
           </ul> : <p className="sd-empty">No weak words right now. Words you get wrong more than a quarter of the time show up here.</p>}

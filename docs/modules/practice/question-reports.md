@@ -31,8 +31,8 @@ Used by `src/app/WordHunter.jsx`; the screens it feeds are unchanged: the round 
 and Admin (`sections/Reports.jsx`). Saving reports to the server is `src/lib/repo/reportsSync.js` (not part of this module).
 
 ## What stayed in the shell, and why
-`finishFinalCaseReport` is the final-case *writing* exercise, not a question report (the name only looks alike): it
-never touches the reports. The quarantine is read by Practice (`reportQuarantine` in the shell, passed to the question
+`finishFinalCaseReport` was the final-case *writing* exercise, not a question report (the name only looked alike): it
+never touched the reports (the Final Case was removed on 2026-10-20). The quarantine is read by Practice (`reportQuarantine` in the shell, passed to the question
 choosers); that code is untouched. `migrateRenamedProgress` stays in the shell and calls `followRename`.
 
 ## Tests

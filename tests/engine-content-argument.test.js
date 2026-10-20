@@ -6,7 +6,7 @@ import { gameContent } from "../src/features/content";
 import { buildCatalog } from "../src/engine/catalog";
 import { courseLevelGroups } from "../src/engine/data";
 import { buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, findWordByLabel, getAllowedModes, legacyQuestionToV2, selectAdaptiveMode, v2SessionFromEntries } from "../src/engine/questions";
-import { getBadgeProgress, pickWeakMode } from "../src/engine/progress";
+import { getBadgeProgress } from "../src/engine/progress";
 
 const W = (word, extra = {}) => ({ word, type: "vocab", category: "Weather", meaning: `The weather word ${word.toLowerCase()} for the test.`, situation: `We saw it near the hotel (${word.length}).`, gap: `We saw the ______ near the hotel (${word.length}).`, ...extra });
 const content = buildCatalog(
@@ -77,7 +77,6 @@ describe("questions come from the given words", () => {
   });
   it("mode choice reads the given words", () => {
     expect(getAllowedModes(content, gust)).toContain(selectAdaptiveMode(content, gust, undefined, {}));
-    expect(getAllowedModes(content, gust).concat(["impostor"])).toContain(pickWeakMode(content, gust, undefined, {}, null));
   });
 });
 

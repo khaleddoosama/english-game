@@ -39,6 +39,7 @@ export function levelItemKey(item) {
 
 export const MASTERY_STAGE = { NEW: "New", FAMILIAR: "Familiar", LEARNED: "Learned", MASTERED: "Mastered" };
 export const MASTERY_STAGE_RANK = { New: 0, Familiar: 1, Learned: 2, Mastered: 3 };
+// "finalReport": written evidence from the Final Case (removed 2026-10-20), still counted in saved records.
 export const PRODUCTION_MODES = new Set(["typing", "gapTyping", "phrasalTransform", "finalReport"]);
 export const REVIEW_STEP_MAX = 4;
 export { PRODUCTION_GATE_STEP };

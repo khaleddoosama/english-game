@@ -216,7 +216,7 @@ sequenceDiagram
   participant W as WordHunter
   participant E as V2 engine
   participant R as Repo
-  H->>W: startLevel / startCourseLevel / startViewPractice / startWeakReview
+  H->>W: startLevel / startCourseLevel / startViewPractice
   W->>E: V2.practice(content, mastery, ..., scope, pools, seen)
   E-->>W: session (queue of questions)
   W->>W: launchSession, navigate to /play
@@ -226,10 +226,10 @@ sequenceDiagram
 | Item | Detail |
 | --- | --- |
 | Screen | Home cards, then `/play` ([SessionView](../../src/features/session/SessionView.jsx)) |
-| Client | The `start*` functions in WordHunter build a session with `V2.practice` ([engine/v2.js](../../src/engine/v2.js)). Round size, new-word intake, weak-review size, and the last round's accuracy shape the queue. Views and Home items narrow the scope. Sentences read recently are avoided; words whose gap sentences are used up trigger background AI writing (`triggerGeneration`). |
+| Client | The `start*` functions in WordHunter build a session with `V2.practice` ([engine/v2.js](../../src/engine/v2.js)). Round size, new-word intake, and the last round's accuracy shape the queue. Views and Home items narrow the scope. Sentences read recently are avoided; words whose gap sentences are used up trigger background AI writing (`triggerGeneration`). |
 | Server | None to start. A view's contents come from `view_contents`. |
 | State | `activeSession` (queue, index, answers, draft). It survives closing the app and shows a "Resume" button. |
-| Other starts | Speed Round (needs enough mastered words, timed, no mastery evidence), stories, Final Case, weak review. |
+| Other starts | Speed Round (needs enough mastered words, timed, no mastery evidence), stories. (Final Case and weak review were removed on 2026-10-20.) |
 
 ### 7.5 Judge an answer
 

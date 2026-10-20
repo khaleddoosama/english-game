@@ -1,8 +1,8 @@
 // Rules for what an answer and the end of a round record in the player's progress: the day's count, streaks and
 // points, the pools' variants, confusions between words, read sentences, the round log, a lesson's stats and star,
-// stories, the Final Case report. No state. Docs: docs/modules/progress/answer-recording.md.
+// stories. No state. Docs: docs/modules/progress/answer-recording.md.
 import { V2 } from "../../engine/v2";
-import { MASTERY_STAGE, RECENT_RESULT_LIMIT, confusionCount, getMasteryStage, normalizeMasteryRecord, normalizeModeStats, todayProgress, updateLevelStat, updateReviewStreak } from "../../engine/data";
+import { confusionCount, todayProgress, updateLevelStat } from "../../engine/data";
 import { LOCK_DAYS, findWordByLabel, getWordPools, poolNeedsGeneration } from "../../engine/questions";
 import { addToDailyHistory, pruneConfusions } from "../../engine/progress";
 
@@ -154,33 +154,9 @@ export function withSolvedStory(solved, session) {
   return [...existing.filter((e) => e.id !== session.sourceStoryId), record];
 }
 
-// The Final Case recall's score: right answers without help among the graded ones.
-export function finalRecallSummary(session) {
-  const graded = session.answers.filter((answer) => answer && !answer.reported && !answer.aiFailed);
-  const correct = graded.filter((answer) => answer.correct && !answer.assisted).length;
-  return { accuracy: graded.length ? correct / graded.length * 100 : 0, correct, total: graded.length };
-}
-
 // New words shown on their learning cards are marked introduced (the first time only).
 export function withIntroduced(mastery, words, now) {
   const next = { ...mastery };
   words.forEach((w) => { next[w.word] = { ...next[w.word], introducedAt: next[w.word]?.introducedAt || now }; });
   return next;
-}
-
-// The Final Case report graded by the AI: each word used well counts as one more right answer, written
-// (production), in the "finalReport" mode. A low-confidence grading changes nothing (returns the same records).
-export function withFinalReport(mastery, words, evaluation, now) {
-  if (evaluation.confidence === "low") return mastery;
-  let nextMastery = mastery;
-  evaluation.words.forEach((result) => {
-    if (!result.productionSuccess) return;
-    const word = words.find((w) => w.word === result.word); if (!word) return;
-    const prev = normalizeMasteryRecord(nextMastery[word.word]);
-    const prevMode = normalizeModeStats(prev.modes.finalReport);
-    let record = { ...prev, correct: prev.correct + 1, total: prev.total + 1, modes: { ...prev.modes, finalReport: { ...prevMode, correct: prevMode.correct + 1, total: prevMode.total + 1, lastResult: "correct", lastDifficulty: 4 } }, productionCorrect: prev.productionCorrect + 1, productionAttempts: prev.productionAttempts + 1, sentenceAttempts: prev.sentenceAttempts + 1, sentenceSuccesses: prev.sentenceSuccesses + 1, aiEvaluatedAttempts: prev.aiEvaluatedAttempts + 1, lastResult: "correct", recentResults: [...prev.recentResults, { correct: true, modeId: "finalReport", difficulty: 4, at: now }].slice(-RECENT_RESULT_LIMIT), ...updateReviewStreak(prev, true, now, { productionNow: true }) };
-    if (getMasteryStage(record, { kind: "word", obj: word }) === MASTERY_STAGE.MASTERED) record.everMastered = true;
-    nextMastery = { ...nextMastery, [word.word]: record };
-  });
-  return nextMastery;
 }

@@ -2,7 +2,8 @@
 // fixtures/content-admin.json and made-up progress): saved progress is loaded into the header; an answer is saved
 // about 600 ms later (not at once), and at once when the page is hidden (pagehide); the numbers an answer changes
 // (score, streak, best streak, questions answered, the day's count) are what is saved; a badge earned now shows
-// "New badge" once, a badge already earned when the game opens does not; finishing a practice round (all answered
+// "New badge" once, a badge already earned when the game opens does not (no Final Case button and no weak-words review:
+// both removed 2026-10-20); finishing a practice round (all answered
 // right, the answers read from the round the game saved) records the study day
 // (yesterday + today = one more day in a row); after a reload the same numbers come back.
 // Reset and restore are in startover.cjs and importexport.cjs. Online saving (merging, conflicts, another device) is
@@ -61,6 +62,7 @@ run(async () => {
   const header = [await stat(page, 'Score'), await stat(page, 'Answer streak'), await stat(page, 'Study streak (days in a row)')].join(' / ');
   ok(header === '100pts / 4 / 3dstreak', 'the saved progress is loaded into the header: ' + header);
   ok(!(await page.locator('.wh-toast').count()), 'no toast when the game opens');
+  ok(!(await page.locator('button:has-text("Final Case")').count()), 'the lessons offer no Final Case (removed 2026-10-20)');
 
   // a practice round of the Weather lesson: the questions and their answers are read from the saved round
   await page.locator('.wh-level-card:has-text("Weather") button:has-text("Practice")').first().click(); await page.waitForTimeout(1200);
@@ -93,6 +95,11 @@ run(async () => {
   const after = [await stat(page, 'Score'), await stat(page, 'Answer streak'), await stat(page, 'Study streak (days in a row)')].join(' / ');
   ok(after === `${100 + 10 * queue.length}pts / ${4 + queue.length} / 4dstreak`, 'after a reload the header shows the saved numbers: ' + after);
   ok(!(await page.locator('.wh-toast').count()), 'a badge earned before the game opened shows no toast');
+  // a word mixed up three times is a weak word
+  await idbPut(page, 'local:progress', { confusions: { 'Drizzle|Gust': { count: 3, lastAt: Date.now() } } });
+  await page.goto(APP + '/stats', { waitUntil: 'networkidle' }); await page.waitForTimeout(600);
+  ok(/Needs work/.test(await page.innerText('body')) && !(await page.locator('.sd-card button:has-text("Review")').count()), 'the stats page lists the words that need work, with no weak-words review (removed 2026-10-20)');
+  await page.goto(APP, { waitUntil: 'networkidle' }); await page.waitForTimeout(800);
   ok(/1\s*\/\s*\d+/.test(await page.locator('.wh-stats button[title="View badges"]').innerText()), 'the badge count includes it: ' + await page.locator('.wh-stats button[title="View badges"]').innerText());
   await page.screenshot({ path: `${SP}/shot-progress.png`, fullPage: true });
 

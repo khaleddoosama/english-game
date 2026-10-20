@@ -2,8 +2,8 @@
 // What answers and finished rounds record (src/features/progress/useAnswerRecording.js), wired to the real
 // useProgress as the shell wires them, with a fake repo and fake sentence writing: an answer counts once (day's count,
 // questions answered, streak and best, 10 points, the goal's message once); reported, ungraded and Speed Round
-// answers; read sentences; pools and new sentences; confusions; new words; the end of a practice round, a story, a
-// Final Case recall and a Speed Round (each recorded once); the Final Case report. Made-up words.
+// answers; read sentences; pools and new sentences; confusions; new words; the end of a practice round, a story, an
+// old Final Case round and a Speed Round (each recorded once). Made-up words.
 // Docs: docs/modules/progress/answer-recording.md.
 import { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -142,10 +142,11 @@ describe("the end of a round", () => {
     expect(out.progressExtrasRef.current.solvedStories).toEqual(out.solvedStories);
   });
 
-  it("the Final Case recall returns its score for the report screen", async () => {
+  it("a Final Case round saved before it was removed ends like any other round", async () => {
     let res;
     await run(() => { res = rec.completeSession(whole([{ correct: true }, { correct: true, assisted: true }], { id: "final-1", kind: "finalRecall" })); });
-    expect(res).toEqual({ finalRecall: { accuracy: 50, correct: 1, total: 2 } });
+    expect(res).toEqual({});
+    expect(out.activeSession).toMatchObject({ id: "final-1", completed: true });
   });
 
   it("a Speed Round: the best score and combo kept, the round closed, a study day if answered; once", async () => {
@@ -167,12 +168,3 @@ describe("the end of a round", () => {
   });
 });
 
-describe("the Final Case report", () => {
-  it("a word used well counts; low confidence changes no record; both are a study day", async () => {
-    await run(() => rec.applyFinalReport([W("Drizzle")], { confidence: "low", words: [{ word: "Drizzle", productionSuccess: true }] }));
-    expect([out.mastery, out.studyStreak]).toEqual([{}, 1]);
-    await run(() => rec.applyFinalReport([W("Drizzle")], { confidence: "high", words: [{ word: "Drizzle", productionSuccess: true }] }));
-    expect(out.mastery.Drizzle).toMatchObject({ correct: 1, productionCorrect: 1 });
-    expect(out.masteryRef.current).toBe(out.mastery);
-  });
-});

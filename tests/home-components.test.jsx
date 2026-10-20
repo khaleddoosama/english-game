@@ -82,15 +82,15 @@ describe("CourseLevelsView", () => {
 
 describe("LessonsView", () => {
   const level = { id: "cat-A", title: "Personality", items: [w("a", { units: ["Unit-1"] }), w("b")] };
-  const props = { levels: [level], indexOf: () => 0, mastery, isAdmin: false, isUnlocked: () => true, clearedSet: new Set(), starsOf: () => 0, onStart: () => {}, onFinalCase: () => {}, onDelete: () => {}, onOpenLibrary: () => {}, onOpenCatalog: () => {} };
-  it("a lesson card: number, title, count and progress, and Practice and Final Case", async () => {
+  const props = { levels: [level], indexOf: () => 0, mastery, isAdmin: false, isUnlocked: () => true, clearedSet: new Set(), starsOf: () => 0, onStart: () => {}, onDelete: () => {}, onOpenLibrary: () => {}, onOpenCatalog: () => {} };
+  it("a lesson card: number, title, count and progress, and Practice (no Final Case since 2026-10-20)", async () => {
     await render(<LessonsView {...props} />);
     expect($(".wh-level-num").textContent).toBe("01");
     expect($(".wh-level-title").textContent).toContain("Personality");
     expect($(".wh-level-meta").textContent).toContain("2 words");
     expect($(".wh-level-stage-detail").textContent).toBe("0 mastered · 0 learned · 1 familiar · 1 new");
     expect($$("button").some((b) => b.textContent === "Practice")).toBe(true);
-    expect($$("button").find((b) => b.textContent === "Final Case").disabled).toBe(true);
+    expect($$("button").some((b) => b.textContent === "Final Case")).toBe(false);
   });
   it("Practice starts the lesson, a unit starts that unit, and a locked lesson can't be started", async () => {
     const onStart = vi.fn();

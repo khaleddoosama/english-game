@@ -2,10 +2,10 @@ import { BookOpen, CheckCircle2, Lock, Play, Trash2 } from "lucide-react";
 import { TOPIC_ICONS, formatStars, levelGroups, levelStageBreakdown } from "../../engine/data";
 
 // By lesson: each lesson with how far the player is in it, its course units,
-// and Practice and Final Case buttons. `levels` is what is shown (a player who
+// and a Practice button. `levels` is what is shown (a player who
 // sees only their library gets the lessons cut down to it); `indexOf(level)` is
 // the lesson's place in the whole course, which the round is started from.
-export default function LessonsView({ levels, indexOf, mastery, isAdmin, emptyLibrary = false, isUnlocked, clearedSet, starsOf, onStart, onFinalCase, onDelete, onOpenLibrary, onOpenCatalog }) {
+export default function LessonsView({ levels, indexOf, mastery, isAdmin, emptyLibrary = false, isUnlocked, clearedSet, starsOf, onStart, onDelete, onOpenLibrary, onOpenCatalog }) {
   return (
     <div className="wh-levels-list">
       {emptyLibrary && (
@@ -58,7 +58,6 @@ export default function LessonsView({ levels, indexOf, mastery, isAdmin, emptyLi
               {unlocked ? <Play size={13} /> : <Lock size={13} />}
               {cleared ? "Practice again" : unlocked ? "Practice" : "Locked"}
             </button>
-            <button className="wh-back-btn" disabled={starsOf(level.id) < 1} title="Available after earning one star in Practice" onClick={() => onFinalCase(i)}>Final Case</button>
           </div>
         );
       })}

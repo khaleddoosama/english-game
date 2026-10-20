@@ -1,5 +1,5 @@
 import { MASTERY_STAGE, MAX_CONFUSIONS, PRODUCTION_GATE_STEP, confusionCount, getAccuracy, getMasteryStage, getProductionCorrect, isWordKey, levelMasteredCount, localDateKey, normalizeMasteryRecord } from "./data";
-import { getAllowedModes, getStrongConfusion, modeAccuracy, selectAdaptiveMode } from "./questions";
+import { getStrongConfusion } from "./questions";
 export function pruneConfusions(confusions) {
   const entries = Object.entries(confusions || {}).sort((a, b) => {
     const ac = confusionCount(a[1]), bc = confusionCount(b[1]);
@@ -31,18 +31,6 @@ export function getWeakWordCandidates(words, mastery, confusions = {}, _now = Da
     if (failedSentence) priority += 5;
     return { word, stats, accuracy, lastWrong, lowAccuracy, weakModes, spelling, missingProduction, confusion, failedSentence, priority };
   }).filter(Boolean).sort((a, b) => b.priority - a.priority || a.accuracy - b.accuracy || Number(a.stats.lastReviewedAt || 0) - Number(b.stats.lastReviewedAt || 0));
-}
-
-export function pickWeakMode(content, word, stats, confusions = {}, quarantine = null) {
-  const s = normalizeMasteryRecord(stats);
-  const isQuarantined = (mode) => !!quarantine && quarantine.has(`${String(word.word || "").trim().toLowerCase()}|${mode}`);
-  const confusion = getStrongConfusion(word, confusions);
-  if (s.spellingMisses > 0 && (!s.modes.typing || modeAccuracy(s, "typing") < 80) && !isQuarantined("typing")) return "typing";
-  const weak = Object.entries(s.modes).filter(([, m]) => m.total >= 2 && (m.correct / m.total) < 0.65).sort((a, b) => (a[1].correct / a[1].total) - (b[1].correct / b[1].total));
-  if (weak.length && getAllowedModes(content, word).includes(weak[0][0]) && !isQuarantined(weak[0][0])) return weak[0][0];
-  if (confusion && !isQuarantined("meaning") && !isQuarantined("impostor")) return Math.random() < 0.5 ? "meaning" : "impostor";
-  if (getProductionCorrect(s) === 0 && s.correct >= 2 && !word.skipTyping && !isQuarantined("gapTyping")) return "gapTyping";
-  return selectAdaptiveMode(content, word, s, { sessionType: "weak", confusion, quarantine });
 }
 
 export function deriveLearningInsights(words, mastery, confusions = {}, _now = Date.now()) {
@@ -116,7 +104,7 @@ export const SCHEMA_VERSION = 6;
 // Kept small and additive so old saves without a `settings` block just
 // fall back to these defaults.
 export const DEFAULT_SETTINGS = {
-  questionsPerRound: 12, newWordsPerRound: 3, weakReviewSize: 8, enablePairModes: true, sound: true, dailyGoal: 20, levelView: "lesson",
+  questionsPerRound: 12, newWordsPerRound: 3, enablePairModes: true, sound: true, dailyGoal: 20, levelView: "lesson",
   // Play: auto-advance after a right answer (ms, 0 = off), hints, the word
   // read aloud after answering, Speed Round length.
   autoAdvanceMs: 0, hints: true, speakWord: false, speedSeconds: 60,
@@ -136,7 +124,6 @@ export function normalizeSettings(raw) {
     // 0 is a valid choice here, so a missing value (a fresh game) must fall
     // back to the default instead of turning into NaN and meaning "none".
     newWordsPerRound: Math.max(0, Math.min(10, Number.isFinite(Number(s.newWordsPerRound)) && s.newWordsPerRound !== null && s.newWordsPerRound !== "" ? Number(s.newWordsPerRound) : DEFAULT_SETTINGS.newWordsPerRound)),
-    weakReviewSize: Math.max(3, Math.min(20, Number(s.weakReviewSize) || DEFAULT_SETTINGS.weakReviewSize)),
     enablePairModes: s.enablePairModes !== false,
     sound: s.sound !== false,
     dailyGoal: Math.max(5, Math.min(100, Number(s.dailyGoal) || DEFAULT_SETTINGS.dailyGoal)),

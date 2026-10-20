@@ -66,7 +66,7 @@ reads the copy and schedules the content save.
   `getAllowedModes(content, word)`, `selectAdaptiveMode(content, word, stats, context)`,
   `legacyQuestionToV2(content, question, entry, suffix)`, `v2SessionFromEntries(content, entries, options)`, and
   the helpers inside the file.
-- `engine/progress`: `pickWeakMode(content, word, stats, confusions, quarantine)`; `getBadgeProgress(badge, {
+- `engine/progress`: `getBadgeProgress(badge, {
   mastery, bestStreak, levels })`.
 - `engine/ai`: `generateContent(words, batch, pools)` and `generateStory(words, targets, categories, rules)`.
 - `engine/data`: `courseLevelGroups(words, grammar)`.

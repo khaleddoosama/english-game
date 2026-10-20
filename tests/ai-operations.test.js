@@ -11,7 +11,6 @@ const cases = [
   ["word explanation", () => ai.askAiForWord("patient", word)],
   ["written answer", () => ai.evaluateFreeForm(question, "She is patient.")],
   ["alternative answer", () => ai.evaluateAlternativeGap(question, "kind")],
-  ["final report", () => ai.evaluateFinalReport([word], "She was patient.")],
   ["grammar court", () => ai.evaluateGrammarCorrection(question, "She is patient.")],
   ["wrong answer explanation", () => ai.explainWrongLead(question, word, word)],
   ["report review", () => ai.reviewReportedQuestion({ prompt: word.gap, answers: [word.word] }, { entity: "words", item: word })],

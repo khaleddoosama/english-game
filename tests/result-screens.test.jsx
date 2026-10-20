@@ -3,7 +3,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { FinalReport, FinalResults, SpeedResults } from "../src/features/results/ResultScreens.jsx";
+import { SpeedResults } from "../src/features/results/ResultScreens.jsx";
 import { DeleteCategoryConfirm, ResetConfirm } from "../src/features/shell/ConfirmDialogs.jsx";
 
 let root, host;
@@ -26,26 +26,6 @@ describe("SpeedResults", () => {
     await act(async () => root.unmount()); host.remove();
     await render(<SpeedResults {...props} best={500} />);
     expect($(".wh-results-unlock")).toBeNull();
-  });
-});
-
-describe("FinalReport and FinalResults", () => {
-  const words = [{ word: "Brand" }, { word: "Campaign" }];
-  it("marks the evidence words used in the text and can't submit an empty report or while busy", async () => {
-    const onSubmit = vi.fn();
-    await render(<FinalReport level={level} recall={{ correct: 4, total: 5 }} words={words} text="A strong brand helps." onText={() => {}} evidenceUsed={1} busy={false} error={null} onSubmit={onSubmit} onBack={() => {}} />);
-    expect($$(".wh-evidence-chip").map((c) => [c.textContent, c.classList.contains("used")])).toEqual([["✓ Brand", true], ["Campaign", false]]);
-    expect($(".wh-results-score").textContent).toContain("4/5");
-    await click(btn("Submit Case Report")); expect(onSubmit).toHaveBeenCalled();
-    await act(async () => root.unmount()); host.remove();
-    await render(<FinalReport level={level} recall={{ correct: 1, total: 1 }} words={words} text="   " onText={() => {}} evidenceUsed={0} busy={false} error="Try again" onSubmit={onSubmit} onBack={() => {}} />);
-    expect(btn("Submit Case Report").disabled).toBe(true);
-    expect($(".wh-feedback-card").textContent).toBe("Try again");
-  });
-  it("the verdict shows each word as used well, used wrongly or missed", async () => {
-    await render(<FinalResults level={level} onBack={() => {}} result={{ quality: "strong", feedback: "", words: [{ word: "A", productionSuccess: true }, { word: "B", used: true }, { word: "C" }] }} />);
-    expect($$(".wh-evidence-chip").map((c) => c.textContent)).toEqual(["A ✅", "B ⚠️", "C ❌"]);
-    expect($(".wh-results-note").textContent).toContain("Normal mastery requirements still apply");
   });
 });
 

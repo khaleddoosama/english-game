@@ -35,7 +35,7 @@ Everything that calls Gemini or handles pictures and sound: the server functions
 | `ai_gate(admin_only, daily_limit, kind, task, preview, chars)` | | `{ok, reason, call, ...}` | database; called by the function with the caller's token |
 | `ai_call_finish(...)` | outcome | nothing | database; server key only |
 
-The task list ([tasks.js](../../../api/_lib/tasks.js)) is the contract between browser and server: player tasks (ask about a word, check a written answer, check another word in a gap, check a final case report, Grammar Court, explain a wrong answer, review a reported question, new combo question, new grammar question, write and check new practice sentences) and admin tasks (fix an import file, suggest a fix for a report, suggest category merges, content health fix, rewrite a word, write a story, write grammar questions).
+The task list ([tasks.js](../../../api/_lib/tasks.js)) is the contract between browser and server: player tasks (ask about a word, check a written answer, check another word in a gap, Grammar Court, explain a wrong answer, review a reported question, new combo question, new grammar question, write and check new practice sentences) and admin tasks (fix an import file, suggest a fix for a report, suggest category merges, content health fix, rewrite a word, write a story, write grammar questions).
 
 ## 3. Files, screens and database objects
 

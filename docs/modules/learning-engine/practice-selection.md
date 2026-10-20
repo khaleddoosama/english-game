@@ -113,7 +113,8 @@ The shell owns learner state in React state/refs; older factories read mutable
 also reads pool/seen refs and image eligibility. Thus the whole UI path is not
 made deterministic just by passing an RNG to `V2.practice`. The separate
 `poolsSnapshotForSession` in `questions.js` serves entry-based sessions such as
-Weak Evidence/Final Recall, not this main Practice call.
+the Speed Round's questions, not this main Practice call (Weak Evidence and Final Recall used it
+until they were removed on 2026-10-20).
 
 After building the session, the shell may request fresh text in the background
 and update a toast. Saving, AI requests, media checks, Library scope retrieval,
