@@ -8,12 +8,11 @@ unlockAudioOnFirstTouch(); // the first tap lets answer sounds play on phones
 import { SessionView } from "../features/session/SessionView";
 import { MaintenanceScreen, Splash, maintenanceBlocks, maintenanceText, useSignOut } from "../features/auth";
 import { MASTERY_STAGE, getMasteryStage, isWordKey, courseLevelGroups, setRuntimeDisabledModes, todayProgress } from "../engine/data";
-import { SPEED_QUEUE_SIZE, SPEED_SECONDS, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, getAllowedModes, legacyQuestionToV2, situationLeaks, speedQuestionV2 } from "../engine/questions";
-import { normalizeAnswerText } from "../engine/text";
 import { useQuestionReports } from "../features/reports";
 import { useContentAdmin } from "../features/content-admin";
 import { SCHEMA_VERSION, getBadgeProgress } from "../engine/progress";
 import { useAnswerRecording, useProgress, useProgressSave, useSaveQueue } from "../features/progress";
+import { MIN_MASTERED_FOR_SPEED, lessonStars, usePractice } from "../features/practice";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
 import { FriendsPage, LOCAL_PEOPLE, Leaderboard, ProfilePage, ranksHiddenFromPlayers, ranksShown, useSocial } from "../features/social";
@@ -94,67 +93,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const { inbox: libraryInbox, refreshInbox: refreshLibraryInbox, keys: libraryKeys, roots: libraryRoots } = useLibraryHome({ library, screen });
   const { limit: limitHome, waiting: waitingForLibrary } = homeLimits({ status: library.status, isAdmin, keys: libraryKeys });
   const homeLevels = limitHome ? limitLessons(gameContent().levels, libraryKeys) : gameContent().levels;
-  function startItemsPractice(title, items) {
-    const scope = itemsScope(items);
-    setCurrentLevelIndex(null);
-    startPractice(title, null, { title, scope }, (w) => scope.words.has(w.word));
-  }
   // Gateway is the owner's own view (the admin's); everyone else starts on By lesson.
   const homeView = resolveHomeView({ levelView: settings.levelView, isAdmin, libraryReady: library.status === "ready", roots: libraryRoots });
   const openRoot = homeView.startsWith("view:") ? homeView.slice(5) : null;
-  function launchSession(session) { setActiveSession(session); setScreen("session"); }
-  // One extra question style per word for Level Practice, built with the
-  // adaptive-engine builders and converted to the V2 question shape.
-  function buildPracticeExtra(wordObj, stage, rng = Math.random) {
-    const allowed = new Set(getAllowedModes(gameContent(), wordObj));
-    const byStage = stage === "Familiar" ? ["whoami", "idiomDetective", "story", "opposite"] : ["whoami", "idiomDetective", "story", "opposite", "twopeople", "selecttwo"];
-    const clues = V2.outsideAntonyms(wordObj, gameContent().words);
-    // Word Partners / Word Family come from collocations and wordFamily;
-    // typed once the word is Learned.
-    const typed = stage === "Learned" || stage === "Mastered";
-    const partners = V2.collocationQuestion(wordObj, gameContent().words, rng, typed) || (typed ? V2.collocationQuestion(wordObj, gameContent().words, rng, false) : null);
-    const family = V2.familyQuestion(wordObj, rng, typed) || (typed ? V2.familyQuestion(wordObj, rng, false) : null);
-    const picture = V2.pictureQuestion(wordObj, gameContent().words, rng, typed, imageLinkOk);
-    const modes = [...byStage.filter((m) => allowed.has(m) && (m !== "opposite" || wordObj.opposite)), ...(clues.length ? ["antonym"] : []), ...(partners ? ["collocation"] : []), ...(family ? ["family"] : []), ...(picture ? ["picture"] : [])];
-    if (!modes.length) return null;
-    const mode = modes[Math.floor(rng() * modes.length)];
-    if (mode === "collocation") return partners;
-    if (mode === "family") return family;
-    if (mode === "picture") return picture;
-    // Opposite Clue: an antonym from outside the game points at this word
-    // ("The opposite of “shrink” is…" → Swell). Typed once the word is Learned.
-    if (mode === "antonym") {
-      const clue = clues[Math.floor(rng() * clues.length)];
-      const base = { id: `${wordObj.word}:antonym`, mode: "antonym", targets: [wordObj.word], answers: [wordObj.word], prompt: `The opposite of “${clue}” is…`, explanation: `${wordObj.word} ↔ ${clue}. ${wordObj.meaning || ""}`.trim(), hints: wordObj.hints || [], difficulty: 2 };
-      if (stage === "Learned" || stage === "Mastered") return { ...base, type: "typing" };
-      // No other word the clue is also the opposite of.
-      const options = V2.optionWords([wordObj], gameContent().words, 6, rng).filter((x) => x.word === wordObj.word || !V2.antonymsOf(x).some((a) => V2.norm(a) === V2.norm(clue))).slice(0, 4).map((x) => x.word);
-      if (!options.includes(wordObj.word)) return null;
-      return options.length >= 2 ? { ...base, type: "mcq", options } : null;
-    }
-    try {
-      // Two People / Select Two only use sentences never shown before: any
-      // gap sentence of the word (authored or AI-written) not yet seen.
-      let raw;
-      if (mode === "twopeople" || mode === "selecttwo") {
-        const seen = progressExtrasRef.current.seenSentences || {};
-        const fresh = (w) => V2.poolItems(w, "gap", poolsRef.current?.[w.word]?.gap).map((it) => it.text).find((t) => t && /_{2,}/.test(t) && !situationLeaks(w, t) && !V2.seenRecently(seen, t, Infinity)) || null;
-        const pair = mode === "twopeople" ? buildTwoPeopleQuestion(gameContent(), wordObj, fresh) : buildSelectTwoQuestion(gameContent(), wordObj, fresh);
-        if (!pair) return null;
-        raw = { ...pair, modeId: mode, difficulty: 2 };
-      } else raw = buildQuestion(gameContent(), mode, wordObj, poolsRef.current, { difficulty: 2 });
-      // Multi-step authored challenges don't fit a single practice slot.
-      const built = legacyQuestionToV2(gameContent(), raw, { kind: "word", wordObj }, mode);
-      const q = built.length === 1 ? { ...built[0], ...(raw.sentences ? { sentences: raw.sentences } : {}) } : null;
-      if (!q || q.noMastery || !q.targets?.length) return null;
-      // Last line of defence: never show a prompt that spells out an answer.
-      if ((q.answers || []).some((a) => String(a).length > 2 && normalizeAnswerText(q.prompt).includes(normalizeAnswerText(a)))) return null;
-      return { ...q, id: `${wordObj.word}:${q.mode}` };
-    } catch {
-      return null;
-    }
-  }
-  function launchStory(story) { try { launchSession(V2.storySession(story, gameContent().words, masteryRef.current)); } catch(e) { setToast({text:e.message}); } }
   // Live Challenge: words in the chosen lesson whose gap sentences have all
   // been read get new ones written in the background, for the next matches.
   function refreshLiveSentences(words) {
@@ -216,9 +157,14 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const openAskAi = askAi.openAskAi;
 
 
-  function getLevelStars(levelId) {
-    return Math.max(Number(levelStats[levelId]?.stars || 0), clearedSet.has(levelId) ? 1 : 0);
-  }
+  const getLevelStars = (levelId) => lessonStars(levelStats, clearedSet, levelId);
+  // Starting rounds (features/practice).
+  const practice = usePractice({
+    progress, gameContent, liveContent, quarantine: reportQuarantine, home: { limited: limitHome, levels: homeLevels },
+    views: { ready: library.status === "ready", scopeOf: (id, deep) => scopeOfView(library, id, deep), isEmpty: scopeIsEmpty }, itemsScope,
+    imageOk: imageLinkOk, onLesson: setCurrentLevelIndex, onToast: setToast, triggerGeneration, onOpen: () => setScreen("session"),
+  });
+  const { startLevel, startCourseLevel, startItemsPractice, startViewPractice, launchStory } = practice;
 
   function isLevelUnlocked(index) {
     return true; // TEMP: all levels unlocked for testing — revert to real progression below when ready
@@ -278,52 +224,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     return () => clearTimeout(t);
   }, [toast]);
 
-  // group (optional): one subCategory of the lesson, from levelGroups().
-  function startLevel(index, group = null) {
-    const level = gameContent().levels[index]; if(!level) return;
-    const sessionTitle = group ? `${level.title} · ${group.title}` : level.title;
-    if (limitHome) return startItemsPractice(sessionTitle, group ? group.items : (homeLevels.find((l) => l.id === level.id)?.items || []));
-    setCurrentLevelIndex(index);
-    startPractice(sessionTitle, level.title, group ? { title: sessionTitle, ...(group.id ? { [group.field === "unit" ? "unit" : "subCategory"]: group.id } : { noGroup: group.field }) } : {}, (w) => w.category === level.title);
-  }
-  // A course level (A1.2 …) from every lesson: the whole level, one of its
-  // sessions ({ unit }), or its words in no session ({ noUnit }). No
-  // level: the words that have no course level yet.
-  function startCourseLevel(level, part = null) {
-    setCurrentLevelIndex(null);
-    const title = !level ? "No course level" : part?.unit ? `${level.id} · ${part.title || part.unit}` : part?.noUnit ? `${level.id} · Other words` : level.id;
-    const opts = !level ? { noCourseLevel: true } : { courseLevel: level.id, ...(part?.unit ? { unit: part.unit } : part?.noUnit ? { noGroup: "unit" } : {}) };
-    const unitsOf = (w) => (Array.isArray(w.units) ? w.units : []);
-    const inRound = (w) => (level ? V2.courseLevelOf(w) === level.id && (!part?.unit || unitsOf(w).includes(part.unit)) && (!part?.noUnit || !unitsOf(w).length) : !V2.courseLevelOf(w));
-    startPractice(title, null, { title, ...opts }, inRound);
-  }
-  function startPractice(sessionTitle, category, narrow, inRound) {
-    // New-word intake follows the last round here: a strong round (90%+)
-    // earns two extra new words, a rough one (under 60%) holds back two so
-    // the missed words get room. 0 in Settings still means none.
-    const lastRound = sessionLogs.find((log) => log.kind === "practice" && log.title === sessionTitle && log.total > 0);
-    const lastAccuracy = lastRound ? lastRound.correct / lastRound.total : null;
-    const baseNew = settings.newWordsPerRound;
-    const newWordsPerRound = baseNew === 0 || lastAccuracy === null ? baseNew : lastAccuracy >= 0.9 ? Math.min(10, baseNew + 2) : lastAccuracy < 0.6 ? Math.max(1, baseNew - 2) : baseNew;
-    const session = V2.practice(liveContent(), masteryRef.current, category, Math.random, reportQuarantine, { questionsPerRound: settings.questionsPerRound, newWordsPerRound, pools: poolsRef.current, extraQuestion: buildPracticeExtra, confusions: confusionsRef.current, seen: progressExtrasRef.current.seenSentences || {}, ...narrow });
-    // Words whose gap sentences have all been read get new ones written now,
-    // so the next rounds have fresh sentences instead of shrinking.
-    const seenNow = progressExtrasRef.current.seenSentences || {};
-    const exhausted = gameContent().words.filter((w) => inRound(w) && V2.known(masteryRef.current[w.word]) && /_{2,}/.test(w.gap || "") && V2.poolItems(w, "gap", poolsRef.current?.[w.word]?.gap).every((it) => V2.seenRecently(seenNow, it.text))).slice(0, 8);
-    if (exhausted.length) triggerGeneration(exhausted.map((w) => ({ word: w.word, poolType: "gap" })), poolsRef.current);
-    if (newWordsPerRound > baseNew && session.introductions.length > baseNew) setToast({ text: `Strong last round here — ${session.introductions.length} new words this time.` });
-    launchSession(session);
-  }
-  // A round from one of my views (and, with deep, the views inside it).
-  async function startViewPractice(viewId, deep = true, name = "My view") {
-    if (library.status !== "ready") return;
-    try {
-      const scope = await scopeOfView(library, viewId, deep);
-      if (scopeIsEmpty(scope)) { setToast({ text: "This view is empty. Add some words first." }); return; }
-      setCurrentLevelIndex(null);
-      startPractice(name, null, { title: name, scope }, (w) => scope.words.has(w.word));
-    } catch (e) { setToast({ text: e.message }); }
-  }
   function backToLevels() { setScreen("levels"); setCurrentLevelIndex(null); }
 
 
@@ -343,25 +243,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
 
 
-
-  // --- Speed Round ---------------------------------------------------------
-
-  const MIN_LEARNED_FOR_SPEED = 5;
-  const masteredWords = masteredOnlyWords;
-
-  function startSpeedRound() {
-    if (masteredOnlyWords.length < MIN_LEARNED_FOR_SPEED) return;
-    const queue = [];
-    for (let i = 0; i < SPEED_QUEUE_SIZE; i++) {
-      // Never the same word twice in a row.
-      let raw = null;
-      for (let tries = 0; tries < 6; tries++) { raw = buildSpeedQuestion(gameContent(), masteredOnlyWords); if (!raw || raw.answer !== queue.at(-1)?.answers[0]) break; }
-      if (!raw) break;
-      queue.push(speedQuestionV2(raw, i));
-    }
-    if (!queue.length) { setToast({ text: "No short questions with safe options are available." }); return; }
-    launchSession({ kind: "speed", id: `speed-${Date.now()}`, title: "Speed Round", queue, index: 0, answers: [], introductions: [], seconds: settings.speedSeconds || SPEED_SECONDS, deadline: Date.now() + (settings.speedSeconds || SPEED_SECONDS) * 1000 });
-  }
 
   async function handleReset() {
     await progress.reset({ onError: () => setStorageWarning("Progress couldn't be reset on the server. Check your connection and try again.") });
@@ -512,20 +393,20 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
 
         {screen === "levels" && section === "practice" && (
-          <div className={`wh-speed-card ${masteredWords.length < MIN_LEARNED_FOR_SPEED ? "locked" : ""}`}>
+          <div className={`wh-speed-card ${masteredOnlyWords.length < MIN_MASTERED_FOR_SPEED ? "locked" : ""}`}>
             <div className="wh-speed-card-icon"><Zap size={22} /></div>
             <div className="wh-speed-card-info">
               <div className="wh-speed-card-title">Speed Round</div>
               <div className="wh-speed-card-meta">
-                {masteredWords.length < MIN_LEARNED_FOR_SPEED
-                  ? `Master ${MIN_LEARNED_FOR_SPEED - masteredWords.length} more word${MIN_LEARNED_FOR_SPEED - masteredWords.length === 1 ? "" : "s"} to unlock`
-                  : `${masteredWords.length} mastered words in the pool · best ${bestSpeedScore} pts, x${bestSpeedCombo} combo`}
+                {masteredOnlyWords.length < MIN_MASTERED_FOR_SPEED
+                  ? `Master ${MIN_MASTERED_FOR_SPEED - masteredOnlyWords.length} more word${MIN_MASTERED_FOR_SPEED - masteredOnlyWords.length === 1 ? "" : "s"} to unlock`
+                  : `${masteredOnlyWords.length} mastered words in the pool · best ${bestSpeedScore} pts, x${bestSpeedCombo} combo`}
               </div>
             </div>
             <button
               className="wh-speed-card-btn"
-              disabled={masteredWords.length < MIN_LEARNED_FOR_SPEED}
-              onClick={startSpeedRound}
+              disabled={masteredOnlyWords.length < MIN_MASTERED_FOR_SPEED}
+              onClick={() => practice.startSpeedRound(masteredOnlyWords)}
             >
               <Play size={13} /> Play
             </button>
@@ -582,7 +463,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         )}
         {screen === "friends" && <Suspense fallback={<ScreenSkeleton />}><FriendsPage api={friendsApi} onChanged={refreshSocial} local={friendsApi.mode === "local"} /></Suspense>}
 
-        {screen === "speedResults" && <SpeedResults score={speedScore} correct={speedCorrect} answered={speedAnswered} bestCombo={speedBestCombo} best={bestSpeedScore} onAgain={startSpeedRound} onBack={backToLevels} />}
+        {screen === "speedResults" && <SpeedResults score={speedScore} correct={speedCorrect} answered={speedAnswered} bestCombo={speedBestCombo} best={bestSpeedScore} onAgain={() => practice.startSpeedRound(masteredOnlyWords)} onBack={backToLevels} />}
       </div>
       {showNav && <BottomNav screen={screen === "friends" || screen === "library" || screen === "catalog" ? "profile" : screen === "join" ? "levels" : screen} badges={socialBadges} isAdmin={isAdmin} showRanks={ranksShown(app, isAdmin)} onNavigate={(id) => setScreen(id)} />}
     </div>

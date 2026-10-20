@@ -2,7 +2,7 @@
 
 Playing the game: Home, starting a round, answering, results, stories, the Speed Round, the study dashboard, badges, and reporting a bad question. Proposed boundary, see [module-map.md](../../architecture/module-map.md). Decisions: [ADR 0003](../../adr/0003-grading-location.md), [ADR 0008](../../adr/0008-session-evidence-mastery.md).
 
-**Today this module is not a folder.** The screens are in `features/home`, `session`, `results` and `stats`. The session lifecycle (start, record each answer, finish, report) is a set of functions inside [WordHunter.jsx](../../../src/app/WordHunter.jsx). The page describes the behaviour as one module and marks where the code is still tangled.
+The screens are in `features/home`, `session`, `results` and `stats`; starting rounds is in [features/practice](../../../src/features/practice) ([starting-rounds.md](starting-rounds.md)); recording answers and the end of a round is in [features/progress](../../../src/features/progress) ([answer-recording.md](../progress/answer-recording.md)). The shell ([WordHunter.jsx](../../../src/app/WordHunter.jsx)) still draws Home and the round screen and passes them these functions.
 
 ## 1. Purpose and scope
 
@@ -43,7 +43,7 @@ These are user actions today, not exported functions.
 - Home: [HomeTabs](../../../src/features/home/HomeTabs.jsx), [LessonsView](../../../src/features/home/LessonsView.jsx), [CourseLevelsView](../../../src/features/home/CourseLevelsView.jsx), [StageCard](../../../src/features/home/StageCard.jsx), [homeState.js](../../../src/features/home/homeState.js) (pure decisions: which tab, what a player sees), [MyViewsHome](../../../src/features/library/components/MyViewsHome.jsx) (read-only personal views).
 - Session: [SessionView](../../../src/features/session/SessionView.jsx), results: [ResultScreens](../../../src/features/results/ResultScreens.jsx), study dashboard: [StudyDashboard](../../../src/features/stats/StudyDashboard.jsx) with [studyStats.js](../../../src/features/stats/studyStats.js).
 - Question reports: [reportRules.js](../../../src/features/reports/reportRules.js) (pure rules) and [useQuestionReports.js](../../../src/features/reports/useQuestionReports.js) (state and operations), used by the shell through [features/reports/index.js](../../../src/features/reports/index.js).
-- In WordHunter: `startPractice`, `launchSession`, `recordSessionResult`, `completeSession` (both in [features/progress](../progress/answer-recording.md) since 2026-10-20), `startSpeedRound`, `triggerGeneration`, `triggerVariantGeneration`.
+- Starting rounds: [practiceRules.js](../../../src/features/practice/practiceRules.js) and [usePractice.js](../../../src/features/practice/usePractice.js) (`startLevel`, `startCourseLevel`, `startItemsPractice`, `startViewPractice`, `launchStory`, `startSpeedRound`). Recording: `recordSessionResult`, `completeSession` in [features/progress](../progress/answer-recording.md).
 - Database: none of its own. Data is saved by [progress](../progress/README.md) in the sections `core`, `session`, `pools`, `seen`, `confusions`, `history`, `levels`, `reports` and in `mastery`.
 
 ## 4. Business rules and permissions
@@ -95,6 +95,7 @@ sequenceDiagram
 | Course levels | [tests/course-levels.test.js](../../../tests/course-levels.test.js) |
 | Result screens | [tests/result-screens.test.jsx](../../../tests/result-screens.test.jsx) |
 | Report window | [tests/report-modal.test.jsx](../../../tests/report-modal.test.jsx) |
+| Starting rounds: a lesson, a unit, a course level, new words, a story, the Speed Round, Resume | [e2e/specs/practice.cjs](../../../e2e/specs/practice.cjs), [practice-rules.test.js](../../../tests/practice-rules.test.js), [practice-hook.test.jsx](../../../tests/practice-hook.test.jsx) |
 | Question report rules and the reports hook (AI review mocked) | [question-reports-rules.test.js](../../../tests/question-reports-rules.test.js), [question-reports-hook.test.jsx](../../../tests/question-reports-hook.test.jsx) |
 | File a report in a round; the admin resolves, reopens, deletes it (browser) | [e2e/specs/reports.cjs](../../../e2e/specs/reports.cjs) |
 | Study dashboard numbers | [tests/study-stats.test.js](../../../tests/study-stats.test.js) |
@@ -102,7 +103,7 @@ sequenceDiagram
 | Practice from a library view, grammar-only views | [e2e/specs/library.cjs](../../../e2e/specs/library.cjs), [e2e/specs/libgrammar.cjs](../../../e2e/specs/libgrammar.cjs) |
 | Whole app, a few questions played | [e2e/specs/sweep.cjs](../../../e2e/specs/sweep.cjs) |
 
-**Gaps.** Recording answers and the end of a round are tested since 2026-10-20 ([answer-recording.md](../progress/answer-recording.md)). Starting rounds, resume after a closed tab and "Save and leave" are checked only through the engine's own tests and the browser specs. `MT-04`.
+**Gaps.** Starting rounds and recording answers are tested since 2026-10-20 ([starting-rounds.md](starting-rounds.md), [answer-recording.md](../progress/answer-recording.md)). Resume after a closed tab is checked only in the browser (`practice.cjs` resumes after leaving, not after closing).
 
 ## 8. Example journey
 
@@ -127,15 +128,13 @@ Omar (synthetic player) opens the game, taps "Practise" on the card for his view
 
 **Planned** (roadmap)
 
-- Phase 0: tests for the session lifecycle.
 - Phase 2: one definition of "mastered"; a rule for unreviewed AI sentences.
-- Phase 4: extract the session lifecycle from WordHunter into this module (the unreachable old round engine was removed on 2026-10-18, `MT-03`).
+- Phase 4: the rest of Home's drawing out of WordHunter (starting rounds and recording moved on 2026-10-20; the old round engine was removed on 2026-10-18, `MT-03`).
 
 **Known Issues**
 
 - `LC-01` grammar items use a simpler "mastered" rule than words.
 - `LC-02` AI-written practice sentences can reach a pool without a review when the quality check is unavailable.
 - `LC-03` score and streak change per answer; mastery per finished round.
-- `MT-04` the session lifecycle is untested at unit level.
 - `DP-02` words cannot be added by a player; "Add to Collection" in Ask AI is admin-only.
 - Reports (found when the reports code was moved, not fixed): after "Reset progress" the reports list in memory is not cleared until a reload; `retire` on a report whose `poolType` is not a known pool would throw (Admin only offers it for reports with a pool). Details: [question-reports.md](question-reports.md#old-problems-found-not-fixed-here).
