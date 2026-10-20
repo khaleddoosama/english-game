@@ -11,7 +11,6 @@ export const AI_TASKS = {
   "Ask AI about a word": { maxChars: SMALL },
   "Check a written answer": { maxChars: SMALL },
   "Check another word in a gap": { maxChars: SMALL },
-  "Check a final case report": { maxChars: SMALL },
   "Grammar court": { maxChars: SMALL },
   "Explain a wrong answer": { maxChars: SMALL },
   "Review a reported question": { maxChars: SMALL },

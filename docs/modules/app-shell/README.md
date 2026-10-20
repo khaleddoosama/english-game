@@ -43,7 +43,7 @@ Start-up, routing, global layout, player preferences, and the wiring between mod
 - Maintenance mode: players see a waiting screen with the admin's message; the admin plays on. This is a browser check only (`PE-03`).
 - Announcement: shown on Home until the player hides it (remembered per announcement text).
 - Bottom navigation hides during a session, the final report, the speed round and the admin panel. The Ranks tab is hidden when ranks are off; the Admin tab appears for admins.
-- Player preferences are clamped to allowed values (round length 4 to 30, new words 0 to 10, weak review size 3 to 20, daily goal 5 to 100, Speed Round seconds from a fixed list, text size, shortcuts, reduced motion, defaults for Live). A new player starts from the admin's defaults.
+- Player preferences are clamped to allowed values (round length 4 to 30, new words 0 to 10, daily goal 5 to 100, Speed Round seconds from a fixed list, text size, shortcuts, reduced motion, defaults for Live). A new player starts from the admin's defaults.
 
 ## 5. Data flow
 

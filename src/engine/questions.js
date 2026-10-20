@@ -289,10 +289,6 @@ export function selectAdaptiveMode(content, word, masteryStats, context = {}) {
     base.impostor = (base.impostor || 0) + 5;
     base.situation = (base.situation || 0) + 3;
   }
-  if (context.sessionType === "weak") {
-    base.typing = (base.typing || 0) + 1.5;
-    base.situation = (base.situation || 0) + 1.5;
-  }
   if (stage === MASTERY_STAGE.MASTERED && !context.forceMastered) {
     Object.keys(base).forEach((k) => { base[k] *= 0.35; });
   }

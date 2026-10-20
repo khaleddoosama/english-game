@@ -632,35 +632,6 @@ async function generateGrammarVariantImpl(g, avoid = [], operationOptions = {}) 
   return { prompt, options, answer, explanation };
 }
 
-async function evaluateFinalReportImpl(words, reportText, operationOptions = {}) {
-  const raw = await callAiJson(`Use B1-or-easier explanations. You are a conservative English-learning evaluator for Word Hunter's FINAL CASE. Return ONLY JSON. Evaluate each evidence word separately for genuine semantic use; string presence alone is not enough. Minor grammar errors are allowed when meaning remains clear. Do not automatically pass all words.
-Required shape:
-{"confidence":"high|medium|low","understandable":true,"quality":"Strong Evidence|Good Evidence|Almost|Needs Work","words":[{"word":"...","used":true,"semanticUse":"correct|partly_correct|incorrect","productionSuccess":true,"feedback":"brief"}],"feedback":"one concise improvement suggestion"}`, {
-    evidenceWords: words.map((w) => ({ word: w.word, meaning: w.meaning })),
-    report: reportText,
-  }, 1200, { task: "Check a final case report", signal: operationOptions.signal });
-  if (!raw || !Array.isArray(raw.words)) throw new Error("Invalid final report evaluation");
-  const byWord = new Map(raw.words.map((x) => [String(x.word || "").toLowerCase(), x]));
-  const evaluatedWords = words.map((w) => {
-    const item = byWord.get(w.word.toLowerCase()) || {};
-    const semanticUse = ["correct", "partly_correct", "incorrect"].includes(item.semanticUse) ? item.semanticUse : "incorrect";
-    return {
-      word: w.word,
-      used: item.used === true,
-      semanticUse,
-      productionSuccess: item.productionSuccess === true && item.used === true && semanticUse === "correct",
-      feedback: String(item.feedback || "").slice(0, 180),
-    };
-  });
-  return {
-    confidence: ["high", "medium", "low"].includes(raw.confidence) ? raw.confidence : "low",
-    understandable: raw.understandable === true,
-    quality: ["Strong Evidence", "Good Evidence", "Almost", "Needs Work"].includes(raw.quality) ? raw.quality : "Needs Work",
-    words: evaluatedWords,
-    feedback: String(raw.feedback || "").slice(0, 260),
-  };
-}
-
 export function containsRequiredTerm(text, term) {
   const clean = (value) => normalizeAnswerText(value).replace(/[^a-z0-9']+/g, " ").replace(/\s+/g, " ").trim();
   const haystack = clean(text);
@@ -729,6 +700,5 @@ export const evaluateFreeForm = managedAiFunction("Check a written answer", eval
 export const evaluateAlternativeGap = managedAiFunction("Check another word in a gap", evaluateAlternativeGapImpl, 2, { background: false, timeoutMs: 50000 });
 export const generateComboVariant = managedAiFunction("New combo question", generateComboVariantImpl, 1, { background: true, timeoutMs: 50000 });
 export const generateGrammarVariant = managedAiFunction("New grammar question", generateGrammarVariantImpl, 2, { background: true, timeoutMs: 50000 });
-export const evaluateFinalReport = managedAiFunction("Check a final case report", evaluateFinalReportImpl, 2, { background: false, timeoutMs: 50000 });
 export const evaluateGrammarCorrection = managedAiFunction("Grammar court", evaluateGrammarCorrectionImpl, 2, { background: false, timeoutMs: 50000 });
 export const explainWrongLead = managedAiFunction("Explain a wrong answer", explainWrongLeadImpl, 3, { background: true, timeoutMs: 50000 });

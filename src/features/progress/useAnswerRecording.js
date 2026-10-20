@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { V2 } from "../../engine/v2";
 import { speedStats } from "../../engine/questions";
-import { POINTS_PER_ANSWER, STAR_ACCURACY, afterRoundLog, answerKey, countsAnswer, dayAfterAnswer, finalRecallSummary, goalJustReached, isWholeRound, lessonRound, marksSentences, nextStreak, roundLogEntry, withCompleted, withConfusion, withFinalReport, withIntroduced, withLessonCleared, withLessonStat, withSeenSentences, withSolvedStory, withVariantAnswer, withWordPoolAnswer, wrongWordChoices } from "./recordRules";
+import { POINTS_PER_ANSWER, STAR_ACCURACY, afterRoundLog, answerKey, countsAnswer, dayAfterAnswer, goalJustReached, isWholeRound, lessonRound, marksSentences, nextStreak, roundLogEntry, withCompleted, withConfusion, withIntroduced, withLessonCleared, withLessonStat, withSeenSentences, withSolvedStory, withVariantAnswer, withWordPoolAnswer, wrongWordChoices } from "./recordRules";
 
 // What answers and finished rounds record in the player's progress (from useProgress). V2 keeps mastery evidence
 // session-based so repeated questions cannot inflate a word's stage; the rest (the day's count, streaks, points,
@@ -12,7 +12,7 @@ import { POINTS_PER_ANSWER, STAR_ACCURACY, afterRoundLog, answerKey, countsAnswe
 // generation    { triggerGeneration, triggerVariantGeneration, keepGrammarFresh } from useAiGeneration (new sentences
 //               when a pool runs out)
 // Returns { markSentencesSeen(q), recordSessionResult(q, result, session), trackConfusion(target, selected),
-// introduceWords(words), completeSession(session) -> what the screen shows next, applyFinalReport(words, evaluation) }.
+// introduceWords(words), completeSession(session) -> what the screen shows next }.
 // Docs: docs/modules/progress/answer-recording.md.
 export function useAnswerRecording({ progress, gameContent, onToast, generation }) {
   const p = progress;
@@ -82,7 +82,7 @@ export function useAnswerRecording({ progress, gameContent, onToast, generation 
   }
 
   // A round ends (or is left). Records it once. Returns null (already recorded), { speed: stats } (a Speed Round:
-  // show its results), { finalRecall: summary } (the Final Case recall: show the report screen), or {} (stay).
+  // show its results), or {} (stay). A Final Case round saved before it was removed (2026-10-20) ends like any other.
   function completeSession(session) {
     const done = p.progressExtrasRef.current.completedSessions || [];
     if (session.kind === "speed") {
@@ -110,17 +110,8 @@ export function useAnswerRecording({ progress, gameContent, onToast, generation 
     const solved = withSolvedStory(p.progressExtrasRef.current.solvedStories, session);
     if (solved) { p.progressExtrasRef.current = { ...p.progressExtrasRef.current, solvedStories: solved }; p.setSolvedStories(solved); }
     p.setActiveSession({ ...session, completed: true });
-    return session.kind === "finalRecall" ? { finalRecall: finalRecallSummary(session) } : {};
+    return {};
   }
 
-  // The Final Case report graded by the AI; the day counts as a study day either way.
-  function applyFinalReport(words, evaluation) {
-    if (evaluation.confidence !== "low") {
-      const next = withFinalReport(p.masteryRef.current, words, evaluation, Date.now());
-      p.masteryRef.current = next; p.setMastery(next);
-    }
-    p.recordStudyDay();
-  }
-
-  return { markSentencesSeen, recordSessionResult, trackConfusion, introduceWords, completeSession, applyFinalReport };
+  return { markSentencesSeen, recordSessionResult, trackConfusion, introduceWords, completeSession };
 }

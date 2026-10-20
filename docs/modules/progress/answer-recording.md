@@ -12,16 +12,16 @@ into `features/progress`; the move kept it (see Tests).
 - [recordRules.js](../../../src/features/progress/recordRules.js), no state: `withSeenSentences`, `marksSentences`,
   `countsAnswer`, `answerKey`, `dayAfterAnswer`, `goalJustReached`, `nextStreak`, `withVariantAnswer`,
   `withWordPoolAnswer`, `wrongWordChoices`, `withConfusion`, `withCompleted`, `isWholeRound`, `roundLogEntry`,
-  `afterRoundLog`, `lessonRound`, `withLessonStat`, `withLessonCleared`, `withSolvedStory`, `finalRecallSummary`,
-  `withIntroduced`, `withFinalReport`, and the limits `POINTS_PER_ANSWER` (10), `SEEN_SENTENCES_MAX` (4000),
+  `afterRoundLog`, `lessonRound`, `withLessonStat`, `withLessonCleared`, `withSolvedStory`,
+  `withIntroduced`, and the limits `POINTS_PER_ANSWER` (10), `SEEN_SENTENCES_MAX` (4000),
   `COMPLETED_SESSIONS_MAX` (500), `ROUND_LOG_MAX` (50), `STAR_ACCURACY` (70).
 - [useAnswerRecording.js](../../../src/features/progress/useAnswerRecording.js): `useAnswerRecording({ progress,
   gameContent, onToast, generation })` returns `{ markSentencesSeen, recordSessionResult, trackConfusion,
-  introduceWords, completeSession, applyFinalReport }`. `progress` is `useProgress`'s result; `generation` is
+  introduceWords, completeSession }`. `progress` is `useProgress`'s result; `generation` is
   `{ triggerGeneration, triggerVariantGeneration, keepGrammarFresh }` from the AI helpers.
 - Exported by [index.js](../../../src/features/progress/index.js); used by the shell only. The shell passes
   `recordSessionResult` and `introduceWords` to the round screen, `markSentencesSeen` to question reports and Live,
-  and shows the screen `completeSession` asks for (Speed Round results, the Final Case report).
+  and shows the screen `completeSession` asks for (the Speed Round's results).
 
 ## One answer
 
@@ -57,21 +57,21 @@ A round is recorded once (the last 500 rounds are remembered); ending it again d
   also for a round left early; the day is a study day; the round is marked done.
   - A whole practice round of a lesson (by its title): the lesson's stats; at 70% or more, its star.
   - A whole story round: the story keeps its best result.
-  - The Final Case recall: its score (right answers without help among the graded ones) opens the report screen.
-- **The Final Case report**, graded by the AI: each word used well counts as one more right, written answer (mode
-  "finalReport"); a low-confidence grading changes no word. Either way the day is a study day.
+- **Removed (2026-10-20, on the owner's request): the Final Case** (a three-word typed recall, then a short report
+  graded by the AI). A Final Case round saved before then still opens and ends like any other round. Words' records
+  keep the evidence old reports gave them (mode "finalReport", still counted as written).
 
 ## Tests
 
 | What | Where |
 | --- | --- |
 | A practice round played to the end and a Speed Round, read back from the save (local mode): each answer once, points, round log, day's history, lesson stats and star, done, new words, confusions, the goal's message, Speed Round bests | `e2e/specs/recording.cjs` |
-| An answer's numbers, the badge and the study day after a Final Case | `e2e/specs/progress.cjs`, `e2e/specs/finalcase.cjs` |
+| An answer's numbers, the badge and the study day after a practice round | `e2e/specs/progress.cjs` |
 | The rules | `tests/record-rules.test.js` |
-| The hook with the real `useProgress`: an answer once, help, reported and ungraded answers, Speed Round sentences, confusions, pools and new sentences, new words, each kind of round's end (once), the Final Case report | `tests/answer-recording.test.jsx` |
+| The hook with the real `useProgress`: an answer once, help, reported and ungraded answers, Speed Round sentences, confusions, pools and new sentences, new words, each kind of round's end (once), an old Final Case round | `tests/answer-recording.test.jsx` |
 
 How the behaviour was kept: `recording.cjs` passes on the code before the move and after it (with `progress`,
-`finalcase`, `poolgen`, `reports`, `storygen`, `livelib`, `liveroom`, `sweep`). The rules were moved unchanged and
+`finalcase` (since removed), `poolgen`, `reports`, `storygen`, `livelib`, `liveroom`, `sweep`). The rules were moved unchanged and
 compared with the old inline code on random made-up answers and rounds (39,000 checks; one-off, not kept). Deliberate
 breaks (51) each make the two test files fail.
 

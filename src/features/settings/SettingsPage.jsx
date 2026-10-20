@@ -38,7 +38,6 @@ export default function SettingsPage({ settings, onChange, onBack, onOpen, app, 
         <h3><Gauge size={16} /> Rounds</h3>
         <Row label="Questions per round" hint="Level practice"><Stepper label="questions" value={settings.questionsPerRound} min={4} max={30} onChange={(v) => set({ questionsPerRound: v })} /></Row>
         <Row label="New words per round" hint="0 = review only"><Stepper label="new words" value={settings.newWordsPerRound} min={0} max={10} onChange={(v) => set({ newWordsPerRound: v })} /></Row>
-        <Row label="Weak-word review size" hint="Questions in a weak-words round"><Stepper label="review questions" value={settings.weakReviewSize} min={3} max={20} onChange={(v) => set({ weakReviewSize: v })} /></Row>
         <Row label="Daily goal" hint="Questions per day"><Stepper label="daily goal" value={settings.dailyGoal} min={5} max={100} step={5} onChange={(v) => set({ dailyGoal: v })} /></Row>
         <Row label="“Pick two” questions" hint="Two People and Select Two"><Toggle label="Pick two questions" checked={settings.enablePairModes} onChange={(v) => set({ enablePairModes: v })} /></Row>
       </section>

@@ -1,6 +1,6 @@
 # Module: practice
 
-Playing the game: Home, starting a round, answering, results, stories, the Speed Round, weak review, the study dashboard, badges, and reporting a bad question. Proposed boundary, see [module-map.md](../../architecture/module-map.md). Decisions: [ADR 0003](../../adr/0003-grading-location.md), [ADR 0008](../../adr/0008-session-evidence-mastery.md).
+Playing the game: Home, starting a round, answering, results, stories, the Speed Round, the study dashboard, badges, and reporting a bad question. Proposed boundary, see [module-map.md](../../architecture/module-map.md). Decisions: [ADR 0003](../../adr/0003-grading-location.md), [ADR 0008](../../adr/0008-session-evidence-mastery.md).
 
 **Today this module is not a folder.** The screens are in `features/home`, `session`, `results` and `stats`. The session lifecycle (start, record each answer, finish, report) is a set of functions inside [WordHunter.jsx](../../../src/app/WordHunter.jsx). The page describes the behaviour as one module and marks where the code is still tangled.
 
@@ -11,10 +11,10 @@ Playing the game: Home, starting a round, answering, results, stories, the Speed
 **Responsibilities (Implemented)**
 
 - Home: three views of the same material, chosen in Settings or by tab: **By lesson** (each lesson, with its units), the player's biggest personal views as tabs, and **Gateway** (course levels and sessions; shown to the admin only). A player sees only words and rules in their own library; the admin sees the whole course.
-- Starting rounds: a lesson, a unit, a course level, a personal view (with or without the views inside), weak review, Final Case, a story, the Speed Round.
+- Starting rounds: a lesson, a unit, a course level, a personal view (with or without the views inside), a story, the Speed Round.
 - The session screen: one question at a time, hints, "don't know", report a question, AI second opinion on typed answers, "Save and leave", resume.
 - Per-answer recording and end-of-round recording (see section 5).
-- Results: round summary, speed results, final report.
+- Results: round summary, speed results.
 - Stories (play; the admin builds them), badges, daily goal, study dashboard.
 - Question reports: file, review with AI, withdraw; reported word and mode pairs are kept out of new rounds until resolved. Rules, state and operations are in [features/reports](../../../src/features/reports) (guide: [question-reports.md](question-reports.md)).
 
@@ -31,8 +31,6 @@ These are user actions today, not exported functions.
 | Operation | Input | Result |
 | --- | --- | --- |
 | Start a round (`startLevel`, `startCourseLevel`, `startViewPractice`, `startItemsPractice`) | a lesson, group, course level, view id or item list | an active session; the app opens `/play`. An empty view gives a message instead. |
-| Start weak review | none | up to the "weak review size" words with the weakest evidence, each in a mode chosen for its weakness. |
-| Start Final Case | a level the player has at least one star in | a three-word typed session. |
 | Start a story | a story | a session of its questions; the best result per story is kept. |
 | Start the Speed Round | none; needs at least 5 mastered words | a timed session (Settings: 30 to 120 s) of short multiple-choice questions from mastered words. |
 | Answer | a choice, text or ordering | a graded result; for typed answers a wrong result may be re-judged by AI first. |
@@ -45,18 +43,18 @@ These are user actions today, not exported functions.
 - Home: [HomeTabs](../../../src/features/home/HomeTabs.jsx), [LessonsView](../../../src/features/home/LessonsView.jsx), [CourseLevelsView](../../../src/features/home/CourseLevelsView.jsx), [StageCard](../../../src/features/home/StageCard.jsx), [homeState.js](../../../src/features/home/homeState.js) (pure decisions: which tab, what a player sees), [MyViewsHome](../../../src/features/library/components/MyViewsHome.jsx) (read-only personal views).
 - Session: [SessionView](../../../src/features/session/SessionView.jsx), results: [ResultScreens](../../../src/features/results/ResultScreens.jsx), study dashboard: [StudyDashboard](../../../src/features/stats/StudyDashboard.jsx) with [studyStats.js](../../../src/features/stats/studyStats.js).
 - Question reports: [reportRules.js](../../../src/features/reports/reportRules.js) (pure rules) and [useQuestionReports.js](../../../src/features/reports/useQuestionReports.js) (state and operations), used by the shell through [features/reports/index.js](../../../src/features/reports/index.js).
-- In WordHunter: `startPractice`, `launchSession`, `recordSessionResult`, `completeSession`, `startWeakReview`, `startFinalCase`, `startSpeedRound`, `triggerGeneration`, `triggerVariantGeneration`.
+- In WordHunter: `startPractice`, `launchSession`, `recordSessionResult`, `completeSession` (both in [features/progress](../progress/answer-recording.md) since 2026-10-20), `startSpeedRound`, `triggerGeneration`, `triggerVariantGeneration`.
 - Database: none of its own. Data is saved by [progress](../progress/README.md) in the sections `core`, `session`, `pools`, `seen`, `confusions`, `history`, `levels`, `reports` and in `mastery`.
 
 ## 4. Business rules and permissions
 
-- Round size, new words per round, weak review size, daily goal and Speed Round seconds come from the player's settings. New-word intake follows the last round in the same place: 90% or better earns two extra new words; under 60% holds back two (never below one unless the setting is 0).
+- Round size, new words per round, daily goal and Speed Round seconds come from the player's settings. New-word intake follows the last round in the same place: 90% or better earns two extra new words; under 60% holds back two (never below one unless the setting is 0).
 - Score: +10 for each independent correct answer; answer streak resets on a miss or an assisted answer. Daily goal: a toast appears the first time the number is reached; more is a bonus.
 - A question's sentences are remembered (newest 4,000) and avoided for about 20 hours. Words whose gap sentences are all used get new ones written in the background.
 - An answer is recorded once per question (key: session id and index), even if the player retries the screen.
 - Reported, unverified, AI-failed and "no telemetry" answers are not recorded. Speed Round answers count for the daily total but give no mastery evidence.
 - Home for a player shows only items in their own library. Gateway is the owner's (admin's) view and falls back to By lesson for anyone else.
-- All AI features used here are player-allowed tasks: check a written answer, check another word in a gap, explain a wrong answer, review a reported question, Grammar Court, new combo or grammar question, write and check new practice sentences, Final Case report. Story writing is admin-only.
+- All AI features used here are player-allowed tasks: check a written answer, check another word in a gap, explain a wrong answer, review a reported question, Grammar Court, new combo or grammar question, write and check new practice sentences. Story writing is admin-only.
 
 ## 5. Data flow
 
@@ -104,7 +102,7 @@ sequenceDiagram
 | Practice from a library view, grammar-only views | [e2e/specs/library.cjs](../../../e2e/specs/library.cjs), [e2e/specs/libgrammar.cjs](../../../e2e/specs/libgrammar.cjs) |
 | Whole app, a few questions played | [e2e/specs/sweep.cjs](../../../e2e/specs/sweep.cjs) |
 
-**Gaps (important).** `recordSessionResult` and `completeSession` have no unit test: once-only recording, mastery timing, resume after a closed tab, and the behaviour of "Save and leave" are checked only through the engine's own tests and the browser sweep. No test covers the weak-review mode choice, Final Case, or the Speed Round end. `MT-04`.
+**Gaps.** Recording answers and the end of a round are tested since 2026-10-20 ([answer-recording.md](../progress/answer-recording.md)). Starting rounds, resume after a closed tab and "Save and leave" are checked only through the engine's own tests and the browser specs. `MT-04`.
 
 ## 8. Example journey
 
@@ -119,6 +117,13 @@ Omar (synthetic player) opens the game, taps "Practise" on the card for his view
 ## 9. Status
 
 **Implemented.** Everything above.
+
+**Removed** (2026-10-20, on the owner's request)
+
+- The Final Case (a lesson's three-word typed recall and a short report graded by the AI) and the weak-words review
+  (a round of the words with the weakest evidence, from the study dashboard) with its setting. The study dashboard
+  still lists the words that need work. Saved progress stays readable: a round of either kind saved before still opens
+  and ends as a normal round; the old setting is ignored; words keep the evidence old reports gave them.
 
 **Planned** (roadmap)
 

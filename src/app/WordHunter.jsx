@@ -7,13 +7,12 @@ import { unlockAudioOnFirstTouch } from "../lib/sound";
 unlockAudioOnFirstTouch(); // the first tap lets answer sounds play on phones
 import { SessionView } from "../features/session/SessionView";
 import { MaintenanceScreen, Splash, maintenanceBlocks, maintenanceText, useSignOut } from "../features/auth";
-import { MASTERY_STAGE, getMasteryStage, isWordKey, courseLevelGroups, levelItemKey, setRuntimeDisabledModes, todayProgress } from "../engine/data";
-import { SPEED_QUEUE_SIZE, SPEED_SECONDS, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, legacyQuestionToV2, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, v2SessionFromEntries } from "../engine/questions";
-import { evaluateFinalReport } from "../engine/ai";
+import { MASTERY_STAGE, getMasteryStage, isWordKey, courseLevelGroups, setRuntimeDisabledModes, todayProgress } from "../engine/data";
+import { SPEED_QUEUE_SIZE, SPEED_SECONDS, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, getAllowedModes, legacyQuestionToV2, situationLeaks, speedQuestionV2 } from "../engine/questions";
 import { normalizeAnswerText } from "../engine/text";
 import { useQuestionReports } from "../features/reports";
 import { useContentAdmin } from "../features/content-admin";
-import { SCHEMA_VERSION, getBadgeProgress, getWeakWordCandidates, pickWeakMode } from "../engine/progress";
+import { SCHEMA_VERSION, getBadgeProgress } from "../engine/progress";
 import { useAnswerRecording, useProgress, useProgressSave, useSaveQueue } from "../features/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
@@ -28,14 +27,14 @@ import CourseLevelsView from "../features/home/CourseLevelsView";
 import HomeTabs from "../features/home/HomeTabs";
 import LessonsView from "../features/home/LessonsView";
 import { homeTabs, itemsScope, limitLessons, resolveHomeView } from "../features/home/homeState";
-import { FinalReport, FinalResults, SpeedResults } from "../features/results/ResultScreens";
+import { SpeedResults } from "../features/results/ResultScreens";
 import { DeleteCategoryConfirm, ResetConfirm } from "../features/shell/ConfirmDialogs";
 // Screens most players open rarely load on demand, keeping the first
 // download small: Admin (and all its tools), Live, Leaderboard, Profile.
 // The Admin tab reopens the admin page (and filters) used last.
 const lastAdminPath = () => { try { const p = localStorage.getItem("wh-admin-path"); return p && p.startsWith("/admin") ? p : "/admin"; } catch { return "/admin"; } };
 const masteredCountFor = (m) => Object.entries(m || {}).filter(([k, v]) => isWordKey(k) && V2.stage(v) === "Mastered").length;
-const PLAY_SCREENS = new Set(["session", "finalReport", "finalResults", "speed", "speedResults"]);
+const PLAY_SCREENS = new Set(["session", "speed", "speedResults"]);
 const AdminPanel = lazy(() => import("../features/admin/AdminPanel").then((m) => ({ default: m.AdminPanel })));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage"));
 const ImportExport = lazy(() => import("../features/data/ImportExport"));
@@ -60,7 +59,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const library = useLibrary({ enabled: loaded, me: livePlayer.id, knownWord: (k) => gameContent().words.some((w) => w.word === k), people: LOCAL_PEOPLE });
   const contentLists = useContentLists();
   const { customWords, setCustomWords, customGrammar, setCustomGrammar, customChallenges, setCustomChallenges, customCombos, setCustomCombos, customStories, setCustomStories, contentNoteRef, setContent, applySavedContent } = contentLists;
-  const aiViewEpoch=useRef(0);
 
   // The player's progress (numbers, words' records, the open session, settings) and its saving: features/progress.
   const progress = useProgress({ repo, loaded, gameContent, onReports: (reports) => questionReportsApi.load(reports), onBadge: (badge) => setToast({ kind: "badge", text: badge.label }) });
@@ -76,7 +74,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [playScreen, setPlayScreen] = useState("session");
   const lastSectionRef = useRef("practice");
   const screen = route.screen === "play" ? playScreen : route.screen === "notFound" ? "levels" : route.screen;
-  useEffect(() => () => { aiViewEpoch.current++; cancelAiTasks(); setAiBusy(false); }, [screen, location.path]);
+  useEffect(() => () => { cancelAiTasks(); }, [screen, location.path]);
   const section = route.screen === "levels" ? route.section : lastSectionRef.current;
   if (route.screen === "levels") lastSectionRef.current = route.section;
   function setScreen(next) {
@@ -163,16 +161,13 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     const batch = gapRefreshBatch(words, poolsRef.current, progressExtrasRef.current.seenSentences || {});
     if (batch.length) triggerGeneration(batch, poolsRef.current);
   }
-  // A round ends (or is left): recorded once (features/progress); then the Speed Round's or the Final Case's screen.
+  // A round ends (or is left): recorded once (features/progress); then the Speed Round's results.
   function completeSession(session) {
     const out = recording.completeSession(session);
     if (out?.speed) {
       const st = out.speed;
       setSpeedScore(st.points); setSpeedAnswered(st.answered); setSpeedCorrect(st.correct); setSpeedBestCombo(st.bestCombo);
       setScreen("speedResults");
-    } else if (out?.finalRecall) {
-      setFinalRecallSummary(out.finalRecall);
-      setScreen("finalReport");
     }
   }
   const [dataVersion, setDataVersion] = useState(0); // bumped whenever the game's copy (gameContent()) changes
@@ -182,10 +177,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [, setQuickBackupCopied] = useState(false);
   const [showFreshCopyPrompt, setShowFreshCopyPrompt] = useState(false);
   const [currentLevelIndex, setCurrentLevelIndex] = useState(null);
-  const [finalCaseWords, setFinalCaseWords] = useState([]);
-  const [finalReportText, setFinalReportText] = useState("");
-  const [finalRecallSummary, setFinalRecallSummary] = useState(null);
-  const [finalCaseResult, setFinalCaseResult] = useState(null);
 
 
   // Speed Round — a timed review of mastered words. It plays in the normal
@@ -195,8 +186,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [speedCorrect, setSpeedCorrect] = useState(0);
   const [speedBestCombo, setSpeedBestCombo] = useState(0);
 
-  const [aiBusy, setAiBusy] = useState(false);
-  const [aiError, setAiError] = useState(null);
 
   const storyApi = useStoryGeneration({ stories: customStories, setStories: setCustomStories, mastery, confusions, viewKey: `${screen} ${location.path}`, gameContent });
 
@@ -218,7 +207,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   });
 
   const clearedSet = useMemo(() => new Set(levelsCleared), [levelsCleared]);
-  const weakCandidates = useMemo(() => getWeakWordCandidates(gameContent().words, mastery, confusions), [mastery, confusions, dataVersion]);
   const masteredOnlyWords = useMemo(() => gameContent().words.filter((w) => getMasteryStage(mastery[w.word], { kind: "word", obj: w }) === MASTERY_STAGE.MASTERED), [mastery, dataVersion]);
   const currentLevel = currentLevelIndex !== null ? gameContent().levels[currentLevelIndex] : null;
   const askAi = useAskAi({
@@ -336,45 +324,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       startPractice(name, null, { title: name, scope }, (w) => scope.words.has(w.word));
     } catch (e) { setToast({ text: e.message }); }
   }
-  function startWeakReview() {
-    const picked = weakCandidates.slice(0, settings.weakReviewSize);
-    if (!picked.length) return;
-    let lastMode = null;
-    const queue = picked.map(({ word, stats }) => {
-      let mode = pickWeakMode(gameContent(), word, stats, confusionsRef.current, reportQuarantine);
-      if (mode === lastMode && !getWeakWordCandidates([word], { [word.word]: stats }, confusionsRef.current)[0]?.weakModes?.includes(mode)) {
-        mode = selectAdaptiveMode(gameContent(), word, stats, { sessionType: "weak", confusion: getStrongConfusion(word, confusionsRef.current), lastMode, quarantine: reportQuarantine });
-      }
-      const entry = { kind: "word", wordObj: word, mode, difficulty: getAdaptiveDifficulty(word, stats, mode), confusionPartner: getStrongConfusion(word, confusionsRef.current)?.partner || null };
-      lastMode = mode;
-      return entry;
-    }).filter((entry, i, arr) => i === 0 || entry.wordObj.word !== arr[i - 1].wordObj.word);
-    setCurrentLevelIndex(null);
-    setPoolsSnapshotForSession(poolsRef.current);
-    launchSession(v2SessionFromEntries(gameContent(), queue,{kind:"weak",title:"Weak Evidence",idPrefix:"weak"}));
-  }
-
-  function startFinalCase(index) {
-    const level = gameContent().levels[index];
-    if (!level || getLevelStars(level.id) < 1) return;
-    const wordItems = level.items.filter((item) => item.kind === "word");
-    if (!wordItems.length) return;
-    const priority = { Learned: 0, Familiar: 1, New: 2, Mastered: 3 };
-    const selectedItems = shuffle(wordItems).sort((a, b) => {
-      const aStage = getMasteryStage(masteryRef.current[levelItemKey(a)], a);
-      const bStage = getMasteryStage(masteryRef.current[levelItemKey(b)], b);
-      return priority[aStage] - priority[bStage];
-    }).slice(0, Math.min(3, wordItems.length));
-    const selectedWords = selectedItems.map((item) => item.obj);
-    setCurrentLevelIndex(index);
-    setFinalCaseWords(selectedWords);
-    setFinalReportText("");
-    setFinalRecallSummary(null);
-    setFinalCaseResult(null);
-    setPoolsSnapshotForSession(poolsRef.current);
-    launchSession(v2SessionFromEntries(gameContent(), selectedWords.map((wordObj)=>({kind:"word",wordObj,mode:"gapTyping",difficulty:4})),{kind:"finalRecall",title:`Final Case — ${level.title}`,idPrefix:"final"}));
-  }
-
   function backToLevels() { setScreen("levels"); setCurrentLevelIndex(null); }
 
 
@@ -393,21 +342,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
 
 
-
-
-  async function finishFinalCaseReport() {
-    const epoch=aiViewEpoch.current;
-    if (!finalCaseWords.length || !finalReportText.trim() || aiBusy) return;
-    setAiBusy(true); setAiError(null);
-    try {
-      const evaluation = await evaluateFinalReport(finalCaseWords, finalReportText.trim());
-      if(epoch!==aiViewEpoch.current)return;
-      setFinalCaseResult(evaluation);
-      recording.applyFinalReport(finalCaseWords, evaluation);
-      setScreen("finalResults");
-    } catch (e) { if(epoch!==aiViewEpoch.current)return; console.error("Final Case AI failed:", e); setAiError("AI evaluation is unavailable. Retry the report, or return without changing mastery."); }
-    finally { if(epoch===aiViewEpoch.current)setAiBusy(false); }
-  }
 
 
   // --- Speed Round ---------------------------------------------------------
@@ -453,10 +387,9 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
   const earnedBadgesCount = gameContent().badges.filter((b) => getBadgeProgress(b, { mastery, bestStreak, levels: gameContent().levels }).earned).length;
   const totalLevelsCleared = levelsCleared.length;
-  const finalEvidenceUsed = finalCaseWords.filter((word) => { const n = normalizeAnswerText(finalReportText); return n.includes(normalizeAnswerText(word.word)); }).length;
 
   const masteredWordCount = Object.entries(mastery).filter(([key, stats]) => isWordKey(key) && V2.stage(stats) === "Mastered").length;
-  const showNav = !["session", "finalReport", "speed", "admin"].includes(screen);
+  const showNav = !["session", "speed", "admin"].includes(screen);
 
   // Addresses that can't be shown go home (replacing, so Back still works):
   // unknown paths, admin pages for players, and /play with nothing to play.
@@ -557,7 +490,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
         {dashboardOpen && <Suspense fallback={<ScreenSkeleton />}><StudyDashboard levels={gameContent().levels} mastery={mastery} sessionLogs={sessionLogs} dailyHistory={progressExtrasRef.current.dailyHistory} confusions={confusions} levelStats={levelStats}
           studyStreak={studyStreak} bestStudyStreak={bestStudyStreak} today={todayProgress(dailyProgress)} dailyGoal={settings.dailyGoal}
-          weakReviewCount={Math.min(weakCandidates.length, settings.weakReviewSize)} onWeakReview={startWeakReview} onPlayLevel={(i) => startLevel(i)} onBack={backToLevels} /></Suspense>}
+          onPlayLevel={(i) => startLevel(i)} onBack={backToLevels} /></Suspense>}
 
         {screen === "levels" && <>
           {app.announcement && !announcementHidden && <div className={`wh-announcement ${app.announcementTone}`} role="status"><p>{app.announcement}</p><button aria-label="Hide this message" onClick={hideAnnouncement}><X size={15} /></button></div>}
@@ -631,15 +564,11 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
         {screen === "levels" && section === "practice" && !waitingForLibrary && homeView === "lesson" && (
           <LessonsView levels={homeLevels} indexOf={(level) => gameContent().levels.findIndex((l) => l.id === level.id)} mastery={mastery} isAdmin={isAdmin} emptyLibrary={limitHome && !homeLevels.length}
-            isUnlocked={isLevelUnlocked} clearedSet={clearedSet} starsOf={getLevelStars} onStart={startLevel} onFinalCase={startFinalCase} onDelete={setDeleteCategoryTarget}
+            isUnlocked={isLevelUnlocked} clearedSet={clearedSet} starsOf={getLevelStars} onStart={startLevel} onDelete={setDeleteCategoryTarget}
             onOpenLibrary={() => navigate("/library")} onOpenCatalog={() => navigate("/catalog")} />
         )}
 
 
-        {screen === "finalReport" && currentLevel && finalRecallSummary && (
-          <FinalReport level={currentLevel} recall={finalRecallSummary} words={finalCaseWords} text={finalReportText} onText={setFinalReportText} evidenceUsed={finalEvidenceUsed} busy={aiBusy} error={aiError} onSubmit={finishFinalCaseReport} onBack={backToLevels} />
-        )}
-        {screen === "finalResults" && currentLevel && finalCaseResult && <FinalResults level={currentLevel} result={finalCaseResult} onBack={backToLevels} />}
 
         {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge gameContent={gameContent} player={livePlayer} friendsApi={friendsApi} onSocialChanged={refreshSocial} library={library.status === "ready" ? library : null} levels={gameContent().levels} code={route.code} sound={settings.sound} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); progress.extrasChanged(); }} onRefresh={refreshLiveSentences} limits={liveLimits(app, settings, isAdmin)} /></Suspense>}
         {screen === "data" && <Suspense fallback={<ScreenSkeleton />}><ImportExport variant="game" isAdmin={isAdmin} tools={dataTools} onBack={backToLevels} /></Suspense>}

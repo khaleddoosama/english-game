@@ -1,8 +1,7 @@
 // The recording rules (src/features/progress/recordRules.js): read sentences (newest 4000), which answers count and
 // once per question, the day's count and its goal, the streak, pool variants (two right answers lock one for a week;
 // when to write a new sentence), confusions from wrong word choices, the round log and the day's history, a lesson's
-// stats and star (70%), the best result of a story, the Final Case recall's score, new words introduced, and the Final
-// Case report. Made-up words. Docs: docs/modules/progress/answer-recording.md.
+// stats and star (70%), the best result of a story, and new words introduced. Made-up words. Docs: docs/modules/progress/answer-recording.md.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LOCK_DAYS } from "../src/engine/questions";
 import { localDateKey } from "../src/engine/data";
@@ -152,11 +151,6 @@ describe("the end of a round", () => {
     expect(R.withSolvedStory([], { ...story([right]), queue: [{}, {}] })).toBe(null);
   });
 
-  it("the Final Case recall: right answers without help among the graded ones", () => {
-    const s = round("finalRecall", "Final", [right, { correct: true, assisted: true }, { correct: false, reported: true }, { correct: false, aiFailed: true }, null]);
-    expect(R.finalRecallSummary(s)).toEqual({ accuracy: 50, correct: 1, total: 2 });
-    expect(R.finalRecallSummary(round("finalRecall", "Final", []))).toEqual({ accuracy: 0, correct: 0, total: 0 });
-  });
 });
 
 describe("words", () => {
@@ -165,14 +159,4 @@ describe("words", () => {
     expect(out).toEqual({ Drizzle: { introducedAt: 5, total: 3 }, Gust: { introducedAt: NOW } });
   });
 
-  it("the Final Case report: a word used well counts as a written right answer; low confidence changes nothing", () => {
-    const words = [W("Drizzle"), W("Gust")];
-    const mastery = {};
-    expect(R.withFinalReport(mastery, words, { confidence: "low", words: [{ word: "Drizzle", productionSuccess: true }] }, NOW)).toBe(mastery);
-    const out = R.withFinalReport(mastery, words, { confidence: "high", words: [{ word: "Drizzle", productionSuccess: true }, { word: "Gust", productionSuccess: false }, { word: "Nope", productionSuccess: true }] }, NOW);
-    expect(Object.keys(out)).toEqual(["Drizzle"]);
-    expect(out.Drizzle).toMatchObject({ correct: 1, total: 1, productionCorrect: 1, productionAttempts: 1, sentenceSuccesses: 1, aiEvaluatedAttempts: 1, lastResult: "correct" });
-    expect(out.Drizzle.modes.finalReport).toMatchObject({ correct: 1, total: 1, lastDifficulty: 4 });
-    expect(out.Drizzle.recentResults.at(-1)).toEqual({ correct: true, modeId: "finalReport", difficulty: 4, at: NOW });
-  });
 });
