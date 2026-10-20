@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Inbox, Pencil, Plus } from "lucide-react";
-import StageCard from "../../home/StageCard";
-import { describeItems } from "../../home/homeState";
+import { StageCard, describeItems } from "../../home";
 import { scopeFromContents } from "../scope";
 import { navigate } from "../../../lib/router";
 import { buildTree, flattenTree } from "../libraryTree";
