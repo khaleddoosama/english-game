@@ -72,16 +72,13 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
    - Who sends them: the database, from triggers, after the change is written (migration 0043): a player added
      ("joined") or removed ("left"); a change of a player's start, answers, right answers, time or finish
      ("progress", with those numbers); the challenge started ("start"), ended ("end"), or a rematch linked
-     ("rematch"). The players' browsers still send their own "joined", "left", "start", "progress" and "end" too
-     (so the game keeps working on a database without 0043); a duplicate is harmless (an older "progress" is
-     ignored; the others only make the screen ask again). Signals carry no question, option, answer or username.
+     ("rematch"). Online the players' browsers send none (since 2026-10-20; before, they sent their own "joined",
+     "left", "start", "progress" and "end" too, which doubled the billed messages). In local mode the tabs send them
+     to each other through `BroadcastChannel`. Signals carry no question, option, answer or username.
    - Polling: every 20 seconds while the channel works, every 4 seconds when it does not; a finished challenge is
      checked every 8 seconds for a rematch (for half an hour). The Live home checks invitations every 30 seconds; the
      navigation badges every 45 seconds ([social](../social/README.md)). Online, an invitation also reaches the
      invited player at once on their own channel (`user:<id>`, see social), and the Live home's list asks again.
-   - A signal sent before the channel is subscribed (right after opening it, or while it reconnects) waits and goes
-     out once it is. After the channel gives up, signals go to the Supabase library, which sends them over HTTP when
-     the channel is not joined.
 3. Each answer is one `live_answer` call; the response carries the next question.
 4. When the last started player finishes (or the time ends) the server settles the challenge, writes `live_results` and a trigger updates the `live_played` and `live_wins` counters on each profile.
 5. After the end, `view` returns all questions, the key and all answers for review. "Retry challenge" creates a new challenge and calls `set_next` so others are offered it.
@@ -104,7 +101,7 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
 | A whole room in two tabs; the room's rules and hook | [e2e/specs/liveroom.cjs](../../../e2e/specs/liveroom.cjs), [tests/live-room.test.jsx](../../../tests/live-room.test.jsx) |
 | Review and rematch | [tests/live-review.test.js](../../../tests/live-review.test.js) |
 | The database's signals: joined, left, progress (with the numbers, nothing of the questions), start, end, rematch; nothing for a change that moves no number or state; who may read or send on which topic | [supabase/tests/realtime_signals.sql](../../../supabase/tests/realtime_signals.sql) |
-| The realtime channel with a fake client: signals sent before it is subscribed or while it reconnects go out once it is, retries, status, events and presence, closing | [tests/live-transport.test.js](../../../tests/live-transport.test.js) |
+| The realtime channel with a fake client: online the browser sends no signal (in any state of the channel), retries, status, events and presence, closing | [tests/live-transport.test.js](../../../tests/live-transport.test.js) |
 | Question variety and freshness | [tests/live-variety.test.js](../../../tests/live-variety.test.js) |
 | Server rules | [supabase/tests/live_challenges.sql](../../../supabase/tests/live_challenges.sql), [live_fairness.sql](../../../supabase/tests/live_fairness.sql), [live_review.sql](../../../supabase/tests/live_review.sql) |
 | Two players in two tabs, with friends and invitations | [e2e/specs/friendslive.cjs](../../../e2e/specs/friendslive.cjs), [e2e/specs/livelib.cjs](../../../e2e/specs/livelib.cjs) |
@@ -128,29 +125,33 @@ Dana (synthetic) challenges two friends.
 
 - 2026-10-19: the "joined" signal a player sends on opening the channel was always lost (it was sent before the
   channel existed), so the host saw a new player only through presence or the next poll. Signals now wait for the
-  channel (`tests/live-transport.test.js` failed before the fix).
+  channel (`tests/live-transport.test.js` failed before the fix). Since 2026-10-20 the browser sends no signal
+  online, so this waiting was removed; local mode never needed it.
 
 - 2026-10-19: signals sent by the database (migration 0043): a signal can no longer be lost with a player's
   browser, and invitations reach the invited player at once. **Applied to the production database on 2026-10-19**,
   by hand in the Supabase SQL Editor, so it is not in Supabase's migration list (`supabase_migrations`). To check a
   database: `select tgname from pg_trigger where tgname like '%_signal'` gives the 4 triggers. Checked after the
   apply (read-only): the 4 triggers, their 4 functions (security definer) and the policy "players read their own
-  signals" are there. Not yet seen with real players: the delivery through Supabase Realtime (see Known Issues).
+  signals" are there. Seen with real players on 2026-10-20 (below).
 
-**Planned**
-
-- Once the database's signals are seen working with real players, the browsers' own signals can be removed (each
-  broadcast is billed once sent and once per receiver, so the duplicates double the messages; Supabase Free plan:
-  2 million a month, 100 a second, 200 connections at once). Until then they stay as a second path.
+- 2026-10-20: seen with real players (two accounts, a 5-question match, 09:09-09:12 UTC): the invitation reached the
+  invited player about 0.9 s after Create (only the database sends it), and joining, Start, each answer and the end
+  showed on the other screen in 0.1-0.4 s. `realtime.messages` for that match: joined 2, invite 1, start 1,
+  progress 12 (2 players x (start + 5 answers)), end 1. So the browsers' own signals were removed (online): each
+  broadcast is billed once sent and once per receiver, so the duplicates doubled the messages (Supabase Free plan:
+  2 million a month, 100 a second, 200 connections at once).
 
 **Known Issues**
 
 - `MT-05` the local backend is a second copy of the server rules with no differential test.
-- On a database without migration 0043 (a new environment where it was not run): signals come from the players' browsers only, so one that is lost (a
-  browser closes or drops at that moment) is not sent again, and the others see the change at their next poll (up
-  to 20 seconds); invitations wait for the 30-second check (Live home) or the 45-second badge check.
+- On a database without migration 0043 (a new environment where it was not run) there are no signals at all
+  (online the browsers send none): the others see each change at their next poll (up to 20 seconds); invitations
+  wait for the 30-second check (Live home) or the 45-second badge check. Run 0043 on every online database.
+- The policy that lets members send on `live:<code>` (migration 0008) is still there, though the game no longer
+  uses it. Removing it is a database change, left for later.
 - The real Supabase Realtime service is not run by any test: the SQL test checks what the triggers write to
-  `realtime.messages` (on stand-ins for Supabase's schemas) and the unit tests use a fake client. Whether the
-  production database's signals reach the players is to be seen in a real match (count:
-  `select event, count(*) from realtime.messages where topic like 'live:%' or topic like 'user:%' group by event`).
+  `realtime.messages` (on stand-ins for Supabase's schemas) and the unit tests use a fake client. It was checked by
+  hand in one real match (see Fixed, 2026-10-20). To count the signals: `select event, count(*) from
+  realtime.messages where topic like 'live:%' or topic like 'user:%' group by event` (kept 3 days).
 - Assumption (not tested): the server checks the shape of the host's questions and that the answer is among the options, but not that it is the correct answer to the prompt; a careless or malicious host can create wrong keys. This affects only that match.
