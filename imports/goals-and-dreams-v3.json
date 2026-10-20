@@ -1,0 +1,281 @@
+{
+  "schemaVersion": 3,
+  "kind": "content",
+  "note": "Goals and Dreams, content v3 (4 words). Category Emotions & Psychology, course level B1.1 (Gateway level 9), unit Goals and Dreams.",
+  "categories": [
+    {
+      "id": "emotions-psychology",
+      "title": "Emotions & Psychology",
+      "subCategories": [
+        {
+          "id": "goal-mindset",
+          "title": "Goal mindset"
+        },
+        {
+          "id": "personality",
+          "title": "Personality"
+        }
+      ]
+    }
+  ],
+  "words": [
+    {
+      "id": "manifest",
+      "word": "Manifest",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "goal-mindset",
+      "level": "B1.1",
+      "register": "informal",
+      "meaning": "To make something you want come true by strongly believing in it and focusing on it every day (popular self-help idea); also, to show something clearly.",
+      "situations": [
+        "Every morning, Lina writes 'I will get into medical school' ten times and truly believes it will happen.",
+        "Omar wrote his dream salary on a note, read it every day, and says that's how he got the job."
+      ],
+      "gaps": [
+        "She believes she can ______ her dream job by thinking positively every day.",
+        "Write your goals down and repeat them — that's how some people try to ______ success.",
+        "His stress began to ______ itself as headaches."
+      ],
+      "hints": [
+        "Make a wish real by believing in it strongly — or show something clearly.",
+        "Starts with 'mani-' and ends with '-fest'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I'm manifesting to get a new car.",
+          "correction": "I'm manifesting a new car.",
+          "why": "'Manifest' takes a direct object: manifest something."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "manifestation",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "manifest your dreams",
+        "manifest success",
+        "manifest itself as"
+      ],
+      "synonyms": [
+        "attract",
+        "bring about"
+      ],
+      "antonyms": [
+        "doubt"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "visualize"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    },
+    {
+      "id": "commitment",
+      "word": "Commitment",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "goal-mindset",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "A strong promise to keep working at something, even when it's hard, and the time and effort you give to it.",
+      "situations": [
+        "Sara has gone to the gym at 6 a.m. every day for a year, even in winter.",
+        "Ali promised his team he'd stay until the project was finished, and he never missed a meeting."
+      ],
+      "gaps": [
+        "Learning a language takes time and ______.",
+        "Her ______ to her studies impressed all her teachers.",
+        "Marriage is a big ______ — think carefully."
+      ],
+      "hints": [
+        "Your promise and dedication to keep going.",
+        "The noun from 'commit'; has a double 'm' and one 't' before '-ment'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He showed a big commitment for the team.",
+          "correction": "He showed a big commitment to the team.",
+          "why": "Use 'commitment to' something or someone."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "commit",
+          "pos": "verb"
+        },
+        {
+          "word": "committed",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "make a commitment",
+        "commitment to",
+        "long-term commitment"
+      ],
+      "synonyms": [
+        "dedication",
+        "devotion"
+      ],
+      "antonyms": [
+        "laziness",
+        "half-heartedness"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    },
+    {
+      "id": "perfectionist",
+      "word": "Perfectionist",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "personality",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "A person who wants everything to be perfect and isn't happy with anything that has even a small mistake.",
+      "situations": [
+        "Mona rewrote her one-page essay seven times because one sentence didn't sound exactly right.",
+        "My boss redid the whole slide because the logo was one millimetre too far to the left."
+      ],
+      "gaps": [
+        "She's a ______ — she checks her work ten times before she sends it.",
+        "Being a ______ can make you slow and stressed.",
+        "As a ______, he hates handing in anything with tiny errors."
+      ],
+      "hints": [
+        "Someone who wants everything 100% perfect.",
+        "Ends in '-ist'; the trait is '-ism'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She is very perfectionist.",
+          "correction": "She is a perfectionist. / She is very perfectionistic.",
+          "why": "'Perfectionist' is a noun; use 'a perfectionist'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "perfectionism",
+          "pos": "noun"
+        },
+        {
+          "word": "perfect",
+          "pos": "adjective"
+        },
+        {
+          "word": "perfectionistic",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "a total perfectionist",
+        "a bit of a perfectionist"
+      ],
+      "synonyms": [
+        "stickler",
+        "high achiever"
+      ],
+      "antonyms": [
+        "slacker",
+        "easy-going person"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    },
+    {
+      "id": "visualize",
+      "word": "Visualize",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "goal-mindset",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "To create a clear picture of something in your mind, like imagining yourself reaching a goal.",
+      "situations": [
+        "Before the race, the runner closed her eyes and pictured herself crossing the finish line first.",
+        "Before every exam, Omar imagines himself calm, opening the paper and knowing every answer."
+      ],
+      "gaps": [
+        "Close your eyes and ______ yourself on the stage, speaking with confidence.",
+        "Athletes often ______ winning before a big match.",
+        "It's hard to ______ what the room will look like with new furniture."
+      ],
+      "hints": [
+        "Picture something in your mind.",
+        "Starts with 'visual-' and ends with '-ize'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I visualize to win the race.",
+          "correction": "I visualize myself winning the race.",
+          "why": "Use 'visualize something / yourself doing something' — not 'to do'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "visualization",
+          "pos": "noun"
+        },
+        {
+          "word": "visual",
+          "pos": "adjective"
+        },
+        {
+          "word": "vision",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "visualize success",
+        "visualize yourself doing"
+      ],
+      "synonyms": [
+        "picture",
+        "imagine"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "manifest"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    }
+  ]
+}
