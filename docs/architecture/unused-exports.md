@@ -55,7 +55,10 @@ builders behind `buildQuestion`, `sampleDistractors`, `safeOppositeDistractor`, 
 `lib/repo/contentPlan.js` (`POSITION_GAP`) and `lib/sound.js` (`CUES`). The full list is the commit
 "Stop exporting names used only inside their file".
 
-How it was checked: lint (an unused name is an error), the build, all unit tests and the browser specs. The unit test
+How it was checked: lint (an unused name is an error), the build, all unit tests and the browser specs. The
+production build before and after was compared chunk by chunk: 18 of 20 JavaScript chunks are the same; in the
+other two (the admin panel and the main chunk) only minified names differ, and six constants (5, 20, 0.12, 120, 50,
+4000) are now declared once instead of written in place. The removed code was already left out of the build. The unit test
 counts did not change (1149 passed before; 1151 after, the 2 new guard tests). Deliberate breaks: a new unused
 export, an internal function exported again, a name added back to an `export { }` list, a feature constant exported
 again, and a new file with an unused class and an alias each make the guard fail.
