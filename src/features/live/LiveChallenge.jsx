@@ -1,12 +1,13 @@
 import { playCue } from "../../lib/sound";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, CheckCircle2, Clock, Copy, Crown, Eye, EyeOff, Link2, LogOut, Play as PlayIcon, Plus, RotateCcw, Share2, Timer, Trophy, UserMinus, UserPlus, Users, X } from "lucide-react";
 import { WordPicture } from "../media/media";
 import { levelGroups } from "../../engine/data";
 import { LIVE_KINDS, liveAutoTitle, liveOption, liveQuestions, retryDefaults } from "./liveEngine";
 import { FEEDBACK_MS, MAX_PLAYERS, MIN_PLAYERS, challengeLink, codeFromInput, formatMs, standings } from "./liveRules";
 import { getLiveApi, withRetry } from "./liveApi";
-import { openLiveChannel } from "./transport";
+import { useChallengeRoom } from "./useChallengeRoom";
+import { progressSignal, roomScreen } from "./roomRules";
 import { navigate, useQueryParam } from "../../lib/router";
 import { useMyViews, useViewScope } from "../library";
 import { AddFriendButton, useFriendStatus } from "../social";
@@ -255,85 +256,10 @@ function CreateForm({ library = null, api, friendsApi, presetInvite = [], levels
 /* ------------------------------------------------------------ challenge */
 
 function ChallengeRoom({ api, friendsApi, code, player, onHome, onOpen, canRetry, onRetry, onSeen, sound }) {
-  const [view, setView] = useState(null);
-  const [loadError, setLoadError] = useState(null);
-  const [error, setError] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [online, setOnline] = useState([]);
-  const [channelState, setChannelState] = useState("connecting");
-  const [localMe, setLocalMe] = useState(null); // newest of my own rows, from answer results
-  const channelRef = useRef(null), viewRef = useRef(null);
-  // Questions arrive one at a time (with Start, then with each answer); a
-  // slower reply never takes back a question already shown.
-  const keep = (v) => {
-    const cur = viewRef.current, have = v?.questions?.length || 0;
-    if (cur?.code === v?.code && v?.state !== "done" && (cur?.questions?.length || 0) > have) v = { ...v, questions: [...(v.questions || []), ...cur.questions.slice(have)] };
-    viewRef.current = v; setView(v);
-  };
-  const addQuestion = (i, q) => {
-    const cur = viewRef.current;
-    if (!cur || !q || cur.questions?.[i]) return;
-    const questions = [...(cur.questions || [])]; questions[i] = q;
-    keep({ ...cur, questions });
-  };
-
-  const refresh = useCallback(async () => {
-    try { keep(await api.view(code)); setLoadError(null); }
-    catch (e) { if (!viewRef.current) setLoadError(e.message); }
-  }, [api, code]);
-  useEffect(() => { refresh(); }, [refresh]);
+  const room = useChallengeRoom({ api, code, player });
+  const { view, loadError, error, busy, online, me, isHost, refresh, addQuestion, setLocalMe, send, act } = room;
   useEffect(() => { if (view?.questions) preloadPictures(view.questions); }, [view?.questions]);
-
-  // Realtime while I'm in it; polling covers a missing channel.
-  const member = !!view?.member;
-  useEffect(() => {
-    if (!member) return;
-    const ch = openLiveChannel(code, { id: player.id, name: player.name }, {
-      onEvent(event, payload) {
-        if (event === "progress" && payload?.user_id) {
-          const cur = viewRef.current;
-          if (cur) keep({ ...cur, players: cur.players.map((p) => (p.user_id === payload.user_id && payload.answered >= p.answered ? { ...p, ...payload } : p)) });
-          if (payload.finished_at) refresh();
-        } else refresh();
-      },
-      onPresence(list) {
-        setOnline(list.map((p) => p.id));
-        const known = new Set((viewRef.current?.players || []).map((p) => p.user_id));
-        if (list.some((p) => !known.has(p.id))) refresh();
-      },
-      onStatus: setChannelState,
-    });
-    channelRef.current = ch;
-    ch.send("joined", { user_id: player.id });
-    return () => { ch.close(); channelRef.current = null; };
-  }, [member, code, player.id]);
-  useEffect(() => {
-    if (!view || view.state === "done") return;
-    const t = setInterval(refresh, channelState === "live" ? 20000 : 4000);
-    return () => clearInterval(t);
-  }, [view?.state, channelState, refresh]);
-
-  // A finished challenge is checked for a rematch the creator made, for half an hour.
-  useEffect(() => {
-    if (!view || view.state !== "done" || !view.member || view.settings?.next_code) return;
-    if (Date.now() - (Date.parse(view.ended_at || view.expires_at) || Date.now()) > 30 * 60000) return;
-    const t = setInterval(refresh, 8000);
-    return () => clearInterval(t);
-  }, [view?.state, view?.member, view?.settings?.next_code, view?.ended_at, refresh]);
-
-  const send = (event, payload = {}) => channelRef.current?.send(event, payload);
-  // From the results: go to the rematch, joining it first unless I made it. If it can't be joined
-  // (full, already started) its own page says why.
-  async function openNext(next, mine) {
-    if (!mine) { setBusy(true); try { await api.join(next); } catch { /* the invite page explains */ } setBusy(false); }
-    onOpen(next);
-  }
-  async function act(fn, after) {
-    setBusy(true); setError(null);
-    try { const r = await fn(); if (r && typeof r === "object" && r.code) keep(r); after?.(r); }
-    catch (e) { setError(e.message); }
-    setBusy(false);
-  }
+  const openNext = (next, mine) => room.openNext(next, mine, onOpen);
 
   if (loadError) return (
     <section className="wh-card lv-center">
@@ -344,20 +270,18 @@ function ChallengeRoom({ api, friendsApi, code, player, onHome, onOpen, canRetry
   );
   if (!view) return <div className="ui-page" aria-busy="true"><div className="ui-skeleton-row" /><div className="ui-skeleton-row" /><div className="ui-skeleton-row short" /></div>;
 
-  const isHost = view.host_id === player.id;
-  const serverMe = view.players.find((p) => p.user_id === player.id) || null;
-  const me = serverMe && localMe && localMe.answered > serverMe.answered ? { ...serverMe, ...localMe } : serverMe;
   const common = { view, me, player, online, busy, error, isHost, friendsApi };
+  const screen = roomScreen(view, me);
 
-  if (!view.member) return <Invite {...common} onJoin={() => act(() => api.join(code), () => send("joined", { user_id: player.id }))} onHome={onHome} />;
-  if (view.state === "lobby") return <Lobby {...common}
+  if (screen === "invite") return <Invite {...common} onJoin={() => act(() => api.join(code), () => send("joined", { user_id: player.id }))} onHome={onHome} />;
+  if (screen === "lobby") return <Lobby {...common}
     onStart={() => act(() => api.start(code), () => { send("start"); refresh(); })}
     onLeave={() => act(() => api.leave(code), () => { send("left", { user_id: player.id }); onHome(); })}
     onRemove={(id) => act(() => api.removePlayer(code, id), () => { send("left", { user_id: id }); refresh(); })} />;
-  if (view.state === "done") return <Results {...common} canRetry={canRetry} onRetry={onRetry} onOpenNext={openNext} onHome={onHome} />;
-  if (!me?.started_at) return <Ready {...common} onBegin={() => act(() => api.begin(code))} onLeave={() => act(() => api.leave(code), onHome)} />;
-  if (!me.finished_at) return <Play {...common} api={api} code={code} sound={sound} onSeen={onSeen} onNext={addQuestion}
-    onProgress={(row, done) => { setLocalMe(row); send("progress", { user_id: player.id, answered: row.answered, correct: row.correct, total_ms: row.total_ms, finished_at: row.finished_at, started_at: row.started_at }); if (done) { send("end"); refresh(); } else if (row.finished_at) refresh(); }}
+  if (screen === "results") return <Results {...common} canRetry={canRetry} onRetry={onRetry} onOpenNext={openNext} onHome={onHome} />;
+  if (screen === "ready") return <Ready {...common} onBegin={() => act(() => api.begin(code))} onLeave={() => act(() => api.leave(code), onHome)} />;
+  if (screen === "play") return <Play {...common} api={api} code={code} sound={sound} onSeen={onSeen} onNext={addQuestion}
+    onProgress={(row, done) => { setLocalMe(row); send("progress", progressSignal(player.id, row)); if (done) { send("end"); refresh(); } else if (row.finished_at) refresh(); }}
     onFailed={refresh} />;
   return <Waiting {...common} onEnd={() => act(() => api.end(code), () => { send("end"); refresh(); })} />;
 }
