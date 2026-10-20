@@ -1,9 +1,9 @@
 # How Word Hunter is divided into modules
 
 Status (2026-10-20): the pattern, first proven on **My Library** (`docs/modules/library/README.md`), now covers every
-module of the plan at the end (rows 1-7 done; see each row for its guide). `WordHunter.jsx` is 471 lines (about 2,100
+module of the plan at the end (rows 1-7 done; see each row for its guide) and Home. `WordHunter.jsx` is 412 lines (about 2,100
 when this page was first written on branch `ccr-29322d12-v8wkmd`; the sections below keep those first numbers, marked
-as such). Still left: Home is drawn by the shell; the progress engine in `repo.js` stays one piece on purpose; the
+as such). Still left: the progress engine in `repo.js` stays one piece on purpose; the
 `engine` <-> `lib` module loop; a few unused engine exports (below). Open gaps in testing: the whole real stack
 (`tests/realstack`, Docker) was not run again after `realtime.send` was added to its setup on 2026-10-20, and no
 test checks that Realtime delivers a message to a player (`docs/integration-tests.md`). Bugs kept on purpose:
@@ -112,7 +112,8 @@ Clusters found by function name (line numbers approximate, from the day of writi
 Since then (2026-10-18) the reports, content admin, import/export, Ask AI and story clusters moved out and the old
 round engine was removed (`MT-03`), then pool and variant generation moved out; the file is 1,027 lines (802 after
 the progress state and saving moved to `features/progress` on 2026-10-20, 661 after recording answers moved there, 471
-after removing the Final Case and weak review and moving starting rounds to `features/practice`). After that removal these engine exports may have no
+after removing the Final Case and weak review and moving starting rounds to `features/practice`, 412 after Home's
+screen moved to `features/home`). After that removal these engine exports may have no
 caller outside the engine: `buildEntryQuestion`, `entryFileMeta`, `uniqueStrings` (questions), `buildContrastiveFeedback`,
 `containsRequiredTerm`, `spellingDistanceInfo` (ai), `deriveLearningInsights` (progress), `setLastChallengeId`,
 `PRODUCTION_MODES`, `MASTERY_STAGE_RANK`, `getStarsForAccuracy`, `formatAccuracy` (data). Checked on 2026-10-19 (with
