@@ -7,13 +7,14 @@ import { unlockAudioOnFirstTouch } from "../lib/sound";
 unlockAudioOnFirstTouch(); // the first tap lets answer sounds play on phones
 import { SessionView } from "../features/session/SessionView";
 import { MaintenanceScreen, Splash, maintenanceBlocks, maintenanceText, useSignOut } from "../features/auth";
-import { MASTERY_STAGE, RECENT_RESULT_LIMIT, confusionCount, getMasteryStage, isWordKey, courseLevelGroups, levelItemKey, nextStudyStreakState, normalizeMasteryRecord, normalizeModeStats, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
+import { MASTERY_STAGE, RECENT_RESULT_LIMIT, confusionCount, getMasteryStage, isWordKey, courseLevelGroups, levelItemKey, normalizeMasteryRecord, normalizeModeStats, setRuntimeDisabledModes, todayProgress, updateLevelStat, updateReviewStreak } from "../engine/data";
 import { LOCK_DAYS, SPEED_QUEUE_SIZE, SPEED_SECONDS, buildQuestion, buildSelectTwoQuestion, buildSpeedQuestion, buildTwoPeopleQuestion, findWordByLabel, getAdaptiveDifficulty, getAllowedModes, getStrongConfusion, getWordPools, legacyQuestionToV2, poolNeedsGeneration, selectAdaptiveMode, setPoolsSnapshotForSession, shuffle, situationLeaks, speedQuestionV2, speedStats, v2SessionFromEntries } from "../engine/questions";
 import { evaluateFinalReport } from "../engine/ai";
 import { normalizeAnswerText } from "../engine/text";
 import { useQuestionReports } from "../features/reports";
 import { useContentAdmin } from "../features/content-admin";
-import { DEFAULT_SETTINGS, SCHEMA_VERSION, addToDailyHistory, emptyProgressData, getBadgeProgress, getWeakWordCandidates, migrateProgressData, normalizeSettings, pickWeakMode, pruneConfusions } from "../engine/progress";
+import { SCHEMA_VERSION, addToDailyHistory, getBadgeProgress, getWeakWordCandidates, pickWeakMode, pruneConfusions } from "../engine/progress";
+import { useProgress, useProgressSave, useSaveQueue } from "../features/progress";
 import { BottomNav, ScreenSkeleton, SyncStatus } from "../features/shell/Shell";
 import { navigate, parseRoute, pathFor, useLocation } from "../lib/router";
 import { FriendsPage, LOCAL_PEOPLE, Leaderboard, ProfilePage, ranksHiddenFromPlayers, ranksShown, useSocial } from "../features/social";
@@ -61,12 +62,13 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const { customWords, setCustomWords, customGrammar, setCustomGrammar, customChallenges, setCustomChallenges, customCombos, setCustomCombos, customStories, setCustomStories, contentNoteRef, setContent, applySavedContent } = contentLists;
   const aiViewEpoch=useRef(0);
 
-  const [activeSession, setActiveSession] = useState(null);
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  // The player's progress (numbers, words' records, the open session, settings) and its saving: features/progress.
+  const progress = useProgress({ repo, loaded, gameContent, onReports: (reports) => questionReportsApi.load(reports), onBadge: (badge) => setToast({ kind: "badge", text: badge.label }) });
+  const { activeSession, setActiveSession, settings, setSettings, solvedStories, setSolvedStories, sessionLogs, setSessionLogs, dailyProgress, setDailyProgress } = progress;
+  const { levelsCleared, setLevelsCleared, levelStats, setLevelStats, studyStreak, bestStudyStreak, lastStudyDate, bestSpeedScore, setBestSpeedScore, bestSpeedCombo, setBestSpeedCombo } = progress;
+  const { score, setScore, streak, setStreak, bestStreak, setBestStreak, attempted, setAttempted, mastery, setMastery, pools, setPools, confusions, setConfusions } = progress;
+  const { progressExtrasRef, masteryRef, poolsRef, confusionsRef, recordStudyDay } = progress;
   useEffect(() => { setRuntimeDisabledModes(new Set(settings.enablePairModes ? [] : ["twopeople", "selecttwo"])); }, [settings.enablePairModes]);
-  const [solvedStories,setSolvedStories]=useState([]);
-  const [sessionLogs,setSessionLogs]=useState([]);
-  const [dailyProgress,setDailyProgress]=useState(null);
   const recordedSessionAnswersRef = useRef(new Set());
   // Where we are comes from the address bar (see lib/router.js). The play
   // screens (a session and its result cards) all live under /play.
@@ -88,7 +90,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   // Leaving /play forgets which result card was showing: coming Back to
   // /play resumes the open session or goes home.
   useEffect(() => { if (route.screen !== "play" && playScreen !== "session") setPlayScreen("session"); }, [route.screen]);
-  const progressExtrasRef = useRef({});
   function liveContent() { return { words: gameContent().words, grammar: gameContent().grammar, challenges: gameContent().challenges, combos: customCombos, stories: customStories, note: contentNoteRef.current }; }
   // Home shows one view at a time; My views needs the library, so without it Gateway shows.
   // A player (not the admin) sees only the words and rules in their own library on Home;
@@ -166,7 +167,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   // practice keeps it away for a while. The newest 4000 are kept.
   // Live Challenge: words in the chosen lesson whose gap sentences have all
   // been read get new ones written in the background, for the next matches.
-  const [liveSeenTick, setLiveSeenTick] = useState(0);
   function refreshLiveSentences(words) {
     const batch = gapRefreshBatch(words, poolsRef.current, progressExtrasRef.current.seenSentences || {});
     if (batch.length) triggerGeneration(batch, poolsRef.current);
@@ -302,11 +302,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
   const [, setQuickBackupCopied] = useState(false);
   const [showFreshCopyPrompt, setShowFreshCopyPrompt] = useState(false);
-  const [levelsCleared, setLevelsCleared] = useState([]);
-  const [levelStats, setLevelStats] = useState({});
-  const [studyStreak, setStudyStreak] = useState(0);
-  const [bestStudyStreak, setBestStudyStreak] = useState(0);
-  const [lastStudyDate, setLastStudyDate] = useState(null);
   const [currentLevelIndex, setCurrentLevelIndex] = useState(null);
   const [finalCaseWords, setFinalCaseWords] = useState([]);
   const [finalReportText, setFinalReportText] = useState("");
@@ -320,30 +315,17 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   const [speedAnswered, setSpeedAnswered] = useState(0);
   const [speedCorrect, setSpeedCorrect] = useState(0);
   const [speedBestCombo, setSpeedBestCombo] = useState(0);
-  const [bestSpeedScore, setBestSpeedScore] = useState(0);
-  const [bestSpeedCombo, setBestSpeedCombo] = useState(0);
 
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState(null);
 
-  const [score, setScore] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [bestStreak, setBestStreak] = useState(0);
-  const [attempted, setAttempted] = useState(0);
-  const [mastery, setMastery] = useState({});
-  const [pools, setPools] = useState({});
-  const [confusions, setConfusions] = useState({});
   const storyApi = useStoryGeneration({ stories: customStories, setStories: setCustomStories, mastery, confusions, viewKey: `${screen} ${location.path}`, gameContent });
 
   const badgesOpen = screen === "badges", dashboardOpen = screen === "stats";
   const [toast, setToast] = useState(null);
-  const seenBadgesRef = useRef(null);
-  const poolsRef = useRef(pools);
   const { triggerGeneration, triggerVariantGeneration, keepGrammarFresh, clearPending: clearPendingGeneration } = useAiGeneration({ gameContent, liveContent, poolsRef, setPools, seenSentences: () => progressExtrasRef.current.seenSentences || {} });
   const questionReportsApi = useQuestionReports({ gameContent, progressExtrasRef, profile, liveContent, markSentencesSeen, touchSession: () => setActiveSession((session) => (session ? { ...session } : session)), poolsRef, setPools, triggerGeneration });
   const { reports: questionReports, quarantine: reportQuarantine } = questionReportsApi;
-  const masteryRef = useRef(mastery);
-  const confusionsRef = useRef(confusions);
   // The admin's content changes (rename a word, merge categories, the levels editor...) and the progress that follows a rename.
   const { renameWord, updateWordFields, migrateRenamedProgress, mergeCategories, removeEmptyLevels, updateAdminContent, deleteLevelCategory, takePendingRenames, returnPendingRenames } = useContentAdmin({
     isAdmin, gameContent, setGameContent,
@@ -352,11 +334,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     progress: { masteryRef, setMastery, poolsRef, setPools, confusionsRef, setConfusions, setLevelStats, setLevelsCleared },
     followReportRename: questionReportsApi.followRename,
   });
-  const studyRef = useRef({ studyStreak: 0, bestStudyStreak: 0, lastStudyDate: null });
-  useEffect(() => { poolsRef.current = pools; }, [pools]);
-  useEffect(() => { masteryRef.current = mastery; }, [mastery]);
-  useEffect(() => { confusionsRef.current = confusions; }, [confusions]);
-  useEffect(() => { studyRef.current = { studyStreak, bestStudyStreak, lastStudyDate }; }, [studyStreak, bestStudyStreak, lastStudyDate]);
 
   const clearedSet = useMemo(() => new Set(levelsCleared), [levelsCleared]);
   const weakCandidates = useMemo(() => getWeakWordCandidates(gameContent().words, mastery, confusions), [mastery, confusions, dataVersion]);
@@ -382,30 +359,6 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     return getLevelStars(previous.id) >= 1 || getLevelStars(level.id) >= 1;
   }
 
-  function recordStudyDay() {
-    const prev = studyRef.current;
-    const next = nextStudyStreakState(prev.lastStudyDate, prev.studyStreak, prev.bestStudyStreak);
-    studyRef.current = next;
-    setStudyStreak(next.studyStreak);
-    setBestStudyStreak(next.bestStudyStreak);
-    setLastStudyDate(next.lastStudyDate);
-  }
-
-
-
-  // Puts a progress object into the game's state (on start, and when
-  // another device's changes were merged in).
-  function applyProgressData(data) {
-    progressExtrasRef.current = data; setActiveSession(data.activeSession || null);setDailyProgress(data.dailyProgress||null);questionReportsApi.load(data.reports);setSolvedStories(Array.isArray(data.solvedStories)?data.solvedStories:[]);setSessionLogs(Array.isArray(data.sessionLogs)?data.sessionLogs:[]);
-    setScore(data.score); setStreak(data.streak); setBestStreak(data.bestStreak); setAttempted(data.attempted);
-    setMastery(data.mastery); masteryRef.current = data.mastery;
-    setLevelsCleared(data.levelsCleared); setLevelStats(data.levelStats); setPools(data.pools); poolsRef.current = data.pools;
-    setStudyStreak(data.studyStreak); setBestStudyStreak(data.bestStudyStreak); setLastStudyDate(data.lastStudyDate);
-    studyRef.current = { studyStreak: data.studyStreak, bestStudyStreak: data.bestStudyStreak, lastStudyDate: data.lastStudyDate };
-    setBestSpeedScore(data.bestSpeedScore); setBestSpeedCombo(data.bestSpeedCombo);
-    setConfusions(data.confusions); confusionsRef.current = data.confusions;
-  }
-
   // Load saved progress AND any previously imported custom content once on
   // mount. Custom content must be merged first so the levels and badges are already
   // correct by the time we compute badge state from the saved mastery.
@@ -426,14 +379,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
 
       try {
         if (raw) hadAnyData = true;
-        const data = raw ? migrateProgressData(raw) : emptyProgressData();
-        applyProgressData(data);
-        // A new player starts with the admin's defaults (Admin -> Settings).
-        setSettings(normalizeSettings(raw?.settings ? data.settings : { ...getAppSettings().newPlayerDefaults }));
-        seenBadgesRef.current = new Set(gameContent().badges.filter((b) => getBadgeProgress(b, { mastery: data.mastery, bestStreak: data.bestStreak, levels: gameContent().levels }).earned).map((b) => b.id));
-      } catch (e) {
-        console.error("Could not read progress:", e);
-        seenBadgesRef.current = new Set();
+        progress.startFrom(raw, getAppSettings().newPlayerDefaults);
       } finally {
         setDataVersion((v) => v + 1);
         setLoaded(true);
@@ -443,80 +389,18 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
     })();
   }, [repo]);
 
-  // Save progress whenever it changes (after initial load). Debounced so a
-  // burst of typing collapses into one save; the repo sends only what
-  // changed and queues the newest state while a save is in flight.
-  // Debounced saves register here so leaving the page (reload, closing
-  // the tab, switching apps on a phone) runs them at once instead of
-  // losing the last 600 ms of changes.
-  const pendingSavesRef = useRef({});
-  const contentWritesRef = useRef(0);
-  useEffect(() => {
-    const flush = () => Object.values(pendingSavesRef.current).forEach((run) => run());
-    const onHide = () => { if (document.visibilityState === "hidden") flush(); };
-    // An admin's content edit still being written: ask before leaving, as
-    // a reload or closed tab would cut the write off.
-    const onLeave = (e) => { flush(); if (contentWritesRef.current > 0) { e.preventDefault(); e.returnValue = ""; } };
-    window.addEventListener("pagehide", flush);
-    window.addEventListener("beforeunload", onLeave);
-    document.addEventListener("visibilitychange", onHide);
-    return () => { window.removeEventListener("pagehide", flush); window.removeEventListener("beforeunload", onLeave); document.removeEventListener("visibilitychange", onHide); };
-  }, []);
-  const runningSavesRef = useRef({});
-  function debouncedSave(name, run, ms = 600) {
-    let done = false;
-    const once = () => { if (done) return; done = true; if (pendingSavesRef.current[name] === once) delete pendingSavesRef.current[name]; runningSavesRef.current[name] = run(); };
-    pendingSavesRef.current[name] = once;
-    const handle = setTimeout(once, ms);
-    return () => clearTimeout(handle);
-  }
+  // Saves wait 600 ms (a burst of changes becomes one save) and run at once when the page is hidden or left.
+  const { debouncedSave, pendingSavesRef, runningSavesRef, contentWritesRef } = useSaveQueue();
   // Log out: finish any save first (up to 5 s), so the last answers and
   // edits aren't lost with the session.
   const { loggingOut, logOut } = useSignOut({ onSignOut, saves: { pendingSavesRef, runningSavesRef }, setToast });
-  // A restored backup replaces the saved progress instead of merging with it.
-  const restoringRef = useRef(false);
-  useEffect(() => {
-    if (!loaded) return;
-    return debouncedSave("progress", () => {
-      const replace = restoringRef.current;
-      restoringRef.current = false;
-      return repo.saveProgress({ ...progressExtrasRef.current, activeSession, schemaVersion: SCHEMA_VERSION, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings }, { replace })
-        .catch((e) => console.error("Could not save progress:", e));
-    });
-  }, [loaded, activeSession, questionReports, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings, liveSeenTick]);
-
-  // Another device (or tab) on this account played: its changes are merged
-  // into this one. Checked when the game comes back to the foreground.
-  useEffect(() => {
-    if (!loaded || !repo.onMerged) return;
-    const off = repo.onMerged((merged) => applyProgressData(migrateProgressData(merged)));
-    let last = 0;
-    const check = () => {
-      if (document.visibilityState !== "visible" || Date.now() - last < 10000) return;
-      last = Date.now();
-      repo.refreshProgress?.().catch?.(() => {});
-    };
-    document.addEventListener("visibilitychange", check);
-    window.addEventListener("focus", check);
-    return () => { off(); document.removeEventListener("visibilitychange", check); window.removeEventListener("focus", check); };
-  }, [loaded, repo]);
+  // Save progress whenever it changes (after initial load); the repo sends only what changed.
+  useProgressSave({ repo, loaded, progress, debouncedSave, alsoOn: questionReports });
 
   // Save content whenever it changes (admin only — players read content, they never write it), and move pictures
   // stored inside the content to the word-images bucket. Separate from progress so a progress reset never touches
   // imported vocabulary.
   useContentSave({ loaded, isAdmin, repo, lists: contentLists, dataVersion, setDataVersion, saves: { debouncedSave, pendingSavesRef, contentWritesRef }, renames: { takePendingRenames, returnPendingRenames }, setStorageWarning });
-
-  // Detect newly earned badges and surface a small celebration toast
-  useEffect(() => {
-    if (!loaded || !seenBadgesRef.current) return;
-    for (const badge of gameContent().badges) {
-      const { earned } = getBadgeProgress(badge, { mastery, bestStreak, levels: gameContent().levels });
-      if (earned && !seenBadgesRef.current.has(badge.id)) {
-        seenBadgesRef.current.add(badge.id);
-        setToast({ kind: "badge", text: badge.label });
-      }
-    }
-  }, [mastery, bestStreak, loaded]);
 
   useEffect(() => {
     if (!toast) return;
@@ -687,15 +571,8 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
   }
 
   async function handleReset() {
-    progressExtrasRef.current={};setActiveSession(null);setDailyProgress(null);
-    try { await repo.resetProgress(); } catch (e) { console.error("Could not reset progress:", e); setStorageWarning("Progress couldn't be reset on the server. Check your connection and try again."); }
-    setScore(0); setStreak(0); setBestStreak(0); setAttempted(0);
-    setMastery({}); masteryRef.current = {};
-    setLevelsCleared([]); setLevelStats({});
-    setStudyStreak(0); setBestStudyStreak(0); setLastStudyDate(null); studyRef.current = { studyStreak: 0, bestStudyStreak: 0, lastStudyDate: null };
-    setPools({}); poolsRef.current = {}; setConfusions({}); confusionsRef.current = {};
-    setBestSpeedScore(0); setBestSpeedCombo(0); clearPendingGeneration(); seenBadgesRef.current = new Set();
-    setSolvedStories([]);setSessionLogs([]);
+    await progress.reset({ onError: () => setStorageWarning("Progress couldn't be reset on the server. Check your connection and try again.") });
+    clearPendingGeneration();
     setScreen("levels"); setCurrentLevelIndex(null);
     // Content is intentionally left alone here.
   }
@@ -706,23 +583,11 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
       activeSession, levelOrder: gameContent().levelOrder, score, streak, bestStreak, attempted, mastery, levelsCleared, levelStats, studyStreak, bestStudyStreak, lastStudyDate, pools, bestSpeedScore, bestSpeedCombo, confusions, settings,
     };
   }
-  // A restored backup replaces the progress (saved as a replacement, not merged; see restoringRef).
-  function applyRestoredProgress(restored) {
-    restoringRef.current = true;
-    progressExtrasRef.current = restored; setActiveSession(restored.activeSession || null); setDailyProgress(restored.dailyProgress || null);
-    setScore(restored.score); setStreak(restored.streak); setBestStreak(restored.bestStreak); setAttempted(restored.attempted);
-    setMastery(restored.mastery); masteryRef.current = restored.mastery; setLevelsCleared(restored.levelsCleared); setLevelStats(restored.levelStats);
-    setStudyStreak(restored.studyStreak); setBestStudyStreak(restored.bestStudyStreak); setLastStudyDate(restored.lastStudyDate);
-    studyRef.current = { studyStreak: restored.studyStreak, bestStudyStreak: restored.bestStudyStreak, lastStudyDate: restored.lastStudyDate };
-    setPools(restored.pools); poolsRef.current = restored.pools; setBestSpeedScore(restored.bestSpeedScore); setBestSpeedCombo(restored.bestSpeedCombo);
-    setConfusions(restored.confusions); confusionsRef.current = restored.confusions; setSolvedStories(restored.solvedStories || []); setSessionLogs(restored.sessionLogs || []);
-    questionReportsApi.load(restored.reports); setSettings(normalizeSettings(restored.settings));
-  }
   // ---- Import & export (/data, and Admin -> Data & backup), and the Profile page's backups -------------
   const { exportFile, checkImport, applyImport, aiFixImport, downloadBackup, handleQuickBackup, wipeEverything } = useDataTransfer({
     isAdmin, gameContent, setGameContent, exportedBy: profile?.username || "local", liveContent, backupPayload, contentNoteRef,
     setContent,
-    migrateRenamedProgress, applyRestoredProgress, resetProgress: handleReset, wipeContent: () => repo.wipeContent(), set: { setDataVersion, setShowFreshCopyPrompt, setToast, setQuickBackupCopied },
+    migrateRenamedProgress, applyRestoredProgress: progress.restore, resetProgress: handleReset, wipeContent: () => repo.wipeContent(), set: { setDataVersion, setShowFreshCopyPrompt, setToast, setQuickBackupCopied },
   });
   const contentCounts = { words: gameContent().words.length, grammar: gameContent().grammar.length, challenges: gameContent().challenges.length, stories: customStories.length, combos: customCombos.length, categories: gameContent().levelOrder.length };
   const dataTools = { exportFile, checkImport, applyImport, aiFixImport, contentCounts, progressCounts: { score, words: Object.keys(mastery).filter(isWordKey).length, mastered: masteredCountFor(mastery), sessions: sessionLogs.length }, onResetProgress: () => setConfirmAction("reset"), onWipeEverything: () => setConfirmAction("wipe") };
@@ -917,7 +782,7 @@ export default function WordHunter({ repo, profile = null, isAdmin = true, onSig
         )}
         {screen === "finalResults" && currentLevel && finalCaseResult && <FinalResults level={currentLevel} result={finalCaseResult} onBack={backToLevels} />}
 
-        {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge gameContent={gameContent} player={livePlayer} friendsApi={friendsApi} onSocialChanged={refreshSocial} library={library.status === "ready" ? library : null} levels={gameContent().levels} code={route.code} sound={settings.sound} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); setLiveSeenTick((n) => n + 1); }} onRefresh={refreshLiveSentences} limits={liveLimits(app, settings, isAdmin)} /></Suspense>}
+        {screen === "live" && <Suspense fallback={<ScreenSkeleton />}><LiveChallenge gameContent={gameContent} player={livePlayer} friendsApi={friendsApi} onSocialChanged={refreshSocial} library={library.status === "ready" ? library : null} levels={gameContent().levels} code={route.code} sound={settings.sound} onOpenCode={(c) => navigate(pathFor("live", { code: c }))} onExit={backToLevels} pools={pools} getSeen={() => progressExtrasRef.current.seenSentences || {}} onSeen={(q) => { markSentencesSeen(q); progress.extrasChanged(); }} onRefresh={refreshLiveSentences} limits={liveLimits(app, settings, isAdmin)} /></Suspense>}
         {screen === "data" && <Suspense fallback={<ScreenSkeleton />}><ImportExport variant="game" isAdmin={isAdmin} tools={dataTools} onBack={backToLevels} /></Suspense>}
         {screen === "settings" && <Suspense fallback={<ScreenSkeleton />}><SettingsPage settings={settings} app={app} onChange={setSettings} onBack={backToLevels} onOpen={(id) => setScreen(id)} isAdmin={isAdmin} /></Suspense>}
         {screen === "leaderboard" && <Suspense fallback={<ScreenSkeleton />}><Leaderboard me={profile?.id} friendsApi={friendsApi} hiddenForPlayers={ranksHiddenFromPlayers(app, isAdmin)} /></Suspense>}
