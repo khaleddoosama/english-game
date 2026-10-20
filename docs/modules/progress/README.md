@@ -41,7 +41,7 @@ The repo interface (online and local). From [repo.js](../../../src/lib/repo.js):
 
 ## 3. Files and database objects
 
-- Files: the progress half of [lib/repo.js](../../../src/lib/repo.js) and its parts in [lib/repo/](../../../src/lib/repo) (`progressShape`, `saveOps`, `unsyncedMerge`, `reportsSync`, `status`, `localRepo`; map: [architecture/repo.md](../../architecture/repo.md)), [lib/progressMerge.js](../../../src/lib/progressMerge.js), [lib/idb.js](../../../src/lib/idb.js), [lib/stableJson.js](../../../src/lib/stableJson.js), the defaults and normalisation in [engine/progress.js](../../../src/engine/progress.js); the save effects in [WordHunter.jsx](../../../src/app/WordHunter.jsx); the status indicator in [Shell.jsx](../../../src/features/shell/Shell.jsx).
+- Files: the progress half of [lib/repo.js](../../../src/lib/repo.js) and its parts in [lib/repo/](../../../src/lib/repo) (`progressShape`, `saveOps`, `unsyncedMerge`, `reportsSync`, `status`, `localRepo`; map: [architecture/repo.md](../../architecture/repo.md)), [lib/progressMerge.js](../../../src/lib/progressMerge.js), [lib/idb.js](../../../src/lib/idb.js), [lib/stableJson.js](../../../src/lib/stableJson.js), the defaults and normalisation in [engine/progress.js](../../../src/engine/progress.js); the game's side (state, saving, reset, restore, study days, badges) in [features/progress](../../../src/features/progress) ([progress-state.md](progress-state.md)), with what answers and rounds record ([answer-recording.md](answer-recording.md)); the status indicator in [Shell.jsx](../../../src/features/shell/Shell.jsx).
 - Sections: `core` (score, streaks, attempts, settings, daily progress...), `session` (the active session), `pools` (sentence variants), `seen` (read sentences), `confusions`, `history` (round log, completed sessions, solved stories, daily history), `levels` (level stats and cleared levels), `reports`.
 - Tables: `progress` (user, section, data, rev), `mastery` (user, item key, stats), `reports`, `report_tombstones`, `profiles` (leaderboard columns).
 - Functions: `save_progress_v2`, `save_progress` (older), `reset_my_progress`, `progress_bump_rev` (trigger), `json_int`, `apply_item_renames` (renames), the reports triggers.
@@ -92,8 +92,10 @@ The repo interface (online and local). From [repo.js](../../../src/lib/repo.js):
 | Reports: ownership, no resurrection, tombstones | [supabase/tests/report_ownership.sql](../../../supabase/tests/report_ownership.sql), [audit_and_reports.sql](../../../supabase/tests/audit_and_reports.sql) |
 | Daily history numbers | [supabase/tests/daily_history.sql](../../../supabase/tests/daily_history.sql) |
 | Merge functions in isolation | covered through [review-audit.test.js](../../../tests/review-audit.test.js); no dedicated file |
+| The game's side: opening, the debounced save, saving on page hide, restore, reset, study days, badges, another device's changes | [tests/progress-hooks.test.jsx](../../../tests/progress-hooks.test.jsx), [progress-rules.test.js](../../../tests/progress-rules.test.js), [e2e/specs/progress.cjs](../../../e2e/specs/progress.cjs) |
+| What answers and rounds record | [tests/answer-recording.test.jsx](../../../tests/answer-recording.test.jsx), [record-rules.test.js](../../../tests/record-rules.test.js), [e2e/specs/recording.cjs](../../../e2e/specs/recording.cjs) |
 
-**Gaps.** The fake used by the repo tests is written from the functions' semantics, so it can drift from the real SQL; the SQL tests cover the server half only. No test runs two real browsers against one account. No test sends an absurd score or writes `progress` directly (`PE-01`, `PE-02`). The WordHunter effects that call the repo (debounce, flush on hide) are untested (`MT-04`).
+**Gaps.** The fake used by the repo tests is written from the functions' semantics, so it can drift from the real SQL; the SQL tests cover the server half only. No test runs two real browsers against one account. No test sends an absurd score or writes `progress` directly (`PE-01`, `PE-02`). The effects that call the repo (debounce, flush on hide) are tested with a fake repo and in local mode, not against Supabase.
 
 ## 8. Example journey
 
@@ -111,7 +113,7 @@ Lena (synthetic) plays on her phone on the train, losing connection halfway.
 **Planned** (roadmap)
 
 - Phase 3: bound or recompute the leaderboard numbers on the server; remove direct writes to `progress` and `mastery`.
-- Phase 4: separate from `content` in `repo.js`; own tests for the WordHunter effects.
+- Phase 4: separate from `content` in `repo.js`. (The game's side has its own module and tests since 2026-10-20.)
 - Phase 5: decide between text keys and ids (`sense_progress`), and replace the committed backup fixture.
 
 **Known Issues**

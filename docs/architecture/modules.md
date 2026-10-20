@@ -94,7 +94,8 @@ shell is other areas). Main chunk +2 kB (logic moved in); the three screens and
 Clusters found by function name (line numbers approximate, from the day of writing):
 
 Since then (2026-10-18) the reports, content admin, import/export, Ask AI and story clusters moved out and the old
-round engine was removed (`MT-03`), then pool and variant generation moved out; the file is 1,027 lines. After that removal these engine exports may have no
+round engine was removed (`MT-03`), then pool and variant generation moved out; the file is 1,027 lines (802 after
+the progress state and saving moved to `features/progress` on 2026-10-20, 661 after recording answers moved there). After that removal these engine exports may have no
 caller outside the engine: `buildEntryQuestion`, `entryFileMeta`, `uniqueStrings` (questions), `buildContrastiveFeedback`,
 `containsRequiredTerm`, `spellingDistanceInfo` (ai), `deriveLearningInsights` (progress), `setLastChallengeId`,
 `PRODUCTION_MODES`, `MASTERY_STAGE_RANK`, `getStarsForAccuracy`, `formatAccuracy` (data). Checked on 2026-10-19 (with
@@ -145,7 +146,7 @@ Order is by how self-contained the cluster is and how well it is covered.
 | 3 | Content administration (**done**: `docs/modules/admin/content-admin.md`) | Touches content and mastery; has the rename path now covered by integration tests | `features/content-admin`: pure rules + `useContentAdmin`; the shell passes the same props to Admin and the round |
 | 4 | Import / export orchestration (**done**: `docs/modules/admin/import-export.md`) | `features/data` already had `transfer.js` (pure) | `features/data`: `importPlan.js` (pure) + `useDataTransfer`; the shell passes the same `dataTools` and Profile props |
 | 5 | AI helpers (**done**: `docs/modules/ai-media/ask-ai.md`, `story-generation.md`, `pool-generation.md`; the old round engine it was mixed with is removed, `MT-03`) | Many epochs/refs; needs care with cancellation | `features/ai-helpers`: pure rules + one hook per helper (`useAskAi`, `useStoryGeneration`, `useAiGeneration`); the shell passes the same props to the round, My Library and question reports |
-| 6 | Progress state | Everything reads it; do after 1 | after `repo/progress` is split |
+| 6 | Progress state (**done**: `docs/modules/progress/progress-state.md`, `answer-recording.md`) | Everything reads it; do after 1 | `features/progress`: pure rules + `useProgress`, `useProgressSave`, `useSaveQueue`, `useAnswerRecording`; the shell keeps the same names for the state |
 | 7 | Session/practice flow | Largest, most coupled | last, one answer type at a time |
 
 ### File import cycles and module dependency cycles are different things

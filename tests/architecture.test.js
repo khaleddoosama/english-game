@@ -124,6 +124,14 @@ describe("no new loops between modules", () => {
     expect(intoSocial.map(([file]) => file)).toEqual([]);
   });
 
+  it("the game's progress is in no loop, uses only the engine, and is reached only through its index, by the shell", () => {
+    expect(cycles(modules).flat()).not.toContain("features/progress");
+    expect(modules["features/progress"]).toEqual(["engine"]);
+    const outside = Object.entries(graph).filter(([file, tos]) => !file.startsWith("features/progress/") && tos.some((t) => t.startsWith("features/progress/") && t !== "features/progress/index"));
+    expect(outside.map(([file]) => file)).toEqual([]);
+    expect(Object.entries(modules).filter(([, tos]) => tos.includes("features/progress")).map(([from]) => from)).toEqual(["app"]);
+  });
+
   it("the engine is below the features: it imports none (the picture check moved to the content module with MT-02)", () => {
     expect(modules.engine).toEqual(["lib"]);
   });
