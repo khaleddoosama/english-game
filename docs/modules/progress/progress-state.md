@@ -26,8 +26,8 @@ into `features/progress`; the move kept it (see Tests).
 - [index.js](../../../src/features/progress/index.js) exports `useProgress`, `useProgressSave`, `useSaveQueue`. Only
   the shell uses them (guarded in `tests/architecture.test.js`).
 
-The shell still loads content and progress together on start (`repo.loadContent`, `repo.loadProgress`), records the
-answers and the end of a round (slice 2), and builds the backup file.
+The shell still loads content and progress together on start (`repo.loadContent`, `repo.loadProgress`) and builds the
+backup file. What answers and rounds record is in [answer-recording.md](answer-recording.md).
 
 ## Opening the game
 
