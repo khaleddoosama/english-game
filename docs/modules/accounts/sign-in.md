@@ -9,9 +9,9 @@ Status: **Implemented** (current code). The behaviour below was written down bef
 
 ## Files and interface
 
-- [features/auth/authRules.js](../../../src/features/auth/authRules.js), no state (access rules below): `USERNAME_RE`, `emailFor(username)`,
+- [features/auth/authRules.js](../../../src/features/auth/authRules.js), no state (access rules below): `emailFor(username)`,
   `cleanUsername`, `usernameProblem`, `passwordProblem`, `signInErrorText`, `PROFILE_LOAD_ERROR`, `LOCAL_PROFILE`,
-  `profileCacheKey`.
+  `profileCacheKey`; `USERNAME_RE` is used only inside the file.
 - [features/auth/AuthProvider.jsx](../../../src/features/auth/AuthProvider.jsx): `AuthProvider` (the sign-in state
   for the whole app) and `useAuth()`.
 - [features/auth/LoginPage.jsx](../../../src/features/auth/LoginPage.jsx): the login page and the `Splash`.

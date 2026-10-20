@@ -5,7 +5,7 @@ import { isLocalMode, supabase } from "../../lib/supabase";
 import { V2 } from "../../engine/v2";
 import { isWordKey } from "../../engine/data";
 
-export const TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch { return "UTC"; } })();
+const TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch { return "UTC"; } })();
 
 async function rpc(name, args) {
   const { data, error } = await supabase.rpc(name, args);
@@ -39,7 +39,7 @@ function auditQuery(columns, { action = "", entity = "", q = "", adminId = "", f
   if (term) query = query.or(`target.ilike.*${term}*,item_key.ilike.*${term}*`);
   return query;
 }
-export async function auditPage({ page = 1, size = AUDIT_PAGE, ...filters } = {}) {
+async function auditPage({ page = 1, size = AUDIT_PAGE, ...filters } = {}) {
   const query = auditQuery("id, at, action, target, entity, item_key, batch_id, details, changes, before, after, admin:admin_id(username)", filters, { count: "exact" });
   const start = (Math.max(1, page) - 1) * size;
   const { data, error, count } = await query.range(start, start + size - 1);
@@ -49,7 +49,7 @@ export async function auditPage({ page = 1, size = AUDIT_PAGE, ...filters } = {}
 
 // AI call log, filtered and paged on the server (Admin -> AI usage).
 export const AI_PAGE = 50;
-export async function aiCallsPage({ page = 1, size = AI_PAGE, userId = "", task = "", status = "", kind = "", from = "", to = "" } = {}) {
+async function aiCallsPage({ page = 1, size = AI_PAGE, userId = "", task = "", status = "", kind = "", from = "", to = "" } = {}) {
   let query = supabase.from("ai_calls")
     .select("id, at, kind, task, admin_only, status, reason, http_status, model, ms, prompt_chars, output_chars, input_tokens, output_tokens, preview, finished_at, user:user_id(username)", { count: "exact" })
     .order("at", { ascending: false }).order("id", { ascending: false });
@@ -79,7 +79,7 @@ export async function auditIds(filters = {}) {
 }
 
 // The same checks analytics.word_quality makes, for local mode.
-export function localWordQuality(content, mastery = {}) {
+function localWordQuality(content, mastery = {}) {
   const order = new Set((content?.levels || []).map((l) => l.title));
   return (content?.words || []).map((w) => {
     const gap = String(w.gap || ""), hints = (w.hints || []).length;

@@ -13,18 +13,18 @@ import { pageWindow, DataTable } from "../DataTable";
 import { BarList, ChartCard, ColumnChart, SimpleTable, formatNumber } from "../charts";
 import { Badge, Kpi, Notice, fmtDate, longDay, relTime, shortDay, useAsync } from "../adminUi";
 
-export const AI_STATUS = {
+const AI_STATUS = {
   ok: { label: "Worked", tone: "success" },
   error: { label: "Failed", tone: "danger" },
   denied: { label: "Refused", tone: "warning" },
   started: { label: "No answer", tone: "neutral" },
 };
 // Why the gate said no, in words.
-export const DENIED_REASON = { admin: "Admin-only tool", off: "AI turned off for players", quota: "Daily limit reached", signin: "Not signed in" };
+const DENIED_REASON = { admin: "Admin-only tool", off: "AI turned off for players", quota: "Daily limit reached", signin: "Not signed in" };
 export const seconds = (ms) => (ms == null ? "—" : ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(ms < 10000 ? 1 : 0)} s`);
 const pct = (n, d) => (d ? `${Math.round((n / d) * 100)}%` : "—");
 const fullDate = (t) => new Date(t).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
-export const reasonText = (r) => (r.status === "denied" ? DENIED_REASON[r.reason] || r.reason || "Refused" : r.reason || "");
+const reasonText = (r) => (r.status === "denied" ? DENIED_REASON[r.reason] || r.reason || "Refused" : r.reason || "");
 
 export function AiUsagePage({ api, tick, usage, summary, activity, range, overview, players }) {
   const limit = useAppSettings().aiDailyLimit;

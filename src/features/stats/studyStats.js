@@ -6,7 +6,7 @@ import { CHALLENGE_MODE_META, MODE_META, confusionCount, getMasteryStage, levelI
 export const STAGES = ["Mastered", "Learned", "Familiar", "New"];
 const DAY = 86400000;
 
-export function itemName(item) {
+function itemName(item) {
   if (item.kind === "word") return item.obj.word;
   if (item.kind === "grammar") return item.obj.rule || item.obj.id;
   if (item.kind === "challenge") return item.obj.label || item.obj.title || item.obj.id;
@@ -14,7 +14,7 @@ export function itemName(item) {
 }
 // Question types the game's own tables don't name.
 const MORE_MODES = { reverse: "Word from its meaning", mcq: "Multiple choice", multi: "Pick all that fit", transform: "Transform the sentence" };
-export function modeLabel(id) {
+function modeLabel(id) {
   return MODE_META[id]?.label || CHALLENGE_MODE_META?.[id]?.label || MORE_MODES[id] || String(id).replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase());
 }
 const emptyStages = () => ({ Mastered: 0, Learned: 0, Familiar: 0, New: 0 });

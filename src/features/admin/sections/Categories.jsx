@@ -10,7 +10,7 @@ import { Badge, ConfirmDialog, Drawer, Kpi, Notice } from "../adminUi";
 
 const TYPES = [["words", "Words", "word"], ["grammar", "Grammar", "id"], ["stories", "Stories", "id"], ["combos", "Combos", "id"], ["challenges", "Challenges", "id"]];
 
-export function categoryRows(content) {
+function categoryRows(content) {
   const order = (content.levels || []).map((l) => l.title);
   const names = [...new Set([...order, ...TYPES.flatMap(([t]) => (content[t] || []).map((x) => x.category).filter(Boolean))])];
   return names.map((name) => {

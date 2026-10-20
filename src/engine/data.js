@@ -39,7 +39,7 @@ export function levelItemKey(item) {
 
 export const MASTERY_STAGE = { NEW: "New", FAMILIAR: "Familiar", LEARNED: "Learned", MASTERED: "Mastered" };
 // "finalReport": written evidence from the Final Case (removed 2026-10-20), still counted in saved records.
-export const PRODUCTION_MODES = new Set(["typing", "gapTyping", "phrasalTransform", "finalReport"]);
+const PRODUCTION_MODES = new Set(["typing", "gapTyping", "phrasalTransform", "finalReport"]);
 export { PRODUCTION_GATE_STEP };
 export const isWordKey = (key) => !/^(grammar|combo|challenge|pun):/.test(String(key));
 export const MAX_CONFUSIONS = 80;
@@ -52,7 +52,7 @@ export function getAccuracy(stats) {
   return total > 0 ? (Number(stats?.correct || 0) / total) * 100 : 0;
 }
 
-export function normalizeModeStats(modeStats) {
+function normalizeModeStats(modeStats) {
   return {
     ...modeStats,
     correct: Number(modeStats?.correct || 0),
@@ -90,7 +90,7 @@ export function normalizeMasteryRecord(record) {
   };
 }
 
-export function getCorrectModeCount(stats) {
+function getCorrectModeCount(stats) {
   const normalized = normalizeMasteryRecord(stats);
   return Object.values(normalized.modes).filter((mode) => mode.correct > 0).length;
 }
@@ -121,7 +121,7 @@ export function getMasteryStage(stats, item) {
   return MASTERY_STAGE.FAMILIAR;
 }
 
-export function isItemMastered(stats, item) {
+function isItemMastered(stats, item) {
   return getMasteryStage(stats, item) === MASTERY_STAGE.MASTERED;
 }
 
@@ -180,7 +180,7 @@ export function levelStageBreakdown(level, mastery) {
   return counts;
 }
 
-export function getStarsForAccuracy(accuracy) {
+function getStarsForAccuracy(accuracy) {
   if (accuracy >= 95) return 3;
   if (accuracy >= 85) return 2;
   if (accuracy >= 70) return 1;
@@ -218,7 +218,7 @@ export function localDateKey(date = new Date()) {
   return `${y}-${m}-${d}`;
 }
 
-export function isPreviousLocalDay(previousKey, todayKey) {
+function isPreviousLocalDay(previousKey, todayKey) {
   if (!previousKey || !todayKey) return false;
   const [y, m, d] = previousKey.split("-").map(Number);
   if (!y || !m || !d) return false;

@@ -48,7 +48,7 @@ export function getBadgeProgress(badge, { mastery, bestStreak, levels }) {
 }
 
 
-export function levelTitleBase(title) {
+function levelTitleBase(title) {
   const m = title.match(/^(.*) (I{1,3}|IV|V|VI|VII|VIII)$/);
   return m ? m[1] : title;
 }
@@ -94,7 +94,7 @@ export const DEFAULT_SETTINGS = {
 };
 export const AUTO_ADVANCE_OPTIONS = [0, 1000, 2000, 3000];
 export const SPEED_SECONDS_OPTIONS = [30, 45, 60, 90, 120];
-export const TEXT_SIZES = ["normal", "large", "xlarge"];
+const TEXT_SIZES = ["normal", "large", "xlarge"];
 export function normalizeSettings(raw) {
   const s = raw && typeof raw === "object" ? raw : {};
   return {
@@ -120,7 +120,7 @@ export function normalizeSettings(raw) {
   };
 }
 
-export function normalizeLevelStats(levelStats = {}, levelsCleared = []) {
+function normalizeLevelStats(levelStats = {}, levelsCleared = []) {
   const out = {};
   if (levelStats && typeof levelStats === "object") {
     Object.entries(levelStats).forEach(([key, value]) => {
@@ -142,7 +142,7 @@ export function normalizeLevelStats(levelStats = {}, levelsCleared = []) {
 // Rounds, answers and right answers per day (the player's local date),
 // kept for DAILY_HISTORY_DAYS. The round log keeps only the newest rounds;
 // this keeps every day's totals for the dashboard and the admin.
-export const DAILY_HISTORY_DAYS = 120;
+const DAILY_HISTORY_DAYS = 120;
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 function bumpDay(history, { at, total, correct }) {
   const day = localDateKey(new Date(Number(at)));

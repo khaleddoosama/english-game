@@ -26,7 +26,7 @@ export async function loadKeyMap(client, table) {
 
 // The player's own words have no legacy key: the game calls them by their
 // text, "Cast" or "Cast (to throw)", so that is the key.
-export async function loadOwnMap(client) {
+async function loadOwnMap(client) {
   const out = new Map();
   for (let from = 0; from < 20 * PAGE; from += PAGE) {
     const { data, error } = await client.from("senses").select("id, label, headwords(text)").not("owner_id", "is", null).range(from, from + PAGE - 1);

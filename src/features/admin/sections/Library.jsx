@@ -9,14 +9,14 @@ import { DataTable } from "../DataTable";
 import { Badge, ConfirmDialog, Drawer, Kpi, Notice } from "../adminUi";
 import { sameItem } from "../editors/WordEditor";
 
-export const LIBRARY_TYPES = {
+const LIBRARY_TYPES = {
   stories: { label: "Stories", one: "story", title: (x) => x.title, size: (x) => `${(x.questions || []).length} questions · ${(x.targetWords || []).length} words`, blank: (id, category) => ({ id, title: "New story", category, text: "", targetWords: [], questions: [] }) },
   combos: { label: "Combos", one: "combo", title: (x) => x.title || x.prompt || x.label, size: (x) => `${(x.words || x.targetWords || []).length} words`, blank: (id, category) => ({ id, category, title: "New combo", words: [] }) },
   challenges: { label: "Challenges", one: "challenge", title: (x) => x.label || x.title || x.prompt, size: (x) => `${(x.steps || x.questions || []).length} steps`, blank: (id, category) => ({ id, category, label: "New challenge", steps: [] }) },
 };
 const ARABIC = /[؀-ۿ]/;
 
-export function libraryProblems(type, item, list, original, content) {
+function libraryProblems(type, item, list, original, content) {
   if (!item || typeof item !== "object" || Array.isArray(item)) return ["The item must be a JSON object."];
   const out = [];
   if (!String(item.id || "").trim()) out.push("Every item needs an id.");

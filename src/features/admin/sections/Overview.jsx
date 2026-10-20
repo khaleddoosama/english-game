@@ -3,7 +3,7 @@ import { BarList, ChartCard, ColumnChart, LineChart, SimpleTable, StackedBar, fo
 import { Kpi, Notice, longDay, shortDay } from "../adminUi";
 
 // Class-wide word buckets (ordinal) from every player's attempts.
-export function wordBuckets(words, stats) {
+function wordBuckets(words, stats) {
   const byKey = new Map(stats.map((s) => [s.item_key, s]));
   const b = { none: 0, low: 0, mid: 0, high: 0 };
   for (const w of words) {

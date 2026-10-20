@@ -3,13 +3,13 @@ import { useCancelAiOnLeave } from "../../lib/aiLifecycle.js";
 import { useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { HEALTH_CHECKS, aiFixWordBatch, findCategoryDuplicates, gapsKey, gapsOf, scanContentHealth } from "../../engine/ai";
-export function formatHealthValue(value) {
+function formatHealthValue(value) {
   if (value == null || value === "") return "—";
   if (Array.isArray(value)) return value.join(value.some((x) => String(x).length > 30) ? "  ·  " : ", ");
   if (typeof value === "object") return `✗ ${value.sentence}  →  ✓ ${value.correction}  (${value.why})`;
   return String(value);
 }
-export const HEALTH_BATCH = 5, HEALTH_RUN = 20;
+const HEALTH_BATCH = 5, HEALTH_RUN = 20;
 export function ContentHealthPanel({ content, onUpdate, onMergeCategories, onRemoveEmptyLevels }) {
   useCancelAiOnLeave(["Fix word content"]);
   const words = content.words || [];

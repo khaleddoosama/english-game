@@ -9,7 +9,7 @@ import { formatNumber, formatPercent } from "../charts";
 import { Badge, ConfirmDialog, Drawer, Kpi, Notice } from "../adminUi";
 
 // What a word is missing, in the order an editor would fix it.
-export function wordIssues(w) {
+function wordIssues(w) {
   const out = [];
   if (w._autoStub) out.push("stub");
   if (!w.meaning) out.push("no meaning");

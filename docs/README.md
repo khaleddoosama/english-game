@@ -13,6 +13,7 @@ Working documentation for the Word Hunter code base. The top-level [README](../R
 | [architecture/roadmap.md](architecture/roadmap.md) | Ranked problem register and a phased plan with acceptance criteria |
 | [architecture/modules.md](architecture/modules.md) | The module pattern (layers, one front door, boundary tests), proven on the library, and the plan for the rest |
 | [architecture/repo.md](architecture/repo.md) | The repo layer (`src/lib/repo.js` and `src/lib/repo/`): its parts and their state |
+| [architecture/unused-exports.md](architecture/unused-exports.md) | Every export in `src/` has a user elsewhere: the rule, its guard test, what was removed |
 | [adr/](adr/README.md) | Architecture decision records: what was decided, why, alternatives |
 | [ai-usage-inventory.md](ai-usage-inventory.md) | Where the app uses AI (written earlier, in Arabic) |
 

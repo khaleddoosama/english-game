@@ -7,7 +7,7 @@
 import { isLocalMode, supabase } from "../../lib/supabase";
 
 // The names the database sends (migration 0043).
-export const LIVE_EVENTS = ["joined", "left", "start", "progress", "end", "rematch"];
+const LIVE_EVENTS = ["joined", "left", "start", "progress", "end", "rematch"];
 const RETRY_MS = [1000, 3000, 8000];
 
 // Returns { send(event, payload), close() }. send() reaches the other tabs in

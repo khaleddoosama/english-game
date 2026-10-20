@@ -182,4 +182,4 @@ function compatible(a,b) {
   return !(Array.isArray(a.excludeFromSameOptionsWith)?a.excludeFromSameOptionsWith:[]).some(x=>norm(x)===norm(b.word)) && !(Array.isArray(b.excludeFromSameOptionsWith)?b.excludeFromSameOptionsWith:[]).some(x=>norm(x)===norm(a.word)) && !syn(a,b) && !syn(b,a);
 }
 
-export { norm, fields, withoutRemovedFields, bareWord, applyRenames, mergeContent, healMissingWordRefs, antonymsOf, linkAntonyms, outsideAntonyms, healOpposites, contentOnly, findWord, headword, sensesOf, synonymsOf, compatible };
+export { norm, fields, withoutRemovedFields, bareWord, applyRenames, mergeContent, healMissingWordRefs, antonymsOf, linkAntonyms, outsideAntonyms, healOpposites, contentOnly, findWord, headword, sensesOf, compatible };

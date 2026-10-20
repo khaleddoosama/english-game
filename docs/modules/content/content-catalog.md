@@ -61,7 +61,7 @@ reads the copy and schedules the content save.
 **The engine takes it as an argument**; it keeps no copy and imports none (`tests/architecture.test.js`).
 
 - `engine/questions`: every function that needs the words or challenges takes the copy (any `{ words, challenges }`)
-  as its first argument: `buildQuestion(content, mode, word, pools, options)`, `buildChallengeQuestion`,
+  as its first argument: `buildQuestion(content, mode, word, pools, options)`, `buildChallengeQuestion` (used inside the file),
   `buildTwoPeopleQuestion`, `buildSelectTwoQuestion`, `buildSpeedQuestion`, `findWordByLabel(content, label)`,
   `getAllowedModes(content, word)`, `selectAdaptiveMode(content, word, stats, context)`,
   `legacyQuestionToV2(content, question, entry, suffix)`, `v2SessionFromEntries(content, entries, options)`, and

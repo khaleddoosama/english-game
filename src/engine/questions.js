@@ -13,7 +13,7 @@ export function shuffle(arr) {
 }
 
 // Words too common to signal any real similarity between two definitions.
-export const MEANING_STOPWORDS = new Set([
+const MEANING_STOPWORDS = new Set([
   "the","a","an","and","or","of","to","in","on","for","with","that","this","is","are","was","were","be","been",
   "someone","something","somebody","people","person","you","your","yours","they","them","their","it","its",
   "who","whom","which","when","where","what","how","not","no","but","from","by","at","as","if","than","then",
@@ -23,7 +23,7 @@ export const MEANING_STOPWORDS = new Set([
   "usually","especially","without","because","while","during","after","before","way","ways","thing","things",
 ]);
 
-export function meaningTokens(text) {
+function meaningTokens(text) {
   return new Set(
     (text || "")
       .toLowerCase()
@@ -35,7 +35,7 @@ export function meaningTokens(text) {
 
 // Rough semantic closeness: how much two definitions overlap in meaningful
 // words, normalized so short definitions aren't unfairly penalized.
-export function meaningSimilarity(a, b) {
+function meaningSimilarity(a, b) {
   const ta = meaningTokens(a);
   const tb = meaningTokens(b);
   if (!ta.size || !tb.size) return 0;
@@ -51,13 +51,13 @@ export function meaningSimilarity(a, b) {
 // and category first, then rank what's left by definition overlap and pick
 // from the closest handful — with a little randomness so repeat encounters
 // aren't identical.
-export function sampleDistractors(content, target, n = 3) {
+function sampleDistractors(content, target, n = 3) {
   return V2.optionWords([target], content.words, n + 1).filter(w => w.word !== target.word);
 }
 
-export const OPPOSITE_TRAP_RATE = 0.12;
+const OPPOSITE_TRAP_RATE = 0.12;
 
-export function weightedChoice(items) {
+function weightedChoice(items) {
   const valid = items.filter((item) => item && item.weight > 0);
   if (!valid.length) return null;
   const total = valid.reduce((sum, item) => sum + item.weight, 0);
@@ -69,15 +69,15 @@ export function weightedChoice(items) {
   return valid[valid.length - 1].value;
 }
 
-export function isPhrasal(word) {
+function isPhrasal(word) {
   return word?.type === "phrasal" || (/^[a-z]+\s+(up|down|in|out|on|off|over|away|back|through|into|for|with|at|by|around|along|across)$/i.test(String(word?.word || "")));
 }
 
-export function isIdiom(word) {
+function isIdiom(word) {
   return word?.type === "idiom" || word?.type === "binomial" || word?.type === "fyi";
 }
 
-export function challengeType(challenge) {
+function challengeType(challenge) {
   const raw = String(challenge?.type || "").trim();
   const aliases = {
     "idiom-story": "idiomStory",
@@ -90,7 +90,7 @@ export function challengeType(challenge) {
   return aliases[raw] || raw || "story";
 }
 
-export function uniqueStrings(values) {
+function uniqueStrings(values) {
   const seen = new Set();
   return (Array.isArray(values) ? values : []).filter((value) => {
     const key = normalizeAnswerText(value);
@@ -100,12 +100,12 @@ export function uniqueStrings(values) {
   });
 }
 
-export function challengeLinkedWords(content, challenge) {
+function challengeLinkedWords(content, challenge) {
   const valid = new Set(content.words.map((w) => w.word));
   return uniqueStrings(challenge?.linkedWords).filter((word) => valid.has(word));
 }
 
-export function authoredChallengesForWord(content, word, type = null) {
+function authoredChallengesForWord(content, word, type = null) {
   return content.challenges.filter((challenge) => {
     if (!challenge || !challenge.id) return false;
     if (type && challengeType(challenge) !== type) return false;
@@ -123,20 +123,20 @@ export function situationLeaks(word, text = word?.situation) {
 // A sentence that points to the word without showing it, for questions
 // that ask "which word?": the gap sentence (word blanked out), or an older
 // scenario-style situation that never used the word. Null if neither works.
-export function contextSentence(word) {
+function contextSentence(word) {
   if (word?.gap && /_{2,}/.test(word.gap) && !situationLeaks(word, word.gap)) return word.gap;
   if (word?.situation && !situationLeaks(word)) return word.situation;
   return null;
 }
 
-export function isStrongStoryFallback(word) {
+function isStrongStoryFallback(word) {
   const situation = String(word?.situation || "").trim();
   const sentences = situation.split(/(?<=[.!?])\s+/).filter(Boolean);
   const leaksAnswer = normalizeAnswerText(situation).includes(normalizeAnswerText(word?.word));
   return !leaksAnswer && sentences.length >= 2 && sentences.length <= 4 && situation.split(/\s+/).length >= 18;
 }
 
-export function buildChallengeQuestionUnsafe(content, challenge) {
+function buildChallengeQuestionUnsafe(content, challenge) {
   const type = challengeType(challenge);
   const linkedWords = challengeLinkedWords(content, challenge);
   const answerList = uniqueStrings(challenge.answers);
@@ -268,7 +268,7 @@ export function selectAdaptiveMode(content, word, masteryStats, context = {}) {
 // correctly twice, it locks for a week and a fresh one is generated so the
 // same phrasing never gets memorized instead of the word itself.
 
-export const POOL_TYPES = ["meaning", "gap", "situation", "typing"];
+const POOL_TYPES = ["meaning", "gap", "situation", "typing"];
 export const LOCK_DAYS = 7;
 
 export function getWordPools(pools, word) {
@@ -278,7 +278,7 @@ export function getWordPools(pools, word) {
   return current;
 }
 
-export function pickActiveItem(wordPools, poolType) {
+function pickActiveItem(wordPools, poolType) {
   const arr = wordPools[poolType];
   const now = Date.now();
   const unlocked = arr.filter((it) => !it.lockedUntil || it.lockedUntil <= now);
@@ -286,7 +286,7 @@ export function pickActiveItem(wordPools, poolType) {
   return candidates.reduce((a, b) => (a.attempts <= b.attempts ? a : b));
 }
 
-export function poolHasFreshItem(wordPools, poolType) {
+function poolHasFreshItem(wordPools, poolType) {
   const now = Date.now();
   return wordPools[poolType].some((it) => !it.lockedUntil || it.lockedUntil <= now);
 }
@@ -299,7 +299,7 @@ export function poolNeedsGeneration(wordPools, poolType) {
 // right twice and no replacement generated yet), repeating that exact
 // question is the worst option — it's the same text a third time. Swap to
 // another style for this word that still has unseen content instead.
-export function resolvePoolMode(modeId, wordObj, wordPools) {
+function resolvePoolMode(modeId, wordObj, wordPools) {
   if (poolHasFreshItem(wordPools, modeId)) return modeId;
   const alternatives = POOL_TYPES.filter(
     (pt) => pt !== modeId && !(pt === "typing" && wordObj.skipTyping) && poolHasFreshItem(wordPools, pt)
@@ -312,18 +312,18 @@ export function resolvePoolMode(modeId, wordObj, wordPools) {
 
 // True when a and b are opposites through either word's antonyms
 // (Good is the opposite of both Sick and Ill).
-export function areOpposites(a, b) {
+function areOpposites(a, b) {
   if (!a || !b) return false;
   const has = (x, y) => x.opposite === y.word || V2.antonymsOf(x).some((t) => V2.norm(V2.bareWord(t)) === V2.norm(V2.bareWord(y.word)));
   return has(a, b) || has(b, a);
 }
 // A wrong option for "opposite of X" must not be another opposite of X, or
 // clash with the right answer (synonym / never-together).
-export function safeOppositeDistractor(wordObj, answerObj, d) {
+function safeOppositeDistractor(wordObj, answerObj, d) {
   return d.word !== wordObj.word && d.word !== answerObj?.word && !areOpposites(wordObj, d) && (!answerObj || V2.compatible(answerObj, d));
 }
 // Mode A — direct match: word shown, pick its opposite from 4 options.
-export function buildOppositeDirect(content, wordObj) {
+function buildOppositeDirect(content, wordObj) {
   const answerObj = findWordByLabel(content, wordObj.opposite);
   const distractors = sampleDistractors(content, wordObj, 5).filter((d) => safeOppositeDistractor(wordObj, answerObj, d)).slice(0, 3);
   while (distractors.length < 3) {
@@ -339,7 +339,7 @@ export function buildOppositeDirect(content, wordObj) {
 // Mode B — pick the side of the sentence: the word's gap sentence (written
 // for the word, not its opposite) becomes a two-option choice between the
 // word and its opposite.
-export function buildOppositeSentence(content, wordObj) {
+function buildOppositeSentence(content, wordObj) {
   const context = contextSentence(wordObj);
   if (!context) return buildOppositeDirect(content, wordObj);
   const target = { ...wordObj, key: wordObj.word, label: wordObj.word, explanation: `${wordObj.word} ↔ ${wordObj.opposite}` };
@@ -350,7 +350,7 @@ export function buildOppositeSentence(content, wordObj) {
 // Mode C — "Opposite or not?": two words, judge whether they're a real pair.
 // True half the time (the real opposite); false half the time (a plausible
 // but wrong same-category word), so "No" isn't just the safe guess.
-export function buildOppositePairJudgment(content, wordObj) {
+function buildOppositePairJudgment(content, wordObj) {
   const isTruePair = Math.random() < 0.5;
   let partner;
   if (isTruePair) {
@@ -381,7 +381,7 @@ export function buildOppositePairJudgment(content, wordObj) {
 
 // Mode E — the trap: not every word has a clean opposite, and knowing that
 // is part of the skill. Only ever used for words with no `opposite` field.
-export function buildOppositeTrap(content, wordObj) {
+function buildOppositeTrap(content, wordObj) {
   const distractors = sampleDistractors(content, wordObj, 3);
   const target = {
     ...wordObj,
@@ -393,7 +393,7 @@ export function buildOppositeTrap(content, wordObj) {
   return { target, prompt: wordObj.word, options, answer: "No clear opposite", type: "mcq" };
 }
 
-export function buildOppositeQuestion(content, wordObj) {
+function buildOppositeQuestion(content, wordObj) {
   if (!wordObj.opposite) return buildOppositeTrap(content, wordObj);
   const r = Math.random();
   if (r < 0.34) return buildOppositeDirect(content, wordObj);
@@ -418,7 +418,7 @@ export function canBuildWhoAmI(w) {
   return w?.type === "vocab" && firstPersonify(w.meaning) !== null;
 }
 
-export function buildWhoAmIQuestion(content, wordObj) {
+function buildWhoAmIQuestion(content, wordObj) {
   const riddle = firstPersonify(wordObj.meaning);
   const distractors = sampleDistractors(content, wordObj, 3);
   const target = { ...wordObj, key: wordObj.word, label: wordObj.word, explanation: wordObj.meaning };
@@ -431,7 +431,7 @@ export function buildWhoAmIQuestion(content, wordObj) {
 // content. A "companion" word from the same category supplies the second.
 // `ctx` picks the sentence for a word (default: its first gap sentence);
 // practice passes one that returns only sentences the learner hasn't seen.
-export function pickCompanion(content, wordObj, ctx = contextSentence) {
+function pickCompanion(content, wordObj, ctx = contextSentence) {
   const source = normalizeAnswerText(ctx(wordObj));
   const pool = content.words.filter((w) =>
     w.word !== wordObj.word &&
@@ -444,11 +444,11 @@ export function pickCompanion(content, wordObj, ctx = contextSentence) {
   return pool.length ? shuffle(pool)[0] : null;
 }
 
-export function canBuildTwoPerson(content, wordObj) {
+function canBuildTwoPerson(content, wordObj) {
   return !!contextSentence(wordObj) && pickCompanion(content, wordObj) !== null;
 }
 
-export function fillToFour(content, base, exclude) {
+function fillToFour(content, base, exclude) {
   const options = [...base];
   if (options.length >= 4) return options.slice(0, 4);
   const more = shuffle(content.words.filter((w) => !exclude.has(w.word) && !options.includes(w.word)));
@@ -527,15 +527,15 @@ export function findWordByLabel(content, label) {
   return content.words.find((w) => String(w.word || "").trim().toLowerCase() === key) || null;
 }
 
-export function hardDistractors(content, target, count = 3) { return sampleDistractors(content, target, count); }
+function hardDistractors(content, target, count = 3) { return sampleDistractors(content, target, count); }
 
-export function buildImpostorQuestion(content, wordObj, _difficulty = 2) {
+function buildImpostorQuestion(content, wordObj, _difficulty = 2) {
   const authored = authoredChallengesForWord(content, wordObj, "impostor");
   if (!authored.length) return null;
   return buildChallengeQuestion(content, shuffle(authored)[0]);
 }
 
-export function safeLegacyQuestion(content, q) {
+function safeLegacyQuestion(content, q) {
   if (!q) return q;
   const lists = [q.options, ...(q.steps || []).map(step => step.options)].filter(Array.isArray);
   let invalid = false;
@@ -547,9 +547,9 @@ export function safeLegacyQuestion(content, q) {
   return invalid ? { ...q, type: "unavailable", prompt: "This authored question conflicts with option exclusions or has too few unique options. Report it or continue; no mastery credit is awarded." } : q;
 }
 export function buildQuestion(content, ...args) { return safeLegacyQuestion(content, buildQuestionUnsafe(content, ...args)); }
-export function buildChallengeQuestion(content, ...args) { return safeLegacyQuestion(content, buildChallengeQuestionUnsafe(content, ...args)); }
+function buildChallengeQuestion(content, ...args) { return safeLegacyQuestion(content, buildChallengeQuestionUnsafe(content, ...args)); }
 
-export function buildQuestionUnsafe(content, modeId, wordObj, pools, options = {}) {
+function buildQuestionUnsafe(content, modeId, wordObj, pools, options = {}) {
   const difficulty = Math.max(1, Number(options.difficulty || 1));
   const confusionPartner = options.confusionPartner || null;
   if (modeId === "opposite") return { ...buildOppositeQuestion(content, wordObj), modeId, difficulty };
@@ -629,13 +629,13 @@ export function buildQuestionUnsafe(content, modeId, wordObj, pools, options = {
   }
   return { ...common, prompt: activeItem.text, answer: wordObj.word, type: "typing" };
 }
-export function buildGrammarQuestion(g) {
+function buildGrammarQuestion(g) {
   const target = { ...g, key: `grammar:${g.id}`, label: g.rule, explanation: g.explanation };
   const q = V2.grammarQuestions(g).find((x) => x.type === "choose") || { prompt: g.prompt, options: g.options || [], answer: g.answer };
   return { target, modeId: "grammarCourt", prompt: q.prompt, options: shuffle(q.options), answer: q.answer, type: "mcq", court: true };
 }
 
-export function buildEntryQuestion(content, entry, pools) {
+function buildEntryQuestion(content, entry, pools) {
   if (entry.kind === "word") return buildQuestion(content, entry.mode, entry.wordObj, pools, { difficulty: entry.difficulty, confusionPartner: entry.confusionPartner });
   if (entry.kind === "grammar") return buildGrammarQuestion(entry.obj);
   if (entry.kind === "challenge") return buildChallengeQuestion(content, entry.obj);
@@ -658,7 +658,7 @@ export function legacyQuestionToV2(content, question, entry, idSuffix = "0") {
   return [{...base,type:"mcq",options:question.options||[],answers:[question.answer]}];
 }
 
-export let poolsSnapshotForSession = {};
+const poolsSnapshotForSession = {};
 export function v2SessionFromEntries(content, entries, {kind,title,idPrefix=kind}) {
   const queue=entries.flatMap((entry,index)=>legacyQuestionToV2(content, buildEntryQuestion(content, entry,poolsSnapshotForSession),entry,String(index)));
   return {id:`${idPrefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,kind,title,queue,introductions:[],index:0,answers:[],initialLength:queue.length};

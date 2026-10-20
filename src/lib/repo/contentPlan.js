@@ -3,7 +3,7 @@
 import { stableJson } from "../stableJson";
 
 export const CONTENT_KINDS = ["words", "grammar", "challenges", "stories", "combos"];
-export const POSITION_GAP = 1000;
+const POSITION_GAP = 1000;
 const keyOf = (kind, item) => (kind === "words" ? item?.word : item?.id);
 
 export const emptyContent = () => ({ words: [], grammar: [], challenges: [], stories: [], combos: [], levelOrder: [], note: "" });

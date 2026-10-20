@@ -27,10 +27,10 @@ Everything that calls Gemini or handles pictures and sound: the server functions
 | `POST /api/tts` | `{text}` (up to 400 characters) | `{url, cached}` or audio bytes | player or admin; cached clips need no sign-in check |
 | `POST /api/image-import` | `{url}` | `{url}` of the stored picture | admin |
 | `GET /api/keepalive` | cron | health numbers | cron secret if set |
-| `callAiText(prompt, {task, signal})`, `postAiRequest` | prompt, task | text | browser |
+| `callAiText(prompt, {task, signal})` (posts with `postAiRequest`, inside `lib/ai.js`) | prompt, task | text | browser |
 | `managedAiFunction(label, fn, arity)` / `runAiOperation` | | a function that shows progress and can be cancelled | browser |
 | `cancelAiTasks(labels?, {includeBackground})` | | none | browser |
-| `speechUrl(text)`, `fetchWordAudio(term)`, `PronunciationModal` | | audio URL | browser |
+| `speechUrl(text)`, `PronunciationModal` (fetches with `fetchWordAudio(term)`, inside `media.jsx`) | | audio URL | browser |
 | `uploadWordImage(file)`, `importImageLink(url)` in `images.js` | picture file / link | public URL | admin |
 | `ai_gate(admin_only, daily_limit, kind, task, preview, chars)` | | `{ok, reason, call, ...}` | database; called by the function with the caller's token |
 | `ai_call_finish(...)` | outcome | nothing | database; server key only |

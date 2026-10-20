@@ -25,7 +25,7 @@ export function unlockAudioOnFirstTouch() {
   };
   for (const e of ["pointerdown", "keydown", "touchstart"]) window.addEventListener(e, unlock, true);
 }
-export const CUES = {
+const CUES = {
   correct: (combo) => { const up = Math.pow(2, Math.min(combo, 8) / 12); return { notes: [523.25 * up, 659.25 * up], gap: 0.09, len: 0.14, type: "triangle", gain: 0.18 }; },
   wrong: () => ({ notes: [329.63, 246.94], gap: 0.13, len: 0.24, type: "triangle", gain: 0.26 }),
 };

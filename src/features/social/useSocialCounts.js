@@ -6,7 +6,7 @@ import { onSocialSignal } from "./socialSignals";
 // on the navigation. Checked when the game opens, every 45 seconds, when the
 // tab comes back into view, and (in local mode) when another tab changes
 // something. A failed check just keeps the last numbers.
-export const SOCIAL_POLL_MS = 45000;
+const SOCIAL_POLL_MS = 45000;
 
 // Calls `refresh` every 45 seconds, when the tab comes back into view or gets
 // focus, when another tab changes friends or Live data (local mode), and at
