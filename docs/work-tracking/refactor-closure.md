@@ -52,9 +52,11 @@ are **not** closed by mocks or by other tests passing:
    runs Supabase's Realtime service; `tests/realstack/realtime.test.js` checks that friend requests, answers, Live
    invitations and a player joining reach the right players, and that another player cannot listen
    ([integration-tests.md](../integration-tests.md), "Real stack").
-3. **No browser spec runs the app against a Supabase backend** (`MT-04`'s open part). The specs run in local mode or
-   with a fake Supabase; `saveclose.cjs` runs the repo against a real PostgreSQL through the test harness, without
-   supabase-js, PostgREST or GoTrue.
+3. ~~No browser spec runs the app against a Supabase backend~~ **closed** 2026-10-21 (#78): `e2e/realstack/app.cjs`
+   runs the app built for online mode in Chromium against the real stack: sign-up, a saved round, another device,
+   a lost connection and a page closed offline, each read back from the database
+   ([integration-tests.md](../integration-tests.md), "Real stack"). The Vercel functions and Storage are still not
+   covered.
 4. ~~The real project was not compared with the migrations~~ **closed** 2026-10-21, read-only and by hand: its
    schema is the one migrations 0001-0043 describe, apart from PostgreSQL 17's `MAINTAIN` privilege and whitespace or
    comments in 8 function bodies ([production-schema-check.md](../migrations/production-schema-check.md)). It is not
