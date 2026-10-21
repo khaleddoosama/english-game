@@ -22,17 +22,6 @@ grant select, insert on realtime.messages to authenticated;
 grant usage on sequence realtime.messages_id_seq to authenticated;
 create function realtime.topic() returns text language sql stable as $$ select current_setting('realtime.topic', true) $$;
 grant execute on function realtime.topic() to authenticated;
--- Broadcast from the database: stores the message (the real service then delivers it); never fails the caller.
-create function realtime.send(payload jsonb, event text, topic text, private boolean default true) returns void language plpgsql as $$
-begin
-  begin
-    perform set_config('realtime.topic', topic, true);
-    insert into realtime.messages (payload, event, topic, private, extension) values (payload, event, topic, private, 'broadcast');
-  exception when others then
-    raise warning 'ErrorSendingBroadcastMessage: %', sqlerrm;
-  end;
-end $$;
-alter function realtime.send(jsonb, text, text, boolean) owner to postgres;
 alter table realtime.messages owner to postgres;
 -- and the columns the Storage service's own migrations add to buckets
 alter table storage.buckets add column if not exists public boolean default false, add column if not exists file_size_limit bigint, add column if not exists allowed_mime_types text[];
