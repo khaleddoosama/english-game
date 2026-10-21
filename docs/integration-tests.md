@@ -119,14 +119,15 @@ Not in the stack: Realtime, Storage, Studio, the Vercel functions, the app's scr
 Realtime and Storage (`realtime.messages`, `realtime.topic()`, `realtime.send()` for the signals of migration 0043, the
 `buckets` columns): `up.sh` creates them by hand, the same way as `supabase/ci/supabase-stub.sql` (keep the two in step).
 `realtime.send()` was missing there until 2026-10-20, so on a fresh real stack the 0043 triggers failed; the SQL block was
-checked on its own after the fix, the whole stack (Docker) was not run again. Tried again on 2026-10-21: the Docker
-daemon started, but the images could not be fetched (Docker Hub: 429 Too Many Requests; `public.ecr.aws`: layer
-downloads refused). Real stack is not part of CI.
+checked on its own after the fix. The agent's environment cannot fetch the images (2026-10-21: Docker Hub 429, the
+`public.ecr.aws` layer downloads refused), so the whole stack runs in CI instead.
 
-**Planned** (2026-10-21): a CI job `realstack` on every push and pull request runs the same commands on a GitHub
-runner (which can fetch the images) through `tests/realstack/run-ci.sh`: it waits for GoTrue and PostgREST, runs the
-tests, and fails if any of them is skipped or none ran, so a missing variable cannot pass as green.
-**Open gaps:** run the whole real stack again with 0043; a test that the Realtime service delivers a signal to a
+**Implemented** (2026-10-21): CI job `realstack` on every push and pull request runs `tests/realstack/up.sh` and then
+`tests/realstack/run-ci.sh` on a GitHub runner. The script starts the gateway, waits for GoTrue and PostgREST, runs the
+tests, and fails if any test fails or is skipped, or if none ran, so a missing variable cannot pass as green. First run
+(#74): 11 passed, 0 skipped. With `realtime.send` removed from the setup on purpose, the job failed at the friend
+request (`function realtime.send(...) does not exist`), as it should.
+**Open gaps:** a test that the Realtime service delivers a signal to a
 player (no test runs the Realtime service; it was checked by hand once, `docs/modules/live/README.md`). This is still
 not a real project: see `docs/migrations/review-0037-0042.md`, "Not verified".
 
