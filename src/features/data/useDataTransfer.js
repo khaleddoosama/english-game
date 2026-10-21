@@ -2,7 +2,7 @@
 // apply it, and send a failed file to the AI for a repair. The steps with no state are in importPlan.js and
 // transfer.js; this hook applies them to the shell's state, as the shell always did. Docs:
 // docs/modules/admin/import-export.md.
-import { aiFixImportJson } from "../../engine/ai";
+import { aiFixImportJson } from "../../lib/aiPrompts";
 import { importModeError, inspectImport } from "./transfer";
 import { contentImportPlan, exportFileOf, importDoneText, restoredProgressOf } from "./importPlan";
 

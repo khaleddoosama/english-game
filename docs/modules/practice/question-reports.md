@@ -24,7 +24,7 @@ progress loaded or restored (the caller sets the ref). `followRename(map)`: a wo
 The pool arguments are only for `retire` (it flags the variant and asks for a new one).
 
 ## Dependencies
-`engine` only (`ai`: `reviewReportedQuestion`, `locateReportSource`; `questions`: `getWordPools`; `v2`). The game's words come
+the engine (`questions`: `getWordPools`; `v2`) and the AI prompts in `lib/aiPrompts.js` (`reviewReportedQuestion`, `locateReportSource`; in `engine/ai.js` until 2026-10-21). The game's words come
 through the `gameContent` the shell passes ([content-catalog.md](../content/content-catalog.md)).
 In no loop, and nothing but the index is imported from outside (`tests/architecture.test.js`).
 Used by `src/app/WordHunter.jsx`; the screens it feeds are unchanged: the round (`SessionView`, with its report window)
@@ -43,7 +43,7 @@ choosers); that code is untouched. `migrateRenamedProgress` stays in the shell a
 | the report window in a round | `tests/report-modal.test.jsx` (existing) |
 | sync with the server | `tests/repo-parts.test.js`, `tests/repo-stores.test.js`, `tests/review-audit.test.js` (existing) |
 | file a report in a browser, Admin resolves, reopens, deletes; saved with the progress | `e2e/specs/reports.cjs` (passes on the build before and after the move) |
-| no loops, only the engine, only through the index | `tests/architecture.test.js` |
+| no loops, only the engine and `lib`, only through the index | `tests/architecture.test.js` |
 
 How the behaviour was kept: the rules were moved first, unchanged, and compared with the original code in the shell on
 many inputs (every combination of question, round, answer kind, prior answer and sender; the list limit with 400

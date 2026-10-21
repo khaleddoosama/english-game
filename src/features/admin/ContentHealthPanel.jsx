@@ -2,7 +2,7 @@ import { runAiOperation, updateAiOperation, isAiCancelled } from "../../lib/aiOp
 import { useCancelAiOnLeave } from "../../lib/aiLifecycle.js";
 import { useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
-import { HEALTH_CHECKS, aiFixWordBatch, findCategoryDuplicates, gapsKey, gapsOf, scanContentHealth } from "../../engine/ai";
+import { HEALTH_CHECKS, aiFixWordBatch, findCategoryDuplicates, gapsKey, gapsOf, scanContentHealth } from "../../lib/aiPrompts";
 function formatHealthValue(value) {
   if (value == null || value === "") return "—";
   if (Array.isArray(value)) return value.join(value.some((x) => String(x).length > 30) ? "  ·  " : ", ");

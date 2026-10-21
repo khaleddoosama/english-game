@@ -6,7 +6,7 @@ import { useCancelAiOnLeave } from "../../../lib/aiLifecycle.js";
 import { useMemo, useState } from "react";
 import { Code2, ImagePlus, Link2, Sparkles, Trash2, X } from "lucide-react";
 import { V2 } from "../../../engine/v2";
-import { askAiForWord } from "../../../engine/ai";
+import { askAiForWord } from "../../../lib/aiPrompts";
 import { IMAGE_LINKS, WordPicture, checkImageLink } from "../../media/media";
 import { importImageLink, uploadWordImage } from "../../../lib/images";
 import { Badge, ConfirmDialog, Drawer, Notice } from "../adminUi";

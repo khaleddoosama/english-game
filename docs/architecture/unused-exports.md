@@ -39,7 +39,7 @@ Before, 130 named exports had no use outside their file: 125 found first by the 
 
 **Removed, no caller at all** (22):
 
-- `engine/ai.js`: `containsRequiredTerm`, `spellingDistanceInfo`.
+- `engine/ai.js` (now `lib/aiPrompts.js`): `containsRequiredTerm`, `spellingDistanceInfo`.
 - `engine/data.js`: `MASTERY_STAGE_RANK`, `MAX_RELATIONSHIPS`, `RECENT_RESULT_LIMIT`, `WORD_MODES`, `formatAccuracy`,
   `updateReviewStreak`, `setLastChallengeId` with `LAST_CHALLENGE_ID`, and `REVIEW_STEP_MAX` (read only by
   `updateReviewStreak`).

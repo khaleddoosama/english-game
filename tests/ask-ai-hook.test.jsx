@@ -9,7 +9,7 @@ import { gameContent, setGameContent } from "../src/features/content";
 
 const askAiForWord = vi.fn();
 const cancelAiTasks = vi.fn();
-vi.mock("../src/engine/ai", async (original) => ({ ...(await original()), askAiForWord: (...a) => askAiForWord(...a) }));
+vi.mock("../src/lib/aiPrompts", async (original) => ({ ...(await original()), askAiForWord: (...a) => askAiForWord(...a) }));
 vi.mock("../src/lib/aiOperations", async (original) => ({ ...(await original()), cancelAiTasks: (...a) => cancelAiTasks(...a) }));
 const { AskAiDrawer, useAskAi } = await import("../src/features/ai-helpers");
 

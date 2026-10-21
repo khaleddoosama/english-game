@@ -3,7 +3,7 @@
 // docs/modules/ai-media/ask-ai.md.
 import { useEffect, useRef, useState } from "react";
 import { V2 } from "../../engine/v2";
-import { askAiForWord } from "../../engine/ai";
+import { askAiForWord } from "../../lib/aiPrompts";
 import { cancelAiTasks } from "../../lib/aiOperations";
 import { aiWordEntry, aiWordProblem, askTerm } from "./askAiRules";
 

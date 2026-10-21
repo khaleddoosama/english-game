@@ -68,7 +68,7 @@ reads the copy and schedules the content save.
   the helpers inside the file.
 - `engine/progress`: `getBadgeProgress(badge, {
   mastery, bestStreak, levels })`.
-- `engine/ai`: `generateContent(words, batch, pools)` and `generateStory(words, targets, categories, rules)`.
+- `lib/aiPrompts`: `generateContent(words, batch, pools)` and `generateStory(words, targets, categories, rules)`.
 - `engine/data`: `courseLevelGroups(words, grammar)`.
 
 **The features get it from the shell**, which imports `gameContent` and `setGameContent` from the content module (the
@@ -127,6 +127,6 @@ the moment it needs the copy (in a render, a handler or after an answer arrives)
    of the features' reads (8) each make `feature-content-argument.test.jsx` fail.
 4. **Implemented**: the variables, `currentCatalog` and `mergeCustomData` are gone from `engine/data`; the content
    module keeps the copy, and the picture check moved with it, so the engine no longer imports the media feature
-   (the `engine` ↔ `features/media` ↔ `lib` loop is now `engine` ↔ `lib`). Kept: `setGameContent` does exactly what
+   (the `engine` ↔ `features/media` ↔ `lib` loop became `engine` ↔ `lib`, gone since 2026-10-21). Kept: `setGameContent` does exactly what
    `mergeCustomData` did; the unit tests (962) and the browser specs pass; the guard fails if a variable comes back
    in `engine/data` or a feature imports the content module.

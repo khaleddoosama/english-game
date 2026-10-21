@@ -1,8 +1,8 @@
-import { V2 } from "./v2";
-import { getWordPools, situationLeaks } from "./questions";
-import { normalizeAnswerText } from "./text";
-import { callAiText } from "../lib/ai";
-import { managedAiFunction, isAiCancelled, updateAiOperation } from "../lib/aiOperations.js";
+import { V2 } from "../engine/v2";
+import { getWordPools, situationLeaks } from "../engine/questions";
+import { normalizeAnswerText } from "../engine/text";
+import { callAiText } from "./ai";
+import { managedAiFunction, isAiCancelled, updateAiOperation } from "./aiOperations.js";
 /* ----------------------------- CONTENT GENERATION --------------------------- */
 // Asks the model for fresh gap/situation sentences or reworded meaning clues
 // for whichever (word, poolType) pairs just ran out of unlocked variants.

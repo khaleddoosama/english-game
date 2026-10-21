@@ -125,7 +125,7 @@ Steps, each its own change:
 1. Delete the unreachable round engine (`MT-03`). **Done** 2026-10-18.
 2. Extract the session lifecycle into `practice`.
 3. Split `content` and `progress` out of `repo.js` behind the same interface.
-4. Break the `live`/`social` and `engine`/`lib` cycles. `live`/`social`: **done** 2026-10-19 (social slice 1); `engine`/`lib` remains.
+4. Break the `live`/`social` and `engine`/`lib` cycles. `live`/`social`: **done** 2026-10-19 (social slice 1); `engine`/`lib`: **done** 2026-10-21 (the AI prompts moved to `lib/aiPrompts.js`, [ADR 0010](../adr/0010-ai-prompts-outside-the-engine.md)).
 5. Replace the content globals with an object passed down. **Done** 2026-10-19 (`MT-02`); the `engine` ↔ `features/media` part of the engine loop went with it.
 
 Acceptance (for every step):

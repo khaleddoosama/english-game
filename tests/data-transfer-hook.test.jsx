@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { gameContent, setGameContent } from "../src/features/content";
 
 const aiFixImportJson = vi.fn();
-vi.mock("../src/engine/ai", async (original) => ({ ...(await original()), aiFixImportJson: (...a) => aiFixImportJson(...a) }));
+vi.mock("../src/lib/aiPrompts", async (original) => ({ ...(await original()), aiFixImportJson: (...a) => aiFixImportJson(...a) }));
 const { useDataTransfer } = await import("../src/features/data");
 
 const word = (w, category, extra = {}) => ({

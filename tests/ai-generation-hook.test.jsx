@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { gameContent, setGameContent } from "../src/features/content";
 
 const generateContent = vi.fn(), generateComboVariant = vi.fn(), generateGrammarVariant = vi.fn();
-vi.mock("../src/engine/ai", async (original) => ({ ...(await original()),
+vi.mock("../src/lib/aiPrompts", async (original) => ({ ...(await original()),
   generateContent: (...a) => generateContent(...a), generateComboVariant: (...a) => generateComboVariant(...a), generateGrammarVariant: (...a) => generateGrammarVariant(...a) }));
 const { useAiGeneration } = await import("../src/features/ai-helpers");
 

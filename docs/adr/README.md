@@ -15,6 +15,7 @@ The reasons come from comments in the code, the README and the migrations. The r
 | [0007](0007-library-as-new-model.md) | Library and views as a new data model beside the legacy content | Accepted, migration unfinished |
 | [0008](0008-session-evidence-mastery.md) | Mastery changes from per-session evidence | Accepted (Implemented), rules differ for grammar (`LC-01`) |
 | [0009](0009-history-api-router.md) | A small History API router instead of a routing library | Accepted (Implemented) |
+| [0010](0010-ai-prompts-outside-the-engine.md) | The AI prompts live with the AI client, outside the engine (ends the `engine` <-> `lib` loop) | Accepted (Implemented) |
 
 ## How to add or change a record
 

@@ -4,7 +4,7 @@ import { useCancelAiOnLeave } from "../../../lib/aiLifecycle.js";
 // content types. /admin/categories/<name> opens one category.
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Eraser, FolderPlus, GitMerge, Pencil, Sparkles, Trash2 } from "lucide-react";
-import { suggestCategoryMerges } from "../../../engine/ai";
+import { suggestCategoryMerges } from "../../../lib/aiPrompts";
 import { DataTable } from "../DataTable";
 import { Badge, ConfirmDialog, Drawer, Kpi, Notice } from "../adminUi";
 

@@ -27,7 +27,6 @@ flowchart LR
   live --> engine & lib & library & social & media
   social --> lib
   session --> engine & lib & media
-  engine --> lib
   lib --> engine
   media --> engine & lib
 ```
@@ -35,7 +34,7 @@ flowchart LR
 What this shows (**Current**):
 
 - `app/WordHunter.jsx` imports almost everything and holds the cross-module logic.
-- Cycles exist: `engine` and `lib` import each other (the repo uses the engine's mastery rules; the AI prompts in the engine call the AI client in `lib`); `live` and `social` imported each other until 2026-10-19 (social now gets the Live API from the app, for local invitations, and Live uses social's index for the add-friend button); `engine` imported `features/media` until 2026-10-19 (the picture check now runs in the content module, `MT-02`).
+- No cycles between modules since 2026-10-21. `engine` and `lib` imported each other until then (the repo uses the engine's mastery rules, which stays; the AI prompts were in the engine and called the AI client in `lib`, and moved to `lib/aiPrompts.js`, [ADR 0010](../adr/0010-ai-prompts-outside-the-engine.md)); `live` and `social` imported each other until 2026-10-19 (social now gets the Live API from the app, for local invitations, and Live uses social's index for the add-friend button); `engine` imported `features/media` until 2026-10-19 (the picture check now runs in the content module, `MT-02`).
 - `features/admin` reaches into `engine` 16 times (it edits content using engine helpers).
 - `features/library` imports `features/home` (through its index since 2026-10-20) and `features/social` (shared helpers and the friends list).
 
@@ -54,13 +53,13 @@ Eleven modules. The list follows what each group of files already does; no new l
 | `library` | Personal library, views, sharing, links, catalog, dictionary id map | [features/library](../../src/features/library) | `headwords`, `senses`, `sense_links`, `grammar_rules`, `grammar_questions`, `collections*`, `library_*`, `collection_shares`, `view_links`, `view_link_takes`, `catalog_*`, all `view_*`, `library_*`, `catalog_*` functions |
 | `live` | Live Challenge: create, join, play, settle, review, rematch, realtime | [features/live](../../src/features/live) | `live_*` tables and functions |
 | `social` | Friends, friend requests, leaderboard, profile, counts and badges | [features/social](../../src/features/social) | `friendships`, `live_invites`, friend functions |
-| `ai-media` | Everything that calls Gemini or handles pictures and audio: prompts, quota gate, cancellation, TTS cache, image copy and resize, pronunciation UI | [api/](../../api), [lib/ai.js](../../src/lib/ai.js), [aiOperations.js](../../src/lib/aiOperations.js), [aiLifecycle.js](../../src/lib/aiLifecycle.js), [images.js](../../src/lib/images.js), [engine/ai.js](../../src/engine/ai.js), [features/media](../../src/features/media) | `ai_usage`, `ai_calls`, `ai_gate`, `ai_call_finish`, buckets `tts` and `word-images` |
+| `ai-media` | Everything that calls Gemini or handles pictures and audio: prompts, quota gate, cancellation, TTS cache, image copy and resize, pronunciation UI | [api/](../../api), [lib/ai.js](../../src/lib/ai.js), [aiOperations.js](../../src/lib/aiOperations.js), [aiLifecycle.js](../../src/lib/aiLifecycle.js), [images.js](../../src/lib/images.js), [lib/aiPrompts.js](../../src/lib/aiPrompts.js), [features/media](../../src/features/media) | `ai_usage`, `ai_calls`, `ai_gate`, `ai_call_finish`, buckets `tts` and `word-images` |
 | `admin` | Operating the game: analytics, players, content tools, reports, data quality, audit, app settings | [features/admin](../../src/features/admin) | `admin_*` functions, `admin_audit`, schema `analytics` |
 
 Notes on the split:
 
 - `content` and `progress` are the two halves of [repo.js](../../src/lib/repo.js). They share one factory today; the proposal separates them because they change for different reasons and have different writers (admin vs player).
-- `learning-engine` is the pure part of the engine. [engine/ai.js](../../src/engine/ai.js) and the media import belong to `ai-media` and would leave it.
+- `learning-engine` is the pure part of the engine. The prompts ([lib/aiPrompts.js](../../src/lib/aiPrompts.js), formerly `engine/ai.js`) and the media import belonged to `ai-media` and have left it (2026-10-21 and 2026-10-19).
 - `practice` is not a folder today. Its session logic sits inside WordHunter (handlers for starting, answering and finishing rounds; the second, unreachable copy of the old round engine was removed on 2026-10-18, `MT-03`).
 - `accounts` and `app-shell` are small on purpose.
 
@@ -125,6 +124,6 @@ In order of lowest risk first. Details and acceptance criteria are in [roadmap.m
 1. Remove the unreachable round engine from WordHunter (no behaviour change).
 2. Move the session lifecycle (`recordSessionResult`, `completeSession`, `start*`) out of WordHunter into `practice`, with tests.
 3. Split the two halves of `repo.js` into `content` and `progress` behind the same interface. (Started: the content store and several progress parts are in `src/lib/repo/`, see [repo.md](repo.md).)
-4. Break the `live`/`social` and `engine`/`lib` cycles.
+4. Break the `live`/`social` and `engine`/`lib` cycles. **Done** (2026-10-19 and 2026-10-21).
 5. Replace the mutable content globals with a content object passed down (or a read-only store). **Done** 2026-10-19: the engine takes the content as an argument and the content module keeps it ([content-catalog.md](../modules/content/content-catalog.md)).
 6. Decide the progress model (text keys vs ids) and finish or drop the unused `sense_progress` / `rule_progress` tables.

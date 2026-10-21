@@ -5,7 +5,7 @@ import { V2 } from "../../engine/v2";
 import { PronunciationModal, WordPicture } from "../media/media";
 import { MODE_META } from "../../engine/data";
 import { SPEED_SECONDS, speedStats } from "../../engine/questions";
-import { evaluateAlternativeGap, evaluateFreeForm, regenerateWordExplanation } from "../../engine/ai";
+import { evaluateAlternativeGap, evaluateFreeForm, regenerateWordExplanation } from "../../lib/aiPrompts";
 import { preloadImage } from "../../lib/images";
 import { withRequestTimeout } from "../../lib/requestTimeout.js";
 import { useCancelAiOnLeave } from "../../lib/aiLifecycle.js";
