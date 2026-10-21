@@ -1,0 +1,24 @@
+# The machine-checkable rules of docs/development-workflow.md, on every pull request and every edit of its
+# description: the sections and one type, files that fit the type, a test with a bug fix or feature, and a docs line.
+# It does not judge the content of the docs or the order of the work; review does.
+name: PR rules
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+jobs:
+  pr-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check the description and the changed files
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/pr-rules.mjs $(git diff --name-only "$BASE...$HEAD")
