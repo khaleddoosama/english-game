@@ -26,6 +26,7 @@ node -e '
   if (r.numFailedTests || r.numPendingTests || r.numTodoTests || !r.numPassedTests) process.exit(1);
 ' "$out" || rc=1
 # The game's screens against this stack (a failed check or a crash fails the run).
+psql $REALSTACK_PGURL -X -q -c "do \$\$ declare f regprocedure; begin for f in select oid::regprocedure from pg_proc where proname = 'save_progress_v2' and pronamespace = 'public'::regnamespace loop execute format('revoke execute on function %s from authenticated, public', f); end loop; end \$\$" >/dev/null # TEMPORARY BREAK
 node e2e/realstack/app.cjs || rc=1
 if [ "$rc" -ne 0 ]; then echo "--- GoTrue"; docker logs whauth 2>&1 | tail -15; echo "--- PostgREST"; docker logs whrest 2>&1 | tail -15; [ -n "$REALSTACK_REALTIME" ] && { echo "--- Realtime"; docker logs whrealtime 2>&1 | tail -40; }; fi
 exit "$rc"
