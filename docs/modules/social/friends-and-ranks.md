@@ -30,8 +30,8 @@ Inside the module:
   (`useLeaderboard(tab, me, friendsApi)` returns `{ rows, error }`), [useFriendsList.js](../../../src/features/social/useFriendsList.js)
   (the Friends page's list, busy state, message and actions), [useLiveHistory.js](../../../src/features/social/useLiveHistory.js).
 - Data: [friendsApi.js](../../../src/features/social/friendsApi.js) (`getFriendsApi(me, liveFor)`: the database
-  functions online, `localStorage` in local mode; `createLocalFriendsApi`, `FriendsError`, the limits, the local
-  helpers), [socialApi.js](../../../src/features/social/socialApi.js) (`fetchLeaderboard`, `fetchFriendsBoard`,
+  functions online, `localStorage` in local mode; `createLocalFriendsApi`; used only inside the file: `FriendsError`,
+  `MAX_INVITES` and the local helpers), [socialApi.js](../../../src/features/social/socialApi.js) (`fetchLeaderboard`, `fetchFriendsBoard`,
   `fetchLiveHistory`).
 - Screens: [FriendsPage](../../../src/features/social/FriendsPage.jsx), [Leaderboard](../../../src/features/social/Leaderboard.jsx),
   [ProfilePage](../../../src/features/social/ProfilePage.jsx), [AddFriendButton](../../../src/features/social/AddFriendButton.jsx).

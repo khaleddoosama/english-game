@@ -41,7 +41,7 @@ export const roomPollMs = (channelState) => (channelState === "live" ? 20000 : 4
 
 // A finished challenge I am in, with no rematch yet, is checked for one for half an hour after it ended.
 export const REMATCH_POLL_MS = 8000;
-export const REMATCH_WATCH_MS = 30 * 60000;
+const REMATCH_WATCH_MS = 30 * 60000;
 export function watchesRematch(view, now = Date.now()) {
   if (!view || view.state !== "done" || !view.member || view.settings?.next_code) return false;
   return !(now - (Date.parse(view.ended_at || view.expires_at) || now) > REMATCH_WATCH_MS);

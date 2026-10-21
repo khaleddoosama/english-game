@@ -9,7 +9,7 @@ import { pageWindow } from "../DataTable";
 import { Badge, ConfirmDialog, Notice, fmtDate, relTime, useAsync } from "../adminUi";
 import { DiffTable, changesToRows, fieldChanges } from "../diff";
 
-export const ACTIONS = {
+const ACTIONS = {
   "content.create": { label: "Added", tone: "success" },
   "content.update": { label: "Edited", tone: "info" },
   "content.delete": { label: "Deleted", tone: "danger" },

@@ -24,7 +24,7 @@ const rememberDict = (key, result) => {
     localStorage.setItem(DICT_KEY, JSON.stringify(all));
   } catch (_) {}
 };
-export async function fetchWordAudio(term, options = {}) {
+async function fetchWordAudio(term, options = {}) {
   const key = String(term || "").trim().toLowerCase();
   if (!key) return null;
   if (audioCache.has(key)) return audioCache.get(key);
@@ -56,14 +56,14 @@ export async function fetchWordAudio(term, options = {}) {
 // Setting utterance.lang alone is only a hint — browsers often keep whatever
 // voice is default (frequently en-GB). Pick an explicitly en-US voice when
 // the device has one, and report back which accent actually got used.
-export function pickUSVoice() {
+function pickUSVoice() {
   if (typeof window === "undefined" || !window.speechSynthesis) return null;
   const voices = window.speechSynthesis.getVoices() || [];
   return voices.find((v) => v.lang === "en-US" || v.lang === "en_US")
     || voices.find((v) => /^en[-_]US/i.test(v.lang || ""))
     || null;
 }
-export function speakWithBrowser(term) {
+function speakWithBrowser(term) {
   if (typeof window === "undefined" || !window.speechSynthesis) throw new Error("No speech support in this browser.");
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(String(term));

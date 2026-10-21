@@ -7,14 +7,14 @@
 import { confusionCount } from "../engine/data";
 import { stableJson } from "./stableJson";
 
-export const HISTORY_LIMIT = 50;
+const HISTORY_LIMIT = 50;
 const COMPLETED_LIMIT = 500;
 const same = (a, b) => stableJson(a) === stableJson(b);
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
 
 // Per key: unchanged on one side -> the other side; changed on both -> merge.
-export function mergeMap(base, local, server, both = (_k, _b, l) => l) {
+function mergeMap(base, local, server, both = (_k, _b, l) => l) {
   const b = isObj(base) ? base : {}, l = isObj(local) ? local : {}, s = isObj(server) ? server : {};
   const out = {};
   for (const k of new Set([...Object.keys(l), ...Object.keys(s)])) {
@@ -70,7 +70,7 @@ function mergeConfusions(b, l, s) {
 }
 
 // One field of the progress object.
-export function mergeField(field, base, local, server, ctx = {}) {
+function mergeField(field, base, local, server, ctx = {}) {
   switch (field) {
     case "score": case "attempted": return added(base, local, server);
     case "bestStreak": case "bestStudyStreak": case "bestSpeedScore": case "bestSpeedCombo": return Math.max(num(local), num(server));

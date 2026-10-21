@@ -4,7 +4,7 @@
 content and progress. Its outside is unchanged by the split below: `mode`, `status`,
 `loadContent`, `saveContent`, `loadProgress`, `saveProgress`, `refreshProgress`, `onMerged`,
 `resetProgress`, `wipeContent`, `dispose`; and the exports `CONTENT_KINDS`, `weekStart`,
-`stableJson`, `createLocalRepo`, `_internals`.
+`stableJson`, `createLocalRepo` (`_internals`, which nothing read, was removed on 2026-10-20).
 
 ## Where things are now (556 -> 289 lines in `repo.js`)
 

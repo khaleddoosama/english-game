@@ -1,5 +1,5 @@
 import { V2 } from "./v2";
-import { getWordPools, levenshtein, situationLeaks } from "./questions";
+import { getWordPools, situationLeaks } from "./questions";
 import { normalizeAnswerText } from "./text";
 import { callAiText } from "../lib/ai";
 import { managedAiFunction, isAiCancelled, updateAiOperation } from "../lib/aiOperations.js";
@@ -7,7 +7,7 @@ import { managedAiFunction, isAiCancelled, updateAiOperation } from "../lib/aiOp
 // Asks the model for fresh gap/situation sentences or reworded meaning clues
 // for whichever (word, poolType) pairs just ran out of unlocked variants.
 
-export function localGeneratedVariantCheck(request, text) {
+function localGeneratedVariantCheck(request, text) {
   const value = String(text || "").trim();
   if (!value || value.length < 8 || value.length > 420) return false;
   const head = normalizeAnswerText(request.word);
@@ -76,7 +76,7 @@ Respond with ONLY a raw JSON array, no markdown fences, no commentary, matching 
 // "{" or "}" — an example, a note, a second snippet — can't extend the
 // match past the real end). Replaces a naive "first { to last }" slice,
 // which broke as soon as anything after the JSON contained a brace.
-export function extractFirstJsonValue(text) {
+function extractFirstJsonValue(text) {
   const s = String(text || "");
   let start = -1;
   for (let i = 0; i < s.length; i++) { if (s[i] === "{" || s[i] === "[") { start = i; break; } }
@@ -98,7 +98,7 @@ export function extractFirstJsonValue(text) {
   return null;
 }
 
-export function parseJsonLoose(text) {
+function parseJsonLoose(text) {
   const clean = String(text || "").replace(/```json|```/gi, "").trim();
   try { return JSON.parse(clean); } catch (_) {}
   const extracted = extractFirstJsonValue(clean);
@@ -108,7 +108,7 @@ export function parseJsonLoose(text) {
 
 // Every AI call goes through /api/ai (Gemini, key kept on the server).
 // maxTokens is kept for call-site compatibility; the server sizes output.
-export async function callAiJson(instructions, payload, _maxTokens = 800, opts = {}) {
+async function callAiJson(instructions, payload, _maxTokens = 800, opts = {}) {
   return parseJsonLoose(await callAiText(`${instructions}\n\nINPUT JSON:\n${JSON.stringify(payload)}`, opts));
 }
 // Content-authoring tools: the server refuses these for players.
@@ -235,7 +235,7 @@ Return ONLY JSON with this exact shape: {"verdict":"flawed|repeated|fine|unsure"
 // match after dropping case, punctuation, spacing, "&" and "and"
 // ("Food Dining" / "Food-Dining", "Restaurants And Eating Out" /
 // "Restaurants-and-Eating-Out"). Canonical = the name holding more items.
-export function categoryKey(name) {
+function categoryKey(name) {
   return String(name || "").toLowerCase().replace(/&/g, " ").replace(/\band\b/g, " ").replace(/[^a-z]/g, "");
 }
 export function findCategoryDuplicates(names, counts) {
@@ -253,8 +253,8 @@ export function findCategoryDuplicates(names, counts) {
 }
 
 // ---- Content Health: find weak word entries and fix them with AI ----
-export const PARTS_OF_SPEECH = ["noun", "verb", "adjective", "adverb", "noun phrase", "verb phrase", "adjective phrase", "adverbial phrase", "phrasal verb", "idiom", "expression", "binomial phrase", "proper noun", "interjection", "preposition", "conjunction"];
-export const antonymsOfWord = (w) => V2.antonymsOf(w);
+const PARTS_OF_SPEECH = ["noun", "verb", "adjective", "adverb", "noun phrase", "verb phrase", "adjective phrase", "adverbial phrase", "phrasal verb", "idiom", "expression", "binomial phrase", "proper noun", "interjection", "preposition", "conjunction"];
+const antonymsOfWord = (w) => V2.antonymsOf(w);
 export const HEALTH_CHECKS = {
   situation: { label: "Situation doesn't use the word", help: "The situation is the word's example sentence, so it should contain the word. AI rewrites missing or scenario-style situations as one natural example sentence that uses the word.", field: "situation", test: (w) => !w.situation || !situationLeaks(w) },
   meaning: { label: "Weak meaning", help: "Very short, \"Opposite of …\", or contains the word. Hard to type the word from. AI writes one clear B1 definition.", field: "meaning", test: (w) => { const m = String(w.meaning || "").trim(); return !m || m.split(/\s+/).length < 4 || /^opposite of/i.test(m) || normalizeAnswerText(m).includes(normalizeAnswerText(w.word)); } },
@@ -275,7 +275,7 @@ export function scanContentHealth(words) {
   out.duplicate = [...byMeaning.values()].filter((g) => g.length > 1).flat();
   return out;
 }
-export const HEALTH_INSTRUCTIONS = {
+const HEALTH_INSTRUCTIONS = {
   situation: `For each word, write a NEW "situation": ONE natural example sentence (B1 English) that uses the word/phrase exactly as written, in a context that makes its meaning clear. Keep the same sense as the current meaning. Return {"results":[{"word":"...","value":"the new example sentence"}]}.`,
   meaning: `For each word, write a NEW "meaning": ONE clear sentence, B1 English, precise enough that a learner could type the exact word from it. Never use the word/phrase itself or "opposite of". Keep the same sense as the current meaning and situation. If "sameMeaningAs" is given, make the definitions clearly different from those words. Return {"results":[{"word":"...","value":"the new meaning"}]}.`,
   commonMistake: `For each word, write a typical B1 learner mistake when using it: "sentence" (the wrong sentence), "correction" (the same sentence fixed), "why" (one short simple reason). The mistake must be about using THIS word (form, preposition, collocation or meaning). Return {"results":[{"word":"...","value":{"sentence":"...","correction":"...","why":"..."}}]}.`,
@@ -357,11 +357,11 @@ async function suggestCategoryMergesImpl(categories, operationOptions = {}) {
     .filter(m => m.canonical && known.has(m.canonical) && m.duplicates.length);
 }
 
-export const FREEFORM_EVALUATION_CONTRACT = `Use B1-or-easier explanations. You are a conservative English-learning evaluator inside Word Hunter. Return ONLY one JSON object. Never reward random word stuffing. Accept beginner/intermediate English when the target meaning is genuinely correct. Minor grammar mistakes may still be acceptable if meaning is clear. If uncertain, set confidence to "low" and correct to false.
+const FREEFORM_EVALUATION_CONTRACT = `Use B1-or-easier explanations. You are a conservative English-learning evaluator inside Word Hunter. Return ONLY one JSON object. Never reward random word stuffing. Accept beginner/intermediate English when the target meaning is genuinely correct. Minor grammar mistakes may still be acceptable if meaning is clear. If uncertain, set confidence to "low" and correct to false.
 Required shape:
 {"correct":true,"confidence":"high|medium|low","targetWordUsed":true,"semanticUse":"correct|partly_correct|incorrect|not_applicable","grammar":"acceptable|minor_issues|meaning_breaking","naturalness":"natural|acceptable|awkward|nonsense","spellingIssue":false,"feedback":"one concise sentence","suggestedCorrection":"optional concise correction"}`;
 
-export function validateEvaluation(raw, kind) {
+function validateEvaluation(raw, kind) {
   const allowedConfidence = new Set(["high", "medium", "low"]);
   const allowedSemantic = new Set(["correct", "partly_correct", "incorrect", "not_applicable"]);
   const allowedGrammar = new Set(["acceptable", "minor_issues", "meaning_breaking"]);
@@ -388,7 +388,7 @@ export function validateEvaluation(raw, kind) {
   return result;
 }
 
-export const REGENERATE_CONTRACT = `You write vocabulary content for an English-learning game aimed at B1-level (intermediate) learners. Rewrite the meaning and example sentence for the given word or phrase. Hard rules: the meaning must be ONE simple sentence using only A2-B1 vocabulary and grammar, and it must NOT contain the target word/phrase itself. The example must be ONE natural sentence, also B1-level or simpler, that clearly shows the word/phrase used with its intended meaning. If partsOfSpeech is given, the new meaning and example must use the word as that exact part of speech — do not drift to a different sense (e.g. a different meaning of the same spelling) or a different grammatical role. Do not reuse the current meaning or example verbatim — produce a genuinely different phrasing. Return ONLY one JSON object with this exact shape: {"meaning":"...","situation":"..."}`;
+const REGENERATE_CONTRACT = `You write vocabulary content for an English-learning game aimed at B1-level (intermediate) learners. Rewrite the meaning and example sentence for the given word or phrase. Hard rules: the meaning must be ONE simple sentence using only A2-B1 vocabulary and grammar, and it must NOT contain the target word/phrase itself. The example must be ONE natural sentence, also B1-level or simpler, that clearly shows the word/phrase used with its intended meaning. If partsOfSpeech is given, the new meaning and example must use the word as that exact part of speech — do not drift to a different sense (e.g. a different meaning of the same spelling) or a different grammatical role. Do not reuse the current meaning or example verbatim — produce a genuinely different phrasing. Return ONLY one JSON object with this exact shape: {"meaning":"...","situation":"..."}`;
 
 async function regenerateWordExplanationImpl(word, operationOptions = {}) {
   const raw = await callAiJsonAdmin(REGENERATE_CONTRACT, {
@@ -405,7 +405,7 @@ async function regenerateWordExplanationImpl(word, operationOptions = {}) {
   return { meaning: raw.meaning.trim(), situation: raw.situation.trim() };
 }
 
-export const STORY_GENERATION_CONTRACT = `You create a B1 graded-reader mystery for Word Hunter. The learner must infer hidden vocabulary from events.
+const STORY_GENERATION_CONTRACT = `You create a B1 graded-reader mystery for Word Hunter. The learner must infer hidden vocabulary from events.
 
 NON-NEGOTIABLE RULES:
 1. Use every target concept exactly once as a distinct event, action, feeling, decision, or reaction.
@@ -429,7 +429,7 @@ Return ONLY: {"title":"...","text":"...","questions":[{"targetWord":"...","promp
 // multi-word phrases) and reject the story if any target leaked through.
 // Common irregular verbs that show up as the first word of idioms/phrasal
 // verbs (get/got, bite/bit, ...) — plain suffix rules can't catch these.
-export const IRREGULAR_VERB_FORMS = {
+const IRREGULAR_VERB_FORMS = {
   get: ["got", "gotten", "getting"], give: ["gave", "given", "giving"], take: ["took", "taken", "taking"],
   go: ["went", "gone", "going"], come: ["came", "coming"], run: ["ran", "running"], break: ["broke", "broken", "breaking"],
   bite: ["bit", "bitten", "biting"], speak: ["spoke", "spoken", "speaking"], see: ["saw", "seen", "seeing"],
@@ -449,7 +449,7 @@ export const IRREGULAR_VERB_FORMS = {
   deal: ["dealt", "dealing"], mean: ["meant", "meaning"], lead: ["led", "leading"], shoot: ["shot", "shooting"],
   steal: ["stole", "stolen", "stealing"], swim: ["swam", "swum", "swimming"],
 };
-export function storyTextLeaksWord(word, text) {
+function storyTextLeaksWord(word, text) {
   const parts = String(word || "").trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return false;
   const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -466,7 +466,7 @@ export function storyTextLeaksWord(word, text) {
 // AI could invent a plausible-looking sentence that was never actually
 // woven into the plot. Filling the blank back in and checking it's a real
 // substring of the story (whitespace/case-insensitive) is the ground truth.
-export function grammarSentenceIsGrounded(promptSentence, answer, storyText) {
+function grammarSentenceIsGrounded(promptSentence, answer, storyText) {
   if (typeof promptSentence !== "string" || !promptSentence.includes("______")) return false;
   if (typeof answer !== "string" || !answer.trim()) return false;
   const filled = promptSentence.replace("______", answer);
@@ -630,23 +630,6 @@ async function generateGrammarVariantImpl(g, avoid = [], operationOptions = {}) 
   // The format of the example: a blank stays a blank.
   if (/_{2,}/.test(g.prompt || "") && (prompt.match(/_{2,}/g) || []).length !== 1) throw new Error("AI variant lost its blank.");
   return { prompt, options, answer, explanation };
-}
-
-export function containsRequiredTerm(text, term) {
-  const clean = (value) => normalizeAnswerText(value).replace(/[^a-z0-9']+/g, " ").replace(/\s+/g, " ").trim();
-  const haystack = clean(text);
-  const needle = clean(term);
-  return !!needle && ` ${haystack} `.includes(` ${needle} `);
-}
-
-export function spellingDistanceInfo(guess, expected) {
-  const a = normalizeAnswerText(guess);
-  const b = normalizeAnswerText(expected);
-  const distance = levenshtein(a, b);
-  const compactLength = Math.max(a.replace(/\s/g, "").length, b.replace(/\s/g, "").length);
-  const maxMinor = compactLength <= 4 ? 1 : compactLength <= 8 ? 2 : 3;
-  const close = a !== b && distance > 0 && distance <= maxMinor && distance / Math.max(1, compactLength) <= 0.28;
-  return { distance, close, exact: a === b };
 }
 
 async function evaluateGrammarCorrectionImpl(question, correction, operationOptions = {}) {

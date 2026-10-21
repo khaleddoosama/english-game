@@ -7,7 +7,7 @@ import { managedAiFunction, updateAiOperation } from "./aiOperations.js";
 
 export const AI_REQUEST_TIMEOUT_MS = 45000;
 
-export async function postAiRequest(path, body, { signal: parentSignal, timeoutMs = AI_REQUEST_TIMEOUT_MS } = {}) {
+async function postAiRequest(path, body, { signal: parentSignal, timeoutMs = AI_REQUEST_TIMEOUT_MS } = {}) {
   if (isLocalMode) throw new Error("AI features need the online version. Sign in on the deployed site.");
   if (typeof navigator !== "undefined" && navigator.onLine === false) throw new Error("You're offline. AI features need a connection.");
   return withRequestTimeout(async (signal) => {

@@ -11,8 +11,8 @@ Status: **Implemented** (current code). The behaviour below was written down bef
 
 [engine/dictionary.js](../../../src/engine/dictionary.js) holds the rules below. It imports nothing.
 [engine/v2.js](../../../src/engine/v2.js) imports them, uses them, and still offers them on the `V2` object under the
-same names (`V2.findWord`, `V2.norm`…), so no caller changed. `healOpposites`, `healMissingWordRefs` and `synonymsOf`
-were never on `V2`; they are exported by the dictionary file only. Not moved yet: the v3 file format
+same names (`V2.findWord`, `V2.norm`…), so no caller changed. `healOpposites` and `healMissingWordRefs`
+were never on `V2`; they are exported by the dictionary file only (`synonymsOf` is used only inside it). Not moved yet: the v3 file format
 (`normalizeV3`, `prepareImport`) and the content checks (`validateContent`), which stay in `engine/v2.js`.
 
 ## Names and finding a word

@@ -183,7 +183,7 @@ function QuestionCard({ q, index, total, problems, preview, onPreview, onChange,
 }
 
 // Roughly what the game shows: the prompt and the choices, right one marked.
-export function QuestionPreview({ q }) {
+function QuestionPreview({ q }) {
   const choices = q.type === "choose" ? (q.options || []).filter((o) => o.trim()) : q.type === "judge" ? [JUDGE_OK, q.correct ? q.alternative : q.fix].filter(Boolean) : [];
   const right = q.type === "choose" ? q.answer : q.type === "judge" ? (q.correct ? JUDGE_OK : q.fix) : null;
   const prompt = q.type === "choose" ? q.prompt : q.type === "judge" ? `Is this sentence correct? If not, choose the fixed version.\n“${q.sentence || "…"}”` : `Fix the mistake and write the whole sentence:\n“${q.sentence || "…"}”`;

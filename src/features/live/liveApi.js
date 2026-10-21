@@ -5,7 +5,7 @@
 import { isLocalMode, supabase } from "../../lib/supabase";
 import { MAX_PLAYERS, MIN_PLAYERS, answerSlack, judgeAnswer, isSettled, randomCode, rankPlayers, splitQuestions, validateQuestions, visibleQuestions } from "./liveRules";
 
-export class LiveError extends Error {
+class LiveError extends Error {
   constructor(message, code) { super(message); this.code = code; }
 }
 

@@ -120,9 +120,12 @@ caller outside the engine: `buildEntryQuestion`, `entryFileMeta`, `uniqueStrings
 `MT-02` step 2): `buildEntryQuestion` and `uniqueStrings` are used inside `questions.js` and stay; `entryFileMeta`,
 `buildContrastiveFeedback` and, with them, `semanticRelation`, `isStrictIdiom`, `challengeProgressEligible`,
 `challengeValidationIssues`, `buildAdaptiveRound`, `buildRound` and `SPEED_MODES` had no caller at all and were
-removed. **Not removed yet** (no caller outside their own file; they do not read the content): `containsRequiredTerm`,
-`spellingDistanceInfo`, `deriveLearningInsights`, `setLastChallengeId` / `LAST_CHALLENGE_ID`, `PRODUCTION_MODES`,
-`MASTERY_STAGE_RANK`, `getStarsForAccuracy`, `formatAccuracy` (follow-up).
+removed. On 2026-10-20 (the unused-exports batch) the rest that had no caller at all were removed too:
+`containsRequiredTerm`, `spellingDistanceInfo` (ai); `deriveLearningInsights` and five old storage-key constants
+(progress); `setLastChallengeId` / `LAST_CHALLENGE_ID`, `MASTERY_STAGE_RANK`, `formatAccuracy`, `updateReviewStreak`,
+`WORD_MODES`, `MAX_RELATIONSHIPS`, `RECENT_RESULT_LIMIT`, `REVIEW_STEP_MAX` (data); `getAdaptiveDifficulty`,
+`setPoolsSnapshotForSession`, `levenshtein`, `modeAccuracy` (questions). `PRODUCTION_MODES` and `getStarsForAccuracy`
+are used inside `data.js` and stay, no longer exported. See [unused-exports.md](unused-exports.md).
 
 | Cluster | Where | Mixed with |
 | --- | --- | --- |

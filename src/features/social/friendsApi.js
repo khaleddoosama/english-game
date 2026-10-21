@@ -4,7 +4,7 @@
 // it; the local side mirrors the server's rules and messages.
 import { isLocalMode, supabase } from "../../lib/supabase";
 
-export class FriendsError extends Error {
+class FriendsError extends Error {
   constructor(message, code) { super(message); this.code = code; }
 }
 
@@ -16,19 +16,19 @@ const friendly = (error) => {
 
 export const MAX_FRIENDS = 100;
 export const MAX_WAITING = 20;
-export const MAX_INVITES = 20;
+const MAX_INVITES = 20;
 export const DECLINE_WAIT_MS = 7 * 86400000;
 // Local mode: is this pair friends, and what is someone called. Read straight
 // from the same storage the local friends API writes, so other features
 // (sharing a view) can ask without owning a second copy of the rules.
-export function localAreFriends(storage, x, y) {
+function localAreFriends(storage, x, y) {
   try { return JSON.parse(storage.getItem(`friends1:p:${[x, y].sort().join("|")}`) || "null")?.status === "accepted"; } catch { return false; }
 }
 // When this friendship began (it changes whenever the pair is made friends again), or null.
-export function localFriendSince(storage, x, y) {
+function localFriendSince(storage, x, y) {
   try { const r = JSON.parse(storage.getItem(`friends1:p:${[x, y].sort().join("|")}`) || "null"); return r?.status === "accepted" ? r.updated_at ?? null : null; } catch { return null; }
 }
-export function localNameOf(storage, id) {
+function localNameOf(storage, id) {
   try { return JSON.parse(storage.getItem("friends1:users") || "null")?.[id] || "player"; } catch { return "player"; }
 }
 // The same three answers for the library (which does not import this module), read at call time.

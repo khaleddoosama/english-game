@@ -7,9 +7,9 @@ import { LOCK_DAYS, findWordByLabel, getWordPools, poolNeedsGeneration } from ".
 import { addToDailyHistory, pruneConfusions } from "../../engine/progress";
 
 export const POINTS_PER_ANSWER = 10;
-export const SEEN_SENTENCES_MAX = 4000;
-export const COMPLETED_SESSIONS_MAX = 500;
-export const ROUND_LOG_MAX = 50;
+const SEEN_SENTENCES_MAX = 4000;
+const COMPLETED_SESSIONS_MAX = 500;
+const ROUND_LOG_MAX = 50;
 export const STAR_ACCURACY = 70;
 
 // Every sentence the learner has read (answered or reported), with when, so practice keeps it away for a while. The

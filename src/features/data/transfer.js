@@ -4,7 +4,7 @@ import { V2 } from "../../engine/v2";
 import { isWordKey } from "../../engine/data";
 import { migrateProgressData } from "../../engine/progress";
 
-export const IMPORT_MODES = ["content", "full", "progress"];
+const IMPORT_MODES = ["content", "full", "progress"];
 const WORD_COLUMNS = ["word", "type", "category", "subCategory", "meaning", "situation", "gap", "hints", "synonyms", "antonyms", "collocations", "image"];
 
 const csvCell = (v) => {

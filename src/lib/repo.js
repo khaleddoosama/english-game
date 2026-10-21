@@ -15,7 +15,7 @@ import { mergeMasteryRecord, mergeSection } from "./progressMerge";
 import { emptyContent } from "./repo/contentPlan";
 import { createContentStore } from "./repo/contentStore";
 import { fetchAll } from "./repo/fetchAll";
-import { hasServerRows, masteryDiff, profileSummary, splitSections, weekStart } from "./repo/progressShape";
+import { hasServerRows, masteryDiff, profileSummary, splitSections } from "./repo/progressShape";
 import { createReportsSync } from "./repo/reportsSync";
 import { baseAfter, inflightOf, lacksOpSupport, newOpId, wasNotApplied } from "./repo/saveOps";
 import { createStatusHub } from "./repo/status";
@@ -317,4 +317,3 @@ export function createSupabaseRepo({ userId, isAdmin, client = supabase }) {
 // Exposed for tests.
 export { createLocalRepo } from "./repo/localRepo";
 
-export const _internals = { splitSections, weekStart, masteryDiff };

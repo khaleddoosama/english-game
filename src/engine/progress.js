@@ -1,4 +1,4 @@
-import { MASTERY_STAGE, MAX_CONFUSIONS, PRODUCTION_GATE_STEP, confusionCount, getAccuracy, getMasteryStage, getProductionCorrect, isWordKey, levelMasteredCount, localDateKey, normalizeMasteryRecord } from "./data";
+import { MAX_CONFUSIONS, PRODUCTION_GATE_STEP, confusionCount, getAccuracy, getProductionCorrect, isWordKey, levelMasteredCount, localDateKey, normalizeMasteryRecord } from "./data";
 import { getStrongConfusion } from "./questions";
 export function pruneConfusions(confusions) {
   const entries = Object.entries(confusions || {}).sort((a, b) => {
@@ -33,28 +33,6 @@ export function getWeakWordCandidates(words, mastery, confusions = {}, _now = Da
   }).filter(Boolean).sort((a, b) => b.priority - a.priority || a.accuracy - b.accuracy || Number(a.stats.lastReviewedAt || 0) - Number(b.stats.lastReviewedAt || 0));
 }
 
-export function deriveLearningInsights(words, mastery, confusions = {}, _now = Date.now()) {
-  const modeTotals = {};
-  words.forEach((word) => {
-    const stats = normalizeMasteryRecord(mastery[word.word]);
-    Object.entries(stats.modes).forEach(([id, m]) => {
-      const agg = modeTotals[id] || { correct: 0, total: 0 };
-      agg.correct += m.correct; agg.total += m.total; modeTotals[id] = agg;
-    });
-  });
-  const weakest = Object.entries(modeTotals).filter(([, x]) => x.total >= 3).sort((a, b) => (a[1].correct/a[1].total) - (b[1].correct/b[1].total))[0];
-  const confusionEntry = Object.entries(confusions || {}).filter(([, v]) => confusionCount(v) >= 2).sort((a,b)=>confusionCount(b[1])-confusionCount(a[1]))[0];
-  const closeToMastery = words.filter((w) => {
-    const stats = normalizeMasteryRecord(mastery[w.word]);
-    return getMasteryStage(stats, {kind:"word",obj:w}) === MASTERY_STAGE.LEARNED && stats.total >= 4 && getAccuracy(stats) >= 75;
-  }).length;
-  return {
-    weakestMode: weakest ? { id: weakest[0], accuracy: (weakest[1].correct/weakest[1].total)*100 } : null,
-    topConfusion: confusionEntry ? { pair: confusionEntry[0].split("|"), count: Number(confusionEntry[1]?.count || confusionEntry[1] || 0) } : null,
-    closeToMastery,
-  };
-}
-
 // `levels` is the game's current levels (engine/catalog.js).
 export function getBadgeProgress(badge, { mastery, bestStreak, levels }) {
   if (badge.type === "category") {
@@ -70,7 +48,7 @@ export function getBadgeProgress(badge, { mastery, bestStreak, levels }) {
 }
 
 
-export function levelTitleBase(title) {
+function levelTitleBase(title) {
   const m = title.match(/^(.*) (I{1,3}|IV|V|VI|VII|VIII)$/);
   return m ? m[1] : title;
 }
@@ -116,7 +94,7 @@ export const DEFAULT_SETTINGS = {
 };
 export const AUTO_ADVANCE_OPTIONS = [0, 1000, 2000, 3000];
 export const SPEED_SECONDS_OPTIONS = [30, 45, 60, 90, 120];
-export const TEXT_SIZES = ["normal", "large", "xlarge"];
+const TEXT_SIZES = ["normal", "large", "xlarge"];
 export function normalizeSettings(raw) {
   const s = raw && typeof raw === "object" ? raw : {};
   return {
@@ -141,13 +119,8 @@ export function normalizeSettings(raw) {
     liveSeconds: s.liveSeconds != null && [0, 10, 15, 20, 30, 45, 60].includes(Number(s.liveSeconds)) ? Number(s.liveSeconds) : null,
   };
 }
-export const STORAGE_KEY = "progress-v6";
-export const LEGACY_V5_STORAGE_KEY = "progress-v5";
-export const LEGACY_V4_STORAGE_KEY = "progress-v4";
-export const LEGACY_V3_STORAGE_KEY = "progress-v3";
-export const CUSTOM_CONTENT_KEY = "custom-content-v1";
 
-export function normalizeLevelStats(levelStats = {}, levelsCleared = []) {
+function normalizeLevelStats(levelStats = {}, levelsCleared = []) {
   const out = {};
   if (levelStats && typeof levelStats === "object") {
     Object.entries(levelStats).forEach(([key, value]) => {
@@ -169,7 +142,7 @@ export function normalizeLevelStats(levelStats = {}, levelsCleared = []) {
 // Rounds, answers and right answers per day (the player's local date),
 // kept for DAILY_HISTORY_DAYS. The round log keeps only the newest rounds;
 // this keeps every day's totals for the dashboard and the admin.
-export const DAILY_HISTORY_DAYS = 120;
+const DAILY_HISTORY_DAYS = 120;
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 function bumpDay(history, { at, total, correct }) {
   const day = localDateKey(new Date(Number(at)));

@@ -13,8 +13,8 @@ into `features/progress`; the move kept it (see Tests).
   `countsAnswer`, `answerKey`, `dayAfterAnswer`, `goalJustReached`, `nextStreak`, `withVariantAnswer`,
   `withWordPoolAnswer`, `wrongWordChoices`, `withConfusion`, `withCompleted`, `isWholeRound`, `roundLogEntry`,
   `afterRoundLog`, `lessonRound`, `withLessonStat`, `withLessonCleared`, `withSolvedStory`,
-  `withIntroduced`, and the limits `POINTS_PER_ANSWER` (10), `SEEN_SENTENCES_MAX` (4000),
-  `COMPLETED_SESSIONS_MAX` (500), `ROUND_LOG_MAX` (50), `STAR_ACCURACY` (70).
+  `withIntroduced`, and the limits `POINTS_PER_ANSWER` (10) and `STAR_ACCURACY` (70); the limits
+  `SEEN_SENTENCES_MAX` (4000), `COMPLETED_SESSIONS_MAX` (500) and `ROUND_LOG_MAX` (50) are used only inside the file.
 - [useAnswerRecording.js](../../../src/features/progress/useAnswerRecording.js): `useAnswerRecording({ progress,
   gameContent, onToast, generation })` returns `{ markSentencesSeen, recordSessionResult, trackConfusion,
   introduceWords, completeSession }`. `progress` is `useProgress`'s result; `generation` is

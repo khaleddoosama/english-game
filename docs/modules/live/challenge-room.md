@@ -12,8 +12,8 @@ a hook; the move kept it (see Tests).
 
 - [roomRules.js](../../../src/features/live/roomRules.js), no state: `keepShown(cur, next)`, `withQuestion(cur, i, q)`,
   `withProgress(cur, payload)`, `someoneNew(view, present)`, `myRow(view, playerId, localMe)`, `progressSignal(playerId,
-  row)`, `roomPollMs(channelState)`, `watchesRematch(view, now)`, `REMATCH_POLL_MS`, `REMATCH_WATCH_MS`,
-  `roomScreen(view, me)`.
+  row)`, `roomPollMs(channelState)`, `watchesRematch(view, now)`, `REMATCH_POLL_MS`,
+  `roomScreen(view, me)`; `REMATCH_WATCH_MS` is used only inside the file.
 - [useChallengeRoom.js](../../../src/features/live/useChallengeRoom.js): `useChallengeRoom({ api, code, player })`
   returns `{ view, loadError, error, busy, online, channelState, me, isHost, refresh, addQuestion, setLocalMe, send,
   act, openNext }`. It reads the challenge, opens the channel for members, polls, and runs the actions.

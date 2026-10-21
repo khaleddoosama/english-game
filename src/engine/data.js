@@ -38,25 +38,21 @@ export function levelItemKey(item) {
 }
 
 export const MASTERY_STAGE = { NEW: "New", FAMILIAR: "Familiar", LEARNED: "Learned", MASTERED: "Mastered" };
-export const MASTERY_STAGE_RANK = { New: 0, Familiar: 1, Learned: 2, Mastered: 3 };
 // "finalReport": written evidence from the Final Case (removed 2026-10-20), still counted in saved records.
-export const PRODUCTION_MODES = new Set(["typing", "gapTyping", "phrasalTransform", "finalReport"]);
-export const REVIEW_STEP_MAX = 4;
+const PRODUCTION_MODES = new Set(["typing", "gapTyping", "phrasalTransform", "finalReport"]);
 export { PRODUCTION_GATE_STEP };
 export const isWordKey = (key) => !/^(grammar|combo|challenge|pun):/.test(String(key));
 export const MAX_CONFUSIONS = 80;
 // Confusion entries are {count,lastAt}; older data stored a bare number.
 // A record whose count was lost (null/NaN) still proves at least one confusion.
 export const confusionCount = (v) => { const n = typeof v === "number" ? v : Number(v?.count); return Number.isFinite(n) && n > 0 ? n : (v ? 1 : 0); };
-export const MAX_RELATIONSHIPS = 220;
-export const RECENT_RESULT_LIMIT = 8;
 
 export function getAccuracy(stats) {
   const total = Number(stats?.total || 0);
   return total > 0 ? (Number(stats?.correct || 0) / total) * 100 : 0;
 }
 
-export function normalizeModeStats(modeStats) {
+function normalizeModeStats(modeStats) {
   return {
     ...modeStats,
     correct: Number(modeStats?.correct || 0),
@@ -94,7 +90,7 @@ export function normalizeMasteryRecord(record) {
   };
 }
 
-export function getCorrectModeCount(stats) {
+function getCorrectModeCount(stats) {
   const normalized = normalizeMasteryRecord(stats);
   return Object.values(normalized.modes).filter((mode) => mode.correct > 0).length;
 }
@@ -125,7 +121,7 @@ export function getMasteryStage(stats, item) {
   return MASTERY_STAGE.FAMILIAR;
 }
 
-export function isItemMastered(stats, item) {
+function isItemMastered(stats, item) {
   return getMasteryStage(stats, item) === MASTERY_STAGE.MASTERED;
 }
 
@@ -184,16 +180,11 @@ export function levelStageBreakdown(level, mastery) {
   return counts;
 }
 
-export function getStarsForAccuracy(accuracy) {
+function getStarsForAccuracy(accuracy) {
   if (accuracy >= 95) return 3;
   if (accuracy >= 85) return 2;
   if (accuracy >= 70) return 1;
   return 0;
-}
-
-export function formatAccuracy(accuracy) {
-  const value = Number(accuracy || 0);
-  return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "");
 }
 
 export function formatStars(stars = 0) {
@@ -214,17 +205,6 @@ export function updateLevelStat(previous = {}, accuracy, grandfatherStars = 0, n
   };
 }
 
-// Spaced repetition is off: nothing is ever scheduled or "due". reviewStep
-// survives only as a streak of correct answers, capped until the word has
-// one correct production — the production gate reads it.
-export function updateReviewStreak(stats, correct, now = Date.now(), opts = {}) {
-  const prev = normalizeMasteryRecord(stats);
-  const productionCorrect = prev.productionCorrect + (opts.productionNow ? 1 : 0);
-  const stepCap = productionCorrect > 0 ? REVIEW_STEP_MAX : PRODUCTION_GATE_STEP;
-  const reviewStep = correct ? Math.min(prev.reviewStep + 1, stepCap) : Math.max(0, prev.reviewStep - 1);
-  return { reviewStep, lastReviewedAt: now, nextReviewAt: 0 };
-}
-
 // Today's answered/correct counts for the daily goal; a record from an
 // earlier day reads as a fresh zero.
 export function todayProgress(record, today = localDateKey()) {
@@ -238,7 +218,7 @@ export function localDateKey(date = new Date()) {
   return `${y}-${m}-${d}`;
 }
 
-export function isPreviousLocalDay(previousKey, todayKey) {
+function isPreviousLocalDay(previousKey, todayKey) {
   if (!previousKey || !todayKey) return false;
   const [y, m, d] = previousKey.split("-").map(Number);
   if (!y || !m || !d) return false;
@@ -272,7 +252,6 @@ export const DISABLED_MODES = new Set();
 export let RUNTIME_DISABLED_MODES = new Set();
 export function setRuntimeDisabledModes(modes) { RUNTIME_DISABLED_MODES = modes; }
 
-export const WORD_MODES = ["meaning", "gap", "gapTyping", "situation", "story", "typing", "opposite", "whoami", "twopeople", "selecttwo", "impostor", "phrasalTransform", "idiomDetective"];
 export const MODE_META = {
   meaning: { label: "Meaning Hunter", icon: Search },
   gap: { label: "Fill the Gap", icon: PenLine },
@@ -298,9 +277,6 @@ export const CHALLENGE_MODE_META = {
   phrasalTransform: { label: "Phrasal Verb Transform", icon: ArrowLeftRight },
   grammarCourt: { label: "Advanced Grammar Court", icon: Scale },
 };
-
-export let LAST_CHALLENGE_ID = null;
-export function setLastChallengeId(id) { LAST_CHALLENGE_ID = id; }
 
 export { dedupeBy };
 

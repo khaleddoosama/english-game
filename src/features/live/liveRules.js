@@ -7,8 +7,8 @@
 //  - a player sees no question before pressing Start, then one at a time;
 //  - the creator wrote the questions, so their run doesn't count toward
 //    Live wins.
-export const LIVE_CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-export const LIVE_CODE_RE = /^[A-Z0-9]{6}$/;
+const LIVE_CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const LIVE_CODE_RE = /^[A-Z0-9]{6}$/;
 export const MIN_PLAYERS = 2, MAX_PLAYERS = 10, MIN_QUESTIONS = 3, MAX_QUESTIONS = 50;
 // Time allowed for the network and drawing the question, on top of what
 // the device measured (see clampAnswerMs).
@@ -44,7 +44,7 @@ export function challengeLink(code, origin = typeof window !== "undefined" ? win
   return `${origin}/live/${code}`;
 }
 
-export const sameAnswer = (a, b) => a != null && b != null && String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+const sameAnswer = (a, b) => a != null && b != null && String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
 
 // The device measures how long the player looked at the question; the
 // server only knows how long since the previous answer (which also covers
