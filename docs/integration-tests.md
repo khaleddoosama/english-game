@@ -119,7 +119,9 @@ Not in the stack: Realtime, Storage, Studio, the Vercel functions, the app's scr
 Realtime and Storage (`realtime.messages`, `realtime.topic()`, `realtime.send()` for the signals of migration 0043, the
 `buckets` columns): `up.sh` creates them by hand, the same way as `supabase/ci/supabase-stub.sql` (keep the two in step).
 `realtime.send()` was missing there until 2026-10-20, so on a fresh real stack the 0043 triggers failed; the SQL block was
-checked on its own after the fix, the whole stack (Docker) was not run again. Real stack is not part of CI.
+checked on its own after the fix, the whole stack (Docker) was not run again. Tried again on 2026-10-21: the Docker
+daemon started, but the images could not be fetched (Docker Hub: 429 Too Many Requests; `public.ecr.aws`: layer
+downloads refused). Real stack is not part of CI.
 **Open gaps:** run the whole real stack again with 0043; a test that the Realtime service delivers a signal to a
 player (no test runs the Realtime service; it was checked by hand once, `docs/modules/live/README.md`). This is still
 not a real project: see `docs/migrations/review-0037-0042.md`, "Not verified".

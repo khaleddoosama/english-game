@@ -123,10 +123,13 @@ Targets: `MT-01`, `MT-02`, `MT-03`, `MT-04`, then the cycles in [module-map.md](
 Steps, each its own change:
 
 1. Delete the unreachable round engine (`MT-03`). **Done** 2026-10-18.
-2. Extract the session lifecycle into `practice`.
-3. Split `content` and `progress` out of `repo.js` behind the same interface.
+2. Extract the session lifecycle into `practice`. **Done** 2026-10-20: starting rounds in `features/practice`, recording answers and finishing rounds in `features/progress`.
+3. Split `content` and `progress` out of `repo.js` behind the same interface. **Closed** 2026-10-21: the pure parts and the content and reports stores are out; the progress engine stays one piece on purpose ([repo.md](repo.md)).
 4. Break the `live`/`social` and `engine`/`lib` cycles. `live`/`social`: **done** 2026-10-19 (social slice 1); `engine`/`lib`: **done** 2026-10-21 (the AI prompts moved to `lib/aiPrompts.js`, [ADR 0010](../adr/0010-ai-prompts-outside-the-engine.md)).
 5. Replace the content globals with an object passed down. **Done** 2026-10-19 (`MT-02`); the `engine` ↔ `features/media` part of the engine loop went with it.
+
+Phase 4 is closed: see [refactor-closure.md](../work-tracking/refactor-closure.md) for what was done, what stays, and the
+integration-test gaps that are still open.
 
 Acceptance (for every step):
 

@@ -6,37 +6,62 @@ Proposed module boundaries, drawn from the responsibilities that already exist i
 
 ## 1. Observed dependencies today
 
-Counted from the imports between top-level folders in `src` (number of import lines). This is what the code does now.
+Which top-level folder of `src` imports which, from the real imports (`moduleGraph` in `tests/importGraph.js`, the same graph
+the architecture guards check), on 2026-10-21; `styles` is left out. This is what the code does now.
 
 ```mermaid
 flowchart LR
   app["app (App, WordHunter)"]
   engine["engine"]
-  lib["lib"]
   admin["features/admin"]
+  ai_helpers["features/ai-helpers"]
+  auth["features/auth"]
+  content["features/content"]
+  content_admin["features/content-admin"]
+  data["features/data"]
+  home["features/home"]
   library["features/library"]
   live["features/live"]
-  social["features/social"]
-  session["features/session"]
-  home["features/home"]
   media["features/media"]
-  data["features/data"]
-  app --> engine & lib & home & library & social & session & media & data
-  admin --> engine & lib & data & media
-  library --> engine & lib & home & social
-  live --> engine & lib & library & social & media
-  social --> lib
-  session --> engine & lib & media
-  lib --> engine
+  practice["features/practice"]
+  progress["features/progress"]
+  reports["features/reports"]
+  results["features/results"]
+  session["features/session"]
+  settings["features/settings"]
+  shell["features/shell"]
+  social["features/social"]
+  stats["features/stats"]
+  lib["lib"]
+  app --> engine & admin & ai_helpers & auth & content & content_admin & data & home & library & live & media & practice & progress & reports & results & session & settings & shell & social & stats & lib
+  admin --> engine & data & media & lib
+  ai_helpers --> engine & media & lib
+  auth --> lib
+  content --> engine & media & lib
+  content_admin --> engine
+  data --> engine & lib
+  home --> engine
+  library --> engine & home & lib
+  live --> engine & library & media & social & lib
   media --> engine & lib
+  practice --> engine
+  progress --> engine
+  reports --> engine & lib
+  session --> engine & media & lib
+  settings --> engine
+  social --> auth & lib
+  stats --> engine & lib
+  lib --> engine
 ```
 
 What this shows (**Current**):
 
-- `app/WordHunter.jsx` imports almost everything and holds the cross-module logic.
+- The app shell (`App.jsx`, `WordHunter.jsx`, 412 lines) imports every module and wires them together; the modules hold the
+  rules, operations and screens.
 - No cycles between modules since 2026-10-21. `engine` and `lib` imported each other until then (the repo uses the engine's mastery rules, which stays; the AI prompts were in the engine and called the AI client in `lib`, and moved to `lib/aiPrompts.js`, [ADR 0010](../adr/0010-ai-prompts-outside-the-engine.md)); `live` and `social` imported each other until 2026-10-19 (social now gets the Live API from the app, for local invitations, and Live uses social's index for the add-friend button); `engine` imported `features/media` until 2026-10-19 (the picture check now runs in the content module, `MT-02`).
-- `features/admin` reaches into `engine` 16 times (it edits content using engine helpers).
-- `features/library` imports `features/home` (through its index since 2026-10-20) and `features/social` (shared helpers and the friends list).
+- `features/admin` uses the engine for content edits, and reaches import & export, media and `lib`.
+- `features/library` imports `features/home` through its index (since 2026-10-20); friends are passed in by the shell.
+- The engine imports no other module; every module may use it.
 
 ## 2. Proposed modules
 

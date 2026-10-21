@@ -4,9 +4,10 @@ Status (2026-10-21): the pattern, first proven on **My Library** (`docs/modules/
 module of the plan at the end (rows 1-7 done; see each row for its guide) and Home. `WordHunter.jsx` is 412 lines (about 2,100
 when this page was first written on branch `ccr-29322d12-v8wkmd`; the sections below keep those first numbers, marked
 as such). The `engine` <-> `lib` loop is gone (2026-10-21, [ADR 0010](../adr/0010-ai-prompts-outside-the-engine.md)) and the unused
-exports are cleaned up ([unused-exports.md](unused-exports.md)). The progress engine in `repo.js` stays one piece on purpose. Open gaps in testing: the whole real stack
-(`tests/realstack`, Docker) was not run again after `realtime.send` was added to its setup on 2026-10-20, and no
-test checks that Realtime delivers a message to a player (`docs/integration-tests.md`). Bugs kept on purpose:
+exports are cleaned up ([unused-exports.md](unused-exports.md)). The progress engine in `repo.js` stays one piece on purpose. The refactor is closed:
+[refactor-closure.md](../work-tracking/refactor-closure.md) lists what was done, what stays, what is outside it, and the
+integration-test gaps that are still open (the whole real stack not run again since `realtime.send`; no test that
+Realtime delivers a message; no browser spec against a Supabase backend). Bugs kept on purpose:
 [known-bugs.md](../work-tracking/known-bugs.md).
 
 ### Behaviour changes made during this work

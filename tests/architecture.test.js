@@ -148,6 +148,13 @@ describe("no new loops between modules", () => {
     expect(Object.entries(modules).filter(([, tos]) => tos.includes("features/home")).map(([from]) => from)).toEqual(["app", "features/library"]);
   });
 
+  it("reports and import & export reach lib only for the AI prompts (lib/aiPrompts), as they reached engine/ai before", () => {
+    for (const mod of ["features/reports", "features/data"]) {
+      const libFiles = Object.entries(graph).filter(([file]) => file.startsWith(`${mod}/`)).flatMap(([, tos]) => tos.filter((t) => t.startsWith("lib/")));
+      expect([...new Set(libFiles)], mod).toEqual(["lib/aiPrompts"]);
+    }
+  });
+
   it("the engine is below everything: it imports no feature and nothing from lib (the picture check moved out with MT-02, the AI prompts on 2026-10-21)", () => {
     expect(modules.engine).toEqual([]);
   });

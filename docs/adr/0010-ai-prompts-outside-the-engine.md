@@ -41,6 +41,7 @@ import paths of its users change. The engine now imports nothing from `lib`; `li
 
 ## Consequences
 
-- `features/reports` and `features/data` now depend on `lib` (they call the prompts); their guards say so.
+- `features/reports` and `features/data` now depend on `lib` (they call the prompts); a guard keeps that to
+  `lib/aiPrompts` alone, so their boundary is as narrow as when they imported `engine/ai`.
 - Guards: no loop between modules, and the engine imports no module at all (`tests/architecture.test.js`).
 - Docs that named `engine/ai.js` point to `lib/aiPrompts.js`. Older work records keep the old name as history.
