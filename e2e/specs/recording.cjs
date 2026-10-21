@@ -24,22 +24,29 @@ const visible = (page, sel) => page.locator(sel).first().isVisible().catch(() =>
 const mastered = { stage: 'Mastered', correct: 9, total: 9, reviewStep: 6, productionCorrect: 3, everMastered: true, streak: 5, lastSeen: Date.now() - 86400000 };
 
 // Plays the round on screen to its end: learning cards, then each question (first option, or "-" when typed).
-// Returns how many questions were answered and the texts of any toast seen.
+// Returns how many questions were answered and the texts of any toast seen. In a timed round (the Speed Round) the
+// time can run out between finding a control and using it, so each action waits at most 3 s and an answer counts
+// only when its click or Enter went through; then the loop looks at the screen again.
+const act = (promise) => promise.then(() => true, () => false);
 async function playRound(page, endSel) {
   let answered = 0; const toasts = new Set();
   for (let i = 0; i < 200 && !(await visible(page, endSel)); i++) {
     if (await visible(page, '.wh-toast')) toasts.add((await page.innerText('.wh-toast')).replace(/\s+/g, ' ').trim());
-    if (await visible(page, 'button:has-text("Next word →")')) { await page.click('button:has-text("Next word →")'); continue; }
+    if (await visible(page, 'button:has-text("Next word →")')) { await act(page.click('button:has-text("Next word →")', { timeout: 3000 })); continue; }
     const input = page.locator('input[aria-label="Your answer"]');
-    if (await input.count() && !(await input.isDisabled())) { await input.fill('-'); await page.keyboard.press('Enter'); answered++; await page.waitForTimeout(250); continue; }
+    if (await input.count() && !(await input.isDisabled())) {
+      if (await act(input.fill('-', { timeout: 3000 })) && await act(input.press('Enter', { timeout: 3000 }))) answered++;
+      await page.waitForTimeout(250); continue;
+    }
     const option = page.locator('.wh-option:not([disabled])').first();
     if (await option.count() && await option.isVisible()) {
-      await option.click(); await page.waitForTimeout(100);
+      if (!(await act(option.click({ timeout: 3000 })))) continue;
+      await page.waitForTimeout(100);
       const submit = page.locator('button.wh-submit-btn:not([disabled])');
-      if (await submit.count()) await submit.click();
+      if (await submit.count() && !(await act(submit.click({ timeout: 3000 })))) continue;
       answered++; await page.waitForTimeout(250); continue;
     }
-    if (await visible(page, 'button:has-text("Continue")')) { await page.locator('button:has-text("Continue")').first().click(); await page.waitForTimeout(200); continue; }
+    if (await visible(page, 'button:has-text("Continue")')) { await act(page.locator('button:has-text("Continue")').first().click({ timeout: 3000 })); await page.waitForTimeout(200); continue; }
     await page.waitForTimeout(250);
   }
   if (await visible(page, '.wh-toast')) toasts.add((await page.innerText('.wh-toast')).replace(/\s+/g, ' ').trim());

@@ -75,7 +75,7 @@ These files cannot stop a merge by themselves: GitHub enforces nothing until the
 **Settings → Branches → Branch protection rule** (or a ruleset) for `master`:
 
 - require a pull request before merging;
-- require these status checks to pass, on the latest commit: `app`, `e2e`, `database`, `pr-rules`;
+- require these status checks to pass, on the latest commit: `app`, `e2e`, `database`, `realstack`, `pr-rules`;
 - block force pushes and deletion of `master`;
 - apply the rule to administrators too (otherwise the owner's account, which agents use, can bypass it);
 - required approvals: only if a second person reviews. An agent working with the owner's account cannot approve its

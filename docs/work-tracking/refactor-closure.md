@@ -45,11 +45,9 @@ or a build that is the same), except the behaviour changes listed in
 The refactor is complete; the integrated verification is **not**. The gaps below are separate from the refactor and
 are **not** closed by mocks or by other tests passing:
 
-1. **The real stack was not run again** after `realtime.send` was added to its setup (2026-10-20). Tried on
-   2026-10-21: the Docker daemon starts in this environment, but the images cannot be fetched (Docker Hub answers
-   429 Too Many Requests; the copies on `public.ecr.aws` are refused when their layers download). Needs a machine
-   that can pull `supabase/postgres:15.8.1.060`, `supabase/gotrue:v2.172.1`, `postgrest/postgrest:v12.2.12`; the
-   commands are in [integration-tests.md](../integration-tests.md).
+1. ~~The real stack was not run again after `realtime.send` was added~~ **closed** 2026-10-21 (#74): CI job
+   `realstack` runs it on every push and pull request (Supabase's Postgres, GoTrue, PostgREST, supabase-js) and fails
+   if a test is skipped. The agent's own environment still cannot fetch those images.
 2. **No test checks that the Realtime service delivers a signal** to a player (Live, invitations, friend requests).
    No stack here runs the Realtime service; the database side (`realtime.send` writes the message, the policy lets
    only the right player read it) is tested on PostgreSQL. Delivery was checked by hand once on the real project.
