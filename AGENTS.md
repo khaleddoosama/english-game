@@ -18,5 +18,6 @@ For every change, before writing code and until the merge:
 5. **Merge** only with the required checks green on the latest commit, blocking review comments resolved, docs
    updated or the reason given, nothing bypassed, no force push to `master`, and the owner's approval (or delegation).
 
-CI checks what it can (`pr-rules`, `tests/repo-rules.test.js`, the architecture guards). Branch protection is a GitHub
-setting the owner must turn on; see the workflow page. These files alone do not block a merge.
+CI checks what it can (`pr-rules`, `tests/repo-rules.test.js`, the architecture guards). `master` is protected on GitHub:
+`app`, `database`, `e2e`, `pr-rules` and `realstack` must pass for everyone, administrators included (see the
+workflow page). What review must judge (docs content, order of work), CI cannot.

@@ -24,12 +24,16 @@ const visible = (page, sel) => page.locator(sel).first().isVisible().catch(() =>
 const mastered = { stage: 'Mastered', correct: 9, total: 9, reviewStep: 6, productionCorrect: 3, everMastered: true, streak: 5, lastSeen: Date.now() - 86400000 };
 
 // Plays the round on screen to its end: learning cards, then each question (first option, or "-" when typed).
-// Returns how many questions were answered and the texts of any toast seen. In a timed round (the Speed Round) the
-// time can run out between finding a control and using it, so each action waits at most 3 s and an answer counts
-// only when its click or Enter went through; then the loop looks at the screen again.
-const act = (promise) => promise.then(() => true, () => false);
-async function playRound(page, endSel) {
-  let answered = 0; const toasts = new Set();
+// Returns how many questions were answered, how many actions timed out, and the texts of any toast seen.
+// Untimed rounds: every action must work; any error fails the spec. Timed rounds (the Speed Round): the time can run
+// out between finding a control and using it, so an action waits at most 3 s and only a Playwright TimeoutError is
+// tolerated (counted in `missed`, the loop looks at the screen again); any other error still fails the spec.
+async function playRound(page, endSel, { timed = false } = {}) {
+  let answered = 0, missed = 0; const toasts = new Set();
+  const act = (promise) => promise.then(() => true, (e) => {
+    if (timed && e?.name === 'TimeoutError') { missed++; return false; }
+    throw e;
+  });
   for (let i = 0; i < 200 && !(await visible(page, endSel)); i++) {
     if (await visible(page, '.wh-toast')) toasts.add((await page.innerText('.wh-toast')).replace(/\s+/g, ' ').trim());
     if (await visible(page, 'button:has-text("Next word →")')) { await act(page.click('button:has-text("Next word →")', { timeout: 3000 })); continue; }
@@ -50,7 +54,7 @@ async function playRound(page, endSel) {
     await page.waitForTimeout(250);
   }
   if (await visible(page, '.wh-toast')) toasts.add((await page.innerText('.wh-toast')).replace(/\s+/g, ' ').trim());
-  return { answered, toasts: [...toasts] };
+  return { answered, missed, toasts: [...toasts] };
 }
 
 run(async () => {
@@ -69,7 +73,7 @@ run(async () => {
 
   // a practice round of the Weather lesson
   await page.locator('.wh-level-card:has-text("Weather") button:has-text("Practice"), .wh-level:has-text("Weather") button:has-text("Practice")').first().click(); await page.waitForTimeout(1000);
-  const { answered, toasts } = await playRound(page, 'h2:has-text("Session complete")');
+  const { answered, toasts } = await playRound(page, 'h2:has-text("Session complete")');  // untimed: no error is tolerated
   const scoreText = await page.innerText('.wh-session-score');
   const [, right, total] = /(\d+) \/ (\d+) correct/.exec(scoreText) || [];
   ok(answered > 0 && Number(total) === answered, `the round asked ${total} questions and all were answered (${answered})`);
@@ -99,11 +103,11 @@ run(async () => {
   await idbPut(page, 'local:progress', { mastery: fiveMastered, bestSpeedScore: 0, bestSpeedCombo: 0, activeSession: null, settings: { ...p.settings, speedSeconds: 30 } });
   await page.goto(APP, { waitUntil: 'networkidle' }); await page.waitForTimeout(1000);
   await page.click('button.wh-speed-card-btn'); await page.waitForTimeout(800);
-  const speed = await playRound(page, '.wh-results-score:has-text("points")');
+  const speed = await playRound(page, '.wh-results-score:has-text("points")', { timed: true });
   const shown = /(\d+) points .* best combo x(\d+)/.exec((await page.innerText('.wh-results-score')).replace(/\s+/g, ' ')) || [];
   await page.waitForTimeout(1200);
   const s = await idbGet(page, 'local:progress');
-  ok(speed.answered > 0 && s.bestSpeedScore === Number(shown[1]) && s.bestSpeedCombo === Number(shown[2]), `the Speed Round's best is kept: ${s.bestSpeedScore} points, combo x${s.bestSpeedCombo} (shown ${shown[1]}, x${shown[2]}; ${speed.answered} answered)`);
+  ok(speed.answered > 0 && s.bestSpeedScore === Number(shown[1]) && s.bestSpeedCombo === Number(shown[2]), `the Speed Round's best is kept: ${s.bestSpeedScore} points, combo x${s.bestSpeedCombo} (shown ${shown[1]}, x${shown[2]}; ${speed.answered} answered, ${speed.missed} actions timed out as the round ended)`);
   ok((s.completedSessions || []).some((id) => /^speed-/.test(id)) && !s.activeSession, 'the Speed Round is marked done and closed');
   await page.screenshot({ path: `${SP}/shot-recording.png`, fullPage: true });
 

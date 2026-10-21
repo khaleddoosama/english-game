@@ -81,5 +81,7 @@ These files cannot stop a merge by themselves: GitHub enforces nothing until the
 - required approvals: only if a second person reviews. An agent working with the owner's account cannot approve its
   own PRs, so a required approval would block every agent merge.
 
-Status on 2026-10-21: **not set**. The GitHub API reports `master` as not protected, and the agent has no permission
-to change repository settings. Until the owner sets it, these rules hold by agreement and review, not technically.
+Status: **set** by the owner (2026-10-21). The GitHub API reports `master` as protected, with the status checks `app`,
+`database`, `e2e`, `pr-rules` and `realstack` required for everyone (enforcement level "everyone", so administrators
+too). The other parts of the rule (pull request required, force push blocked) are not readable with the agent's
+access; the owner set them. A merge now fails while a required check is missing or red on the latest commit.
