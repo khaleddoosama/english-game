@@ -4,7 +4,7 @@
 // Docs: docs/modules/ai-media/pool-generation.md.
 import { useRef } from "react";
 import { V2 } from "../../engine/v2";
-import { generateComboVariant, generateContent, generateGrammarVariant } from "../../engine/ai";
+import { generateComboVariant, generateContent, generateGrammarVariant } from "../../lib/aiPrompts";
 import { comboVariantFields, grammarVariantAsk, grammarVariantFields, idOfKey, mayRetryVariant, withGeneratedTexts, withVariantItem } from "./generationRules";
 
 // liveContent()      the live content (combos and grammar rules are looked up in it)

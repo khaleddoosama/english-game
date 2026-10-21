@@ -9,7 +9,7 @@ import { gameContent, setGameContent } from "../src/features/content";
 
 const generateStory = vi.fn();
 const cancelAiTasks = vi.fn();
-vi.mock("../src/engine/ai", async (original) => ({ ...(await original()), generateStory: (...a) => generateStory(...a) }));
+vi.mock("../src/lib/aiPrompts", async (original) => ({ ...(await original()), generateStory: (...a) => generateStory(...a) }));
 vi.mock("../src/lib/aiOperations", async (original) => ({ ...(await original()), cancelAiTasks: (...a) => cancelAiTasks(...a) }));
 const { StoryBuilder, useStoryGeneration } = await import("../src/features/ai-helpers");
 

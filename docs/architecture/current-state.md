@@ -122,7 +122,7 @@ There is no state library. State lives in these layers, from most global to most
 | [/api/image-import](../../api/image-import.js) | POST | admin | Copies an outside picture into `word-images` | `ai_gate` admin-only; public addresses only, 2 MB, magic-byte type check ([publicFetch.js](../../api/_lib/publicFetch.js)). |
 | [/api/keepalive](../../api/keepalive.js) | GET | cron | Health pings | Optional `CRON_SECRET`. |
 
-The browser side is [lib/ai.js](../../src/lib/ai.js) (45 s timeout, offline check, token header) and [lib/aiOperations.js](../../src/lib/aiOperations.js). All prompts are written in the browser ([engine/ai.js](../../src/engine/ai.js)); the server forwards the text. See `PE-04`.
+The browser side is [lib/ai.js](../../src/lib/ai.js) (45 s timeout, offline check, token header) and [lib/aiOperations.js](../../src/lib/aiOperations.js). All prompts are written in the browser ([lib/aiPrompts.js](../../src/lib/aiPrompts.js)); the server forwards the text. See `PE-04`.
 
 ## 6. Data layer
 

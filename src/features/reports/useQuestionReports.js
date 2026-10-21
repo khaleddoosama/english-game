@@ -2,7 +2,7 @@
 // in reportRules.js. The list also lives in progressExtrasRef.current.reports, which is what is saved with the
 // progress; every change writes both, the ref first (as the shell always did). Docs: docs/modules/practice/question-reports.md.
 import { useMemo, useState } from "react";
-import { locateReportSource, reviewReportedQuestion } from "../../engine/ai";
+import { locateReportSource, reviewReportedQuestion } from "../../lib/aiPrompts";
 import { getWordPools } from "../../engine/questions";
 import { V2 } from "../../engine/v2";
 import { buildReport, followRenames, mapReport, quarantineOf, withReport, withoutReport } from "./reportRules";

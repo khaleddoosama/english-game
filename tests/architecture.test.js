@@ -17,8 +17,8 @@ describe("no new loops between files", () => {
 });
 
 describe("no new loops between modules", () => {
-  it("only the known one: the engine and lib use each other (social and live no longer do)", () => {
-    expect(cycles(modules)).toEqual([["engine", "lib"]]);
+  it("none: the engine and lib no longer use each other (the AI prompts moved to lib/aiPrompts.js), nor social and live", () => {
+    expect(cycles(modules)).toEqual([]);
   });
 
   it("My Library is in none, and depends only on what the module document lists", () => {
@@ -26,9 +26,9 @@ describe("no new loops between modules", () => {
     expect(modules["features/library"]).toEqual(["engine", "features/home", "lib", "styles"]);
   });
 
-  it("question reports are in no loop and use only the engine; the app shell reaches them through their index", () => {
+  it("question reports are in no loop and use only the engine and the AI prompts in lib; the app shell reaches them through their index", () => {
     expect(cycles(modules).flat()).not.toContain("features/reports");
-    expect(modules["features/reports"]).toEqual(["engine"]);
+    expect(modules["features/reports"]).toEqual(["engine", "lib"]);
     const outside = Object.entries(graph).filter(([file, tos]) => !file.startsWith("features/reports/") && tos.some((t) => t.startsWith("features/reports/") && t !== "features/reports/index"));
     expect(outside.map(([file]) => file)).toEqual([]);
   });
@@ -40,9 +40,9 @@ describe("no new loops between modules", () => {
     expect(outside.map(([file]) => file)).toEqual([]);
   });
 
-  it("import & export is in no loop and uses only the engine and styles; the rest of the app reaches it through its index or its screen", () => {
+  it("import & export is in no loop and uses only the engine, the AI prompts in lib and styles; the rest of the app reaches it through its index or its screen", () => {
     expect(cycles(modules).flat()).not.toContain("features/data");
-    expect(modules["features/data"]).toEqual(["engine", "styles"]);
+    expect(modules["features/data"]).toEqual(["engine", "lib", "styles"]);
     const doors = ["features/data/index", "features/data/ImportExport"];
     const outside = Object.entries(graph).filter(([file, tos]) => !file.startsWith("features/data/") && tos.some((t) => t.startsWith("features/data/") && !doors.includes(t)));
     expect(outside.map(([file]) => file)).toEqual([]);
@@ -83,9 +83,9 @@ describe("no new loops between modules", () => {
 
   it("the question, progress and AI engine take the content as an argument: they import none of the content variables", () => {
     const CONTENT = ["WORDS", "GRAMMAR", "CHALLENGES", "LEVEL_ORDER", "LEVELS", "BADGES"];
-    for (const file of ["questions", "progress", "ai"]) {
-      const text = readFileSync(new URL(`../src/engine/${file}.js`, import.meta.url), "utf8");
-      const imported = [...text.matchAll(/import\s*\{([^}]*)\}\s*from\s*"\.\/data"/g)].flatMap((m) => m[1].split(",").map((x) => x.trim()));
+    for (const file of ["engine/questions", "engine/progress", "lib/aiPrompts"]) {
+      const text = readFileSync(new URL(`../src/${file}.js`, import.meta.url), "utf8");
+      const imported = [...text.matchAll(/import\s*\{([^}]*)\}\s*from\s*"(?:\.\/|\.\.\/engine\/)data"/g)].flatMap((m) => m[1].split(",").map((x) => x.trim()));
       expect(imported.filter((name) => CONTENT.includes(name)), file).toEqual([]);
     }
   });
@@ -148,8 +148,8 @@ describe("no new loops between modules", () => {
     expect(Object.entries(modules).filter(([, tos]) => tos.includes("features/home")).map(([from]) => from)).toEqual(["app", "features/library"]);
   });
 
-  it("the engine is below the features: it imports none (the picture check moved to the content module with MT-02)", () => {
-    expect(modules.engine).toEqual(["lib"]);
+  it("the engine is below everything: it imports no feature and nothing from lib (the picture check moved out with MT-02, the AI prompts on 2026-10-21)", () => {
+    expect(modules.engine).toEqual([]);
   });
 
   it("nothing but the app shell imports the app shell, and features do not import the app", () => {

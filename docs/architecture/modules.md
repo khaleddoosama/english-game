@@ -1,10 +1,10 @@
 # How Word Hunter is divided into modules
 
-Status (2026-10-20): the pattern, first proven on **My Library** (`docs/modules/library/README.md`), now covers every
+Status (2026-10-21): the pattern, first proven on **My Library** (`docs/modules/library/README.md`), now covers every
 module of the plan at the end (rows 1-7 done; see each row for its guide) and Home. `WordHunter.jsx` is 412 lines (about 2,100
 when this page was first written on branch `ccr-29322d12-v8wkmd`; the sections below keep those first numbers, marked
-as such). Still left: the progress engine in `repo.js` stays one piece on purpose; the
-`engine` <-> `lib` module loop; a few unused engine exports (below). Open gaps in testing: the whole real stack
+as such). The `engine` <-> `lib` loop is gone (2026-10-21, [ADR 0010](../adr/0010-ai-prompts-outside-the-engine.md)) and the unused
+exports are cleaned up ([unused-exports.md](unused-exports.md)). The progress engine in `repo.js` stays one piece on purpose. Open gaps in testing: the whole real stack
 (`tests/realstack`, Docker) was not run again after `realtime.send` was added to its setup on 2026-10-20, and no
 test checks that Realtime delivers a message to a player (`docs/integration-tests.md`). Bugs kept on purpose:
 [known-bugs.md](../work-tracking/known-bugs.md).
@@ -178,14 +178,14 @@ Order is by how self-contained the cluster is and how well it is covered.
   `normalizeAnswerText` to `engine/text.js`.)
 - A **module dependency cycle** is about folders: module A has a file that imports a file of module B, and B has a
   file that imports a file of A, with no file loop at all. Nothing fails at run time, but A and B can no longer be
-  understood or changed one without the other. **Today: one**, listed below. My Library is in none of them.
+  understood or changed one without the other. **Today: none** (since 2026-10-21; the last one is listed below).
 
 So "0 file cycles" does not mean "no cycles between modules": the second kind is what the remaining work is about.
 
 Known debts the guards list (outside My Library; module cycles, not file cycles):
 
 - ~~loop `engine/ai` <-> `engine/questions`~~ fixed: `normalizeAnswerText` moved to `engine/text.js`
-- loop `engine` <-> `lib` (`lib` imports the engine, and the engine imports `lib`); the media part is fixed: since `MT-02` the picture check (`checkImageLinks`) is called by the content module, so the engine imports no feature
+- ~~loop `engine` <-> `lib`~~ fixed 2026-10-21: the AI prompts moved from `engine/ai.js` to `lib/aiPrompts.js`, so the engine imports nothing outside itself; `lib` still uses the engine's rules ([ADR 0010](../adr/0010-ai-prompts-outside-the-engine.md)). The media part was fixed earlier: since `MT-02` the picture check (`checkImageLinks`) is called by the content module
 - ~~loop `features/social` <-> `features/live`~~ fixed 2026-10-19: social no longer imports Live (the shell passes `getLiveApi` in, used for local invitations; `formatMs` moved to `lib/format.js`), and Live imports social only through its index
 
 ## What was not verified

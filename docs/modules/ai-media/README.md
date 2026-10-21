@@ -10,7 +10,7 @@ Everything that calls Gemini or handles pictures and sound: the server functions
 
 - Server: `/api/ai`, `/api/tts`, `/api/image-import`, `/api/keepalive` and their helpers ([api/](../../../api)).
 - Database gate: who may call, which features are admin-only, the daily quota, the call log.
-- Browser: the request client with timeout and offline check ([lib/ai.js](../../../src/lib/ai.js)), the cancellable job registry and progress panel ([aiOperations.js](../../../src/lib/aiOperations.js), [AiProgress.jsx](../../../src/features/media/AiProgress.jsx), [aiLifecycle.js](../../../src/lib/aiLifecycle.js)), the prompts and answer parsing ([engine/ai.js](../../../src/engine/ai.js)).
+- Browser: the request client with timeout and offline check ([lib/ai.js](../../../src/lib/ai.js)), the cancellable job registry and progress panel ([aiOperations.js](../../../src/lib/aiOperations.js), [AiProgress.jsx](../../../src/features/media/AiProgress.jsx), [aiLifecycle.js](../../../src/lib/aiLifecycle.js)), the prompts and answer parsing ([aiPrompts.js](../../../src/lib/aiPrompts.js); in `engine/ai.js` until 2026-10-21, [ADR 0010](../../adr/0010-ai-prompts-outside-the-engine.md)).
 - Pronunciation: a recorded voice from the free service dictionaryapi.dev where available (the browser calls it directly, outside this app's servers), otherwise the shared AI voice cache, otherwise the browser's own speech ([media.jsx](../../../src/features/media/media.jsx)).
 - Word pictures: resize to WebP in the browser, store by content hash in a public bucket; copy an outside link into the bucket ([images.js](../../../src/lib/images.js), `/api/image-import`).
 

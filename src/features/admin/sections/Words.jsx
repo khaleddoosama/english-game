@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "../../../lib/router";
 import { FileJson, FolderInput, Image as ImageIcon, Plus, Sparkles, Trash2 } from "lucide-react";
-import { askAiForWord } from "../../../engine/ai";
+import { askAiForWord } from "../../../lib/aiPrompts";
 import { WordEditor } from "../editors/WordEditor";
 import { V2 } from "../../../engine/v2";
 import { DataTable, downloadText } from "../DataTable";

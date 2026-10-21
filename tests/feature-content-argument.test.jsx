@@ -11,7 +11,7 @@ import { buildCatalog } from "../src/engine/catalog";
 import { liveQuestions } from "../src/features/live/liveEngine";
 
 const generateStory = vi.fn(), generateContent = vi.fn();
-vi.mock("../src/engine/ai", async (original) => ({ ...(await original()), generateStory: (...a) => generateStory(...a), generateContent: (...a) => generateContent(...a) }));
+vi.mock("../src/lib/aiPrompts", async (original) => ({ ...(await original()), generateStory: (...a) => generateStory(...a), generateContent: (...a) => generateContent(...a) }));
 const { StoryBuilder, useAiGeneration, useStoryGeneration } = await import("../src/features/ai-helpers");
 
 const W = (word, category) => ({ word, type: "vocab", category, meaning: `Quick and cold, kind ${word.length}${word[0]} of weather.`, situation: `We met the ${word.length} today.`, gap: `We met the ______ today (${word.length}).` });

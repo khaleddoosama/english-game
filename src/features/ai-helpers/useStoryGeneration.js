@@ -1,7 +1,7 @@
 // Story generation (admin): the chosen categories, the story being written, its preview, and Add / Discard. The
 // choice of targets is in storyRules.js. Docs: docs/modules/ai-media/story-generation.md.
 import { useEffect, useRef, useState } from "react";
-import { generateStory } from "../../engine/ai";
+import { generateStory } from "../../lib/aiPrompts";
 import { cancelAiTasks } from "../../lib/aiOperations";
 import { storyPlan } from "./storyRules";
 

@@ -5,9 +5,9 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../src/engine/ai", async (original) => ({ ...(await original()), reviewReportedQuestion: vi.fn(), locateReportSource: vi.fn(() => "source") }));
+vi.mock("../src/lib/aiPrompts", async (original) => ({ ...(await original()), reviewReportedQuestion: vi.fn(), locateReportSource: vi.fn(() => "source") }));
 
-import { reviewReportedQuestion, locateReportSource } from "../src/engine/ai";
+import { reviewReportedQuestion, locateReportSource } from "../src/lib/aiPrompts";
 import { gameContent, setGameContent } from "../src/features/content";
 import { getWordPools } from "../src/engine/questions";
 import { useQuestionReports } from "../src/features/reports";

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { BookOpen, CheckCheck, FileJson, RotateCcw, Sparkles, Trash2, User, Wrench } from "lucide-react";
 import { useQuery } from "../../../lib/router";
 import { V2 } from "../../../engine/v2";
-import { locateReportSource, suggestReportFix } from "../../../engine/ai";
+import { locateReportSource, suggestReportFix } from "../../../lib/aiPrompts";
 import { DataTable, downloadText } from "../DataTable";
 import { Badge, ConfirmDialog, Drawer, Kpi, Notice, fmtDate, relTime } from "../adminUi";
 import { DiffTable, fieldChanges } from "../diff";

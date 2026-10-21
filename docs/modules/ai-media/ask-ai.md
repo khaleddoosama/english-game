@@ -2,7 +2,7 @@
 
 The "Ask AI" drawer: look up a word or short phrase, read a simple explanation, hear it, and (admin) add it to the
 course. Part of the [AI & Media](README.md) module. The AI call itself is `askAiForWord` in
-[engine/ai.js](../../../src/engine/ai.js) (task "Ask AI about a word", cancellable, 50 s limit); the voice is
+[lib/aiPrompts.js](../../../src/lib/aiPrompts.js) (task "Ask AI about a word", cancellable, 50 s limit); the voice is
 `PronunciationModal` in [media.jsx](../../../src/features/media/media.jsx).
 
 Status: **Implemented** (current code). The behaviour below was written down before the code moved out of

@@ -4,7 +4,7 @@
 // single-question rule becomes the first question of its set.
 import { V2 } from "../../../engine/v2";
 import { managedAiFunction } from "../../../lib/aiOperations.js";
-import { callAiJsonAdmin } from "../../../engine/ai";
+import { callAiJsonAdmin } from "../../../lib/aiPrompts";
 
 export const GRAMMAR_TYPES = { choose: "Choose", judge: "Right or wrong?", fix: "Fix the sentence" };
 // Course levels (A1.2 …) first, then plain difficulty levels.

@@ -69,7 +69,7 @@ A restored progress is saved as a replacement (`restoringRef`), not merged with 
 | The hook: each mode on real React state, a player's refusal, the files, Download and Copy backup, AI repair, Delete everything (order, a failed server wipe) | `tests/data-transfer-hook.test.jsx` |
 | Reset progress keeps the content; Delete everything clears content and progress; both after a reload (made-up content) | `e2e/specs/startover.cjs` |
 | Export a backup and the content, then import the backup back in "My progress only" and "Content and my progress", saved and after a reload (made-up content) | `e2e/specs/importexport.cjs` |
-| Only through the index or the screen, engine only, no loop | `tests/architecture.test.js` |
+| Only through the index or the screen, the engine, `lib` (the AI fix of a file) and styles only, no loop | `tests/architecture.test.js` |
 | Pictures inside imported content | `tests/image-import.test.js` |
 | Importing the course in a browser (used to set up many specs) | `e2e/specs/*.cjs` |
 

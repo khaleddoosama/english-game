@@ -18,7 +18,7 @@ The rules of learning: how a round is picked, how questions are built, how an an
 
 **Out of scope**
 
-- Calling an AI to judge an answer or write content (the prompts are in [engine/ai.js](../../../src/engine/ai.js), which belongs to [ai-media](../ai-media/README.md)).
+- Calling an AI to judge an answer or write content (the prompts are in [lib/aiPrompts.js](../../../src/lib/aiPrompts.js), which belongs to [ai-media](../ai-media/README.md)).
 - Storage, network and screens.
 - The Live Challenge rules, except that Live reuses the question builders ([live](../live/README.md)).
 

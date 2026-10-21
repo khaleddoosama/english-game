@@ -2,7 +2,7 @@
 
 In the background, the game asks the AI for new practice text so a player does not see the same sentence again and
 again: new sentences for a word's pools, and new variants of a combo or a grammar question. Part of the
-[AI & Media](README.md) module. The AI calls are in [engine/ai.js](../../../src/engine/ai.js): `generateContent(words, batch, pools)`
+[AI & Media](README.md) module. The AI calls are in [lib/aiPrompts.js](../../../src/lib/aiPrompts.js): `generateContent(words, batch, pools)`
 (the hook passes the game's words; task "Write new practice sentences", background, checked by `validateGeneratedContent`), `generateComboVariant`
 and `generateGrammarVariant` (checked before they are returned). Nothing here blocks a round: when a call fails, the
 game keeps using what it has.

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("../src/lib/ai", () => ({ callAiText: vi.fn(() => new Promise(() => {})) }));
 import { callAiText } from "../src/lib/ai";
-import * as ai from "../src/engine/ai";
+import * as ai from "../src/lib/aiPrompts";
 import { generateGrammarQuestions } from "../src/features/admin/editors/grammarRules.js";
 import { cancelAiOperation, cancelAiTasks, describeAiError, dismissAiOperation, getAiOperations, runAiOperation, updateAiOperation } from "../src/lib/aiOperations.js";
 

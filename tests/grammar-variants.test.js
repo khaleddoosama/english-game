@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const callAiText = vi.fn();
 vi.mock("../src/lib/ai", () => ({ callAiText: (...a) => callAiText(...a), speechUrl: vi.fn(), forgetSpeechUrl: vi.fn() }));
 const { V2 } = await import("../src/engine/v2");
-const { generateGrammarVariant } = await import("../src/engine/ai");
+const { generateGrammarVariant } = await import("../src/lib/aiPrompts");
 
 const backup = JSON.parse(readFileSync(new URL("../word-hunter-backup.json", import.meta.url), "utf8"));
 const seeded = (seed = 7) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
