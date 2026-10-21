@@ -28,6 +28,9 @@ if [ "${WITH_REALTIME:-}" = 1 ]; then
     sleep 2
   done
   [ "$(psql $U -X -q -A -t -c "select to_regclass('realtime.messages') is not null")" = t ] || { echo "Realtime did not create its objects"; docker logs whrealtime 2>&1 | tail -40; exit 1; }
+  # realtime.messages is split by day; Realtime's janitor makes the partitions on its own schedule. Make them now
+  # (yesterday to three days ahead), or every write (realtime.send, and Realtime's own permission check) fails.
+  psql $U -X -q -v ON_ERROR_STOP=1 -c "do \$\$ declare d date; begin for d in select generate_series(current_date - 1, current_date + 3, interval '1 day')::date loop execute format('create table if not exists realtime.%I partition of realtime.messages for values from (%L) to (%L)', 'messages_' || to_char(d, 'YYYY_MM_DD'), d, d + 1); end loop; end \$\$" >/dev/null
   # The migrations (run as postgres, as on a project) put policies on realtime.messages: postgres must be able to.
   psql $U -X -q -v ON_ERROR_STOP=1 -c "do \$\$ declare o text; begin select tableowner into o from pg_tables where schemaname = 'realtime' and tablename = 'messages'; if o <> 'postgres' then execute format('grant %I to postgres', o); end if; end \$\$" >/dev/null
   echo "Realtime up; its objects are in the database"

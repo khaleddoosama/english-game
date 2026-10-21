@@ -39,7 +39,7 @@ describe.skipIf(!REALTIME)("Realtime delivers the database's signals, only to wh
   beforeAll(async () => {
     [ann, bob, cat] = await Promise.all([signUp(`${tag}ann`), signUp(`${tag}bob`), signUp(`${tag}cat`)]);
     promote(ann); // Live challenges are made by the admin in this test (the app's switch for players is not the point)
-  });
+  }, 30000);
   afterAll(async () => {
     for (const l of open) await l.close();
     for (const p of [ann, bob, cat]) p?.client.realtime.disconnect();
@@ -56,7 +56,7 @@ describe.skipIf(!REALTIME)("Realtime delivers the database's signals, only to wh
     expect(r.error).toBeNull();
     expect(await bobs.waitFor("friends")).toEqual({ event: "friends", payload: {} });
     expect(spy.got).toEqual([]);
-  });
+  }, 30000);
 
   it("the answer reaches the player who asked", async () => {
     const anns = await listen(ann, `user:${ann.id}`, ["friends"]); open.push(anns);
@@ -64,7 +64,7 @@ describe.skipIf(!REALTIME)("Realtime delivers the database's signals, only to wh
     const r = await bob.client.rpc("friend_respond", { p_user: ann.id, p_accept: true });
     expect(r.error).toBeNull();
     expect(await anns.waitFor("friends")).not.toBeNull();
-  });
+  }, 30000);
 
   it("a Live invitation reaches the invited friend; a player joining reaches the challenge's members, not an outsider", async () => {
     const made = await ann.client.rpc("live_create", { p_title: "Made-up", p_seconds: 20, p_max_players: 3, p_start_mode: "together", p_settings: {}, p_questions: QUESTIONS });
@@ -86,5 +86,5 @@ describe.skipIf(!REALTIME)("Realtime delivers the database's signals, only to wh
     const signal = await room.waitFor("joined");
     expect(signal?.payload).toEqual({ user_id: bob.id });
     expect(outsider.got).toEqual([]);
-  });
+  }, 45000);
 });
