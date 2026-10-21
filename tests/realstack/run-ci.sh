@@ -19,7 +19,6 @@ ready() { curl -s -o /dev/null -w '%{http_code}' "$1" | grep -qE '^(200|401|404)
 for i in $(seq 1 60); do ready http://127.0.0.1:54332/health && ready http://127.0.0.1:54333/ && ready http://127.0.0.1:54330/auth/v1/health && break; sleep 2; done
 ready http://127.0.0.1:54330/auth/v1/health || { echo "GoTrue or the gateway did not start"; docker logs whauth 2>&1 | tail -20; exit 1; }
 out=/tmp/realstack-results.json
-psql $REALSTACK_PGURL -X -q -c "alter table public.friendships disable trigger friendships_signal; alter table public.live_invites disable trigger live_invites_signal" # TEMPORARY BREAK
 rc=0; npx vitest run tests/realstack --no-file-parallelism --reporter=default --reporter=json --outputFile="$out" || rc=$?
 node -e '
   const r = require(process.argv[1]);
