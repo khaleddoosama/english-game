@@ -17,6 +17,12 @@ Working documentation for the Word Hunter code base. The top-level [README](../R
 | [adr/](adr/README.md) | Architecture decision records: what was decided, why, alternatives |
 | [ai-usage-inventory.md](ai-usage-inventory.md) | Where the app uses AI (written earlier, in Arabic) |
 
+### How to work on the project
+
+| Page | What it is for |
+| --- | --- |
+| [development-workflow.md](development-workflow.md) | The required steps for every change (scope, docs first, verification, closing, merge), what CI checks, and the GitHub settings it needs. Short version: [AGENTS.md](../AGENTS.md) |
+
 ### Tests, migrations and work records
 
 | Page | What it is for |
@@ -64,17 +70,20 @@ The goal is documentation that stays true, not documentation of everything.
 **Update the docs in the same change when you:**
 
 1. change observable behaviour (what a player, the admin or another module sees or can do);
-2. change a public contract: a database function's arguments or result, a table's meaning, an API route, the saved progress format, an import or export file format, a module's interface listed in [module-map.md](architecture/module-map.md#4-public-contracts-to-keep-stable), or a limit or rule shown in the UI;
-3. add, remove or move a module, a screen or a route;
-4. fix or discover a problem listed in the register, or change its evidence or severity;
-5. make a decision that is hard to reverse or affects more than one module (add or supersede an ADR).
+2. change a module's responsibilities or dependencies, or how the project is run or tested;
+3. change a public contract: a database function's arguments or result, a table's meaning, an API route, the saved progress format, an import or export file format, a module's interface listed in [module-map.md](architecture/module-map.md#4-public-contracts-to-keep-stable), or a limit or rule shown in the UI;
+4. add, remove or move a module, a screen or a route;
+5. fix or discover a problem listed in the register, or change its evidence or severity;
+6. make a decision that is hard to reverse or affects more than one module (add or supersede an ADR).
+
+**When:** before the code, as **Planned**, then **Implemented** when the change is done ([development-workflow.md](development-workflow.md)).
 
 **What to update:** the module page(s) that own the change; the register and plan if a problem or phase is affected; [current-state.md](architecture/current-state.md) only when a journey, route, table or source of truth changes; the top-level README if setup, environment variables or user-facing features change.
 
 **Not required:**
 
 - A comment or a doc entry for every function. Document purposes, contracts, rules and flows.
-- Doc updates for refactors that keep behaviour and contracts, bug fixes that restore documented behaviour, styling, copy edits, or test-only changes.
+- Doc updates for refactors that keep behaviour, contracts and module responsibilities, bug fixes that restore documented behaviour, styling, copy edits, or test-only changes.
 - Copying code into the docs. Link to the file instead; describe what it does and why.
 
 **Style:**
