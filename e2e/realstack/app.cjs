@@ -48,8 +48,14 @@ async function answer(page, max, endSel) {
   }
   return answered;
 }
+// Opens the made-up lesson from Home; if it is not there, says what the page shows instead.
 const openLesson = async (page) => {
-  await page.locator('.wh-level-card:has(.wh-level-title:text-is("Weather")) > button.wh-level-btn').first().click({ timeout: 20000 });
+  try {
+    await page.locator('.wh-level-card:has(.wh-level-title:text-is("Weather")) > button.wh-level-btn').first().click({ timeout: 20000 });
+  } catch (e) {
+    const shown = (await page.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300);
+    throw new Error(`the lesson is not on ${page.url()}: ${shown}`, { cause: e });
+  }
   await page.waitForTimeout(800);
 };
 const signIn = async (page, username) => {
@@ -126,7 +132,7 @@ run(async () => {
   // 5. the page is closed while offline, then the game opens again online
   // A new round, started online, then played offline; the page is closed once the game has kept the answers.
   const before = coreOf(id).dailyProgress?.answered;
-  await tab.reload({ waitUntil: 'networkidle' }); await settled(tab);
+  await tab.goto(APP + '/', { waitUntil: 'networkidle' }); await settled(tab); // Home (a reload would stay in the open round)
   await openLesson(tab);
   await tablet.setOffline(true);
   const more = await answer(tab, 2);
