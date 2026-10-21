@@ -1,6 +1,7 @@
 # Every push and pull request: lint (undefined names, hooks called out of
-# order), the unit tests, the build, the browser specs, and every
-# database migration plus the SQL tests on a fresh Postgres.
+# order), the unit tests, the build, the browser specs, every database
+# migration plus the SQL tests on a fresh Postgres, and the real stack
+# (Supabase's own Postgres, GoTrue and PostgREST, with supabase-js).
 name: CI
 on:
   push:
@@ -66,3 +67,17 @@ jobs:
       # the migrated database behind it (the spec is skipped without PGURL, so the e2e job above skips it).
       - run: npx playwright-core install --with-deps chromium
       - run: node e2e/specs/saveclose.cjs
+
+  # Supabase's own images (Postgres 15.8, GoTrue, PostgREST) with every migration, and supabase-js signing players in
+  # (tests/realstack). Fails if any of those tests is skipped. Not in it: Realtime, Storage, the app's screens.
+  realstack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: tests/realstack/up.sh
+      - run: tests/realstack/run-ci.sh
