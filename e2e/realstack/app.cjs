@@ -123,10 +123,12 @@ run(async () => {
   await tablet.setOffline(true);
   ok(await until(async () => /Offline/.test(await syncText(tab)), 10000), 'losing the connection shows: ' + await syncText(tab));
   await openLesson(tab);
-  const offlineAnswers = await answer(tab, 3);
-  ok(offlineAnswers === 3 && coreOf(id).dailyProgress?.answered === answered, `answers while offline stay on the device (${offlineAnswers}); the server still has ${coreOf(id).dailyProgress?.answered}`);
+  // A round has 2 or more questions (the game picks them): up to 3 answers, the real count is what must arrive.
+  const offlineAnswers = await answer(tab, 3, 'h2:has-text("Session complete")');
+  await tab.waitForTimeout(1500); // longer than the game's save wait, so the save has been tried and kept
+  ok(offlineAnswers >= 2 && coreOf(id).dailyProgress?.answered === answered, `answers while offline stay on the device (${offlineAnswers}); the server still has ${coreOf(id).dailyProgress?.answered}`);
   await tablet.setOffline(false);
-  ok(await until(() => coreOf(id).dailyProgress?.answered === answered + 3, 45000), `when the connection comes back, they reach the server: ${coreOf(id).dailyProgress?.answered}`);
+  ok(await until(() => coreOf(id).dailyProgress?.answered === answered + offlineAnswers, 45000), `when the connection comes back, they reach the server: ${answered} + ${offlineAnswers} -> ${coreOf(id).dailyProgress?.answered}`);
   ok(await until(async () => /^Saved$/.test(await syncText(tab)), 20000), 'and the game says Saved: ' + await syncText(tab));
 
   // 5. the page is closed while offline, then the game opens again online
@@ -135,7 +137,7 @@ run(async () => {
   await tab.goto(APP + '/', { waitUntil: 'networkidle' }); await settled(tab); // Home (a reload would stay in the open round)
   await openLesson(tab);
   await tablet.setOffline(true);
-  const more = await answer(tab, 2);
+  const more = await answer(tab, 2, 'h2:has-text("Session complete")');
   await tab.waitForTimeout(1500); // longer than the game's save wait, so the save has been tried and kept
   ok(more === 2 && /Offline/.test(await syncText(tab)) && coreOf(id).dailyProgress?.answered === before, `offline again, ${more} answers kept on the device: ${await syncText(tab)}`);
   await tab.close();

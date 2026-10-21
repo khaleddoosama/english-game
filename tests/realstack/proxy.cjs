@@ -2,7 +2,7 @@
 // Routes what supabase-js sends to the services, as a project's gateway does: /auth/v1 to GoTrue, /rest/v1 to
 // PostgREST, and /realtime/v1 (HTTP and the WebSocket) to Realtime's /socket, with the Host header naming the tenant
 // "realtime-dev" (the one Realtime seeds when it runs self-hosted).
-// With STATIC_DIR set it also serves the built app from that folder (any other path; unknown paths get index.html), so
+// With STATIC_DIR set it also serves the built app from that folder (any other path; unknown app paths get index.html, unknown files 404), so
 // the browser specs open the app from the same address as the API.
 //   node tests/realstack/proxy.cjs            listens on 54330; GoTrue on 54332, PostgREST on 54333, Realtime on 4000
 const http = require('node:http');
@@ -14,7 +14,10 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/cs
 function serveStatic(req, res) {
   const clean = path.normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)).replace(/^([/\\])+/, '');
   let file = path.join(STATIC_DIR, clean);
-  if (!file.startsWith(path.resolve(STATIC_DIR)) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(STATIC_DIR, 'index.html');
+  const found = file.startsWith(path.resolve(STATIC_DIR)) && fs.existsSync(file) && !fs.statSync(file).isDirectory();
+  // A missing file (for example Vercel's /_vercel/insights/script.js, which only Vercel serves) is a 404, not the page.
+  if (!found && path.extname(clean)) { res.writeHead(404); res.end('not found'); return; }
+  if (!found) file = path.join(STATIC_DIR, 'index.html');
   res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream' });
   fs.createReadStream(file).pipe(res);
 }
