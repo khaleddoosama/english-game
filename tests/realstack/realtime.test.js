@@ -10,8 +10,13 @@ import { ENABLED, cleanup, newTag, promote, signUp } from "./stack";
 
 const REALTIME = ENABLED && process.env.REALSTACK_REALTIME === "1";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-// Realtime adds the message's own id to what realtime.send() sent; everything else is what the trigger sent.
-const sent = (message) => { const { id: _id, ...rest } = message?.payload || {}; return rest; };
+// What the trigger sent, from a message that must have arrived (Realtime adds the message's own id; it is left out).
+// A missing message fails here, so an empty payload can never pass for a delivered one.
+const sent = (message) => {
+  expect(message, "the message did not arrive").not.toBeNull();
+  const { id: _id, ...rest } = message.payload || {};
+  return rest;
+};
 const QUESTIONS = [1, 2, 3].map((n) => ({ mode: "meaning", prompt: `p${n}`, options: ["Apple", "Bread", "Cheese"], answer: "Apple", word: "apple" }));
 
 // Listens on a private topic as the app does; `status` is SUBSCRIBED, or CHANNEL_ERROR when the policies refuse.
