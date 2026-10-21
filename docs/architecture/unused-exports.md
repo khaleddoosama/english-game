@@ -74,7 +74,8 @@ again, and a new file with an unused class and an alias each make the guard fail
   can pass.
 - A use whose name is never written whole (a computed property such as `module["foo" + "Bar"]`) is not seen. On
   2026-10-20 no such access to a module or `V2` was found in `src` or `tests`; the namespace imports in tests
-  (`import * as`) name each property they use.
+  (`import * as`) write each name they read in full, in code or in a string (`D[name]` over a written list in
+  `tests/dictionary-rules.test.js`).
 - Exports used only by tests are allowed on purpose; the check does not tell them apart from the app's interface.
 - `known-bugs.md` bug 3 names `buildOppositeDirect` and `safeOppositeDistractor`; they are now internal to
   `questions.js`, so its test will go through `buildQuestion` (or export them again for that test).
