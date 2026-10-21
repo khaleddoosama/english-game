@@ -10,6 +10,8 @@ import { ENABLED, cleanup, newTag, promote, signUp } from "./stack";
 
 const REALTIME = ENABLED && process.env.REALSTACK_REALTIME === "1";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Realtime adds the message's own id to what realtime.send() sent; everything else is what the trigger sent.
+const sent = (message) => { const { id: _id, ...rest } = message?.payload || {}; return rest; };
 const QUESTIONS = [1, 2, 3].map((n) => ({ mode: "meaning", prompt: `p${n}`, options: ["Apple", "Bread", "Cheese"], answer: "Apple", word: "apple" }));
 
 // Listens on a private topic as the app does; `status` is SUBSCRIBED, or CHANNEL_ERROR when the policies refuse.
@@ -54,7 +56,7 @@ describe.skipIf(!REALTIME)("Realtime delivers the database's signals, only to wh
 
     const r = await ann.client.rpc("friend_request", { p_username: bob.username });
     expect(r.error).toBeNull();
-    expect(await bobs.waitFor("friends")).toEqual({ event: "friends", payload: {} });
+    expect(sent(await bobs.waitFor("friends"))).toEqual({}); // a signal only: no name, no answer
     expect(spy.got).toEqual([]);
   }, 30000);
 
@@ -63,7 +65,7 @@ describe.skipIf(!REALTIME)("Realtime delivers the database's signals, only to wh
     expect(anns.status).toBe("SUBSCRIBED");
     const r = await bob.client.rpc("friend_respond", { p_user: ann.id, p_accept: true });
     expect(r.error).toBeNull();
-    expect(await anns.waitFor("friends")).not.toBeNull();
+    expect(sent(await anns.waitFor("friends"))).toEqual({});
   }, 30000);
 
   it("a Live invitation reaches the invited friend; a player joining reaches the challenge's members, not an outsider", async () => {
@@ -74,7 +76,7 @@ describe.skipIf(!REALTIME)("Realtime delivers the database's signals, only to wh
     const bobs = await listen(bob, `user:${bob.id}`, ["invite"]); open.push(bobs);
     const inv = await ann.client.rpc("live_invite_friends", { p_code: code, p_users: [bob.id] });
     expect(inv.error).toBeNull();
-    expect(await bobs.waitFor("invite")).not.toBeNull();
+    expect(sent(await bobs.waitFor("invite"))).toEqual({});
 
     const room = await listen(ann, `live:${code}`, ["joined"]); open.push(room);
     const outsider = await listen(cat, `live:${code}`, ["joined"]); open.push(outsider);
@@ -83,8 +85,7 @@ describe.skipIf(!REALTIME)("Realtime delivers the database's signals, only to wh
 
     const joined = await bob.client.rpc("live_join", { p_code: code });
     expect(joined.error).toBeNull();
-    const signal = await room.waitFor("joined");
-    expect(signal?.payload).toEqual({ user_id: bob.id });
+    expect(sent(await room.waitFor("joined"))).toEqual({ user_id: bob.id });
     expect(outsider.got).toEqual([]);
   }, 45000);
 });
