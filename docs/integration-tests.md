@@ -83,8 +83,8 @@ The database is plain PostgreSQL plus `supabase-stub.sql`. So these tests do
   (`alter default privileges ... grant all`). `SECURITY DEFINER` functions here
   run as a real superuser, so a function that works here could still fail on
   Supabase for lack of a privilege (for example on the `auth` schema).
-- **Realtime and Storage**: the stub has empty tables for them; live
-  challenges' realtime delivery and picture uploads are not tested.
+- **Realtime and Storage**: the stub has empty tables for them; realtime
+  delivery is tested in the real stack instead (below); picture uploads are not tested.
 - **Extensions and versions**: only `pgcrypto`; the real project's Postgres
   version and extensions can differ.
 - **Edge Functions and Vercel API routes** (`api/`): not part of these tests.
@@ -115,9 +115,9 @@ REALSTACK_JWT_SECRET=super-secret-jwt-token-with-at-least-32-characters-long \
 ```
 
 Without the variables the tests are skipped. The last test rolls 0037-0042 back and forward on that database.
-Not in the stack: Realtime, Storage, Studio, the Vercel functions, the app's screens. The migrations need some things from
+Without `WITH_REALTIME=1` the Realtime service is not started. The migrations need some things from
 Realtime and Storage (`realtime.messages`, `realtime.topic()`, `realtime.send()` for the signals of migration 0043, the
-`buckets` columns): `up.sh` creates them by hand, the same way as `supabase/ci/supabase-stub.sql` (keep the two in step).
+`buckets` columns): without the Realtime service `up.sh` creates them by hand, the same way as `supabase/ci/supabase-stub.sql` (keep the two in step).
 `realtime.send()` was missing there until 2026-10-20, so on a fresh real stack the 0043 triggers failed; the SQL block was
 checked on its own after the fix. The agent's environment cannot fetch the images (2026-10-21: Docker Hub 429, the
 `public.ecr.aws` layer downloads refused), so the whole stack runs in CI instead.
@@ -127,16 +127,21 @@ checked on its own after the fix. The agent's environment cannot fetch the image
 tests, and fails if any test fails or is skipped, or if none ran, so a missing variable cannot pass as green. First run
 (#74): 11 passed, 0 skipped. With `realtime.send` removed from the setup on purpose, the job failed at the friend
 request (`function realtime.send(...) does not exist`), as it should.
-**Planned** (2026-10-21): the job also runs Supabase's **Realtime** service (`WITH_REALTIME=1` in `up.sh`): Realtime
-creates its own objects (`realtime.messages`, `realtime.send`, `realtime.topic`) before the migrations, instead of the
-stand-ins, and the gateway forwards `/realtime/v1` (HTTP and WebSocket) to it. `tests/realstack/realtime.test.js`
-signs players in and listens with supabase-js as the app does: a friend request, its answer and a Live invitation reach
-the player's own channel `user:<id>`; a player joining reaches the challenge's channel `live:<code>`; another player
-cannot listen on either (the policies refuse the private channel).
+**Implemented** (2026-10-21, #76): the job also runs Supabase's **Realtime** service (`WITH_REALTIME=1` in `up.sh`,
+image `supabase/realtime` v2.34.47, self-hosted tenant `realtime-dev`): Realtime creates its own objects
+(`realtime.messages`, `realtime.send`, `realtime.topic`) before the migrations, instead of the stand-ins; `up.sh` adds
+the day partitions of `realtime.messages` that the platform makes on a real project, and the gateway forwards
+`/realtime/v1` (HTTP and WebSocket, Host header naming the tenant) to it. `tests/realstack/realtime.test.js` signs
+players in and listens with supabase-js as the app does: a friend request, its answer and a Live invitation reach the
+player's own channel `user:<id>`; a player joining reaches the challenge's channel `live:<code>` with its `user_id`;
+another player cannot listen on either (the policies refuse the private channel: `CHANNEL_ERROR`) and receives
+nothing. Realtime adds the message's own `id` to the payload; the test compares the rest exactly. First passing run:
+14 passed, 0 skipped. With a policy that lets every signed-in player read every private channel added on purpose,
+the job failed (11 passed, 3 failed: the other player's subscriptions were accepted), as it should.
 
-**Open gaps:** a test that the Realtime service delivers a signal to a
-player (no test runs the Realtime service; it was checked by hand once, `docs/modules/live/README.md`). This is still
-not a real project: see `docs/migrations/review-0037-0042.md`, "Not verified".
+**Open gaps:** this is still not a real project (the platform's own gateway, its Realtime settings and partition
+upkeep): see `docs/migrations/review-0037-0042.md`, "Not verified". Storage, Studio, the Vercel functions and the
+app's screens are not in this stack. 
 
 ## Upgrade and rollback check
 
