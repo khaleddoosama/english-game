@@ -127,6 +127,13 @@ checked on its own after the fix. The agent's environment cannot fetch the image
 tests, and fails if any test fails or is skipped, or if none ran, so a missing variable cannot pass as green. First run
 (#74): 11 passed, 0 skipped. With `realtime.send` removed from the setup on purpose, the job failed at the friend
 request (`function realtime.send(...) does not exist`), as it should.
+**Planned** (2026-10-21): the job also runs Supabase's **Realtime** service (`WITH_REALTIME=1` in `up.sh`): Realtime
+creates its own objects (`realtime.messages`, `realtime.send`, `realtime.topic`) before the migrations, instead of the
+stand-ins, and the gateway forwards `/realtime/v1` (HTTP and WebSocket) to it. `tests/realstack/realtime.test.js`
+signs players in and listens with supabase-js as the app does: a friend request, its answer and a Live invitation reach
+the player's own channel `user:<id>`; a player joining reaches the challenge's channel `live:<code>`; another player
+cannot listen on either (the policies refuse the private channel).
+
 **Open gaps:** a test that the Realtime service delivers a signal to a
 player (no test runs the Realtime service; it was checked by hand once, `docs/modules/live/README.md`). This is still
 not a real project: see `docs/migrations/review-0037-0042.md`, "Not verified".
