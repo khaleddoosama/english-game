@@ -122,6 +122,10 @@ Realtime and Storage (`realtime.messages`, `realtime.topic()`, `realtime.send()`
 checked on its own after the fix, the whole stack (Docker) was not run again. Tried again on 2026-10-21: the Docker
 daemon started, but the images could not be fetched (Docker Hub: 429 Too Many Requests; `public.ecr.aws`: layer
 downloads refused). Real stack is not part of CI.
+
+**Planned** (2026-10-21): a CI job `realstack` on every push and pull request runs the same commands on a GitHub
+runner (which can fetch the images) through `tests/realstack/run-ci.sh`: it waits for GoTrue and PostgREST, runs the
+tests, and fails if any of them is skipped or none ran, so a missing variable cannot pass as green.
 **Open gaps:** run the whole real stack again with 0043; a test that the Realtime service delivers a signal to a
 player (no test runs the Realtime service; it was checked by hand once, `docs/modules/live/README.md`). This is still
 not a real project: see `docs/migrations/review-0037-0042.md`, "Not verified".
