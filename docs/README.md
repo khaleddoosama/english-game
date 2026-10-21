@@ -30,6 +30,7 @@ Working documentation for the Word Hunter code base. The top-level [README](../R
 | [integration-tests.md](integration-tests.md) | Database integration tests and the real-stack tests: what they need, how to run them, what they do not prove |
 | [library-unit-test-matrix.md](library-unit-test-matrix.md) | Library and view-round rules, each with the test that checks it |
 | [migrations/review-0037-0042.md](migrations/review-0037-0042.md) | Review of migrations 0037-0042: order, compatibility, rollback, what was not verified |
+| [migrations/production-schema-check.md](migrations/production-schema-check.md) | Read-only comparison of the production schema with migrations 0001-0043 (2026-10-21): what differs and why |
 | [migrations/diagnosis-renamed-words.md](migrations/diagnosis-renamed-words.md) | Library entries left behind by renames made before 0037: diagnosis and repair plan (not run) |
 | [work-tracking/](work-tracking) | What was done, checked and left, per piece of work; handover notes |
 

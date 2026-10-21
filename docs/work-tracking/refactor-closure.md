@@ -55,5 +55,7 @@ are **not** closed by mocks or by other tests passing:
 3. **No browser spec runs the app against a Supabase backend** (`MT-04`'s open part). The specs run in local mode or
    with a fake Supabase; `saveclose.cjs` runs the repo against a real PostgreSQL through the test harness, without
    supabase-js, PostgREST or GoTrue.
-4. **The real project** was not compared with the migrations by these tests; `supabase/ci/preflight-compare.sh` is
-   the read-only check for that ([review-0037-0042.md](../migrations/review-0037-0042.md)).
+4. ~~The real project was not compared with the migrations~~ **closed** 2026-10-21, read-only and by hand: its
+   schema is the one migrations 0001-0043 describe, apart from PostgreSQL 17's `MAINTAIN` privilege and whitespace or
+   comments in 8 function bodies ([production-schema-check.md](../migrations/production-schema-check.md)). It is not
+   automated, and other schemas (`auth`, `storage`) and data were not compared.
