@@ -23,7 +23,10 @@ also covers:
 - access through an object such as `V2.x` or `api.x`, and `import * as`;
 - names written in strings (a mock, a script) or comments.
 
-So the check can call a dead export used (a word that happens to match), but never calls a used export dead.
+It is a text search, a helper guard for the patterns this code uses today, not a proof. It can call a dead export
+used (a word that happens to match). It can also miss a real use whose name is never written whole, for example
+`module["foo" + "Bar"]` for `fooBar`; the code has no such access today, and lint and the build would not catch it
+either, so keep names written out.
 
 Not searched: `legacy/` (the original single file, kept for reference only), `imports/` (data files), `e2e/out`
 (generated output; while it was searched it hid five unused exports), `dist`, `node_modules`. Default exports are not
@@ -58,7 +61,9 @@ builders behind `buildQuestion`, `sampleDistractors`, `safeOppositeDistractor`, 
 How it was checked: lint (an unused name is an error), the build, all unit tests and the browser specs. The
 production build before and after was compared chunk by chunk: 18 of 20 JavaScript chunks are the same; in the
 other two (the admin panel and the main chunk) only minified names differ, and six constants (5, 20, 0.12, 120, 50,
-4000) are now declared once instead of written in place. The removed code was already left out of the build. The unit test
+4000) are now declared once instead of written in place. The removed code was already left out of the build.
+The comparison is strong extra evidence, not a proof on its own (two chunks do differ); the tests and browser specs
+are the other part. The unit test
 counts did not change (1149 passed before; 1151 after, the 2 new guard tests). Deliberate breaks: a new unused
 export, an internal function exported again, a name added back to an `export { }` list, a feature constant exported
 again, and a new file with an unused class and an alias each make the guard fail.
@@ -67,6 +72,9 @@ again, and a new file with an unused class and an alias each make the guard fail
 
 - A name that appears in any other file, even in a comment, counts as used, so a dead export with a common name
   can pass.
+- A use whose name is never written whole (a computed property such as `module["foo" + "Bar"]`) is not seen. On
+  2026-10-20 no such access to a module or `V2` was found in `src` or `tests`; the namespace imports in tests
+  (`import * as`) name each property they use.
 - Exports used only by tests are allowed on purpose; the check does not tell them apart from the app's interface.
 - `known-bugs.md` bug 3 names `buildOppositeDirect` and `safeOppositeDistractor`; they are now internal to
   `questions.js`, so its test will go through `buildQuestion` (or export them again for that test).

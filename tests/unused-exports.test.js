@@ -1,7 +1,8 @@
 // Every named export in src/ is used somewhere else: in another source file, a test, a browser spec, the API, the
 // database scripts, or as a property (V2.findWord counts for findWord). An export nobody reads is either dead code or
 // should not be exported. Names are matched as whole identifiers, so a mention in a string or a comment also counts:
-// the check can miss a dead export, never call a used one dead. Default exports are not checked.
+// the check can miss a dead export. It is a text search: a use whose name is never written whole (module["foo" + "Bar"])
+// would be missed, so it guards the patterns this code uses, not every possible access. Default exports are not checked.
 // Docs: docs/architecture/unused-exports.md.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
