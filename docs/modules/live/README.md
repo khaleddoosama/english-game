@@ -102,11 +102,12 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
 | Review and rematch | [tests/live-review.test.js](../../../tests/live-review.test.js) |
 | The database's signals: joined, left, progress (with the numbers, nothing of the questions), start, end, rematch; nothing for a change that moves no number or state; who may read or send on which topic | [supabase/tests/realtime_signals.sql](../../../supabase/tests/realtime_signals.sql) |
 | The realtime channel with a fake client: online the browser sends no signal (in any state of the channel), retries, status, events and presence, closing | [tests/live-transport.test.js](../../../tests/live-transport.test.js) |
+| Through Supabase's Realtime service (CI job `realstack`): an invitation reaches the friend's `user:<id>` channel, a player joining reaches the members of `live:<code>`, an outsider's subscription is refused and gets nothing | [tests/realstack/realtime.test.js](../../../tests/realstack/realtime.test.js) |
 | Question variety and freshness | [tests/live-variety.test.js](../../../tests/live-variety.test.js) |
 | Server rules | [supabase/tests/live_challenges.sql](../../../supabase/tests/live_challenges.sql), [live_fairness.sql](../../../supabase/tests/live_fairness.sql), [live_review.sql](../../../supabase/tests/live_review.sql) |
 | Two players in two tabs, with friends and invitations | [e2e/specs/friendslive.cjs](../../../e2e/specs/friendslive.cjs), [e2e/specs/livelib.cjs](../../../e2e/specs/livelib.cjs) |
 
-**Gaps.** No test compares the local backend with the SQL functions (the library has such a test; Live does not; `MT-05`). The realtime channel and its fallback are untested against a real Realtime service. The host's question content is not validated against the course (see Known Issues).
+**Gaps.** No test compares the local backend with the SQL functions (the library has such a test; Live does not; `MT-05`). The app's own channel code (`transport.js`: reconnects, the fallback to polling) is untested against a real Realtime service; the service's delivery and its policies are tested with supabase-js. The host's question content is not validated against the course (see Known Issues).
 
 ## 8. Example journey
 

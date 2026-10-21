@@ -48,9 +48,10 @@ are **not** closed by mocks or by other tests passing:
 1. ~~The real stack was not run again after `realtime.send` was added~~ **closed** 2026-10-21 (#74): CI job
    `realstack` runs it on every push and pull request (Supabase's Postgres, GoTrue, PostgREST, supabase-js) and fails
    if a test is skipped. The agent's own environment still cannot fetch those images.
-2. **No test checks that the Realtime service delivers a signal** to a player (Live, invitations, friend requests).
-   No stack here runs the Realtime service; the database side (`realtime.send` writes the message, the policy lets
-   only the right player read it) is tested on PostgreSQL. Delivery was checked by hand once on the real project.
+2. ~~No test checks that the Realtime service delivers a signal~~ **closed** 2026-10-21 (#76): the `realstack` job
+   runs Supabase's Realtime service; `tests/realstack/realtime.test.js` checks that friend requests, answers, Live
+   invitations and a player joining reach the right players, and that another player cannot listen
+   ([integration-tests.md](../integration-tests.md), "Real stack").
 3. **No browser spec runs the app against a Supabase backend** (`MT-04`'s open part). The specs run in local mode or
    with a fake Supabase; `saveclose.cjs` runs the repo against a real PostgreSQL through the test harness, without
    supabase-js, PostgREST or GoTrue.
