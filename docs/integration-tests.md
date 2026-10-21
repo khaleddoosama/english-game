@@ -139,9 +139,20 @@ nothing. Realtime adds the message's own `id` to the payload; the test compares 
 14 passed, 0 skipped. With a policy that lets every signed-in player read every private channel added on purpose,
 the job failed (11 passed, 3 failed: the other player's subscriptions were accepted), as it should.
 
+**Planned** (2026-10-21): the game's **screens** against this stack. `run-ci.sh` builds the app for online mode
+against the stack (`VITE_SUPABASE_URL` is the gateway, the anon key is signed with the stack's JWT secret), the gateway
+also serves that build, and `e2e/realstack/app.cjs` drives it in Chromium with made-up accounts and words, reading the
+database after each step:
+- an account made on the sign-up screen (GoTrue, `register_player`) plays a round of a lesson in its library to the
+  end and saves it: the answers are in the progress sections and the mastery rows;
+- another device (a new browser profile) signing in shows what the server has;
+- with the connection lost the game says "Offline" and keeps playing; the answers stay on the device, and reach the
+  server when the connection comes back;
+- answers given offline with the page then closed reach the server when the game is opened again.
+
 **Open gaps:** this is still not a real project (the platform's own gateway, its Realtime settings and partition
-upkeep): see `docs/migrations/review-0037-0042.md`, "Not verified". Storage, Studio, the Vercel functions and the
-app's screens are not in this stack. 
+upkeep): see `docs/migrations/review-0037-0042.md`, "Not verified". Storage, Studio and the Vercel functions are not in this
+stack. 
 
 ## Upgrade and rollback check
 
