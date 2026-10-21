@@ -124,10 +124,15 @@ run(async () => {
   ok(await until(async () => /^Saved$/.test(await syncText(tab)), 20000), 'and the game says Saved: ' + await syncText(tab));
 
   // 5. the page is closed while offline, then the game opens again online
+  // A new round, started online, then played offline; the page is closed once the game has kept the answers.
   const before = coreOf(id).dailyProgress?.answered;
+  await tab.reload({ waitUntil: 'networkidle' }); await settled(tab);
+  await openLesson(tab);
   await tablet.setOffline(true);
   const more = await answer(tab, 2);
-  await tab.close({ runBeforeUnload: true });
+  await tab.waitForTimeout(1500); // longer than the game's save wait, so the save has been tried and kept
+  ok(more === 2 && /Offline/.test(await syncText(tab)) && coreOf(id).dailyProgress?.answered === before, `offline again, ${more} answers kept on the device: ${await syncText(tab)}`);
+  await tab.close();
   await tablet.setOffline(false);
   const again = await newPage(tablet);
   await again.goto(APP + '/', { waitUntil: 'networkidle' }); await settled(again);
