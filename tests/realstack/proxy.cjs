@@ -1,10 +1,26 @@
-/* global process, console */
+/* global process, console, URL */
 // Routes what supabase-js sends to the services, as a project's gateway does: /auth/v1 to GoTrue, /rest/v1 to
 // PostgREST, and /realtime/v1 (HTTP and the WebSocket) to Realtime's /socket, with the Host header naming the tenant
 // "realtime-dev" (the one Realtime seeds when it runs self-hosted).
+// With STATIC_DIR set it also serves the built app from that folder (any other path; unknown app paths get index.html, unknown files 404), so
+// the browser specs open the app from the same address as the API.
 //   node tests/realstack/proxy.cjs            listens on 54330; GoTrue on 54332, PostgREST on 54333, Realtime on 4000
 const http = require('node:http');
 const net = require('node:net');
+const fs = require('node:fs');
+const path = require('node:path');
+const STATIC_DIR = process.env.STATIC_DIR;
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.ico': 'image/x-icon', '.woff2': 'font/woff2' };
+function serveStatic(req, res) {
+  const clean = path.normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)).replace(/^([/\\])+/, '');
+  let file = path.join(STATIC_DIR, clean);
+  const found = file.startsWith(path.resolve(STATIC_DIR)) && fs.existsSync(file) && !fs.statSync(file).isDirectory();
+  // A missing file (for example Vercel's /_vercel/insights/script.js, which only Vercel serves) is a 404, not the page.
+  if (!found && path.extname(clean)) { res.writeHead(404); res.end('not found'); return; }
+  if (!found) file = path.join(STATIC_DIR, 'index.html');
+  res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream' });
+  fs.createReadStream(file).pipe(res);
+}
 const ROUTES = [['/auth/v1', 54332, ''], ['/rest/v1', 54333, ''], ['/realtime/v1', 4000, '/socket']];
 const TENANT_HOST = 'realtime-dev.localhost';
 const route = (url) => {
@@ -16,6 +32,7 @@ const route = (url) => {
 
 const server = http.createServer((req, res) => {
   const r = route(req.url);
+  if (!r && STATIC_DIR) { serveStatic(req, res); return; }
   if (!r) { res.writeHead(404); res.end('no route'); return; }
   const headers = r.realtime ? { ...req.headers, host: TENANT_HOST } : req.headers;
   const up = http.request({ host: '127.0.0.1', port: r.port, method: req.method, path: r.path, headers }, (u) => { res.writeHead(u.statusCode, u.headers); u.pipe(res); });

@@ -81,5 +81,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
       - run: tests/realstack/up.sh
       - run: tests/realstack/run-ci.sh
