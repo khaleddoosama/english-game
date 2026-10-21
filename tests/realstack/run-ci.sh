@@ -7,6 +7,8 @@ cd "$(dirname "$0")/../.."
 export REALSTACK_URL=http://127.0.0.1:54330
 export REALSTACK_PGURL=postgres://supabase_admin:postgres@127.0.0.1:54331/postgres
 export REALSTACK_JWT_SECRET=super-secret-jwt-token-with-at-least-32-characters-long
+# With the Realtime service (up.sh with WITH_REALTIME=1) the delivery tests run too; they are skipped otherwise.
+export REALSTACK_REALTIME="${WITH_REALTIME:-}"
 node tests/realstack/proxy.cjs > /tmp/realstack-proxy.log 2>&1 &
 proxy=$!
 trap 'kill $proxy 2>/dev/null || true' EXIT
@@ -20,5 +22,5 @@ node -e '
   console.log(`real stack: ${r.numPassedTests} passed, ${r.numFailedTests} failed, ${r.numPendingTests + r.numTodoTests} skipped`);
   if (r.numFailedTests || r.numPendingTests || r.numTodoTests || !r.numPassedTests) process.exit(1);
 ' "$out" || rc=1
-if [ "$rc" -ne 0 ]; then echo "--- GoTrue"; docker logs whauth 2>&1 | tail -15; echo "--- PostgREST"; docker logs whrest 2>&1 | tail -15; fi
+if [ "$rc" -ne 0 ]; then echo "--- GoTrue"; docker logs whauth 2>&1 | tail -15; echo "--- PostgREST"; docker logs whrest 2>&1 | tail -15; [ -n "$REALSTACK_REALTIME" ] && { echo "--- Realtime"; docker logs whrealtime 2>&1 | tail -40; }; fi
 exit "$rc"

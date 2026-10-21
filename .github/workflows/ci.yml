@@ -68,10 +68,12 @@ jobs:
       - run: npx playwright-core install --with-deps chromium
       - run: node e2e/specs/saveclose.cjs
 
-  # Supabase's own images (Postgres 15.8, GoTrue, PostgREST) with every migration, and supabase-js signing players in
-  # (tests/realstack). Fails if any of those tests is skipped. Not in it: Realtime, Storage, the app's screens.
+  # Supabase's own images (Postgres 15.8, GoTrue, PostgREST, Realtime) with every migration, and supabase-js signing
+  # players in and listening (tests/realstack). Fails if any of those tests is skipped. Not in it: Storage.
   realstack:
     runs-on: ubuntu-latest
+    env:
+      WITH_REALTIME: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
