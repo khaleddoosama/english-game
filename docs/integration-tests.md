@@ -166,17 +166,18 @@ also requires no page errors. First passing run: every step, no page errors. Wit
 on purpose just before the spec, it failed at each save (the game said "Not saved yet · retrying" and the server
 had nothing), as it should; the vitest tests of the same run passed.
 
-**Planned** (2026-10-22): a **Live challenge between two players** from the game's screens, on this stack, each
+**Implemented** (2026-10-22): a **Live challenge between two players** from the game's screens, on this stack, each
 player in their own browser profile, with the app's own channel code (`src/features/live/transport.js`).
-`e2e/realstack/live.cjs`: the host makes a challenge on the form; the other player opens its link and joins; the
-host's lobby shows them, the start reaches the other player, and each answer reaches the other's race. Each of those
-must arrive through a Realtime message the browser received (its WebSocket frames are read) and show sooner than the
-room's polling (20 s while the channel is live): the screen must change within 1.5 s after the frame. The other
-player's connection is lost twice. After 10 s offline, the room must catch up and get the host's next answer through
-Realtime. After 60 s (longer than the channel's retries), the room must catch up and get the next answer within its
-4 s polling; the spec prints whether that came from Realtime (Known Issue on the Live page: it does not). Both finish
-and see the results. **Planned** (2026-10-22): after 60 s too, the next answer must come through Realtime (the same
-1.5 s rule as after 10 s), with the fix in `transport.js` (Live page, section 6).
+`e2e/realstack/live.cjs` (run by `run-ci.sh` with Realtime): the host makes a challenge on the form; the other player
+opens its link and joins; the host's lobby shows them, the start reaches the other player, and each answer reaches
+the other's race. Each of those must arrive through a Realtime message the browser received (its WebSocket frames
+are read) and show sooner than the room's polling (20 s while the channel is live): the screen must change within
+1.5 s after the frame. The other player's connection is lost twice, for 10 s (the socket survives) and for 60 s (the
+socket is dropped and realtime-js reconnects); after each, the room must catch up and get the host's next answer
+through Realtime. Both finish and see the results. Evidence: on the commit with only the tightened check (CI run
+39753848764) every step passed except the one after 60 s offline (message at +32 ms, screen at +4.1 s: the next
+poll); with the fix in `transport.js` (run 39753913435) it passed (message at +29 ms, screen at +255 ms, the channel
+joined again). See the Live page, Fixed (2026-10-22).
 
 **Open gaps:** this is still not a real project (the platform's own gateway, its Realtime settings and partition
 upkeep): see `docs/migrations/review-0037-0042.md`, "Not verified". Storage, Studio and the Vercel functions are not in this

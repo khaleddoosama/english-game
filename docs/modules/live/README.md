@@ -110,7 +110,7 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
 | Server rules | [supabase/tests/live_challenges.sql](../../../supabase/tests/live_challenges.sql), [live_fairness.sql](../../../supabase/tests/live_fairness.sql), [live_review.sql](../../../supabase/tests/live_review.sql) |
 | Two players in two tabs, with friends and invitations | [e2e/specs/friendslive.cjs](../../../e2e/specs/friendslive.cjs), [e2e/specs/livelib.cjs](../../../e2e/specs/livelib.cjs) |
 
-**Gaps.** No test compares the local backend with the SQL functions (the library has such a test; Live does not; `MT-05`). The app's own channel code (`transport.js`: reconnects, the fallback to polling) is untested against a real Realtime service; the service's delivery and its policies are tested with supabase-js. **Planned** (2026-10-22): a two-player challenge in the browser on the real stack, through `transport.js`, with the connection lost and back ([integration-tests.md](../../integration-tests.md), "Real stack"). The host's question content is not validated against the course (see Known Issues).
+**Gaps.** No test compares the local backend with the SQL functions (the library has such a test; Live does not; `MT-05`). The service's delivery and its policies are tested with supabase-js; the app's own channel code (`transport.js`) is tested against the real Realtime service by a two-player challenge in the browser, with the connection lost for 10 s and 60 s and back ([integration-tests.md](../../integration-tests.md), "Real stack"; `e2e/realstack/live.cjs`). Not tested there: the player's own channel `user:<id>` after a loss (unit tests and a one-off local run only). The host's question content is not validated against the course (see Known Issues).
 
 ## 8. Example journey
 
@@ -157,7 +157,8 @@ Dana (synthetic) challenges two friends.
   dropped. Now `transport.js` and `socialSignals.js` keep their one channel and let realtime-js join it again
   ([section 6](#6-failure-retry-cancel-offline)). Checked: the unit tests (`tests/live-transport.test.js`,
   `tests/social-signals.test.jsx`) failed before the change; `live.cjs` now needs the update after 60 s offline to
-  come through Realtime; a one-off local run of the real realtime-js against a stand-in Phoenix server (30 s loss,
+  come through Realtime, and failed on CI without the fix (screen at +4.1 s) and passed with it (screen at +255 ms
+  after the message); a one-off local run of the real realtime-js against a stand-in Phoenix server (30 s loss,
   not kept) failed before and passed after, for both channels. A room left before its channel was made no longer
   opens one anyway.
 
