@@ -1,6 +1,6 @@
 # Module: content
 
-The shared course that every player plays from: words, grammar rules, challenges, stories and combos, and the order of the lessons. Proposed boundary, see [module-map.md](../../architecture/module-map.md). Decision: [ADR 0004](../../adr/0004-text-keys-for-words-and-progress.md).
+The shared course that every player plays from: words, grammar rules, challenges, stories and combos, and the order of the lessons. Proposed boundary, see [module-map.md](../../architecture/module-map.md). Decision: [ADR 0004](../../adr/0004-text-keys-for-words-and-progress.md). Every field of a word, where it is written and read: [word-fields.md](word-fields.md).
 
 ## 1. Purpose and scope
 

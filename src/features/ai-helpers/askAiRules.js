@@ -14,9 +14,11 @@ export function aiWordEntry(result, contextCategory) {
   return { word: result.word, type: result.type, ...(result.partsOfSpeech?.length ? { partsOfSpeech: result.partsOfSpeech } : {}), category: contextCategory || result.category || "AI Discoveries", meaning: result.meaning, situation: result.situation, gap: result.gap, hints: result.hints || [], _aiAdded: true, ...(result.commonMistake ? { commonMistake: result.commonMistake } : {}) };
 }
 
-// Why the entry cannot be added (shown in the drawer), or null.
+// Why the entry cannot be added (shown in the drawer), or null. The answer's check leaves the gap empty when it was
+// unusable (askAiCard.js).
 export function aiWordProblem(entry, live) {
   if (/[\u0600-\u06FF]/.test(JSON.stringify(entry))) return "The generated card contains non-English text. Regenerate it before adding.";
+  if (!entry.gap) return "This card has no usable gap sentence. Ask again before adding.";
   const errors = V2.validateContent({ schemaVersion: 2, kind: "content", words: [entry] }, live);
   return errors.length ? `Cannot add this card: ${errors[0]}` : null;
 }

@@ -15,7 +15,7 @@ Working documentation for the Word Hunter code base. The top-level [README](../R
 | [architecture/repo.md](architecture/repo.md) | The repo layer (`src/lib/repo.js` and `src/lib/repo/`): its parts and their state |
 | [architecture/unused-exports.md](architecture/unused-exports.md) | Every export in `src/` has a user elsewhere: the rule, its guard test, what was removed |
 | [adr/](adr/README.md) | Architecture decision records: what was decided, why, alternatives |
-| [ai-usage-inventory.md](ai-usage-inventory.md) | Where the app uses AI (written earlier, in Arabic) |
+| [ai-usage-inventory.md](ai-usage-inventory.md) | Every AI call: where it starts, input, expected answer, checks, use, ways to improve |
 
 ### How to work on the project
 
@@ -42,7 +42,7 @@ One folder per module under [modules](modules). Each page has the same sections:
 | --- | --- |
 | [app-shell](modules/app-shell/README.md) | Start-up, routing, layout, player preferences, wiring |
 | [accounts](modules/accounts/README.md) | Sign-in, sign-up, roles, profile (guide: [signing in](modules/accounts/sign-in.md)) |
-| [content](modules/content/README.md) | The shared course ("Dictionary"): loading, caching, saving, import and export, renames (guides: [dictionary rules](modules/content/dictionary-rules.md), [loading and saving](modules/content/content-sync.md), [the game's copy](modules/content/content-catalog.md)) |
+| [content](modules/content/README.md) | The shared course ("Dictionary"): loading, caching, saving, import and export, renames (guides: [word fields](modules/content/word-fields.md), [dictionary rules](modules/content/dictionary-rules.md), [loading and saving](modules/content/content-sync.md), [the game's copy](modules/content/content-catalog.md)) |
 | [learning-engine](modules/learning-engine/README.md) | Pure rules: questions, grading, mastery, session evidence; guide to [practice question selection](modules/learning-engine/practice-selection.md) |
 | [practice](modules/practice/README.md) | Home, sessions, results, stories, speed, stats, question reports (guide: [question-reports](modules/practice/question-reports.md)) |
 | [progress](modules/progress/README.md) | A player's saved state, offline snapshot, merge, leaderboard numbers |
