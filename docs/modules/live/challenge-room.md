@@ -83,7 +83,7 @@ finished; the last answer of the challenge also sends "end". A failed answer (af
 | --- | --- |
 | A whole room in two tabs (local mode): the link, the host seeing the guest arrive, starting together, questions in order, the race, a reload in the middle, waiting, results, a rematch, removing, leaving, cancelling | `e2e/specs/liveroom.cjs` |
 | The rules and the hook: questions kept, the next question, my row, signals and presence, polling, the rematch check, actions, opening a rematch | `tests/live-room.test.jsx` |
-| The channel itself (signals, retries, status) | `tests/live-transport.test.js` |
+| The channel itself (signals, a lost channel joined again, status) | `tests/live-transport.test.js` |
 | Invitations from friends, joining from them | `e2e/specs/friendslive.cjs` |
 | The server's rules | `tests/live.test.js`, `supabase/tests/live_*.sql` |
 

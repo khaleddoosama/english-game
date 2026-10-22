@@ -47,7 +47,10 @@ Inside the module:
   opened by `useSocial` once the game has loaded) brings the database's signals (migration 0043): "friends" when a
   request is sent, answered or ended (to both players) and "invite" when the player is invited to a challenge. On a
   signal the badges are counted again at once, the Friends page reads its lists again, and the Live home reads its
-  invitations again. A failed channel is tried again after 1, 3 and 8 seconds, then the checks above carry on alone.
+  invitations again. A lost channel is kept and realtime-js joins it again by itself for as long as the game is open
+  (like Live's channel); the checks above carry on meanwhile. Before 2026-10-22 it was tried again after 1, 3 and 8
+  seconds and then given up, so after a longer loss no signal arrived until the game was opened again
+  ([Live](../live/README.md), Fixed).
   Nobody but the database can send on these channels, and a player can read only their own.
 - The Live tab shows the waiting invitations, the Profile tab the waiting friend requests; above 9 the badge says
   "9+". The Profile page's Friends button shows the requests too.
@@ -124,7 +127,7 @@ tooltip.
 | --- | --- |
 | Everything above in a browser with the app built for online mode and a fake Supabase: the badges, the four tabs (what each reads, order, values, notes, empty and failed reads), the add-friend button, the Friends page's actions and messages (offline too), the Live history, Ranks off for players and the admin, local mode's text | `e2e/specs/social.cjs` |
 | The rules | `tests/social-rules.test.js` |
-| The player's channel and its listeners (private `user:<id>`, both signals, retries, closing, nothing in local mode; the badges and Live's invitations ask again) | `tests/social-signals.test.jsx` |
+| The player's channel and its listeners (private `user:<id>`, both signals, a lost channel kept and heard again once joined, closing, nothing in local mode; the badges and Live's invitations ask again) | `tests/social-signals.test.jsx` |
 | What the database sends and who may read it | `supabase/tests/realtime_signals.sql` |
 | The hooks: the friends API and badges (online, local, before loading), a tab's rows (a late answer dropped, the Friends tab), the Friends page's actions, the Live history | `tests/social-hooks.test.jsx` |
 | Social in no loop, not importing Live, reached only through its index (by the shell and Live) | `tests/architecture.test.js` |

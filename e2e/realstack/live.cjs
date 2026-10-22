@@ -5,9 +5,9 @@
 //   the start reaches the other player, and each answer reaches the other's race, each through a Realtime message the
 //   browser received (its WebSocket frames are read) and on screen sooner than the room's polling (20 s while live);
 // - the other player's connection is lost for 10 s and comes back: the room catches up and the next answer reaches it
-//   through Realtime; lost for 60 s (longer than the room's channel retries): the room catches up and the next answer
-//   arrives within its 4 s polling. Known Issue: after the long loss the update comes from polling, not Realtime
-//   (docs/modules/live/README.md); the spec prints which;
+//   through Realtime; lost for 60 s (the socket is dropped and realtime-js reconnects): the room catches up, and the
+//   next answer reaches it through Realtime too (before 2026-10-22 it came only from the 4 s polling, because the
+//   room's channel had given up; docs/modules/live/README.md, Fixed);
 // - both finish and see the results.
 // NOT proven here: a real Supabase project (its gateway and Realtime settings). Docs: docs/integration-tests.md.
 const { execFileSync } = require('node:child_process');
@@ -145,8 +145,8 @@ run(async () => {
   c = causedBy(H.ws.got(code, 'progress', t), t, seen);
   ok(c.yes, `the host's race shows the other player's answer, from a Realtime "progress" message (${c.text})`);
 
-  // 5. the other player's connection is lost while the host plays on, then comes back: once for 10 s, and once for
-  // 60 s, longer than the room's channel keeps retrying (transport.js: 3 tries, then polling every 4 s).
+  // 5. the other player's connection is lost while the host plays on, then comes back: once for 10 s (the socket
+  // survives), and once for 60 s (the socket is dropped; before 2026-10-22 transport.js gave up its channel then).
   let hostAnswered = 0;
   const pct = (n) => `${n * 10}%`;
   async function outage(seconds) {
@@ -168,10 +168,7 @@ run(async () => {
   const short = await outage(10);
   ok(short.r.yes, `after 10 s offline, the host's next answer reaches the other player's screen through Realtime (${short.r.text}; the same socket: ${short.sockets === 0})`);
   const long = await outage(60);
-  // Known Issue (docs/modules/live/README.md): after a loss longer than the channel's retries, the room stays on
-  // polling. The message still reaches the browser (realtime-js reconnects), but no channel of the room listens.
-  ok(long.seen !== null && long.seen - long.t1 <= 6000, `after 60 s offline, the host's next answer reaches the other player's screen within the room's 4 s polling (${long.r.text})`);
-  console.log(`INFO after 60 s offline: ${long.r.yes ? 'the update came through Realtime' : 'KNOWN ISSUE: the update came from polling, not from Realtime'} (${long.r.text}; channel joined again: ${long.again}; ${long.sockets} new socket(s))`);
+  ok(long.r.yes, `after 60 s offline, the host's next answer reaches the other player's screen through Realtime (${long.r.text}; channel joined again: ${long.again}; ${long.sockets} new socket(s))`);
   console.log('INFO the other player\'s channel, as transport.js reported it: ' + (channelLog.join(' | ') || 'nothing'));
 
   // 6. both finish and see the results

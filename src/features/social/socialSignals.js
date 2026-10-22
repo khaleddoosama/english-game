@@ -5,7 +5,6 @@
 import { isLocalMode, supabase } from "../../lib/supabase";
 
 export const SOCIAL_SIGNALS = ["friends", "invite"];
-const RETRY_MS = [1000, 3000, 8000];
 const listeners = new Set();
 
 // fn(event, payload) for every signal; returns the function that stops listening.
@@ -16,24 +15,19 @@ export function onSocialSignal(fn) {
 const emit = (event, payload) => listeners.forEach((fn) => fn(event, payload));
 
 // Opens the player's channel (nothing in local mode, where other tabs' changes arrive as storage events); returns
-// close(). A failed channel is tried again after 1, 3 and 8 seconds, then left to the checks.
+// close(). A lost channel is kept: realtime-js joins it again by itself for as long as the game is open (as Live's
+// channel, src/features/live/transport.js), and the checks carry on meanwhile. Until 2026-10-22 it was replaced up to
+// 3 times and then given up, which lost every signal after a long loss until the game was opened again.
 export function openPersonalChannel(userId, client = supabase) {
   if (isLocalMode || !client || !userId) return () => {};
-  let channel = null, closed = false, attempt = 0, timer = null;
+  let channel = null, closed = false;
   const connect = async () => {
     try { await client.realtime.setAuth(); } catch {}
     if (closed) return;
     channel = client.channel(`user:${userId}`, { config: { private: true } });
     for (const event of SOCIAL_SIGNALS) channel.on("broadcast", { event }, ({ payload }) => emit(event, payload));
-    channel.subscribe((status) => {
-      if (closed) return;
-      if (status === "SUBSCRIBED") { attempt = 0; return; }
-      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-        client.removeChannel(channel);
-        if (attempt < RETRY_MS.length) timer = setTimeout(connect, RETRY_MS[attempt++]);
-      }
-    });
+    channel.subscribe();
   };
   connect();
-  return () => { closed = true; clearTimeout(timer); if (channel) client.removeChannel(channel); };
+  return () => { closed = true; if (channel) client.removeChannel(channel); };
 }

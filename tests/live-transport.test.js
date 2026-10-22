@@ -1,7 +1,9 @@
 // The Live realtime channel (src/features/live/transport.js), online side, with a fake Supabase Realtime client:
 // the browser sends no signal (the database sends them, migration 0043), whatever the channel's state; the status goes
-// connecting -> live, with three retries (1 s, 3 s, 8 s) before "offline"; events and presence from others reach
-// the screen; closing removes the channel and stops the retries. Made-up players. NOT proven: the real Supabase Realtime service.
+// connecting -> live; a failed channel is kept (realtime-js joins it again by itself), never replaced and never given
+// up, and is live again once joined; events and presence from others reach the screen; closing removes the one
+// channel, and closing before it is made leaves none. Made-up players. NOT proven: the real Supabase Realtime service
+// and realtime-js's own rejoining (e2e/realstack/live.cjs checks those).
 // Docs: docs/modules/live/README.md.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -9,7 +11,8 @@ const env = vi.hoisted(() => ({ client: null }));
 vi.mock("../src/lib/supabase", () => ({ isLocalMode: false, get supabase() { return env.client; } }));
 const { openLiveChannel } = await import("../src/features/live/transport");
 
-// A fake client: every channel made is kept with what it was asked to send; the test decides when it subscribes.
+// A fake client: every channel made is kept with what it was asked to send; the test decides when it subscribes, and
+// plays realtime-js's part: a lost channel reports CHANNEL_ERROR or TIMED_OUT, and SUBSCRIBED again once rejoined.
 function fakeClient() {
   const c = {
     channels: [], removed: [],
@@ -62,35 +65,40 @@ describe("live channel: sending", () => {
     expect(ch.sent).toEqual([]);
   });
 
-  it("nor while it reconnects, nor after giving up", async () => {
-    const { link, calls } = open();
+  it("nor while the channel is lost, nor once it is joined again", async () => {
+    const { link } = open();
     await settle();
-    for (const wait of [1000, 3000, 8000]) {
-      env.client.channels.at(-1).status("TIMED_OUT");
+    const [ch] = env.client.channels;
+    for (const status of ["TIMED_OUT", "CHANNEL_ERROR", "TIMED_OUT"]) {
+      ch.status(status);
       link.send("progress", { user_id: SAM.id, answered: 2 });
-      await vi.advanceTimersByTimeAsync(wait);
+      await vi.advanceTimersByTimeAsync(10000);
     }
-    env.client.channels.at(-1).status("TIMED_OUT");
-    expect(calls.status.at(-1)).toBe("offline");
+    await ch.status("SUBSCRIBED");
     link.send("end", {});
     await vi.advanceTimersByTimeAsync(20000);
-    expect(env.client.channels).toHaveLength(4);
-    expect(env.client.channels.flatMap((ch) => ch.sent)).toEqual([]);
+    expect(env.client.channels.flatMap((c) => c.sent)).toEqual([]);
   });
 
-  it("closing removes the channel, and stops the retries", async () => {
-    const first = open();
+  it("closing removes the one channel, also while it is lost; a late status from it changes nothing", async () => {
+    const { link, calls } = open();
     await settle();
     const [ch] = env.client.channels;
     await ch.status("SUBSCRIBED");
-    first.link.close();
+    ch.status("CHANNEL_ERROR", { message: "transport failure" });
+    link.close();
     expect(env.client.removed).toEqual([ch]);
-    const second = open();
-    await settle();
-    env.client.channels.at(-1).status("CHANNEL_ERROR", { message: "dropped" });
-    second.link.close();
-    await vi.advanceTimersByTimeAsync(20000);
-    expect(env.client.channels).toHaveLength(2);
+    const seen = calls.status.length;
+    await ch.status("SUBSCRIBED");
+    await vi.advanceTimersByTimeAsync(60000);
+    expect([env.client.channels, calls.status.length, ch.tracked]).toEqual([[ch], seen, [SAM]]);
+  });
+
+  it("closing before the channel is made (the room left at once) leaves none", async () => {
+    const { link, calls } = open();
+    link.close();
+    await vi.advanceTimersByTimeAsync(60000);
+    expect([env.client.channels, env.client.removed, calls.status]).toEqual([[], [], ["connecting"]]);
   });
 });
 
@@ -105,20 +113,34 @@ describe("live channel: status, events and presence", () => {
     expect(ch.tracked).toEqual([SAM]);
   });
 
-  it("retries after 1, 3 and 8 seconds, then says offline", async () => {
+  it("a lost channel is kept, not replaced: connecting (polling) while it is lost, however long, then live again", async () => {
     const { calls } = open();
     await settle();
-    const made = [];
-    for (const wait of [1000, 3000, 8000]) {
-      env.client.channels.at(-1).status("CHANNEL_ERROR", { message: "MissingPartition" });
-      await vi.advanceTimersByTimeAsync(wait - 1);
-      made.push(env.client.channels.length);
-      await vi.advanceTimersByTimeAsync(1);
+    const [ch] = env.client.channels;
+    await ch.status("SUBSCRIBED");
+    // A long loss (CI, 2026-10-22: 60 s offline): realtime-js reports the channel lost again and again for minutes.
+    for (let i = 0; i < 12; i++) {
+      ch.status(i % 3 ? "CHANNEL_ERROR" : "TIMED_OUT", { message: "transport failure" });
+      await vi.advanceTimersByTimeAsync(10000);
     }
-    expect(made).toEqual([1, 2, 3]);
-    env.client.channels.at(-1).status("CHANNEL_ERROR", { message: "MissingPartition" });
-    expect(env.client.channels).toHaveLength(4);
-    expect(calls.status.at(-1)).toBe("offline");
+    expect([calls.status.at(-1), env.client.channels, env.client.removed]).toEqual(["connecting", [ch], []]);
+    // The network is back: realtime-js joins the same channel again.
+    await ch.status("SUBSCRIBED");
+    expect(calls.status.at(-1)).toBe("live");
+    expect(calls.status).not.toContain("offline");
+    expect(ch.tracked).toEqual([SAM, SAM]);
+    ch.emit("broadcast", "progress", { payload: { user_id: "u-ada", answered: 5 } });
+    expect(calls.events).toEqual([["progress", { user_id: "u-ada", answered: 5 }]]);
+    expect(env.client.channels).toEqual([ch]);
+  });
+
+  it("a channel that fails before its first join (e.g. MissingPartition) is kept too, and goes live when it joins", async () => {
+    const { calls } = open();
+    await settle();
+    const [ch] = env.client.channels;
+    for (let i = 0; i < 5; i++) { ch.status("CHANNEL_ERROR", { message: "MissingPartition" }); await vi.advanceTimersByTimeAsync(10000); }
+    await ch.status("SUBSCRIBED");
+    expect([calls.status.at(-1), env.client.channels, env.client.removed]).toEqual(["live", [ch], []]);
   });
 
   it("events and presence from others reach the screen", async () => {

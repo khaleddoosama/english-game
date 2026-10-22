@@ -87,8 +87,11 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
 
 - Offline: the module needs a connection. Messages say so ("You're offline. Live Challenge needs a connection.").
 - `answer` is retried up to 3 times with growing waits when the network fails; a server refusal (an error code) is not retried.
-- Realtime failure: up to three reconnect attempts (1 s, 3 s, 8 s), then the screen relies on polling. The screen
-  does not show whether the channel works (only a console warning "Live channel: …").
+- Realtime failure: the room keeps its one channel for as long as it is open and realtime-js joins it again by itself
+  (it tries after 1, 2 and 5 s, then every 10 s while the socket is up, and at once when the socket reconnects). While
+  the channel is not joined the room polls every 4 s; once it is joined again it is "live", tracks its presence again
+  and polls every 20 s. It never gives up and never opens a second channel for the same challenge (since 2026-10-22;
+  see Fixed). The screen does not show whether the channel works (only a console warning "Live channel: …").
 - Leaving before pressing Start removes the player (the host leaving an unstarted lobby removes the challenge); after Start a player cannot leave.
 - The host can end the challenge or remove a player who has not started.
 - A closed tab mid-challenge: the player returns to `/live/<code>` and continues from the next unanswered question; the clock between answers is the server's.
@@ -101,14 +104,14 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
 | A whole room in two tabs; the room's rules and hook | [e2e/specs/liveroom.cjs](../../../e2e/specs/liveroom.cjs), [tests/live-room.test.jsx](../../../tests/live-room.test.jsx) |
 | Review and rematch | [tests/live-review.test.js](../../../tests/live-review.test.js) |
 | The database's signals: joined, left, progress (with the numbers, nothing of the questions), start, end, rematch; nothing for a change that moves no number or state; who may read or send on which topic | [supabase/tests/realtime_signals.sql](../../../supabase/tests/realtime_signals.sql) |
-| The realtime channel with a fake client: online the browser sends no signal (in any state of the channel), retries, status, events and presence, closing | [tests/live-transport.test.js](../../../tests/live-transport.test.js) |
+| The realtime channel with a fake client: online the browser sends no signal (in any state of the channel); a lost channel is kept, never replaced or given up, and is live again once joined; status, events and presence; closing (also before the channel is made) | [tests/live-transport.test.js](../../../tests/live-transport.test.js) |
 | Through Supabase's Realtime service (CI job `realstack`): an invitation reaches the friend's `user:<id>` channel, a player joining reaches the members of `live:<code>`, an outsider's subscription is refused and gets nothing | [tests/realstack/realtime.test.js](../../../tests/realstack/realtime.test.js) |
 | Two players in two browsers on the real stack: the form, the link, the lobby, the start and the race updated by Realtime messages (checked against the WebSocket frames), a 10 s and a 60 s connection loss, the results | [e2e/realstack/live.cjs](../../../e2e/realstack/live.cjs) |
 | Question variety and freshness | [tests/live-variety.test.js](../../../tests/live-variety.test.js) |
 | Server rules | [supabase/tests/live_challenges.sql](../../../supabase/tests/live_challenges.sql), [live_fairness.sql](../../../supabase/tests/live_fairness.sql), [live_review.sql](../../../supabase/tests/live_review.sql) |
 | Two players in two tabs, with friends and invitations | [e2e/specs/friendslive.cjs](../../../e2e/specs/friendslive.cjs), [e2e/specs/livelib.cjs](../../../e2e/specs/livelib.cjs) |
 
-**Gaps.** No test compares the local backend with the SQL functions (the library has such a test; Live does not; `MT-05`). The service's delivery and its policies are tested with supabase-js (`tests/realstack/realtime.test.js`), and since 2026-10-22 a two-player challenge runs in the browser on the real stack, through `transport.js`, with the connection lost for 10 s and for 60 s (`e2e/realstack/live.cjs`, [integration-tests.md](../../integration-tests.md), "Real stack"); it found the Known Issue below about long losses. The host's question content is not validated against the course (see Known Issues).
+**Gaps.** No test compares the local backend with the SQL functions (the library has such a test; Live does not; `MT-05`). The service's delivery and its policies are tested with supabase-js (`tests/realstack/realtime.test.js`), and since 2026-10-22 a two-player challenge runs in the browser on the real stack, through `transport.js`, with the connection lost for 10 s and for 60 s (`e2e/realstack/live.cjs`, [integration-tests.md](../../integration-tests.md), "Real stack"); it found the long-loss defect now in Fixed. Not tested there: the player's own channel `user:<id>` after a loss (unit tests and a one-off local run only). The host's question content is not validated against the course (see Known Issues).
 
 ## 8. Example journey
 
@@ -144,6 +147,23 @@ Dana (synthetic) challenges two friends.
   broadcast is billed once sent and once per receiver, so the duplicates doubled the messages (Supabase Free plan:
   2 million a month, 100 a second, 200 connections at once).
 
+- 2026-10-22: after a connection loss longer than the channel's three retries (for example 60 s offline), the room
+  stayed on polling every 4 s until it was opened again, and the player's own channel (`user:<id>`, friends and
+  invitations) lost every signal until the game was opened again. Seen in CI on the real stack
+  (`e2e/realstack/live.cjs`: the message reached the browser 26 ms after the answer, the screen changed only at the
+  next poll, 3.7 s; the messages carried join reference "57" while the room had no channel left). Likely cause (read
+  from realtime-js's code, not proven against the server): each retry made a new channel while the socket was down;
+  its join waited in realtime-js's send buffer and reached the server when the network came back, but its leave was
+  sent without a join reference, which the server ignores, so the server kept sending to a join the browser had
+  dropped. Now `transport.js` and `socialSignals.js` keep their one channel and let realtime-js join it again
+  ([section 6](#6-failure-retry-cancel-offline)). Checked: the unit tests (`tests/live-transport.test.js`,
+  `tests/social-signals.test.jsx`) failed before the change; `live.cjs` now needs the update after 60 s offline to
+  come through Realtime, and failed on CI without the fix (screen at +4.1 s) and passed with it (screen at +255 ms
+  after the message); a one-off local run of the real realtime-js against a stand-in Phoenix server (30 s loss,
+  not kept) failed before and passed after, for both channels. A room left before its channel was made no longer
+  opens one anyway. Limit of the evidence: `live.cjs` counts a screen change as Realtime when it follows the frame
+  within 1.5 s; that supports, but does not prove, that it did not come from a poll; one CI run before and one after.
+
 **Known Issues**
 
 - `MT-05` the local backend is a second copy of the server rules with no differential test.
@@ -152,13 +172,9 @@ Dana (synthetic) challenges two friends.
   wait for the 30-second check (Live home) or the 45-second badge check. Run 0043 on every online database.
 - The policy that lets members send on `live:<code>` (migration 0008) is still there, though the game no longer
   uses it. Removing it is a database change, left for later.
-- After a connection loss longer than the channel's retries (about 20 s of failures, for example 60 s offline), the
-  room does not use Realtime again until it is opened again: `transport.js` gives up after 3 tries and stays on
-  polling every 4 s. The browser does reconnect and still receives the messages (realtime-js rejoins a channel that
-  could not be removed while offline), but they reach no channel the room listens on, so the screen updates only at
-  the next poll. Seen in CI on the real stack (`e2e/realstack/live.cjs`, 2026-10-22: message at +26 ms, screen at
-  +3.7 s); a loss of 10 s does not trigger it (the socket survives). The screen still shows every change within
-  about 4 s. Changing it is an app change, not done here.
+- Not tested (since 2026-10-22): a channel the server closes by itself (rather than losing it) is not opened again;
+  the room then relies on its polling. A channel that can never be joined (for example a permission removed while
+  the room is open) is tried by realtime-js every 10 s for as long as the room is open.
 - To count the signals on a project: `select event, count(*) from realtime.messages where topic like 'live:%' or
   topic like 'user:%' group by event` (kept 3 days).
 - Assumption (not tested): the server checks the shape of the host's questions and that the answer is among the options, but not that it is the correct answer to the prompt; a careless or malicious host can create wrong keys. This affects only that match.
