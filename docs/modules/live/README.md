@@ -107,7 +107,7 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
 | Server rules | [supabase/tests/live_challenges.sql](../../../supabase/tests/live_challenges.sql), [live_fairness.sql](../../../supabase/tests/live_fairness.sql), [live_review.sql](../../../supabase/tests/live_review.sql) |
 | Two players in two tabs, with friends and invitations | [e2e/specs/friendslive.cjs](../../../e2e/specs/friendslive.cjs), [e2e/specs/livelib.cjs](../../../e2e/specs/livelib.cjs) |
 
-**Gaps.** No test compares the local backend with the SQL functions (the library has such a test; Live does not; `MT-05`). The app's own channel code (`transport.js`: reconnects, the fallback to polling) is untested against a real Realtime service; the service's delivery and its policies are tested with supabase-js. The host's question content is not validated against the course (see Known Issues).
+**Gaps.** No test compares the local backend with the SQL functions (the library has such a test; Live does not; `MT-05`). The app's own channel code (`transport.js`: reconnects, the fallback to polling) is untested against a real Realtime service; the service's delivery and its policies are tested with supabase-js. **Planned** (2026-10-22): a two-player challenge in the browser on the real stack, through `transport.js`, with the connection lost and back ([integration-tests.md](../../integration-tests.md), "Real stack"). The host's question content is not validated against the course (see Known Issues).
 
 ## 8. Example journey
 

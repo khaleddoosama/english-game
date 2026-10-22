@@ -166,6 +166,15 @@ also requires no page errors. First passing run: every step, no page errors. Wit
 on purpose just before the spec, it failed at each save (the game said "Not saved yet · retrying" and the server
 had nothing), as it should; the vitest tests of the same run passed.
 
+**Planned** (2026-10-22): a **Live challenge between two players** from the game's screens, on this stack, each
+player in their own browser profile, with the app's own channel code (`src/features/live/transport.js`).
+`e2e/realstack/live.cjs`: the host makes a challenge on the form; the other player opens its link and joins; the
+host's lobby shows them, the start reaches the other player, and each answer reaches the other's race. Each of those
+must arrive through a Realtime message the browser received (its WebSocket frames are read) and show sooner than the
+room's polling (20 s while the channel is live). The other player's connection is lost twice, for 10 s and for 60 s
+(longer than the channel's retries): after each, the room must catch up, join the channel again, and get the host's
+next answer through Realtime. Both finish and see the results.
+
 **Open gaps:** this is still not a real project (the platform's own gateway, its Realtime settings and partition
 upkeep): see `docs/migrations/review-0037-0042.md`, "Not verified". Storage, Studio and the Vercel functions are not in this
 stack. 
