@@ -1,7 +1,7 @@
 {
   "schemaVersion": 3,
   "kind": "content",
-  "note": "Goals and Dreams, content v3 (4 words). Category Emotions & Psychology, course level B1.1 (Gateway level 9), unit Goals and Dreams.",
+  "note": "Goals and Dreams, content v3 (16 words). Category Emotions & Psychology, course level B1.1 (Gateway level 9), unit Goals and Dreams.",
   "categories": [
     {
       "id": "emotions-psychology",
@@ -14,6 +14,22 @@
         {
           "id": "personality",
           "title": "Personality"
+        },
+        {
+          "id": "career",
+          "title": "Career"
+        },
+        {
+          "id": "crime",
+          "title": "Crime"
+        },
+        {
+          "id": "life-changes",
+          "title": "Life changes"
+        },
+        {
+          "id": "moods",
+          "title": "Moods"
         }
       ]
     }
@@ -271,6 +287,744 @@
         "confusableWith": [
           "manifest"
         ],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    },
+    {
+      "id": "manifestation",
+      "word": "Manifestation",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "goal-mindset",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "A sign that clearly shows something exists or is happening; also, the act of making a wish come true by believing in it.",
+      "situations": [
+        "Ali's hands shake and he can't sleep before every exam — clear signs of his stress.",
+        "Lina says her new job is the result of writing her dream down and believing in it every day."
+      ],
+      "gaps": [
+        "Headaches can be a physical ______ of stress.",
+        "The protest was a ______ of people's anger.",
+        "She believes her success is a ______ of her positive thinking."
+      ],
+      "hints": [
+        "The noun of 'manifest': a clear sign, or a wish made real.",
+        "Ends in '-ation'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "His anger was a manifest of stress.",
+          "correction": "His anger was a manifestation of stress.",
+          "why": "The noun is 'manifestation'; 'manifest' is the verb."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "manifest",
+          "pos": "verb"
+        }
+      ],
+      "collocations": [
+        "a manifestation of",
+        "physical manifestation"
+      ],
+      "synonyms": [
+        "sign",
+        "expression",
+        "indication"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "manifest"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    },
+    {
+      "id": "strive",
+      "word": "Strive",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "goal-mindset",
+      "level": "B1.1",
+      "register": "formal",
+      "meaning": "To try very hard for a long time to achieve something difficult.",
+      "situations": [
+        "Sara worked two jobs and studied every night for years to become a doctor.",
+        "The small team keeps trying to make their app better every single week."
+      ],
+      "gaps": [
+        "We ______ to give our customers the best service.",
+        "She ______d for years to become a pilot.",
+        "Always ______ for excellence, not perfection."
+      ],
+      "hints": [
+        "Try very hard for a long time.",
+        "Rhymes with 'drive'; past tense 'strove'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He strives to success.",
+          "correction": "He strives for success. / He strives to succeed.",
+          "why": "Use 'strive for + noun' or 'strive to + verb'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "striving",
+          "pos": "noun"
+        },
+        {
+          "word": "strove",
+          "pos": "verb"
+        },
+        {
+          "word": "striven",
+          "pos": "verb"
+        }
+      ],
+      "collocations": [
+        "strive for success",
+        "strive to improve"
+      ],
+      "synonyms": [
+        "work hard",
+        "make every effort",
+        "struggle"
+      ],
+      "antonyms": [
+        "give up"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "persist"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    },
+    {
+      "id": "committed",
+      "word": "Committed",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "goal-mindset",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "Giving a lot of time and effort to something because you truly believe in it.",
+      "situations": [
+        "Omar has volunteered at the animal shelter every Saturday for five years and never misses a day.",
+        "The coach comes early and stays late every day because he really believes in his team."
+      ],
+      "gaps": [
+        "She's a ______ teacher who stays late to help her students.",
+        "He is fully ______ to his family and his work.",
+        "We need ______ volunteers who will come every week."
+      ],
+      "hints": [
+        "Describes someone who is dedicated and loyal to something.",
+        "The '-ed' adjective of 'commit' (double 't')."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She is very commited.",
+          "correction": "She is very committed.",
+          "why": "Spell it with double 'm' and double 't': committed."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "commit",
+          "pos": "verb"
+        },
+        {
+          "word": "commitment",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "committed to",
+        "fully committed",
+        "a committed fan"
+      ],
+      "synonyms": [
+        "dedicated",
+        "devoted"
+      ],
+      "antonyms": [
+        "uncommitted",
+        "half-hearted"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "commitment"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    },
+    {
+      "id": "perfectionism",
+      "word": "Perfectionism",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "personality",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "The habit of wanting everything to be perfect and being unhappy with any small mistake.",
+      "situations": [
+        "Mona's need for every detail to be flawless means she never finishes her projects on time.",
+        "Ali spends three hours choosing one photo because none of them feel good enough."
+      ],
+      "gaps": [
+        "Her ______ makes her work slowly.",
+        "______ can lead to stress and burnout.",
+        "He's trying to let go of his ______ and accept 'good enough'."
+      ],
+      "hints": [
+        "The trait (not the person) of wanting everything perfect.",
+        "Ends in '-ism'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "His perfectionist makes him slow.",
+          "correction": "His perfectionism makes him slow.",
+          "why": "'Perfectionism' is the trait; 'perfectionist' is the person."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "perfectionist",
+          "pos": "noun"
+        },
+        {
+          "word": "perfect",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "struggle with perfectionism"
+      ],
+      "synonyms": [
+        "fussiness",
+        "high standards"
+      ],
+      "antonyms": [
+        "carelessness"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "perfectionist"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    },
+    {
+      "id": "persist",
+      "word": "Persist",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "verb"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "goal-mindset",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "To keep doing something even though it is difficult or other people tell you to stop.",
+      "situations": [
+        "Ali failed his driving test three times, but he kept practising and took it again.",
+        "The company said no to her idea twice, but she kept asking until they listened."
+      ],
+      "gaps": [
+        "If you ______, you will succeed in the end.",
+        "He ______ed in asking questions until he got an answer.",
+        "Don't give up — ______ and keep trying."
+      ],
+      "hints": [
+        "The verb: keep going despite problems.",
+        "Starts with 'pers-' and ends with '-ist'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She persisted to ask.",
+          "correction": "She persisted in asking.",
+          "why": "Use 'persist in doing' something."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "persistent",
+          "pos": "adjective"
+        },
+        {
+          "word": "persistence",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "persist in doing",
+        "persist with"
+      ],
+      "synonyms": [
+        "keep going",
+        "carry on",
+        "persevere"
+      ],
+      "antonyms": [
+        "give up",
+        "quit"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "persistent",
+          "persistence"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    },
+    {
+      "id": "persistent",
+      "word": "Persistent",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "adjective"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "goal-mindset",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "Describes a person who keeps trying and doesn't give up easily; also, a problem that continues for a long time.",
+      "situations": [
+        "The salesman called me every day for two weeks until I agreed to meet him.",
+        "I've had a cough for a month that won't go away."
+      ],
+      "gaps": [
+        "Be ______ — send the email again if they don't reply.",
+        "She's very ______ and never gives up on her goals.",
+        "He went to the doctor because of a ______ headache."
+      ],
+      "hints": [
+        "The adjective: describing someone or something that keeps going.",
+        "Ends in '-ent'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He is very persistence.",
+          "correction": "He is very persistent.",
+          "why": "After 'very', use the adjective 'persistent'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "persist",
+          "pos": "verb"
+        },
+        {
+          "word": "persistence",
+          "pos": "noun"
+        },
+        {
+          "word": "persistently",
+          "pos": "adverb"
+        }
+      ],
+      "collocations": [
+        "persistent effort",
+        "persistent pain"
+      ],
+      "synonyms": [
+        "determined",
+        "tenacious"
+      ],
+      "antonyms": [
+        "quitter",
+        "temporary"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "persist",
+          "persistence"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    },
+    {
+      "id": "persistence",
+      "word": "Persistence",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "goal-mindset",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "The quality of continuing to try even when things are difficult.",
+      "situations": [
+        "It took Edison thousands of failed tests before his light bulb finally worked.",
+        "After 50 rejections, the writer's book was finally published."
+      ],
+      "gaps": [
+        "Success comes from hard work and ______.",
+        "Her ______ finally paid off when she got the job.",
+        "Learning to code takes patience and ______."
+      ],
+      "hints": [
+        "The noun: the quality of not giving up.",
+        "Ends in '-ence'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "His persistent paid off.",
+          "correction": "His persistence paid off.",
+          "why": "Use the noun 'persistence' as the subject."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "persist",
+          "pos": "verb"
+        },
+        {
+          "word": "persistent",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "persistence pays off",
+        "with persistence"
+      ],
+      "synonyms": [
+        "perseverance",
+        "determination"
+      ],
+      "antonyms": [
+        "laziness",
+        "weakness"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "persist",
+          "persistent"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    },
+    {
+      "id": "turning-point",
+      "word": "Turning point",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "life-changes",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "The moment when an important change happens and things start to go in a new direction.",
+      "situations": [
+        "After meeting an inspiring teacher at 16, Omar stopped skipping school and decided to study medicine.",
+        "Losing her job pushed Sara to start her own business, and her life changed completely."
+      ],
+      "gaps": [
+        "Moving to London was a ______ in my career.",
+        "The second goal was the ______ of the match.",
+        "Becoming a father was a real ______ in his life."
+      ],
+      "hints": [
+        "The moment everything starts to change.",
+        "Two words: '___ing' + a word for a moment or spot."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "It was a turn point in my life.",
+          "correction": "It was a turning point in my life.",
+          "why": "The fixed phrase is 'turning point'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "turn",
+          "pos": "verb"
+        }
+      ],
+      "collocations": [
+        "a turning point in",
+        "major turning point"
+      ],
+      "synonyms": [
+        "milestone",
+        "crossroads"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    },
+    {
+      "id": "ransom",
+      "word": "Ransom",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "crime",
+      "level": "B1.1",
+      "register": "neutral",
+      "meaning": "Money that criminals demand before they will free a person they have kidnapped.",
+      "situations": [
+        "The kidnappers called the rich family and asked for a million dollars to let their son go.",
+        "Hackers locked the company's computers and asked for bitcoin to unlock them."
+      ],
+      "gaps": [
+        "The kidnappers demanded a $1 million ______.",
+        "The family paid the ______, and the boy was freed.",
+        "The hackers asked for a ______ to unlock the files."
+      ],
+      "hints": [
+        "Money paid to free someone who was kidnapped.",
+        "Rhymes with 'handsome'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "They paid a ransom of the kidnappers.",
+          "correction": "They paid a ransom to the kidnappers.",
+          "why": "Pay a ransom to someone."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "ransomware",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "demand a ransom",
+        "pay a ransom",
+        "hold someone for ransom"
+      ],
+      "synonyms": [
+        "payoff"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    },
+    {
+      "id": "in-a-funk",
+      "word": "In a funk",
+      "type": "idiom",
+      "partsOfSpeech": [
+        "phrase"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "moods",
+      "level": "B1.1",
+      "register": "informal",
+      "meaning": "Feeling low, sad and without energy for a while, often without a clear reason (informal).",
+      "situations": [
+        "Since the holidays ended, Lina has stayed in bed, skipped the gym and doesn't feel like seeing friends.",
+        "After losing the final, the team was quiet and unmotivated for a whole week."
+      ],
+      "gaps": [
+        "I've been ______ all week — I can't focus on anything.",
+        "He's been ______ since his girlfriend left.",
+        "A walk outside can help when you're ______."
+      ],
+      "hints": [
+        "Feeling low and unmotivated for a while.",
+        "Three words: 'in a' + a word that is also a music style."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I'm in funk today.",
+          "correction": "I'm in a funk today.",
+          "why": "The phrase needs 'a': in a funk."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "be in a funk",
+        "get out of a funk"
+      ],
+      "synonyms": [
+        "feeling down",
+        "in a slump",
+        "in a rut"
+      ],
+      "antonyms": [
+        "in high spirits"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    },
+    {
+      "id": "usury",
+      "word": "Usury",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "crime",
+      "level": "B1.1",
+      "register": "formal",
+      "meaning": "Lending money at unfairly or illegally high interest rates.",
+      "situations": [
+        "The man lent his neighbour $100 and demanded $300 back a month later.",
+        "Some loan apps charge 400% interest, trapping poor people in debt."
+      ],
+      "gaps": [
+        "Charging 200% interest is ______ and is illegal in many countries.",
+        "The loan shark was arrested for ______.",
+        "Many religions forbid ______."
+      ],
+      "hints": [
+        "Lending money with crazy-high interest.",
+        "Starts with 'usu-'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He made a usury to his friend.",
+          "correction": "He charged his friend usurious interest.",
+          "why": "'Usury' is the practice; 'usurious' is the adjective."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "usurer",
+          "pos": "noun"
+        },
+        {
+          "word": "usurious",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "practise usury",
+        "laws against usury"
+      ],
+      "synonyms": [
+        "loan sharking",
+        "extortionate lending"
+      ],
+      "antonyms": [
+        "fair lending"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Goals and Dreams"
+      ]
+    },
+    {
+      "id": "get-your-foot-in-the-door",
+      "word": "Get your foot in the door",
+      "type": "idiom",
+      "partsOfSpeech": [
+        "phrase"
+      ],
+      "category": "emotions-psychology",
+      "subCategory": "career",
+      "level": "B1.1",
+      "register": "informal",
+      "meaning": "To get a first small chance in a job or organization that may lead to better things later.",
+      "situations": [
+        "Sara took a low-paid internship at a big bank, hoping it would lead to a real job there.",
+        "Omar started as a receptionist at the TV station and is now a news reporter."
+      ],
+      "gaps": [
+        "The salary wasn't great, but it was a good way to ______ of my career.",
+        "An internship can help you ______ at a big company.",
+        "Take any job there — you just need to ______."
+      ],
+      "hints": [
+        "Get a first, small chance that can lead to more.",
+        "An idiom about a body part and an entrance."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I got my leg in the door.",
+          "correction": "I got my foot in the door.",
+          "why": "The idiom uses 'foot'."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "get your foot in the door"
+      ],
+      "synonyms": [
+        "get a start",
+        "break in"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
         "excludeWith": []
       },
       "units": [
