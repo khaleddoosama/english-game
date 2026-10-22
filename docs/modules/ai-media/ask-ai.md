@@ -67,6 +67,85 @@ The "Add to Collection" button is shown to the admin only, and not when the word
   bumped (the content save follows), the card switches to "Already in your collection", a toast says
   "<word> added to your collection", and the word is kept in the admin's library (`keepInLibrary`, best effort).
 
+## The question and the answer: Planned (2026-10-22)
+
+**Planned.** Not in the code yet. The current prompt and checks are in `askAiForWordImpl`
+([aiPrompts.js](../../../src/lib/aiPrompts.js)). The fields it fills are described in
+[word-fields.md](../content/word-fields.md).
+
+Problems with the current code, found by reading it:
+
+- **The game's meaning is ignored.** Only the parts of speech of the game's entry are kept. For a word with several
+  meanings, the answer can explain a different meaning from the one the player is learning. The editor's "Fill empty
+  fields with AI" can also write an example for a different meaning from the one the admin typed.
+- **The whole entry is sent.** This includes a picture link or drawing (up to 12,000 characters), so a prompt can come
+  close to the task's 20,000-character limit.
+- **Fields are shown without checks.** `nearWords`, `pronunciation` and any other field of the answer are passed to
+  the drawer as they come. If `nearWords` is not a list, or a difference is not text, the drawer fails to render.
+- **Some answers are refused for no reason, others are accepted when they should not be.** A good explanation is
+  refused when its gap sentence has no blank, even though the drawer never shows the gap. A gap that gives the word
+  away, or has two blanks, is accepted. Hints that contain the word are kept. An unknown type silently becomes
+  `vocab`, and unknown parts of speech are kept.
+- **Unclear input is not handled.**
+  - Random letters or a whole sentence is sent to the AI, which explains something anyway.
+  - A word in Arabic letters becomes an empty term, which is caught.
+  - A word with an accent at the end loses its last letter ("café" becomes "caf").
+- **Placeholder text is treated as real.** A stub's placeholder meaning ("Imported reference — needs a real
+  definition.") would be sent as if it were the real meaning.
+
+The change (`src/lib/askAiCard.js`, used by `askAiForWordImpl`). Task name, permissions, cancelling, time limits,
+quota, model and the drawer stay as they are.
+
+1. **Checked before any AI call** (no quota is used):
+   - the term is cut to 80 characters, as now;
+   - empty → "Select or type an English word first." (as now);
+   - letters from another alphabet → "Type the word in English letters.";
+   - more than 8 words → "Ask about one word or a short phrase."
+2. **What is sent:** `term`; `gameEntry`, holding only `word`, `type`, `partsOfSpeech`, `meaning`, `situation`,
+   `category` and `opposite` (the texts shortened); and `topic`.
+   - For a stub (`_autoStub`), only its word and opposite are sent: its meaning and type are placeholders.
+   - `topic` is the lesson the player is on (`contextCategory`). It is passed by the drawer only; the admin
+     screens keep their calls as they are.
+3. **The prompt.**
+   - Explain one meaning for a B1 learner: the game's meaning when there is one, else the meaning that fits the
+     topic, else the most common one. Every field must be about that meaning.
+   - Use the dictionary form ("went" → "go", "recieve" → "receive").
+   - Rules for each field:
+     - `type`: when to use phrasal, idiom or binomial; the AI never uses `fyi`, which is the course's own label.
+     - `partsOfSpeech`: chosen only from the game's list.
+     - `meaning`: does not contain the word.
+     - `situation`: a natural example.
+     - `gap`: a different sentence, with exactly one blank where the word fits as written.
+     - `hints`: do not give the word away.
+     - `nearWords`: real confusions only, or none.
+     - `commonMistake`: a real, typical mistake, or null. Never invented.
+   - For input that is not an English word or phrase, the answer is
+     `{"status":"invalid","reason","suggestion"}`.
+4. **Checks on the answer** (`readAskAiAnswer`).
+   - A reply that cannot be read, or has no `meaning` or `situation`: a clear error. Nothing is shown or saved.
+   - `status: "invalid"`: the error "“<term>” doesn't look like an English word or phrase." and, when the AI
+     suggests one, "Did you mean “…”?"
+   - With a game entry, the result keeps the game's `word`, `type`, `partsOfSpeech` and `category`.
+   - Without one:
+     - `type` is accepted from the five types or a few common names for them ("phrasal verb" → `phrasal`), else
+       `vocab`;
+     - `partsOfSpeech` keeps only values from the game's list.
+   - A gap without exactly one blank, or that contains the word: the gap is dropped (empty).
+     - The explanation is still shown.
+     - "Add to Collection" is refused with "This card has no usable gap sentence. Ask again before adding."
+     - The admin screens' own content checks refuse it too.
+   - Hints that contain the word are dropped, and at most 3 are kept.
+   - `nearWords`: at most 3 entries, each a word and a difference in text, never the word itself.
+   - `commonMistake`: three texts, and the correction differs from the sentence; otherwise it is left out.
+   - `pronunciation`: short text, or nothing.
+   - The result has only these fields. Nothing else from the answer reaches the drawer or the content.
+5. **Evaluation.**
+   - A fixed set of synthetic cases (`tests/askAiCases.js`): a word with several meanings, an idiom, a phrasal verb,
+     an unclear word with no context, random letters, Arabic letters and a whole sentence.
+   - Tests use made-up AI replies: what is sent, what is accepted or refused, and the errors.
+   - `tests/ask-ai-eval.test.js` runs the same cases against the real model. It runs only by hand, with
+     `ASK_AI_EVAL=1` and `GEMINI_API_KEY`, and is skipped in CI.
+
 ## Pronunciation
 
 `listenTerm` holds the text of the open pronunciation window (`PronunciationModal`); the header's speaker and the
