@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // The database's signals to one player (src/features/social/socialSignals.js, migration 0043), with a fake Supabase
 // Realtime client: the private channel user:<id>, "friends" and "invite" reach every listener, a failed channel is
-// tried again after 1, 3 and 8 s and then left to the checks, closing (even before it is open) leaves nothing open,
+// kept for realtime-js to join again (never replaced, never given up), closing (even before it is open) leaves nothing open,
 // nothing in local mode; the badge counts and Live's invitations list ask again at once. Made-up players.
 // Docs: docs/modules/social/friends-and-ranks.md, docs/modules/live/README.md.
 import { act } from "react";
@@ -61,20 +61,20 @@ describe("the player's channel", () => {
     expect(heard).toEqual([]);
   });
 
-  it("a failed channel is tried again after 1, 3 and 8 seconds, then left to the checks", async () => {
+  it("a lost channel is kept, however long, and its signals arrive again once realtime-js has joined it again", async () => {
+    const heard = [];
+    stops.push(onSocialSignal((e) => heard.push(e)));
     stops.push(openPersonalChannel("u-sam"));
     await settle();
-    for (const wait of [1000, 3000, 8000]) {
-      env.client.channels.at(-1).status("CHANNEL_ERROR");
-      await act(async () => { await vi.advanceTimersByTimeAsync(wait - 1); });
-      const before = env.client.channels.length;
-      await act(async () => { await vi.advanceTimersByTimeAsync(1); });
-      expect(env.client.channels.length).toBe(before + 1);
+    const [ch] = env.client.channels;
+    ch.status("SUBSCRIBED");
+    for (let i = 0; i < 12; i++) {
+      ch.status(i % 3 ? "CHANNEL_ERROR" : "TIMED_OUT");
+      await act(async () => { await vi.advanceTimersByTimeAsync(10000); });
     }
-    env.client.channels.at(-1).status("TIMED_OUT");
-    await act(async () => { await vi.advanceTimersByTimeAsync(60000); });
-    expect(env.client.channels).toHaveLength(4);
-    expect(env.client.removed).toHaveLength(4);
+    ch.status("SUBSCRIBED");
+    ch.emit("invite");
+    expect([env.client.channels, env.client.removed, heard]).toEqual([[ch], [], ["invite"]]);
   });
 
   it("closing removes the channel; closing before it opens leaves none", async () => {
