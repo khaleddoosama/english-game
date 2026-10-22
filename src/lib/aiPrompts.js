@@ -3,6 +3,7 @@ import { getWordPools, situationLeaks } from "../engine/questions";
 import { normalizeAnswerText } from "../engine/text";
 import { callAiText } from "./ai";
 import { managedAiFunction, isAiCancelled, updateAiOperation } from "./aiOperations.js";
+import { ASK_AI_INSTRUCTIONS, PARTS_OF_SPEECH, askAiInput, askAiTerm, readAskAiAnswer } from "./askAiCard.js";
 /* ----------------------------- CONTENT GENERATION --------------------------- */
 // Asks the model for fresh gap/situation sentences or reworded meaning clues
 // for whichever (word, poolType) pairs just ran out of unlocked variants.
@@ -115,15 +116,15 @@ async function callAiJson(instructions, payload, _maxTokens = 800, opts = {}) {
 // task: a short name for the Admin -> AI usage log ("Ask AI about a word").
 export const callAiJsonAdmin = (instructions, payload, maxTokens, task, opts = {}) => callAiJson(instructions, payload, maxTokens, { ...opts, adminOnly: true, task });
 
-async function askAiForWordImpl(rawTerm, existingWord = null, operationOptions = {}) {
-  const term=String(rawTerm||"").trim().replace(/^[^A-Za-z]+|[^A-Za-z' -]+$/g,"").replace(/\s+/g," ").slice(0,80);
-  if(!term)throw new Error("Select or type an English word first.");
-  const result=await callAiJson(`You are the Word Hunter vocabulary coach. Use English only and B1-or-easier supporting language. Explain the requested word or short phrase accurately in its most likely meaning. If an existingEntry is given, its partsOfSpeech (if present) is authoritative — keep those exact values. A word can have more than one (e.g. a noun that is also used as a verb) — list every part of speech that applies to this meaning. Return ONLY JSON with this shape: {"word":"canonical form","type":"vocab|idiom|binomial|phrasal|fyi","partsOfSpeech":["noun"],"category":"short topic","meaning":"simple definition","pronunciation":"easy readable pronunciation","situation":"one natural example sentence","gap":"the same kind of example with the target replaced by exactly ______","nearWords":[{"word":"...","difference":"..."}],"commonMistake":{"sentence":"...","correction":"...","why":"..."},"hints":["...","..."]}. Never include Arabic. The gap must not reveal the answer.`,{term,existingEntry:existingWord||null},1000, { task: "Ask AI about a word", signal: operationOptions.signal });
-  const partsOfSpeech=Array.isArray(existingWord?.partsOfSpeech)&&existingWord.partsOfSpeech.length?existingWord.partsOfSpeech:(Array.isArray(result.partsOfSpeech)?result.partsOfSpeech.map(String).filter(Boolean):[]);
-  const entry={word:String(result.word||term).trim(),type:["vocab","idiom","binomial","phrasal","fyi"].includes(result.type)?result.type:"vocab",partsOfSpeech,category:String(result.category||"AI Discoveries").trim(),meaning:String(result.meaning||"").trim(),situation:String(result.situation||"").trim(),gap:String(result.gap||"").trim(),hints:Array.isArray(result.hints)?result.hints.map(String).filter(Boolean).slice(0,3):[]};
-  if(result.commonMistake?.sentence&&result.commonMistake?.correction&&result.commonMistake?.why)entry.commonMistake={sentence:String(result.commonMistake.sentence),correction:String(result.commonMistake.correction),why:String(result.commonMistake.why)};
-  if(!entry.meaning||!entry.situation||!entry.gap.includes("______"))throw new Error("AI returned an incomplete vocabulary card. Try again.");
-  return {...result,...entry};
+// Ask AI about a word: the term is checked before any call, and only a card that passes readAskAiAnswer comes back
+// (askAiCard.js). topic: the lesson the player is on, used only to pick between meanings.
+async function askAiForWordImpl(rawTerm, existingWord = null, topic = null, operationOptions = {}) {
+  const term = askAiTerm(rawTerm);
+  if (term instanceof Error) throw term;
+  const text = await callAiText(`${ASK_AI_INSTRUCTIONS}\n\nINPUT JSON:\n${JSON.stringify(askAiInput(term, existingWord, topic))}`, { task: "Ask AI about a word", signal: operationOptions.signal });
+  let raw;
+  try { raw = parseJsonLoose(text); } catch { throw new Error("AI returned an unreadable answer. Please try again."); }
+  return readAskAiAnswer(raw, { term, gameEntry: existingWord });
 }
 
 async function aiFixImportJsonImpl(rawText, errorText, operationOptions = {}) {
@@ -253,7 +254,6 @@ export function findCategoryDuplicates(names, counts) {
 }
 
 // ---- Content Health: find weak word entries and fix them with AI ----
-const PARTS_OF_SPEECH = ["noun", "verb", "adjective", "adverb", "noun phrase", "verb phrase", "adjective phrase", "adverbial phrase", "phrasal verb", "idiom", "expression", "binomial phrase", "proper noun", "interjection", "preposition", "conjunction"];
 const antonymsOfWord = (w) => V2.antonymsOf(w);
 export const HEALTH_CHECKS = {
   situation: { label: "Situation doesn't use the word", help: "The situation is the word's example sentence, so it should contain the word. AI rewrites missing or scenario-style situations as one natural example sentence that uses the word.", field: "situation", test: (w) => !w.situation || !situationLeaks(w) },
@@ -671,7 +671,7 @@ async function explainWrongLeadImpl(question, chosenWord, correctWord, operation
 // Manage validation, retries and cancellation as one job, not just one HTTP call.
 export const validateGeneratedContent = managedAiFunction("Check new practice sentences", validateGeneratedContentImpl, 2, { background: true, timeoutMs: 50000 });
 export const generateContent = managedAiFunction("Write new practice sentences", generateContentImpl, 3, { background: true, timeoutMs: 100000 });
-export const askAiForWord = managedAiFunction("Ask AI about a word", askAiForWordImpl, 2, { background: false, timeoutMs: 50000 });
+export const askAiForWord = managedAiFunction("Ask AI about a word", askAiForWordImpl, 3, { background: false, timeoutMs: 50000 });
 export const aiFixImportJson = managedAiFunction("Fix an import file", aiFixImportJsonImpl, 2, { background: false, timeoutMs: 50000 });
 export const suggestReportFix = managedAiFunction("Suggest a fix for a report", suggestReportFixImpl, 3, { background: false, timeoutMs: 50000 });
 export const reviewReportedQuestion = managedAiFunction("Review a reported question", reviewReportedQuestionImpl, 2, { background: false, timeoutMs: 50000 });
