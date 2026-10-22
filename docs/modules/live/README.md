@@ -103,11 +103,12 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
 | The database's signals: joined, left, progress (with the numbers, nothing of the questions), start, end, rematch; nothing for a change that moves no number or state; who may read or send on which topic | [supabase/tests/realtime_signals.sql](../../../supabase/tests/realtime_signals.sql) |
 | The realtime channel with a fake client: online the browser sends no signal (in any state of the channel), retries, status, events and presence, closing | [tests/live-transport.test.js](../../../tests/live-transport.test.js) |
 | Through Supabase's Realtime service (CI job `realstack`): an invitation reaches the friend's `user:<id>` channel, a player joining reaches the members of `live:<code>`, an outsider's subscription is refused and gets nothing | [tests/realstack/realtime.test.js](../../../tests/realstack/realtime.test.js) |
+| Two players in two browsers on the real stack: the form, the link, the lobby, the start and the race updated by Realtime messages (checked against the WebSocket frames), a 10 s and a 60 s connection loss, the results | [e2e/realstack/live.cjs](../../../e2e/realstack/live.cjs) |
 | Question variety and freshness | [tests/live-variety.test.js](../../../tests/live-variety.test.js) |
 | Server rules | [supabase/tests/live_challenges.sql](../../../supabase/tests/live_challenges.sql), [live_fairness.sql](../../../supabase/tests/live_fairness.sql), [live_review.sql](../../../supabase/tests/live_review.sql) |
 | Two players in two tabs, with friends and invitations | [e2e/specs/friendslive.cjs](../../../e2e/specs/friendslive.cjs), [e2e/specs/livelib.cjs](../../../e2e/specs/livelib.cjs) |
 
-**Gaps.** No test compares the local backend with the SQL functions (the library has such a test; Live does not; `MT-05`). The app's own channel code (`transport.js`: reconnects, the fallback to polling) is untested against a real Realtime service; the service's delivery and its policies are tested with supabase-js. The host's question content is not validated against the course (see Known Issues).
+**Gaps.** No test compares the local backend with the SQL functions (the library has such a test; Live does not; `MT-05`). The service's delivery and its policies are tested with supabase-js (`tests/realstack/realtime.test.js`), and since 2026-10-22 a two-player challenge runs in the browser on the real stack, through `transport.js`, with the connection lost for 10 s and for 60 s (`e2e/realstack/live.cjs`, [integration-tests.md](../../integration-tests.md), "Real stack"); it found the Known Issue below about long losses. The host's question content is not validated against the course (see Known Issues).
 
 ## 8. Example journey
 
@@ -151,8 +152,13 @@ Dana (synthetic) challenges two friends.
   wait for the 30-second check (Live home) or the 45-second badge check. Run 0043 on every online database.
 - The policy that lets members send on `live:<code>` (migration 0008) is still there, though the game no longer
   uses it. Removing it is a database change, left for later.
-- The real Supabase Realtime service is not run by any test: the SQL test checks what the triggers write to
-  `realtime.messages` (on stand-ins for Supabase's schemas) and the unit tests use a fake client. It was checked by
-  hand in one real match (see Fixed, 2026-10-20). To count the signals: `select event, count(*) from
-  realtime.messages where topic like 'live:%' or topic like 'user:%' group by event` (kept 3 days).
+- After a connection loss longer than the channel's retries (about 20 s of failures, for example 60 s offline), the
+  room does not use Realtime again until it is opened again: `transport.js` gives up after 3 tries and stays on
+  polling every 4 s. The browser does reconnect and still receives the messages (realtime-js rejoins a channel that
+  could not be removed while offline), but they reach no channel the room listens on, so the screen updates only at
+  the next poll. Seen in CI on the real stack (`e2e/realstack/live.cjs`, 2026-10-22: message at +26 ms, screen at
+  +3.7 s); a loss of 10 s does not trigger it (the socket survives). The screen still shows every change within
+  about 4 s. Changing it is an app change, not done here.
+- To count the signals on a project: `select event, count(*) from realtime.messages where topic like 'live:%' or
+  topic like 'user:%' group by event` (kept 3 days).
 - Assumption (not tested): the server checks the shape of the host's questions and that the answer is among the options, but not that it is the correct answer to the prompt; a careless or malicious host can create wrong keys. This affects only that match.
