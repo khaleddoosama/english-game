@@ -89,6 +89,10 @@ The Live API in [liveApi.js](../../../src/features/live/liveApi.js).
 - `answer` is retried up to 3 times with growing waits when the network fails; a server refusal (an error code) is not retried.
 - Realtime failure: up to three reconnect attempts (1 s, 3 s, 8 s), then the screen relies on polling. The screen
   does not show whether the channel works (only a console warning "Live channel: …").
+  **Planned** (2026-10-22): the room keeps its one channel for as long as it is open and lets realtime-js join it
+  again by itself (it tries after 1, 2 and 5 s, then every 10 s while the socket is up, and at once when the socket
+  reconnects). While the channel is not joined the room polls every 4 s; once it is joined again it is "live" and
+  polls every 20 s. It never gives up and never opens a second channel for the same challenge.
 - Leaving before pressing Start removes the player (the host leaving an unstarted lobby removes the challenge); after Start a player cannot leave.
 - The host can end the challenge or remove a player who has not started.
 - A closed tab mid-challenge: the player returns to `/live/<code>` and continues from the next unanswered question; the clock between answers is the server's.
@@ -157,7 +161,11 @@ Dana (synthetic) challenges two friends.
   could not be removed while offline), but they reach no channel the room listens on, so the screen updates only at
   the next poll. Seen in CI on the real stack (`e2e/realstack/live.cjs`, 2026-10-22: message at +26 ms, screen at
   +3.7 s); a loss of 10 s does not trigger it (the socket survives). The screen still shows every change within
-  about 4 s. Changing it is an app change, not done here.
+  about 4 s. **Planned** fix (2026-10-22, see section 6): keep the channel and let realtime-js join it again.
+  Cause, from the frames in CI: each retry made a new channel while the socket was down; its join waited in
+  realtime-js's send buffer and reached the server when the network came back, but its leave did not (it carried no
+  join reference), so the server kept sending to a join the room had already dropped, and the browser discarded those
+  messages.
 - To count the signals on a project: `select event, count(*) from realtime.messages where topic like 'live:%' or
   topic like 'user:%' group by event` (kept 3 days).
 - Assumption (not tested): the server checks the shape of the host's questions and that the answer is among the options, but not that it is the correct answer to the prompt; a careless or malicious host can create wrong keys. This affects only that match.

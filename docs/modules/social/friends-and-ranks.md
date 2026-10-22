@@ -48,6 +48,9 @@ Inside the module:
   request is sent, answered or ended (to both players) and "invite" when the player is invited to a challenge. On a
   signal the badges are counted again at once, the Friends page reads its lists again, and the Live home reads its
   invitations again. A failed channel is tried again after 1, 3 and 8 seconds, then the checks above carry on alone.
+  **Planned** (2026-10-22): like Live's channel, the player keeps one channel and realtime-js joins it again by itself
+  for as long as the game is open (after a loss longer than those retries, signals were otherwise lost until the game
+  was opened again; [Live](../live/README.md), Known Issues).
   Nobody but the database can send on these channels, and a player can read only their own.
 - The Live tab shows the waiting invitations, the Profile tab the waiting friend requests; above 9 the badge says
   "9+". The Profile page's Friends button shows the requests too.
