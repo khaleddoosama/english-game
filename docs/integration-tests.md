@@ -137,7 +137,17 @@ player's own channel `user:<id>`; a player joining reaches the challenge's chann
 another player cannot listen on either (the policies refuse the private channel: `CHANNEL_ERROR`) and receives
 nothing. Realtime adds the message's own `id` to the payload; the test compares the rest exactly. First passing run:
 14 passed, 0 skipped. With a policy that lets every signed-in player read every private channel added on purpose,
-the job failed (11 passed, 3 failed: the other player's subscriptions were accepted), as it should.
+the job failed (11 passed, 3 failed: the other player's subscriptions were accepted), as it should. A message
+that does not arrive fails its test (until 2026-10-21 a missing message read as an empty payload, so the friend and
+invitation checks passed with those signals turned off: shown with the triggers `friendships_signal` and
+`live_invites_signal` disabled, subscriptions and policies untouched, then the same break failed the 3 tests once
+the check was fixed, #79). The fixed check then showed what the old one hid: the first
+friend request of the file never arrived, in every run, although later messages to the same player did. The cause
+was not found; Realtime starts streaming the database's messages when the first channel joins. The tests now first
+send a test message until one arrives (in the first passing run, the first one did), then measure delivery.
+**Known Issue (seen only in this stack, not verified on the real project):** a signal sent around the time Realtime
+starts streaming for the project may be lost; the app's own checks then pick the change up later (a Live room polls
+every 20 s, the friend and invitation lists check every 30-45 s).
 
 **Implemented** (2026-10-21, #78): the game's **screens** against this stack. `run-ci.sh` builds the app for online mode
 against the stack (`VITE_SUPABASE_URL` is the gateway, the anon key is signed with the stack's JWT secret), the gateway

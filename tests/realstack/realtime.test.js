@@ -6,12 +6,17 @@
 // Needs the real stack with Realtime (REALSTACK_REALTIME=1 and the variables of stack.js); otherwise it is skipped,
 // and tests/realstack/run-ci.sh fails a run in which it was skipped. See docs/integration-tests.md.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { ENABLED, cleanup, newTag, promote, signUp } from "./stack";
+import { ENABLED, cleanup, newTag, promote, signUp, sql } from "./stack";
 
 const REALTIME = ENABLED && process.env.REALSTACK_REALTIME === "1";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-// Realtime adds the message's own id to what realtime.send() sent; everything else is what the trigger sent.
-const sent = (message) => { const { id: _id, ...rest } = message?.payload || {}; return rest; };
+// What the trigger sent, from a message that must have arrived (Realtime adds the message's own id; it is left out).
+// A missing message fails here, so an empty payload can never pass for a delivered one.
+const sent = (message) => {
+  expect(message, "the message did not arrive").not.toBeNull();
+  const { id: _id, ...rest } = message.payload || {};
+  return rest;
+};
 const QUESTIONS = [1, 2, 3].map((n) => ({ mode: "meaning", prompt: `p${n}`, options: ["Apple", "Bread", "Cheese"], answer: "Apple", word: "apple" }));
 
 // Listens on a private topic as the app does; `status` is SUBSCRIBED, or CHANNEL_ERROR when the policies refuse.
@@ -41,7 +46,19 @@ describe.skipIf(!REALTIME)("Realtime delivers the database's signals, only to wh
   beforeAll(async () => {
     [ann, bob, cat] = await Promise.all([signUp(`${tag}ann`), signUp(`${tag}bob`), signUp(`${tag}cat`)]);
     promote(ann); // Live challenges are made by the admin in this test (the app's switch for players is not the point)
-  }, 30000);
+    // Without this, the first friend request of this file never arrived (every CI run, 2026-10-21; cause not found:
+    // Realtime starts streaming the database's messages when the first channel joins). So a test message is sent
+    // until one reaches a player; the tests below then measure delivery, not Realtime starting up.
+    const probe = await listen(cat, `user:${cat.id}`, ["probe"]);
+    let sent = 0;
+    for (; sent < 30 && !probe.got.length; sent++) {
+      sql(`select realtime.send('{}'::jsonb, 'probe', 'user:${cat.id}', true)`);
+      await sleep(1000);
+    }
+    await probe.close();
+    if (!probe.got.length) throw new Error("Realtime delivered no test message in 30 s");
+    console.log(`Realtime delivered a test message after ${sent} sent, ${probe.got.length} received`);
+  }, 60000);
   afterAll(async () => {
     for (const l of open) await l.close();
     for (const p of [ann, bob, cat]) p?.client.realtime.disconnect();

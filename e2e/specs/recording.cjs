@@ -26,12 +26,13 @@ const mastered = { stage: 'Mastered', correct: 9, total: 9, reviewStep: 6, produ
 // Plays the round on screen to its end: learning cards, then each question (first option, or "-" when typed).
 // Returns how many questions were answered, how many actions timed out, and the texts of any toast seen.
 // Untimed rounds: every action must work; any error fails the spec. Timed rounds (the Speed Round): the time can run
-// out between finding a control and using it, so an action waits at most 3 s and only a Playwright TimeoutError is
-// tolerated (counted in `missed`, the loop looks at the screen again); any other error still fails the spec.
+// out between finding a control and using it, so an action waits at most 3 s, and a Playwright TimeoutError is
+// tolerated only if the round's end screen (`endSel`) is showing when it happens (counted in `missed`); a timeout
+// while the round still runs, or any other error, fails the spec.
 async function playRound(page, endSel, { timed = false } = {}) {
   let answered = 0, missed = 0; const toasts = new Set();
-  const act = (promise) => promise.then(() => true, (e) => {
-    if (timed && e?.name === 'TimeoutError') { missed++; return false; }
+  const act = (promise) => promise.then(() => true, async (e) => {
+    if (timed && e?.name === 'TimeoutError' && await visible(page, endSel)) { missed++; return false; }
     throw e;
   });
   for (let i = 0; i < 200 && !(await visible(page, endSel)); i++) {
