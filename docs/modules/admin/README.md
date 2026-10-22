@@ -130,3 +130,17 @@ already in `features/admin`. What the shell still holds for this module is the p
 - `DP-03` a failed dictionary copy is invisible to the admin.
 - `DP-05` reports are stored in two places.
 - `MT-01` (for this module, fixed for content tools and import/export) the content operations moved to `features/content-admin`, and import, export and backups to `features/data`; WordHunter keeps only the progress parts they need (`backupPayload`, `applyRestoredProgress`, `handleReset`). Reset progress itself belongs to the progress module.
+
+## Units filters (2026-10-22)
+
+Status: **Implemented**. Type: **Feature**.
+
+Words (`/admin/words`) and Grammar (`/admin/grammar`) filter the `units` field alongside other fields.
+Options are All units, Without unit (absent/empty arrays), and distinct naturally sorted units from the available list.
+An item matches each unit it belongs to. Combine with existing search and filters. The filter is persisted in the
+URL with the other filters, pagination resets to page one when changed, and each screen offers a clear unit filter action
+alongside meaningful empty results. This is display-only; content, permissions and database remain unchanged.
+Verified with `tests/unit-filters.test.jsx` and `e2e/specs/units-folding.cjs`: multi-unit/no-unit items,
+combined filters, URL reload, page reset, and desktop/mobile rendering. The URL uses `unit=none` or
+`unit=unit:<exact name>` (URL-encoded); no parameter means All units. Shared helpers are in `lib/UnitFilter`
+and `lib/unitFilter`. Full evidence and limits: [UI batch](../../work-tracking/ui-folding-units.md).

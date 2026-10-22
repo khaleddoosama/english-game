@@ -1,3 +1,5 @@
+import UnitFilter from "../../../lib/UnitFilter";
+import { matchesUnit } from "../../../lib/unitFilter";
 import { useMemo, useState } from "react";
 import { V2 } from "../../../engine/v2";
 import { searchWords } from "../libraryTree";
@@ -12,7 +14,8 @@ const PAGE = 60;
 //   disabled  - keys that are already in (shown ticked, can't be changed)
 //   onToggle(key)    onSetMany(keys, on)    empty(query) - what to show when nothing matches
 //   tagOf(key) - a small note after a word (for example how many views it is in)
-export default function WordPicker({ words, selected, onToggle, onSetMany, disabled = new Set(), disabledLabel = "already in", tagOf = null, keyOf = (w) => w.word, nameOf = (w) => w.word, noun = "word", placeholder = "Search by word or meaning", searchLabel = "Search words", empty = null, children }) {
+export default function WordPicker({ words, selected, onToggle, onSetMany, disabled = new Set(), disabledLabel = "already in", tagOf = null, keyOf = (w) => w.word, nameOf = (w) => w.word, noun = "word", placeholder = "Search by word or meaning", searchLabel = "Search words", empty = null, filterUnits = false, unitItems = words, children }) {
+  const [unit, setUnit] = useState("");
   const [query, setQuery] = useState("");
   const [lesson, setLesson] = useState("");
   const [level, setLevel] = useState("");
@@ -22,8 +25,8 @@ export default function WordPicker({ words, selected, onToggle, onSetMany, disab
   const levels = useMemo(() => [...new Set(words.map((w) => V2.courseLevelOf(w)).filter(Boolean))].sort((a, b) => V2.courseLevelRank(a) - V2.courseLevelRank(b)), [words]);
   const list = useMemo(() => {
     const base = query.trim() ? searchWords(words, query, 5000) : words;
-    return base.filter((w) => (!lesson || w.category === lesson) && (!level || V2.courseLevelOf(w) === level));
-  }, [words, query, lesson, level]);
+    return base.filter((w) => (!filterUnits || matchesUnit(w, unit)) && (!lesson || w.category === lesson) && (!level || V2.courseLevelOf(w) === level));
+  }, [words, query, lesson, level, unit, filterUnits]);
   const pickable = list.filter((w) => !disabled.has(keyOf(w)));
   const allPicked = pickable.length > 0 && pickable.every((w) => selected.has(keyOf(w)));
   const reset = (fn) => (e) => { fn(e.target.value); setShown(PAGE); };
@@ -31,8 +34,9 @@ export default function WordPicker({ words, selected, onToggle, onSetMany, disab
   return (
     <div className="lib-picker">
       <input className="lib-search" value={query} onChange={reset(setQuery)} placeholder={placeholder} aria-label={searchLabel} />
-      {(lessons.length > 1 || levels.length > 0) && (
+      {(filterUnits || lessons.length > 1 || levels.length > 0) && (
         <div className="lib-filters">
+          {filterUnits && <UnitFilter items={unitItems} value={unit} onChange={(v) => { setUnit(v); setShown(PAGE); }} />}
           {lessons.length > 1 && (
             <select value={lesson} onChange={reset(setLesson)} aria-label="Lesson">
               <option value="">All lessons</option>

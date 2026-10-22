@@ -33,7 +33,7 @@ export default function LibraryRules({ rules, grammar, rows, busy, isAdmin = fal
   return (
     <div className="lib-rules">
       <h4 className="lib-sub">Grammar rules <small>{rules.length}</small></h4>
-      <WordPicker words={pool} selected={sel.set} onToggle={(k) => { setSure(false); sel.toggle(k); }} onSetMany={sel.setMany}
+      <WordPicker filterUnits words={pool} selected={sel.set} onToggle={(k) => { setSure(false); sel.toggle(k); }} onSetMany={sel.setMany}
         keyOf={ruleKey} nameOf={ruleName} noun="rule" searchLabel="Search your grammar rules" placeholder="Search your grammar rules"
         empty={(q) => <p className="ui-muted">No rule matches “{q}”.</p>} />
       {keys.length > 0 && (

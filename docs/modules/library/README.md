@@ -61,7 +61,7 @@ Defined in [libraryApi.js](../../../src/features/library/libraryApi.js), with tw
 - Screens: [LibraryPage](../../../src/features/library/LibraryPage.jsx) (`/library`) with [ViewTree](../../../src/features/library/components/ViewTree.jsx), [ViewPanel](../../../src/features/library/components/ViewPanel.jsx), [AddWords](../../../src/features/library/components/AddWords.jsx), [AddRules](../../../src/features/library/components/AddRules.jsx), [LibraryWords](../../../src/features/library/components/LibraryWords.jsx), [LibraryRules](../../../src/features/library/components/LibraryRules.jsx), [CreateViews](../../../src/features/library/components/CreateViews.jsx), [SharePanel](../../../src/features/library/components/SharePanel.jsx), [ShareInbox](../../../src/features/library/components/ShareInbox.jsx), [WordPicker](../../../src/features/library/components/WordPicker.jsx); [CatalogPage](../../../src/features/library/CatalogPage.jsx) (`/catalog`); [JoinPage](../../../src/features/library/JoinPage.jsx) (`/join/<token>`); [LibraryRoutes](../../../src/features/library/LibraryRoutes.jsx) places them; [MyViewsHome](../../../src/features/library/components/MyViewsHome.jsx) on Home.
 - Orchestration: [useLibrary.js](../../../src/features/library/useLibrary.js) and [openLibrary.js](../../../src/features/library/openLibrary.js) (is the library on, the API, the id maps), [useLibraryHome.js](../../../src/features/library/useLibraryHome.js), [useViews.js](../../../src/features/library/useViews.js), [useViewScope.js](../../../src/features/library/useViewScope.js), [viewRound.js](../../../src/features/library/viewRound.js), [ownWords.js](../../../src/features/library/ownWords.js), [libraryActions.js](../../../src/features/library/libraryActions.js) (the page's changes and their sentences).
 - Pure rules: [libraryRules.js](../../../src/features/library/libraryRules.js) (limits and messages shared by both implementations), [libraryTree.js](../../../src/features/library/libraryTree.js), [libraryHome.js](../../../src/features/library/libraryHome.js), [scope.js](../../../src/features/library/scope.js), [libraryIds.js](../../../src/features/library/libraryIds.js), [libraryErrors.js](../../../src/features/library/libraryErrors.js).
-- Outward dependencies: `lib/router`, `lib/supabase`, `engine/v2` (`V2.norm`, `V2.headword`), and `features/home` through its index (`StageCard`, `describeItems`, only for `MyViewsHome`). No dependency on the friends module: the app passes who the local friends are. The module is in no import loop ([tests/architecture.test.js](../../../tests/architecture.test.js)).
+- Outward dependencies: shared display-only `lib/UnitFilter` and `lib/unitFilter`, `lib/router`, `lib/supabase`, `engine/v2` (`V2.norm`, `V2.headword`), and `features/home` through its index (`StageCard`, `describeItems`, only for `MyViewsHome`). No dependency on the friends module: the app passes who the local friends are. The module is in no import loop ([tests/architecture.test.js](../../../tests/architecture.test.js)).
 - Tables: `headwords`, `senses`, `sense_links`, `grammar_rules`, `grammar_questions`, `collections` (views; `owner_id` null means the official course), `collection_senses`, `collection_rules`, `library_entries`, `library_rules`, `collection_shares`, `view_links`, `view_link_takes`, `catalog_entries`, `catalog_takes`; unused: `sense_progress`, `rule_progress`.
 - Functions: `view_create`, `view_edit`, `view_remove`, `view_add`, `view_drop`, `view_add_rules`, `view_drop_rule`, `view_contents`, `view_tree`, `library_add`, `library_remove`, `library_add_rules`, `library_remove_rule`, `library_list`, `library_patch`, `sense_create`, `view_share`, `view_shares_inbox`, `view_share_accept`, `view_share_dismiss`, `view_copy_tree`, `view_link_create`, `view_link_info`, `view_link_accept`, `view_link_revoke`, `catalog_publish`, `catalog_edit`, `catalog_unpublish`, `catalog_list`, `catalog_take`, `view_depth`, `view_height`.
 - Migrations 0026 to 0036 (library), 0037 (a rename keeps the sense), 0038 (deleting a player removes their library data), 0039 (a rename needs a free name), 0040 (offers end with the friendship). 0041 and 0042 belong to content and progress.
@@ -173,3 +173,26 @@ Omar (synthetic) makes a view and shares it. Dana (synthetic) takes it.
 - `apply_item_renames` could be called directly by an admin and merge progress without the 0039 check. Fixed by 0041 (in production since 2026-10-18), which leaves it callable only from `content_save_v2`.
 - `view_contents` returns deleted senses; the app drops ids it cannot map to a key.
 - The library is hidden (`off`) when the first connection fails once, not only when the tables are missing.
+
+## UI filtering and folding (2026-10-22)
+
+Status: **Implemented**. Type: **Feature**.
+
+ViewTree and Home share `useViewExpansion` and `ViewFold`, including the selected root on Home.
+Views start expanded. Home keeps the parent practice card visible when its children are folded. An accessible arrow
+changes only expansion, never selection, contents or practice scope. Leaves have no arrow; nested fold state
+survives folding an ancestor. Names keep their existing actions.
+
+The owner confirmed both personal destinations: `/library` → Library (`LibraryWords` / `LibraryRules`), and
+`/library?view=<id>` → In this view (`ViewPanel`). `/profile` itself only links to My library.
+Separate word/rule units filters use only each list's available items and distinct, naturally sorted
+`units` strings. All units includes everything; Without unit includes absent/empty arrays.
+Multi-unit items match any of their units. They combine with existing search/filters, reset displayed pages on
+change, keep component-local filter state like the existing screens, and offer a clear filter action.
+Filtering does not change membership, selected items, permissions or practice scope. No database changes.
+
+Verified: nested folding, separate name/arrow actions, keyboard/aria support, multi-unit and missing-unit
+items, combined filters, pagination reset and empty states, and desktop/mobile browsers with synthetic data.
+Folded rows stay mounted but hidden so the open panel keeps its selection.
+Tests: `tests/view-folding.test.jsx`, `tests/unit-filters.test.jsx`, and `e2e/specs/units-folding.cjs`.
+Full evidence and limits: [UI batch](../../work-tracking/ui-folding-units.md).
