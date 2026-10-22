@@ -28,6 +28,7 @@ node -e '
 # The game's screens against this stack (a failed check or a crash fails the run).
 node e2e/realstack/app.cjs || rc=1
 # A Live challenge between two players, with Realtime (needs WITH_REALTIME=1).
+psql $REALSTACK_PGURL -X -q -c "alter table public.live_players disable trigger live_players_signal; alter table public.live_challenges disable trigger live_challenges_signal" # TEMPORARY BREAK
 [ -n "$REALSTACK_REALTIME" ] && { node e2e/realstack/live.cjs || rc=1; }
 if [ "$rc" -ne 0 ]; then echo "--- GoTrue"; docker logs whauth 2>&1 | tail -15; echo "--- PostgREST"; docker logs whrest 2>&1 | tail -15; [ -n "$REALSTACK_REALTIME" ] && { echo "--- Realtime"; docker logs whrealtime 2>&1 | tail -40; }; fi
 exit "$rc"
