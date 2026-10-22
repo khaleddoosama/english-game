@@ -130,3 +130,15 @@ already in `features/admin`. What the shell still holds for this module is the p
 - `DP-03` a failed dictionary copy is invisible to the admin.
 - `DP-05` reports are stored in two places.
 - `MT-01` (for this module, fixed for content tools and import/export) the content operations moved to `features/content-admin`, and import, export and backups to `features/data`; WordHunter keeps only the progress parts they need (`backupPayload`, `applyRestoredProgress`, `handleReset`). Reset progress itself belongs to the progress module.
+
+## Units filters (2026-10-22)
+
+Status: **Planned**. Type: **Feature**.
+
+Words (`/admin/words`) and Grammar (`/admin/grammar`) currently filter other fields but not `units`.
+Add All units, Without unit (absent/empty arrays), and distinct naturally sorted units from the available list.
+An item matches each unit it belongs to. Combine with existing search and filters. Persist the filter in the
+URL with the other filters, reset pagination to page one when changed, and offer a clear unit filter action
+alongside meaningful empty results. This is display-only; content, permissions and database remain unchanged.
+Verify both screens with multi-unit/no-unit synthetic items, existing filters, URL reload and pagination,
+plus desktop/mobile browser checks.

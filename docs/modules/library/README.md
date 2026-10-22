@@ -173,3 +173,23 @@ Omar (synthetic) makes a view and shares it. Dana (synthetic) takes it.
 - `apply_item_renames` could be called directly by an admin and merge progress without the 0039 check. Fixed by 0041 (in production since 2026-10-18), which leaves it callable only from `content_save_v2`.
 - `view_contents` returns deleted senses; the app drops ids it cannot map to a key.
 - The library is hidden (`off`) when the first connection fails once, not only when the tables are missing.
+
+## UI filtering and folding (2026-10-22)
+
+Status: **Planned**. Type: **Feature**.
+
+Currently ViewTree folds descendants, but Home's view groups stay open; personal lists have no units filter.
+Reuse the existing folding behaviour in both trees, including the selected root on Home. An accessible arrow
+changes only expansion, never selection, contents or practice scope. Leaves have no arrow; nested fold state
+survives folding an ancestor. Names keep their existing actions.
+
+The owner confirmed both personal destinations: `/library` → Library (`LibraryWords` / `LibraryRules`), and
+`/library?view=<id>` → In this view (`ViewPanel`). `/profile` itself only links to My library.
+Add separate word/rule units filters to these lists. Use only their available items, deduplicate and naturally
+sort the actual `units` strings. All units includes everything; Without unit includes absent/empty arrays.
+Multi-unit items match any of their units. Combine with existing search/filters, reset displayed pages on
+change, keep component-local filter state like the existing screens, and offer a clear filter action.
+Filtering must not change membership, selected items, permissions or practice scope. No database changes.
+
+Acceptance: nested folding and separate name/arrow actions; keyboard/aria support; multi-unit and missing-unit
+items; combined filters, pagination reset and empty states; desktop and mobile browser checks with synthetic data.
