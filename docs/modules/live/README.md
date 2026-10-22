@@ -162,10 +162,11 @@ Dana (synthetic) challenges two friends.
   the next poll. Seen in CI on the real stack (`e2e/realstack/live.cjs`, 2026-10-22: message at +26 ms, screen at
   +3.7 s); a loss of 10 s does not trigger it (the socket survives). The screen still shows every change within
   about 4 s. **Planned** fix (2026-10-22, see section 6): keep the channel and let realtime-js join it again.
-  Cause, from the frames in CI: each retry made a new channel while the socket was down; its join waited in
-  realtime-js's send buffer and reached the server when the network came back, but its leave did not (it carried no
-  join reference), so the server kept sending to a join the room had already dropped, and the browser discarded those
-  messages.
+  Seen in CI: after the loss the messages arrive with join reference "57" while the room has no channel left.
+  Likely cause (read from realtime-js's code, not proven against the server): each retry made a new channel while
+  the socket was down; its join waited in realtime-js's send buffer and reached the server when the network came
+  back, but its leave was sent without a join reference, which the server ignores, so the server kept sending to a
+  join the room had already dropped, and the browser discarded those messages.
 - To count the signals on a project: `select event, count(*) from realtime.messages where topic like 'live:%' or
   topic like 'user:%' group by event` (kept 3 days).
 - Assumption (not tested): the server checks the shape of the host's questions and that the answer is among the options, but not that it is the correct answer to the prompt; a careless or malicious host can create wrong keys. This affects only that match.
