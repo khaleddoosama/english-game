@@ -141,7 +141,12 @@ the job failed (11 passed, 3 failed: the other player's subscriptions were accep
 that does not arrive fails its test (until 2026-10-21 a missing message read as an empty payload, so the friend and
 invitation checks passed with those signals turned off: shown with the triggers `friendships_signal` and
 `live_invites_signal` disabled, subscriptions and policies untouched, then the same break failed the 3 tests once
-the check was fixed, #79).
+the check was fixed, #79). The fixed check then showed a real gap the old one hid: the very first
+message after Realtime starts streaming the database's messages was never delivered (the first friend request, in
+every run). Realtime starts that stream when the first channel joins; the tests now first send a test message until
+one arrives, then measure delivery. **Known Issue (not verified on the real project):** a signal written while
+Realtime is (re)starting its stream for the project may be lost; the app's own checks then pick the change up later
+(a Live room polls every 20 s, the friend and invitation lists check every 30-45 s).
 
 **Implemented** (2026-10-21, #78): the game's **screens** against this stack. `run-ci.sh` builds the app for online mode
 against the stack (`VITE_SUPABASE_URL` is the gateway, the anon key is signed with the stack's JWT secret), the gateway
