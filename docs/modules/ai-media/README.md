@@ -85,11 +85,11 @@ The task list ([tasks.js](../../../api/_lib/tasks.js)) is the contract between b
 | Pictures | [tests/images.test.js](../../../tests/images.test.js) |
 | New practice sentences and variants | [tests/generation-rules.test.js](../../../tests/generation-rules.test.js), [tests/ai-generation-hook.test.jsx](../../../tests/ai-generation-hook.test.jsx), [e2e/specs/poolgen.cjs](../../../e2e/specs/poolgen.cjs) |
 | Story generation | [tests/story-rules.test.js](../../../tests/story-rules.test.js), [tests/story-generation-hook.test.jsx](../../../tests/story-generation-hook.test.jsx), [e2e/specs/storygen.cjs](../../../e2e/specs/storygen.cjs) |
-| Ask AI about a word | [tests/ask-ai-rules.test.js](../../../tests/ask-ai-rules.test.js), [tests/ask-ai-hook.test.jsx](../../../tests/ask-ai-hook.test.jsx), [e2e/specs/askai.cjs](../../../e2e/specs/askai.cjs) |
+| Ask AI about a word | [tests/ask-ai-rules.test.js](../../../tests/ask-ai-rules.test.js), [tests/ask-ai-card.test.js](../../../tests/ask-ai-card.test.js), [tests/ask-ai-hook.test.jsx](../../../tests/ask-ai-hook.test.jsx), [e2e/specs/askai.cjs](../../../e2e/specs/askai.cjs); real model by hand: [tests/ask-ai-eval.test.js](../../../tests/ask-ai-eval.test.js) |
 | Pronunciation | [tests/pronunciation.test.js](../../../tests/pronunciation.test.js), [tests/listening-background.test.jsx](../../../tests/listening-background.test.jsx) |
 | AI log screen | [tests/ai-log.test.js](../../../tests/ai-log.test.js) |
 
-**Gaps.** No test calls the real Gemini or the real Supabase gate through the Vercel Functions end to end; the prompts' behaviour is not tested (a model may answer differently over time). The usage inventory is in [docs/ai-usage-inventory.md](../../ai-usage-inventory.md).
+**Gaps.** No test calls the real Gemini or the real Supabase gate through the Vercel Functions end to end; the prompts' behaviour is not tested (a model may answer differently over time). For Ask AI only, a fixed set of cases can be run against the real model by hand (`tests/ask-ai-eval.test.js`); it has not been run yet. The usage inventory is in [docs/ai-usage-inventory.md](../../ai-usage-inventory.md).
 
 ## 8. Example journey
 
@@ -113,4 +113,4 @@ Mia (synthetic) types "I was reluctant of go" in a typing question for "Reluctan
 
 - `LC-02` when the quality-check AI call fails, sentences that pass only the local checks (length, a blank, the answer not given away) are still added to the player's pool.
 - `PE-04` the server forwards any prompt text within the size limit, so a signed-in player can use the AI as a general chat within the daily quota.
-- Assumption: the usage inventory in `docs/ai-usage-inventory.md` is current; it was not re-checked here.
+- The usage inventory ([ai-usage-inventory.md](../../ai-usage-inventory.md)) was re-checked on 2026-10-22; its "Ways to improve" list holds the problems found in the other prompts (not changed).

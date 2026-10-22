@@ -15,7 +15,7 @@ Working documentation for the Word Hunter code base. The top-level [README](../R
 | [architecture/repo.md](architecture/repo.md) | The repo layer (`src/lib/repo.js` and `src/lib/repo/`): its parts and their state |
 | [architecture/unused-exports.md](architecture/unused-exports.md) | Every export in `src/` has a user elsewhere: the rule, its guard test, what was removed |
 | [adr/](adr/README.md) | Architecture decision records: what was decided, why, alternatives |
-| [ai-usage-inventory.md](ai-usage-inventory.md) | Where the app uses AI (written earlier, in Arabic) |
+| [ai-usage-inventory.md](ai-usage-inventory.md) | Every AI call: where it starts, input, expected answer, checks, use, ways to improve |
 
 ### How to work on the project
 
