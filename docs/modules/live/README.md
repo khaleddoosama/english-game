@@ -151,8 +151,13 @@ Dana (synthetic) challenges two friends.
   wait for the 30-second check (Live home) or the 45-second badge check. Run 0043 on every online database.
 - The policy that lets members send on `live:<code>` (migration 0008) is still there, though the game no longer
   uses it. Removing it is a database change, left for later.
-- The real Supabase Realtime service is not run by any test: the SQL test checks what the triggers write to
-  `realtime.messages` (on stand-ins for Supabase's schemas) and the unit tests use a fake client. It was checked by
-  hand in one real match (see Fixed, 2026-10-20). To count the signals: `select event, count(*) from
-  realtime.messages where topic like 'live:%' or topic like 'user:%' group by event` (kept 3 days).
+- After a connection loss longer than the channel's retries (about 20 s of failures, for example 60 s offline), the
+  room does not use Realtime again until it is opened again: `transport.js` gives up after 3 tries and stays on
+  polling every 4 s. The browser does reconnect and still receives the messages (realtime-js rejoins a channel that
+  could not be removed while offline), but they reach no channel the room listens on, so the screen updates only at
+  the next poll. Seen in CI on the real stack (`e2e/realstack/live.cjs`, 2026-10-22: message at +26 ms, screen at
+  +3.7 s); a loss of 10 s does not trigger it (the socket survives). The screen still shows every change within
+  about 4 s. Changing it is an app change, not done here.
+- To count the signals on a project: `select event, count(*) from realtime.messages where topic like 'live:%' or
+  topic like 'user:%' group by event` (kept 3 days).
 - Assumption (not tested): the server checks the shape of the host's questions and that the answer is among the options, but not that it is the correct answer to the prompt; a careless or malicious host can create wrong keys. This affects only that match.
