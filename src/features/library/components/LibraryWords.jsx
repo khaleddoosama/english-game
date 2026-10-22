@@ -16,6 +16,7 @@ export default function LibraryWords({ items, rows, grammar = [], isAdmin = fals
   const [sure, setSure] = useState(false);
 
   const viewsOf = useMemo(() => new Map(items.words.map((w) => [w.key, w.views])), [items.words]);
+  const unitItems = useMemo(() => items.words.map((w) => wordByKey.get(w.key)).filter(Boolean), [items.words, wordByKey]);
   const pool = useMemo(() => items.words.filter((w) => only === "all" || w.views === 0).map((w) => wordByKey.get(w.key)).filter(Boolean), [items.words, only, wordByKey]);
   const loose = items.words.filter((w) => w.views === 0).length;
 
@@ -39,7 +40,7 @@ export default function LibraryWords({ items, rows, grammar = [], isAdmin = fals
     <div className="lib-words">
       <p className="lib-summary">{count(items.words.length, "word")}{items.rules.length ? ` · ${count(items.rules.length, "rule")}` : ""} in your library{loose ? ` · ${loose} not in any view` : ""}</p>
       {!items.words.length && <p className="ui-muted">No words in your library yet, only grammar rules (below).</p>}
-      {items.words.length > 0 && <WordPicker words={pool} selected={sel.set} onToggle={sel.toggle} onSetMany={sel.setMany} searchLabel="Search your library" placeholder="Search your library" tagOf={(k) => (viewsOf.get(k) ? `in ${count(viewsOf.get(k), "view")}` : "no view")}
+      {items.words.length > 0 && <WordPicker filterUnits unitItems={unitItems} words={pool} selected={sel.set} onToggle={sel.toggle} onSetMany={sel.setMany} searchLabel="Search your library" placeholder="Search your library" tagOf={(k) => (viewsOf.get(k) ? `in ${count(viewsOf.get(k), "view")}` : "no view")}
         empty={() => <p className="ui-muted">Nothing matches.</p>}>
         <div className="lib-source" role="group" aria-label="Which words">
           <button className={`chip ${only === "all" ? "on" : ""}`} aria-pressed={only === "all"} onClick={() => setOnly("all")}>All</button>

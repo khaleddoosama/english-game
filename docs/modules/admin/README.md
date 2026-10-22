@@ -133,12 +133,14 @@ already in `features/admin`. What the shell still holds for this module is the p
 
 ## Units filters (2026-10-22)
 
-Status: **Planned**. Type: **Feature**.
+Status: **Implemented**. Type: **Feature**.
 
-Words (`/admin/words`) and Grammar (`/admin/grammar`) currently filter other fields but not `units`.
-Add All units, Without unit (absent/empty arrays), and distinct naturally sorted units from the available list.
-An item matches each unit it belongs to. Combine with existing search and filters. Persist the filter in the
-URL with the other filters, reset pagination to page one when changed, and offer a clear unit filter action
+Words (`/admin/words`) and Grammar (`/admin/grammar`) filter the `units` field alongside other fields.
+Options are All units, Without unit (absent/empty arrays), and distinct naturally sorted units from the available list.
+An item matches each unit it belongs to. Combine with existing search and filters. The filter is persisted in the
+URL with the other filters, pagination resets to page one when changed, and each screen offers a clear unit filter action
 alongside meaningful empty results. This is display-only; content, permissions and database remain unchanged.
-Verify both screens with multi-unit/no-unit synthetic items, existing filters, URL reload and pagination,
-plus desktop/mobile browser checks.
+Verified with `tests/unit-filters.test.jsx` and `e2e/specs/units-folding.cjs`: multi-unit/no-unit items,
+combined filters, URL reload, page reset, and desktop/mobile rendering. The URL uses `unit=none` or
+`unit=unit:<exact name>` (URL-encoded); no parameter means All units. Shared helpers are in `lib/UnitFilter`
+and `lib/unitFilter`. Full evidence and limits: [UI batch](../../work-tracking/ui-folding-units.md).

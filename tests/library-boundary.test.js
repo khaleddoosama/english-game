@@ -51,8 +51,10 @@ describe("what the module imports from the rest of the app", () => {
     expect([...out].sort()).toEqual([
       "engine/v2",
       "features/home",
+      "lib/UnitFilter",
       "lib/router",
       "lib/supabase",
+      "lib/unitFilter",
       "styles/library",
     ]);
   });

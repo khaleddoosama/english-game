@@ -1,3 +1,5 @@
+import UnitFilter from "../../../lib/UnitFilter";
+import { matchesUnit } from "../../../lib/unitFilter";
 import { useMemo, useState } from "react";
 import { useQuery } from "../../../lib/router";
 import { FileJson, FolderInput, Image as ImageIcon, Plus, Sparkles, Trash2 } from "lucide-react";
@@ -36,8 +38,8 @@ export function Words({ content, wordStats, mastery, onUpdate, onRenameWord, ope
   const onEdit = (word) => onOpen(word);
   const onCreate = () => onOpen("new");
   // Filters live in the address: /admin/words?category=Food&hasPicture=false
-  const [filters, setFilters] = useQuery({ category: "", type: "", issue: "", hasPicture: "" });
-  const { category, type, issue, hasPicture: pictureFilter } = filters;
+  const [filters, setFilters] = useQuery({ unit: "", category: "", type: "", issue: "", hasPicture: "" });
+  const { unit, category, type, issue, hasPicture: pictureFilter } = filters;
   const setCategory = (v) => setFilters({ category: v, page: null });
   const setType = (v) => setFilters({ type: v, page: null });
   const setIssue = (v) => setFilters({ issue: v, page: null });
@@ -53,10 +55,10 @@ export function Words({ content, wordStats, mastery, onUpdate, onRenameWord, ope
     const s = stats.get(w.word);
     return { w, index, word: w.word, category: w.category || "", type: w.type || "", attempts: s?.attempts || 0, players: s?.players || 0, accuracy: s?.attempts ? s.correct / s.attempts : null, issues: wordIssues(w), picture: hasPicture(w), stage: V2.stage(mastery[w.word]) };
   }), [words, stats, mastery]);
-  const rows = useMemo(() => enriched.filter((r) => (!category || r.category === category) && (!type || r.type === type)
+  const rows = useMemo(() => enriched.filter((r) => matchesUnit(r.w, unit) && (!category || r.category === category) && (!type || r.type === type)
     && (pictureFilter === "" || r.picture === (pictureFilter === "true")) && (
     !issue || (issue === "any" && r.issues.length) || r.issues.includes(issue)
-    || (issue === "hard" && r.accuracy != null && r.accuracy < 0.5 && r.attempts >= 5) || (issue === "unplayed" && !r.attempts))), [enriched, category, type, issue, pictureFilter]);
+    || (issue === "hard" && r.accuracy != null && r.accuracy < 0.5 && r.attempts >= 5) || (issue === "unplayed" && !r.attempts))), [enriched, unit, category, type, issue, pictureFilter]);
 
   const columns = [
     { key: "word", label: "Word", render: (r) => <span className="adm-word">{r.picture ? <ImageIcon size={14} className="adm-has-pic" aria-label="has a picture" /> : <i className="adm-pic-gap" />}<b>{r.word}</b><small>{r.w.meaning}</small></span> },
@@ -125,8 +127,9 @@ export function Words({ content, wordStats, mastery, onUpdate, onRenameWord, ope
       <DataTable
         id="words" columns={columns} rows={rows} rowKey={(r) => r.word} csvName="word-hunter-words"
         searchText={(r) => `${r.word} ${r.w.meaning || ""} ${r.category} ${(r.w.synonyms || []).join(" ")}`} searchPlaceholder="Search words, meanings, categories…"
-        resetKey={`${category}|${type}|${issue}|${pictureFilter}`} syncUrl selectable onRowClick={(r) => onEdit(r.word)}
+        resetKey={`${unit}|${category}|${type}|${issue}|${pictureFilter}`} syncUrl selectable onRowClick={(r) => onEdit(r.word)}
         filters={<>
+          <UnitFilter items={words} value={unit} onChange={(v) => setFilters({ unit: v, page: null })} className="adm-select" />
           <select className="adm-select" value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Category"><option value="">All categories</option>{categories.map((c) => <option key={c} value={c}>{c}</option>)}</select>
           <select className="adm-select" value={type} onChange={(e) => setType(e.target.value)} aria-label="Type"><option value="">All types</option>{types.map((t) => <option key={t} value={t}>{t}</option>)}</select>
           <select className="adm-select" value={pictureFilter} onChange={(e) => setPicture(e.target.value)} aria-label="Picture"><option value="">Any picture</option><option value="true">Has a picture</option><option value="false">No picture</option></select>
@@ -141,7 +144,7 @@ export function Words({ content, wordStats, mastery, onUpdate, onRenameWord, ope
           <button className="adm-btn ghost" onClick={() => downloadText(`word-hunter-words-${sel.length}.json`, JSON.stringify({ schemaVersion: 2, kind: "content", words: sel.map((r) => r.w) }, null, 2), "application/json")}><FileJson size={15} /> Export JSON</button>
           <button className="adm-btn danger" onClick={() => setConfirm({ rows: sel, clear })}><Trash2 size={15} /> Delete</button>
         </>}
-        emptyText="No words yet. Import a backup from Data, or add one."
+        emptyText={words.length ? "No words match these filters." : "No words yet. Import a backup from Data, or add one."}
       />
       {editing !== undefined && editing !== null || openWord === "new" ? <WordEditor key={openWord} word={editing || null} content={content} stats={editing ? stats.get(editing.word) : null}
         onSave={saveWord} onDelete={(w) => { onUpdate("words", words.filter((x) => x !== w)); onOpen(null); }} onClose={() => onOpen(null)} /> : null}
