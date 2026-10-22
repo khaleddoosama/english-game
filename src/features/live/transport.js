@@ -8,35 +8,33 @@ import { isLocalMode, supabase } from "../../lib/supabase";
 
 // The names the database sends (migration 0043).
 const LIVE_EVENTS = ["joined", "left", "start", "progress", "end", "rematch"];
-const RETRY_MS = [1000, 3000, 8000];
 
 // Returns { send(event, payload), close() }. send() reaches the other tabs in
 // local mode and does nothing online (the database has sent it already).
-// onStatus gets "connecting", "live" or "offline" (gave up; polling only).
+// onStatus gets "connecting" (not joined yet, or lost; the room polls often) or "live".
 export function openLiveChannel(code, me, { onEvent, onPresence, onStatus = () => {} }) {
   return isLocalMode ? localChannel(code, me, onEvent, onPresence, onStatus) : realtimeChannel(code, me, onEvent, onPresence, onStatus);
 }
 
+// One channel for as long as the room is open. When it is lost (e.g. "MissingPartition" on a project's very first
+// connection, or a dropped network) realtime-js joins this same channel again by itself: after 1, 2 and 5 s, then
+// every 10 s while the socket is up, and at once when the socket reconnects. Until 2026-10-22 it was removed and
+// replaced up to 3 times, then given up: after a long loss the server kept sending to a join the room no longer
+// listened to, so the room stayed on polling until it was opened again (docs/modules/live/README.md, Fixed).
 function realtimeChannel(code, me, onEvent, onPresence, onStatus) {
-  let channel = null, closed = false, attempt = 0, timer = null;
+  let channel = null, closed = false;
   const connect = async () => {
-    if (closed) return;
     onStatus("connecting");
     try { await supabase.realtime.setAuth(); } catch {}
+    if (closed) return;
     channel = supabase.channel(`live:${code}`, { config: { private: true, broadcast: { self: false }, presence: { key: me.id } } });
     for (const event of LIVE_EVENTS) channel.on("broadcast", { event }, ({ payload }) => onEvent(event, payload));
     channel.on("presence", { event: "sync" }, () => onPresence(Object.values(channel.presenceState()).map((metas) => metas[0]).filter(Boolean)));
     channel.subscribe(async (status, err) => {
       if (closed) return;
-      if (status === "SUBSCRIBED") { attempt = 0; onStatus("live"); await channel.track({ id: me.id, name: me.name }); return; }
-      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-        // e.g. "MissingPartition" on a project's very first connection, or
-        // a dropped network: try again a few times, then rely on polling.
-        console.warn("Live channel:", status, err?.message || "");
-        supabase.removeChannel(channel);
-        if (attempt < RETRY_MS.length) { timer = setTimeout(connect, RETRY_MS[attempt++]); onStatus("connecting"); }
-        else onStatus("offline");
-      }
+      // Presence is tracked again on every join: the server forgets it with the lost join.
+      if (status === "SUBSCRIBED") { onStatus("live"); await channel.track({ id: me.id, name: me.name }); return; }
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") { console.warn("Live channel:", status, err?.message || ""); onStatus("connecting"); }
     });
   };
   connect();
@@ -44,7 +42,7 @@ function realtimeChannel(code, me, onEvent, onPresence, onStatus) {
     // The database sends every signal after the change is written (migration 0043), so the browser sends none.
     // Before 2026-10-20 it sent its own too, which doubled the billed messages.
     send() {},
-    close() { closed = true; clearTimeout(timer); if (channel) supabase.removeChannel(channel); },
+    close() { closed = true; if (channel) supabase.removeChannel(channel); },
   };
 }
 

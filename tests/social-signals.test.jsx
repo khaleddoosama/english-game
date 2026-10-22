@@ -21,7 +21,7 @@ function fakeClient() {
     channel(name, opts) {
       const ch = { name, opts, handlers: {}, status: null,
         on(type, filter, fn) { ch.handlers[`${type}:${filter.event}`] = fn; return ch; },
-        subscribe(fn) { ch.status = fn; return ch; },
+        subscribe(fn = () => {}) { ch.status = fn; return ch; },
         emit(event, payload = {}) { ch.handlers[`broadcast:${event}`]?.({ payload }); } };
       c.channels.push(ch);
       return ch;
