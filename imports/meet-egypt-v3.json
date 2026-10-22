@@ -1,0 +1,648 @@
+{
+  "schemaVersion": 3,
+  "kind": "content",
+  "note": "Meet Egypt, content v3 (10 words). Category Travel & Transport, course level A2.1, unit Meet Egypt.",
+  "categories": [
+    {
+      "id": "travel-transport",
+      "title": "Travel & Transport",
+      "subCategories": [
+        {
+          "id": "culture-and-people",
+          "title": "Culture and people"
+        },
+        {
+          "id": "food",
+          "title": "Food"
+        },
+        {
+          "id": "geography",
+          "title": "Geography"
+        },
+        {
+          "id": "tourism",
+          "title": "Tourism"
+        }
+      ]
+    }
+  ],
+  "words": [
+    {
+      "id": "traditions",
+      "word": "Traditions",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "travel-transport",
+      "subCategory": "culture-and-people",
+      "level": "A2.1",
+      "register": "neutral",
+      "meaning": "Customs and ways of doing things that families or a country have kept for a very long time.",
+      "situations": [
+        "Every Ramadan, Egyptian families hang colourful lanterns and eat together after sunset, as their grandparents did.",
+        "At weddings in Upper Egypt, people still dance with sticks, just like hundreds of years ago."
+      ],
+      "gaps": [
+        "Hanging lanterns in Ramadan is one of Egypt's oldest ______.",
+        "Every family has its own holiday ______.",
+        "Young people should learn about their country's ______."
+      ],
+      "hints": [
+        "Old customs passed from parents to children.",
+        "Starts with 'trad-' and ends with '-tions'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "We have a tradition to eat fish on Sham El-Nessim.",
+          "correction": "We have a tradition of eating fish on Sham El-Nessim.",
+          "why": "Use 'a tradition of + -ing'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "tradition",
+          "pos": "noun"
+        },
+        {
+          "word": "traditional",
+          "pos": "adjective"
+        },
+        {
+          "word": "traditionally",
+          "pos": "adverb"
+        }
+      ],
+      "collocations": [
+        "family traditions",
+        "keep traditions alive",
+        "old traditions"
+      ],
+      "synonyms": [
+        "customs",
+        "rituals"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "culture"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Meet Egypt"
+      ]
+    },
+    {
+      "id": "sightseeing",
+      "word": "Sightseeing",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "travel-transport",
+      "subCategory": "tourism",
+      "level": "A2.1",
+      "register": "neutral",
+      "meaning": "Visiting famous and interesting places as a tourist.",
+      "situations": [
+        "On their first day in Cairo, the tourists visited the Pyramids, the Egyptian Museum and Khan El-Khalili.",
+        "We spent the morning taking photos of old mosques and temples in Luxor."
+      ],
+      "gaps": [
+        "We spent the whole day ______ in Cairo.",
+        "Luxor is perfect for ______ — there are temples everywhere.",
+        "After a week of ______, we relaxed on the beach."
+      ],
+      "hints": [
+        "Visiting famous places as a tourist.",
+        "A compound: 'sight' + 'seeing'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "We did a sightseeing.",
+          "correction": "We went sightseeing.",
+          "why": "Say 'go sightseeing' — 'sightseeing' is uncountable."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "sightseer",
+          "pos": "noun"
+        },
+        {
+          "word": "sights",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "go sightseeing",
+        "sightseeing tour",
+        "a day of sightseeing"
+      ],
+      "synonyms": [
+        "touring"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Meet Egypt"
+      ]
+    },
+    {
+      "id": "generosity",
+      "word": "Generosity",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "travel-transport",
+      "subCategory": "culture-and-people",
+      "level": "A2.1",
+      "register": "neutral",
+      "meaning": "The quality of happily giving money, food, time or help to others.",
+      "situations": [
+        "The old shop owner gave free bread to every poor family in the street during Ramadan.",
+        "When I lost my wallet, a stranger paid for my train ticket and refused to take the money back."
+      ],
+      "gaps": [
+        "Thank you for your ______ — the donation will help many families.",
+        "Egyptians are known for their ______ during Ramadan.",
+        "Her ______ surprised everyone; she gave away half her salary."
+      ],
+      "hints": [
+        "Happily giving things to others.",
+        "The noun of 'generous'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "He is famous for his generous.",
+          "correction": "He is famous for his generosity.",
+          "why": "'Generous' is the adjective; the noun is 'generosity'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "generous",
+          "pos": "adjective"
+        },
+        {
+          "word": "generously",
+          "pos": "adverb"
+        }
+      ],
+      "collocations": [
+        "great generosity",
+        "thank you for your generosity"
+      ],
+      "synonyms": [
+        "kindness",
+        "giving"
+      ],
+      "antonyms": [
+        "greed",
+        "selfishness",
+        "meanness"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "hospitality"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Meet Egypt"
+      ]
+    },
+    {
+      "id": "cuisine",
+      "word": "Cuisine",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "travel-transport",
+      "subCategory": "food",
+      "level": "A2.1",
+      "register": "neutral",
+      "meaning": "The typical style of cooking and the dishes of a country or region.",
+      "situations": [
+        "Koshari, molokhia and ful are famous dishes from Egypt.",
+        "The restaurant serves sushi and ramen cooked the traditional way in Japan."
+      ],
+      "gaps": [
+        "Egyptian ______ is famous for dishes like koshari and molokhia.",
+        "I love trying the local ______ when I travel.",
+        "This hotel restaurant serves Italian ______."
+      ],
+      "hints": [
+        "A country's style of cooking and its dishes.",
+        "Starts with 'cui-'; sounds like 'kwi-ZEEN'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I love Egyptian cuisines food.",
+          "correction": "I love Egyptian cuisine / Egyptian food.",
+          "why": "'Cuisine' already means food style — don't add 'food'."
+        }
+      ],
+      "wordFamily": [],
+      "collocations": [
+        "local cuisine",
+        "Egyptian cuisine",
+        "international cuisine"
+      ],
+      "synonyms": [
+        "cooking",
+        "food"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Meet Egypt"
+      ]
+    },
+    {
+      "id": "hospitality",
+      "word": "Hospitality",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "travel-transport",
+      "subCategory": "culture-and-people",
+      "level": "A2.1",
+      "register": "neutral",
+      "meaning": "Being friendly and welcoming to guests and visitors, and taking good care of them.",
+      "situations": [
+        "When we visited a village near Aswan, a family invited us in, made us tea and wouldn't let us leave without lunch.",
+        "The hotel staff greeted us with cold juice and helped us with our bags."
+      ],
+      "gaps": [
+        "Egyptian ______ is famous — people always invite you for tea.",
+        "Thank you for your warm ______ during our stay.",
+        "He works in the ______ industry, in hotels and restaurants."
+      ],
+      "hints": [
+        "Welcoming and caring for guests.",
+        "Starts with 'hospit-' and ends with '-ality'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "They showed us a great hospitable.",
+          "correction": "They showed us great hospitality.",
+          "why": "'Hospitable' is the adjective; the noun is 'hospitality'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "hospitable",
+          "pos": "adjective"
+        },
+        {
+          "word": "host",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "warm hospitality",
+        "the hospitality industry"
+      ],
+      "synonyms": [
+        "welcome",
+        "friendliness"
+      ],
+      "antonyms": [
+        "unfriendliness",
+        "hostility"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "generosity"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Meet Egypt"
+      ]
+    },
+    {
+      "id": "luxury",
+      "word": "Luxury",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun",
+        "adjective"
+      ],
+      "category": "travel-transport",
+      "subCategory": "tourism",
+      "level": "A2.1",
+      "register": "neutral",
+      "meaning": "Great comfort and expensive, beautiful things that you enjoy but don't really need.",
+      "situations": [
+        "The Nile cruise had a private pool, gold taps and a chef who cooked anything we wanted.",
+        "The hotel room in Sharm had a private beach, a huge bed and free champagne."
+      ],
+      "gaps": [
+        "We stayed in a ______ hotel with a private beach.",
+        "A Nile cruise is a real ______.",
+        "They live a life of ______ with expensive cars and big houses."
+      ],
+      "hints": [
+        "Expensive comfort you don't need.",
+        "Starts with 'lux-'; the adjective is '-urious'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "The hotel was very luxury.",
+          "correction": "The hotel was very luxurious. / It was a luxury hotel.",
+          "why": "After 'very', use the adjective 'luxurious'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "luxurious",
+          "pos": "adjective"
+        },
+        {
+          "word": "luxuriously",
+          "pos": "adverb"
+        }
+      ],
+      "collocations": [
+        "luxury hotel",
+        "a life of luxury",
+        "luxury goods"
+      ],
+      "synonyms": [
+        "comfort",
+        "extravagance"
+      ],
+      "antonyms": [
+        "poverty",
+        "basic"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Meet Egypt"
+      ]
+    },
+    {
+      "id": "culture",
+      "word": "Culture",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "travel-transport",
+      "subCategory": "culture-and-people",
+      "level": "A2.1",
+      "register": "neutral",
+      "meaning": "The whole way of life of a group of people — their art, music, beliefs, language and habits.",
+      "situations": [
+        "Egypt's music, food, language and religion make life there very different from life in Japan.",
+        "When she moved to Cairo, Anna learned Arabic, cooked local food and listened to Umm Kulthum."
+      ],
+      "gaps": [
+        "Egyptian ______ is a mix of African, Arab and Mediterranean influences.",
+        "Travelling helps you learn about other ______s.",
+        "Music is a big part of our ______."
+      ],
+      "hints": [
+        "A people's whole way of life: art, food, beliefs.",
+        "Seven letters; the adjective is 'cultural'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "I want to learn the culture of Egypt people.",
+          "correction": "I want to learn about Egyptian culture.",
+          "why": "Say 'Egyptian culture' — use the adjective."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "cultural",
+          "pos": "adjective"
+        },
+        {
+          "word": "culturally",
+          "pos": "adverb"
+        }
+      ],
+      "collocations": [
+        "Egyptian culture",
+        "local culture",
+        "culture shock"
+      ],
+      "synonyms": [
+        "way of life",
+        "civilization"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [
+          "traditions"
+        ],
+        "excludeWith": []
+      },
+      "units": [
+        "Meet Egypt"
+      ]
+    },
+    {
+      "id": "sense-of-humor",
+      "word": "Sense of humor",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "travel-transport",
+      "subCategory": "culture-and-people",
+      "level": "A2.1",
+      "register": "neutral",
+      "meaning": "The ability to find things funny and to make other people laugh.",
+      "situations": [
+        "Even when the bus broke down in the desert, our Egyptian guide made jokes and had everyone laughing.",
+        "My grandmother laughs at everything and always knows a joke that makes us smile."
+      ],
+      "gaps": [
+        "Egyptians are famous for their great ______ — they joke about everything.",
+        "He has no ______; he never laughs at my jokes.",
+        "A good ______ helps you in difficult times."
+      ],
+      "hints": [
+        "The ability to laugh and make others laugh.",
+        "Three words: 'sense of' + a word for funniness."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "She has a good humor sense.",
+          "correction": "She has a good sense of humor.",
+          "why": "The fixed phrase is 'sense of humor' (UK: humour)."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "humorous",
+          "pos": "adjective"
+        },
+        {
+          "word": "humorless",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "a great sense of humor",
+        "no sense of humor"
+      ],
+      "synonyms": [
+        "wit"
+      ],
+      "antonyms": [
+        "humorlessness"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Meet Egypt"
+      ]
+    },
+    {
+      "id": "mediterranean-sea",
+      "word": "Mediterranean Sea",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "travel-transport",
+      "subCategory": "geography",
+      "level": "A2.1",
+      "register": "neutral",
+      "meaning": "The large sea between southern Europe, northern Africa and western Asia, on Egypt's north coast.",
+      "situations": [
+        "From Alexandria, you can look north across the water towards Greece and Italy.",
+        "In summer, many Egyptian families go to the north coast to swim in the blue water."
+      ],
+      "gaps": [
+        "Alexandria is on the coast of the ______.",
+        "Egypt has beaches on both the Red Sea and the ______.",
+        "Greece, Italy and Egypt all have coasts on the ______."
+      ],
+      "hints": [
+        "The big sea north of Egypt.",
+        "Two words: starts with 'Medi-' + 'Sea'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Alexandria is on the Mediterranean ocean.",
+          "correction": "Alexandria is on the Mediterranean Sea.",
+          "why": "It's a sea, not an ocean."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "Mediterranean",
+          "pos": "adjective"
+        }
+      ],
+      "collocations": [
+        "the Mediterranean coast",
+        "swim in the Mediterranean"
+      ],
+      "synonyms": [
+        "the Med"
+      ],
+      "antonyms": [],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Meet Egypt"
+      ]
+    },
+    {
+      "id": "coastal-cities",
+      "word": "Coastal Cities",
+      "type": "vocab",
+      "partsOfSpeech": [
+        "noun"
+      ],
+      "category": "travel-transport",
+      "subCategory": "geography",
+      "level": "A2.1",
+      "register": "neutral",
+      "meaning": "Cities built next to the sea or ocean.",
+      "situations": [
+        "Alexandria, Port Said and Marsa Matrouh all have beaches and ports right in the city.",
+        "In summer, many Cairo families travel north to big towns by the sea to escape the heat."
+      ],
+      "gaps": [
+        "Alexandria and Port Said are famous ______ in Egypt.",
+        "Many ______ have busy ports and fresh fish markets.",
+        "Rising sea levels are a danger for ______."
+      ],
+      "hints": [
+        "Cities next to the sea.",
+        "Two words: an adjective from 'coast' + 'cities'."
+      ],
+      "commonMistakes": [
+        {
+          "sentence": "Alexandria is a coast city.",
+          "correction": "Alexandria is a coastal city.",
+          "why": "The adjective is 'coastal'."
+        }
+      ],
+      "wordFamily": [
+        {
+          "word": "coast",
+          "pos": "noun"
+        },
+        {
+          "word": "coastal city",
+          "pos": "noun"
+        }
+      ],
+      "collocations": [
+        "coastal cities",
+        "coastal town",
+        "coastal road"
+      ],
+      "synonyms": [
+        "seaside cities",
+        "port cities"
+      ],
+      "antonyms": [
+        "inland cities"
+      ],
+      "links": {
+        "opposite": null,
+        "confusableWith": [],
+        "excludeWith": []
+      },
+      "units": [
+        "Meet Egypt"
+      ]
+    }
+  ]
+}
