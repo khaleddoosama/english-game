@@ -161,7 +161,8 @@ Dana (synthetic) challenges two friends.
   come through Realtime, and failed on CI without the fix (screen at +4.1 s) and passed with it (screen at +255 ms
   after the message); a one-off local run of the real realtime-js against a stand-in Phoenix server (30 s loss,
   not kept) failed before and passed after, for both channels. A room left before its channel was made no longer
-  opens one anyway.
+  opens one anyway. Limit of the evidence: `live.cjs` counts a screen change as Realtime when it follows the frame
+  within 1.5 s; that supports, but does not prove, that it did not come from a poll; one CI run before and one after.
 
 **Known Issues**
 

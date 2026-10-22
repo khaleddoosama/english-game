@@ -183,7 +183,9 @@ after 10 s offline failed ("message not received"); the lobby still passed, thro
 not come from the triggers. The 60 s check now needs Realtime too: on the commit with only that change (CI run
 39753848764) it failed (message at +32 ms, screen at +4.1 s: the next poll); with the fix in `transport.js` (run
 39753913435) it passed (message at +29 ms, screen at +255 ms, the channel joined again). See the Live page, Fixed
-(2026-10-22).
+(2026-10-22). Limit: the 1.5 s rule is supporting evidence that the change came from the Realtime message, not proof
+that it did not come from polling: a poll that happens to land within 1.5 s after the frame would pass too (less
+likely while the room is "live" and polls every 20 s). Each result above is from one CI run.
 
 **Open gaps:** this is still not a real project (the platform's own gateway, its Realtime settings and partition
 upkeep): see `docs/migrations/review-0037-0042.md`, "Not verified". Storage, Studio and the Vercel functions are not in this
