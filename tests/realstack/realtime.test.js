@@ -46,9 +46,9 @@ describe.skipIf(!REALTIME)("Realtime delivers the database's signals, only to wh
   beforeAll(async () => {
     [ann, bob, cat] = await Promise.all([signUp(`${tag}ann`), signUp(`${tag}bob`), signUp(`${tag}cat`)]);
     promote(ann); // Live challenges are made by the admin in this test (the app's switch for players is not the point)
-    // Realtime starts streaming the database's messages when the first channel joins, and a message written before
-    // that stream runs is not delivered (seen in CI: the first friend request never arrived). So a test message is
-    // sent until one reaches a player: the tests below measure delivery, not Realtime starting up.
+    // Without this, the first friend request of this file never arrived (every CI run, 2026-10-21; cause not found:
+    // Realtime starts streaming the database's messages when the first channel joins). So a test message is sent
+    // until one reaches a player; the tests below then measure delivery, not Realtime starting up.
     const probe = await listen(cat, `user:${cat.id}`, ["probe"]);
     let sent = 0;
     for (; sent < 30 && !probe.got.length; sent++) {
