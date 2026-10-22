@@ -54,6 +54,14 @@ async function within(page, check, arg, ms) {
   const t = Date.now();
   try { await page.waitForFunction(check, arg, { timeout: ms, polling: 100 }); return Date.now() - t; } catch { return null; }
 }
+// The screen changed `took` ms after `t` because of `frame`: the frame came first, and the change followed within
+// 1.5 s (the next poll could be up to 20 s away while the channel is live, 4 s while it is not). Returns a text
+// with both times for the check's message, and whether it holds.
+function causedBy(frame, t, took) {
+  if (!frame || took === null) return { yes: false, text: `message ${frame ? `at +${frame.at - t} ms` : 'not received'}, screen ${took === null ? 'not changed' : `at +${took} ms`}` };
+  const gap = t + took - frame.at;
+  return { yes: gap >= -50 && gap <= 1500, text: `message at +${frame.at - t} ms, screen at +${took} ms` };
+}
 // The width of a player's bar in the race (answered / questions).
 const raceWidth = ([name, width]) => [...document.querySelectorAll('.lv-race li')].some((li) => li.textContent.includes(name) && li.querySelector('.lv-race-bar i')?.style.width === width);
 // Answers the question on screen (the first option) and waits for the next one, or for the end of the run.
@@ -113,20 +121,23 @@ run(async () => {
   let t = Date.now();
   await G.page.click('button:has-text("Join the challenge")'); await G.page.waitForSelector('.lv-lobby', { timeout: 15000 });
   let took = await within(H.page, (n) => [...document.querySelectorAll('.lv-people b')].some((b) => b.textContent === n), guest.username, SOON);
-  ok(took !== null && !!H.ws.got(code, 'joined', t), `the host's lobby shows the player who joined (${took} ms), from a Realtime "joined" message: ${!!H.ws.got(code, 'joined', t)}`);
+  let c = causedBy(H.ws.got(code, 'joined', t), t, took);
+  ok(c.yes, `the host's lobby shows the player who joined, from a Realtime "joined" message (${c.text})`);
 
   // 3. the start reaches the other player
   t = Date.now();
   await H.page.click('button:has-text("Start for 2 players")');
   took = await within(G.page, () => !!document.querySelector('.lv-countdown, .lv-play'), null, SOON);
-  ok(took !== null && !!G.ws.got(code, 'start', t), `the start reaches the other player (${took} ms), from a Realtime "start" message: ${!!G.ws.got(code, 'start', t)}`);
+  c = causedBy(G.ws.got(code, 'start', t), t, took);
+  ok(c.yes, `the start reaches the other player, from a Realtime "start" message (${c.text})`);
   await H.page.waitForSelector('.lv-play', { timeout: 15000 }); await G.page.waitForSelector('.lv-play', { timeout: 15000 });
 
   // 4. an answer reaches the other's race
   t = Date.now();
   await answer(G.page);
   took = await within(H.page, raceWidth, [guest.username, '10%'], SOON);
-  ok(took !== null && !!H.ws.got(code, 'progress', t), `the host's race shows the other player's answer (${took} ms), from a Realtime "progress" message: ${!!H.ws.got(code, 'progress', t)}`);
+  c = causedBy(H.ws.got(code, 'progress', t), t, took);
+  ok(c.yes, `the host's race shows the other player's answer, from a Realtime "progress" message (${c.text})`);
 
   // 5. the other player's connection is lost while the host plays on, then comes back: once briefly, once for longer
   // than the room's channel keeps retrying (transport.js: 3 tries), so both ways back are seen.
@@ -146,8 +157,8 @@ run(async () => {
     const t1 = Date.now();
     await answer(H.page); hostAnswered++;
     const next = await within(G.page, raceWidth, [host.username, pct(hostAnswered)], SOON);
-    const viaRealtime = !!G.ws.got(code, 'progress', t1);
-    ok(next !== null && viaRealtime, `after ${seconds} s offline, the host's next answer reaches the other player through Realtime (${next} ms; message received: ${viaRealtime}; channel joined again: ${again}; ${G.ws.sockets() - sockets} new socket(s))`);
+    const r = causedBy(G.ws.got(code, 'progress', t1), t1, next);
+    ok(r.yes, `after ${seconds} s offline, the host's next answer reaches the other player's screen through Realtime (${r.text}; channel joined again: ${again}; ${G.ws.sockets() - sockets} new socket(s))`);
   }
   await outage(10);
   await outage(60);
