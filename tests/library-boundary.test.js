@@ -49,6 +49,7 @@ describe("what the module imports from the rest of the app", () => {
 
   it("only the shared pieces listed in the module document", () => {
     expect([...out].sort()).toEqual([
+      "engine/units",
       "engine/v2",
       "features/home",
       "lib/router",
