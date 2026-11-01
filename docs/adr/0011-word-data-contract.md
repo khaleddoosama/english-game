@@ -1,7 +1,8 @@
 # ADR 0011: One data contract for a word
 
-- Status: **Proposed** (revised 2026-11-01 after the owner's first review). The owner agreed with the direction;
-  this text waits for approval. Nothing here is built. No code and no production data were changed for it.
+- Status: **Proposed** (revised twice on 2026-11-01 after the owner's reviews). The owner agreed with the direction
+  and answered the open decisions (see the end). This text waits for approval. Nothing here is built. No code and no
+  production data were changed for it.
 - Modules: [content](../modules/content/README.md), [ai-media](../modules/ai-media/README.md),
   [admin](../modules/admin/README.md), [learning-engine](../modules/learning-engine/README.md),
   [library](../modules/library/README.md)
@@ -75,11 +76,20 @@ The game keeps reading what it reads today, through a view built at load time.
 There is no "extra" class. **A key that is not in the table below is refused in any new write.** A key like that
 already stored is reported by the dry run and treated as Retired.
 
+**Converted and unconverted rows.** A row written under the contract carries the system key `contract: 1`. A row
+without it is *unconverted*; today every row is. Readers, writers and the server tell the two apart by this marker
+alone, never by guessing from the other keys.
+- An unconverted row is read exactly as today, field by field: the stored `situation`, `gap`, `commonMistake`,
+  `opposite` and `relations.*` are used where they are used today, even where they disagree with the lists.
+- A converted row is read from the lists and the top-level relation lists. It holds no derived or alias key.
+
+An unconverted row is never counted as converted or valid just because it loads (section 6.3).
+
 ### 2. Values: absent, empty, false and zero
 
 - **Empty** means `""` (or only spaces), `null`, `[]` or `{}`. `false` and `0` are **not** empty. A key that does not
-  accept them refuses them with a type error; they are never dropped silently. No stored key accepts a number, and
-  the system flags accept only `true`.
+  accept them refuses them with a type error; they are never dropped silently. The only number is the system marker
+  `contract`, which accepts only `1`; the system flags accept only `true`.
 - Text is trimmed and inner spaces become single. Lists keep their order.
 
 **Full write** (a new word: create, Ask AI add, a new word in an import):
@@ -135,6 +145,7 @@ because the check is limited.
 | `_autoStub` | System | `true` | — | Set only when a stub is made | Not a stub | Fewer required keys; admin badge |
 | `_aiAdded` | System | `true` | — | Set only when Ask AI adds a word | Not AI | Admin badge; library source |
 | `gapsCheckedFor` | System | string | — | Set only by Content Health | Not checked | Content Health |
+| `contract` | System | `1` | — | Set by every write under the contract; never typed, never accepted as input | Unconverted row: read the old way | Which reading and saving rules apply (sections 1, 6) |
 | `situation`, `gap`, `commonMistake` | Derived; Input alias | | | Read as item `[0]` of the list. On input see section 4. | | Read by the game, analytics and the CSV |
 | `opposite` | Derived; Input alias | | | Read as `linkAntonyms` gives it, as today. On input it is added to `antonyms`; `"None"` means no opposite. | | Opposite Battle, library links |
 | `relations.antonyms`, `relations.synonyms`, `relations.confusableWords` | Input alias | | | Merged into the top-level list (union, order kept, no repeats). | | |
@@ -170,6 +181,9 @@ because the check is limited.
   - **Choice B**: keep the list's `[0]`. The `seed` counts would then sit on a different sentence. So B is offered
     only together with a separate, approved change that moves those counts in players' progress, or an explicit
     approval to reset them for that word.
+  - **Decided (owner, 2026-11-01).** A is the recommendation. It is applied to a word only after the report has
+    shown, for that word, the text behind every pool id before and after, and the two match. B needs its own
+    approval for moving or resetting the counts.
   - The same applies to `situations`. Practice does not ask the situation pool today, but its stored counts are
     reported the same way.
 - **Normalising is stable.** `normalize(normalize(x))` equals `normalize(x)` for every input. The migration's
@@ -181,10 +195,16 @@ because the check is limited.
   `relations.synonyms` adds nothing in production. `relations.confusableWords` moves as it is.
 - **No new opposites are turned on as a side effect.**
   - The game does not read `relations.antonyms` today. Loading never folds it in.
-  - For the 4 production words whose `relations.antonyms` has entries missing from `antonyms`, the migration does
-    not decide on its own. The owner chooses per word:
-    - move the entry into `antonyms`: a listed change in play, because new opposite pairs appear;
-    - or archive it.
+  - The 4 production entries in `relations.antonyms` that are missing from `antonyms` are shown in the report, each
+    with:
+    - the meanings of both words;
+    - the effect in play: which opposite pair appears, and in which question kinds (Opposite Battle, its pair
+      questions, Live);
+    - a recommendation for that entry.
+
+    The owner chooses per entry: move it into `antonyms` (a listed change in play), or archive it. **Nothing is
+    moved or archived without that choice** (decided 2026-11-01). Until then the entry stays where it is and is
+    not read by the game (sections 6.1 and 6.2).
   - A new write that gives `relations.antonyms` is merged, because it is new authored input.
 - **References to no word stay as they are.**
   - The 183 `confusableWords` references (181 to no word, 2 to deleted words) are kept and listed by class in the
@@ -192,31 +212,135 @@ because the check is limited.
   - They are neither deleted nor turned into stubs.
   - A new write that names no live word gives a warning.
 - **Renames update every relation list** (`antonyms`, `synonyms`, `confusableWords`, `excludeFromSameOptionsWith`,
-  `pictureAvoid`), for entries equal to the old name ignoring case. This is a fix that comes with step 4
+  `pictureAvoid`), for entries equal to the old name ignoring case. This is a fix that comes with step 5
   (writers).
 
 ### 6. One path for every writer, checked on the server too
 
 | Writer | With the contract |
 | --- | --- |
-| Import (v2, v3 files, a backup's content) | `prepareImport` (the v3 conversion is kept) → `readWord` on each incoming word → `checkWord`, strict. **Any error refuses the whole file before anything is written.** The report lists word, field and reason. Old-shape files are accepted when they only use input aliases without conflicts; retired or unknown keys refuse them. |
-| Word editor | The form gives the lists → `updateWord(previous, changes)` with partial-update rules → `checkWord`. A word with an unresolved conflict cannot be saved; the message names the conflict. |
-| Ask AI | The AI is asked only for keys in the table: `word`, `type`, `partsOfSpeech`, `category`, `meaning`, one example, one gap, `hints`, at most one common mistake. It may also give `pronunciation` and `nearWords`, which are shown in the drawer and never stored. Optional keys are not asked to be filled: a missing hint or mistake stays missing (the prompt of PR #83 already says "never invent"). The checked card (`readAskAiAnswer`) becomes a word through `readWord(…, {source: "ai"})` → `checkWord`. The same applies to editor fill and stub fill. |
+| Import (v2, v3 files, a backup's content) | `prepareImport` (the v3 conversion is kept) → `readWord` on each incoming word → `checkWord`, strict. **Any error refuses the whole file before anything is written.** The report lists word, field and reason. Old-shape files are accepted when they only use input aliases without conflicts; retired or unknown keys refuse them. A file entry for an existing unconverted word changes it through the carry-over save (6.2). |
+| Word editor | The form gives the lists → `updateWord(previous, changes)` with partial-update rules → `checkWord`. An unconverted word gets the carry-over save (6.2): a change to a conflicting list needs Choice A, and other fields can be saved. |
+| Ask AI | The AI is asked only for keys of the table that a card can hold. Required: `word`, `type`, `category`, `meaning`, one example, one gap. Optional: `partsOfSpeech`, `hints`, at most one common mistake. Display-only: `pronunciation`, `nearWords`, shown in the drawer and never stored. **Optional keys may be generated when they are correct and useful.** The prompt never requires them, so one that does not fit stays missing instead of being invented. Every key is checked (`readAskAiAnswer`), and the card becomes a word through `readWord(…, {source: "ai"})` → `checkWord`, like any other write. The same applies to editor fill and stub fill. |
 | Content Health, Regenerate, Report fix | `updateWord(previous, patch)` → `checkWord`. Regenerate replaces `situations[0]`. A report fix that fails is shown with its errors and cannot be applied. |
-| Save of the game's copy | `storedWord` removes derived keys and keeps retired keys that are already stored (until the migration). Only changed words are sent, as today. |
-| **Server** | A `BEFORE INSERT OR UPDATE OF data` trigger on `content_items`, for a word row that is not deleted, calls `public.word_contract_errors(data)` and raises on any error. It checks the shape rules of section 3: allowed keys, types, required keys, the enums, one blank per gap, list items, flags only `true`, no derived or alias keys. It covers `content_save_v2`, staged drafts when they are published, and direct table writes by the admin. |
+| Save of the game's copy | A new word or a converted row: `storedWord` removes derived keys and sets `contract: 1`. An unconverted row: the carry-over save of 6.2. Only changed words are sent, as today. |
+| **Server** | A trigger on `content_items` for every insert and update (6.4). It runs `public.word_contract_errors(data)` and raises on any error. It covers `content_save_v2`, staged drafts when they are published, and direct table writes by the admin. |
 
-**Server check details.**
-- **The browser and the server must agree.** The rules are written twice: JavaScript (the reference) and SQL. One
-  shared file of cases (`tests/fixtures/word-contract-cases.json`) is run against both, `checkWord` in the `app`
+**The browser and the server must agree.**
+- The rules are written twice: JavaScript (the reference) and SQL.
+- One shared file of cases (`tests/fixtures/word-contract-cases.json`) is run against both: `checkWord` in the `app`
   job and `word_contract_errors` in the `database` job. A difference fails CI.
-- **What the server does not check.**
-  - Warnings, and rules that need other words (whether a reference resolves), stay in the browser.
-  - No check, in either place, proves that a meaning is right, an example natural, or a gap clear: a valid shape is
-    not a correct word.
-- **The only exception is the restore** (section 8). It writes snapshot rows exactly as they were. The trigger lets
-  a row through only when a `content_restores` record for the same transaction (`txid_current()`) lists that
-  snapshot row. Only the definer function `content_restore` can write that table.
+
+**What the server does not check.**
+- Warnings, and rules that need other words (whether a reference resolves), stay in the browser.
+- No check, in either place, proves that a meaning is right, an example natural, or a gap clear: a valid shape is not
+  a correct word.
+
+#### 6.1 Reading while both shapes exist (steps 2 and 3)
+
+Each reader picks its rules by the `contract` marker only:
+
+| Reader | Unconverted row (no marker) | Converted row |
+| --- | --- | --- |
+| Game view (`wordView`), CSV, admin screens | As today. `situation`, `gap` and `commonMistake` are used as stored, **even when they differ from the lists' `[0]`**. `opposite` comes from `linkAntonyms` over `antonyms` and the stored `opposite`. `relations.confusableWords` and `relations.synonyms` are read as today. `relations.antonyms` is not read. | The single fields from item `[0]`. `opposite` from `antonyms`. `confusableWords` from the top-level list. |
+| `analytics.words`, `word_quality` | `data->>'situation'`, `data->>'gap'` and `data->>'opposite'`, as today | `situations->>0`, `gaps->>0`, and whether an antonym names a live word (what `opposite` held) |
+| `dictionary_sync` | Links from `opposite`, `relations.*` and `synonyms`, and `senses.content`, as today | Links from `antonyms` (entries that name a live word), `synonyms` and `confusableWords`. `senses.content` also gets `situation` and `gap` from `[0]`, so the library copy keeps its keys. |
+
+Differential tests prove that this step changes nothing; it is not assumed. The fixtures cover every class found in
+production:
+- a single field that differs from `[0]` and is not in the list;
+- a stored `opposite`;
+- `relations.antonyms` entries missing from `antonyms`;
+- empty lists;
+- retired keys;
+- references to no word.
+
+The tests:
+1. For each unconverted fixture, the old code and the new code give the same view, the same questions (seeded),
+   the same analytics row, and the same library links and `senses.content`.
+2. For each fixture without a conflict, its converted form gives the same outputs as the unconverted one.
+3. For each conflict fixture, its converted form under Choice A shows the same sentence first, and every pool id
+   names the same text.
+
+#### 6.2 Saving before the migration (steps 5 and 6)
+
+Two ways of saving exist until the migration, chosen by the stored row's marker:
+
+- **A new word, or a converted row: contract save.** Strict checks, lists only, `contract: 1`.
+- **An unconverted row: carry-over save.**
+  - The fields the admin changed are checked strictly, with the same rules as a contract save. A change that
+    breaks them is refused.
+  - Every other stored key is kept exactly as stored, including retired keys, the single fields, `relations` and
+    the stored `opposite`. **Nothing is dropped and nothing is archived before the approved migration.**
+  - The row stays unconverted, without the marker, so it is still read the old way.
+  - The row stays consistent for the old readers:
+    - a changed `situations` also rewrites `situation` from its new `[0]`; the same holds for `gaps` with `gap` and
+      `commonMistakes` with `commonMistake`;
+    - a changed `antonyms` recomputes the stored `opposite`, as today's save does.
+  - A change cannot add a retired or unknown key: such a request is refused.
+  - `relations.antonyms` is never read or merged by a carry-over save. The 4 words keep their current play, and
+    changing `antonyms` on one of them changes only `antonyms`.
+  - **A word with a conflict:**
+    - A change to the conflicting list or its single field needs Choice A in the same request (the editor asks);
+      without it, the save is refused.
+    - Choice B is not offered until it has its own approval.
+    - Other fields of that word can still be saved; the conflict stays listed.
+- **After the migration has converted a word,** every save of it is a contract save.
+
+The editor's choice prompt is part of step 5 and is planned with the UI batch.
+
+#### 6.3 Words that do not conform (decided 2026-11-01)
+
+- **The list.** After the migration, the view `content_unconverted_words` lists every active row without the marker,
+  with the reasons and the open decision. It is computed, never kept by hand.
+- **They keep working.** These words keep loading and playing, read the old way. Nothing counts them as converted or
+  valid: not the reports, not Content Health.
+- **Saving them.**
+  - From step 7 on, any change to their data must make them conform: a contract save that converts them, with the
+    choices they need.
+  - The editor can open them and fix them. It cannot save them as they are.
+  - Reordering or other position-only changes still work (6.4).
+
+#### 6.4 The server check
+
+A `BEFORE INSERT OR UPDATE` trigger on `content_items` runs for each row and for any column. The check depends on
+the row as it will be after the write: it runs whenever that row is an active word (`kind = 'words'` and not
+deleted), whatever the row was before. So it covers:
+- an insert;
+- a change of `data`;
+- **undeleting a row, even with `data` unchanged.** A deleted row holds `{}`, so it cannot be undeleted without
+  valid data;
+- a change of `key`.
+
+**`kind` cannot change on update**, in either direction. A row never becomes, or stops being, a word through an
+update.
+
+A write passes only when one of these holds:
+1. its `data` passes `word_contract_errors` and carries `contract: 1`;
+2. it is an update of an active word that changes none of `data`, `kind` or `deleted` (for example position or
+   `updated_at`), so an unconverted word can still be reordered;
+3. it is a restore of an original row (below).
+
+Deleting a word is not checked.
+
+**The restore exception holds only the snapshot's original values.**
+- A row passes without the check only when a `content_restores` record exists for the current transaction
+  (`txid_current()`), and the snapshot it names holds an item with the same `kind` and `key` whose `data`,
+  `deleted` and position equal the row being written.
+- Any other value for that key in the same transaction is checked normally, and fails if it does not conform.
+- Only the definer function `content_restore` can write `content_restores`, and it deletes its record before
+  returning.
+
+**Tests** (CI database, synthetic rows):
+- a word without the marker, or with the marker and bad data, fails on insert and on update; a conforming word passes;
+- undeleting a row fails unless its `data` conforms;
+- a change of `kind` fails, both ways;
+- a position-only update of an unconverted word passes; once the trigger is on, any `data` change to it fails;
+- a restore of a snapshot's original row passes, even if it does not conform;
+- within the same restore transaction, any other value for that key fails;
+- a snapshot row written under another key fails;
+- a `content_restores` record from another transaction does not help;
+- a staged draft with one bad word fails when published, and writes nothing.
 
 ### 7. Changing the stored words (the migration)
 
@@ -236,11 +360,12 @@ because the check is limited.
 3. **Apply.** One function, `content_migrate(snapshot, upserts, archive, expected_version)`:
    - checks the content version;
    - writes the archive rows: table `content_field_archive` with migration id, word key, key path, value and time;
-   - writes the converted rows through the normal save path;
+   - writes the converted rows through the normal save path, each with `contract: 1`;
    - records the hash of each row it wrote, for the restore's conflict check.
    - All of it happens in one transaction.
 
-   Words with an unresolved conflict or a strict failure are not written.
+   Words with an unresolved conflict, an undecided `relations.antonyms` entry or a strict failure are not
+   written. They stay unconverted and are listed (6.3).
 4. **Checks after the apply.**
    - Running the normaliser again gives no change.
    - The game view of every converted word equals its view before, except the approved changes in the report.
@@ -261,8 +386,8 @@ because the check is limited.
   - It **refuses to overwrite newer edits.** For each key, it compares the current row with the hash the migration
     recorded. A key changed since then is listed, and nothing is written unless that key is passed in
     `overwrite_keys`.
-  - It writes the snapshot rows byte for byte (the trigger exception above) and raises the content version, so
-    devices reload.
+  - It writes the snapshot rows byte for byte and raises the content version, so devices reload. The trigger lets
+    through only those original values (6.4).
   - The audit log records before and after. Archive rows stay, marked as restored.
   - Restoring a downloaded file loads it into a new snapshot first; its SHA-256 must match.
   - The import is **not** the restore path: it would refuse or convert old shapes.
@@ -270,7 +395,8 @@ because the check is limited.
   - snapshot → migrate → restore gives `data` equal (`jsonb`) to the original for every row;
   - a key edited after the migration is refused, and is written only when passed explicitly;
   - progress tables are untouched;
-  - a direct write of a bad row fails, while the restore of the same row passes.
+  - the trigger tests of 6.4, including that the restore cannot write anything other than the snapshot's original
+    value for a key.
 
 ### 9. Examples (synthetic)
 
@@ -322,6 +448,21 @@ word has that name.
 | `"opposite": "Calm"` sent straight to the table (bypassing the app) | server: `opposite` is derived, not stored |
 | `"transformExample": {"before": "a", "after": "b"}` on a `vocab` word | `transformExample`: phrasal or fyi only |
 | `"commonMistakes": [{"sentence": "a.", "correction": "A", "why": "x"}]` | `commonMistakes[0]`: the correction equals the sentence |
+| `"contract": 1` typed by a person or sent by the AI | `contract`: set only by code |
+| undeleting a word row (`deleted: false`) while its `data` is still `{}` | server: required keys missing |
+| changing a row's `kind` from `words` | server: `kind` cannot change |
+| inside a restore, writing a value for a key that differs from the snapshot's | server: checked normally, and refused if it does not conform |
+| a carry-over save that adds `"register": "formal"` to an old word | `register`: retired key, cannot be added |
+
+**Saving an old (unconverted) word before the migration** (6.2):
+
+| Stored row | Change | Result |
+| --- | --- | --- |
+| has `register`, `learningData.difficulty`, `relations` and `opposite`; no conflict | `level` → `"B1"` | Saved. Only `level` changes; everything else is kept; still unconverted. |
+| `situation: "B"`, `situations: ["A", "C"]` (a conflict) | `hints` changed | Saved. The conflict is still listed. |
+| the same | `situations` changed, no choice given | Refused: "this word has a conflict in situations; choose A". |
+| the same | `situations` → `["B", "C", "D"]` with Choice A | Saved. `situation` becomes "B"; the conflict is gone. |
+| `relations.antonyms: ["Calm"]` missing from `antonyms` | `antonyms` → `["Quiet", "Still"]` | Saved. `antonyms` changes and `opposite` is recomputed from it. "Calm" is neither read nor moved. |
 
 **Conflicting** (refused as a new write; reported, not converted, when already stored):
 
@@ -340,12 +481,12 @@ one PR and follows the [workflow](../development-workflow.md).
 | Step | What | Type | When something changes for users |
 | --- | --- | --- | --- |
 | 1 | `wordContract.js`, the shared case file and its tests; `word_contract_errors` in SQL, created but not attached; the read-only dry-run report. Nothing calls them. | Feature (tooling) + Data (a function only) | Nothing |
-| 2 | App readers accept both shapes: the load view (single fields from lists; `confusableWords` from either place), CSV, admin screens. A differential test shows the same view and the same questions (seeded) for a word in old and in new shape. | Feature | Nothing, proven by the differential test, not assumed |
-| 3 | Database readers accept both shapes: `dictionary_sync` (links from the top-level lists as well as the old keys), `analytics.words` and `word_quality` (`situations[0]` / `gaps[0]` when present). Rollback included. | Data or permissions (owner approval) | Nothing for old-shape rows. Library-link differences for converted rows are listed in the dry run, to be approved in step 6. |
+| 2 | App readers pick their rules by the marker (6.1): the load view, the CSV and the admin screens. The differential tests of 6.1 include the conflicting rows. | Feature | Nothing, proven by the differential tests and not assumed. No row has the marker yet. |
+| 3 | Database readers pick their rules by the marker (6.1): `dictionary_sync`, `analytics.words` and `word_quality`. Rollback included. | Data or permissions (owner approval) | Nothing for unconverted rows, which are all rows at this point. For converted rows, the library-link differences are listed in the dry run and approved in step 6. |
 | 4 | Snapshot, archive and restore tables and functions, with the tests of section 8. | Data or permissions (owner approval) | Nothing |
-| 5 | Writers switch to the contract: import (whole-file refusal), Ask AI (add, fill, stubs), Content Health, Regenerate, report fix, editor, save. The Admin files (`WordEditor.jsx`, `Words.jsx`, `Reports.jsx`, `ContentHealthPanel.jsx`) are **scheduled with the UI batch first**. | Feature | **From here:** imports and edits that break the rules are refused; empty input clears; report fixes are checked; Regenerate stays in step; edited words are saved in the new shape (retired keys kept until step 6); a word with a conflict cannot be saved. |
-| 6 | The migration (section 7): dry run → the owner's decisions → snapshot → apply → checks. | Data or permissions (owner approval) | Only the approved items: e.g. any of the 4 antonym entries moved, and the archived keys removed from words. |
-| 7 | Attach the trigger. Only after step 6, when every live word passes or the owner accepts the listed ones as locked until fixed. | Data or permissions (owner approval) | Direct writes that break the rules are refused |
+| 5 | Writers switch to the contract: import (whole-file refusal), Ask AI (add, fill, stubs), Content Health, Regenerate, report fix, the editor, and the save. There are two save modes (6.2). The Admin files (`WordEditor.jsx`, `Words.jsx`, `Reports.jsx`, `ContentHealthPanel.jsx`) are **scheduled with the UI batch first**. | Feature | **From here:** imports and edits that break the rules are refused; an empty value clears; report fixes are checked; new words are stored converted; old words get carry-over saves (nothing dropped); changing a conflicting list needs Choice A. |
+| 6 | The migration (section 7): dry run → the owner's decisions → snapshot → apply → checks. Converted rows get the marker. | Data or permissions (owner approval) | Only the approved items. For example: the antonym entries the owner chose to move; the retired keys archived and removed; and, through the marker, converted rows read from their lists, which the checks show to be the same as before. |
+| 7 | Attach the trigger (6.4). The view `content_unconverted_words` lists the words that still do not conform (6.3). | Data or permissions (owner approval) | Writes that break the rules are refused, direct ones included. Listed words still load and play, and can only be saved once fixed. |
 
 Not in this plan:
 - word ids instead of text keys (ADR 0004 stays);
@@ -389,12 +530,22 @@ Not in this plan:
 - Imports and edits that pass today can be refused after step 5. The report and the messages say exactly why.
 - The rules exist twice (JavaScript and SQL), held together by the shared cases.
 - Until step 7 a direct write can still bypass the rules, as today.
+- Between steps 5 and 6 there are two ways of saving (contract and carry-over). The marker decides which one applies,
+  and the migration ends the carry-over save for every word it converts.
 - Steps 3, 4, 6 and 7 change the database and need the owner's approval each.
 - Step 5 touches Admin files and is scheduled with the UI batch.
 
-## Open decisions for the owner
+## Decisions taken (owner, 2026-11-01)
 
-1. Is the key table (section 3) final, including `collocations` kept as admin-used?
-2. Conflicts: Choice A as the recommended answer per word, with B only together with a separate counts change?
-3. The 4 `relations.antonyms` entries: decided per word in the dry run (move or archive)?
-4. Should step 7 accept words that still fail as "locked until fixed", or should all of them be fixed first?
+1. **The key table (section 3) is agreed in principle,** with `collocations` kept because the admin and the export
+   use it.
+   - Ask AI may produce optional keys when they are correct and useful; it is never made to invent them.
+2. **Conflicts.** Choice A is the recommendation, given after the report shows that every sentence keeps its counts.
+   Choice B needs its own approval to move or reset the counts.
+3. **The 4 `relations.antonyms` entries.** Each is shown in the report with the meanings, the effect and a
+   recommendation. None is turned on or archived without the owner's choice.
+4. **Words that still fail.** The check is switched on with an explicit, computed list of old words that do not
+   conform (6.3). They are still read and played; saving them is refused until they are fixed. They are not counted
+   as converted or valid.
+
+What is left is the owner's approval of this design as a whole, before step 1.
