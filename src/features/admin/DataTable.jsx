@@ -73,7 +73,7 @@ const sizeKey = (id) => `wh-admin-pagesize:${id}`;
 
 export function DataTable({
   id, columns, rows, rowKey, searchText, searchPlaceholder = "Search…", filters, toolbar,
-  initialSort = null, selectable = false, bulkActions, onRowClick, emptyText = "Nothing here yet.", csvName,
+  initialSort = null, selectable = false, bulkActions, onRowClick, emptyText = "Nothing here yet.", noMatchText = "No rows match your search.", csvName,
   dense = false, resetKey, syncUrl = false,
 }) {
   // syncUrl: search (?q=), sort (?sort=name or ?sort=-name) and page (?page=)
@@ -173,7 +173,7 @@ export function DataTable({
                 </tr>
               );
             })}
-            {!view.items.length && <tr><td className="adm-empty" colSpan={columns.length + (selectable ? 1 : 0)}>{rows.length ? "No rows match your search." : emptyText}</td></tr>}
+            {!view.items.length && <tr><td className="adm-empty" colSpan={columns.length + (selectable ? 1 : 0)}>{rows.length ? noMatchText : emptyText}</td></tr>}
           </tbody>
         </table>
       </div>
