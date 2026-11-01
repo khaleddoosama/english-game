@@ -18,8 +18,13 @@
 .lib-chev { flex: none; transition: transform .15s; }
 .lib-chev.down { transform: rotate(90deg); }
 .lib-tree li { flex-wrap: wrap; }
-.lib-fold { flex: none; width: 28px; height: 34px; display: grid; place-items: center; background: none; border: 0; color: var(--paper); cursor: pointer; }
-.lib-fold-gap { flex: none; width: 28px; }
+/* The arrow that folds the views inside a view (library tree and My views on Home). */
+.lib-fold { flex: none; width: 34px; height: 34px; padding: 0; display: inline-grid; place-items: center; background: none; border: 1px solid var(--line); border-radius: var(--radius); color: var(--gold); cursor: pointer; }
+.lib-fold:hover { border-color: var(--gold); }
+.lib-fold:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.lib-fold-gap { flex: none; width: 34px; }
+.wh-level-group-heading .lib-fold { vertical-align: middle; margin-right: 8px; }
+@media (max-width: 480px) { .lib-fold, .lib-fold-gap { width: 40px; } .lib-fold { height: 40px; } }
 .lib-inline-panel { flex: 1 1 100%; margin-top: 2px; }
 .lib-panel { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: 10px; }
 .lib-path { margin: 0; font-size: 15px; color: var(--gold); overflow-wrap: anywhere; }

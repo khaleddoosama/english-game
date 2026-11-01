@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTree, flattenTree, matchPasted, moveTargets, searchWords } from "../src/features/library/libraryTree.js";
+import { buildTree, flattenTree, matchPasted, moveTargets, searchWords, visibleRows } from "../src/features/library/libraryTree.js";
 
 const flat = [
   { id: "t", parent: null, name: "A1.1", position: 1, words: 0, rules: 0 },
@@ -21,6 +21,26 @@ describe("tree", () => {
     expect(moveTargets(roots, "o").map((n) => n.id)).toEqual(["t", "m", "h"]); // a leaf may go as deep as the 4th level
     const deep = buildTree([...flat, { id: "x", parent: "o", name: "x", position: 1, words: 0, rules: 0 }]);
     expect(moveTargets(deep, "o").map((n) => n.id)).toEqual(["t", "m"]);    // with a view inside it, it can't go under horror
+  });
+});
+
+describe("folding", () => {
+  const rows = flattenTree(buildTree(flat));
+  const names = (folded) => visibleRows(rows, new Set(folded)).map((n) => n.name);
+  it("nothing folded: every row", () => {
+    expect(names([])).toEqual(["A1.1", "movies", "horror", "other"]);
+  });
+  it("a folded view hides what is inside it, at any depth, and nothing else", () => {
+    expect(names(["m"])).toEqual(["A1.1", "movies", "other"]);
+    expect(names(["t"])).toEqual(["A1.1", "other"]);              // horror too, two levels down
+  });
+  it("folds inside a folded view are kept: opening the upper one shows the lower one still folded", () => {
+    expect(names(["t", "m"])).toEqual(["A1.1", "other"]);
+    expect(names(["m"])).toEqual(["A1.1", "movies", "other"]);    // "t" opened again, "m" still folded
+  });
+  it("a view with nothing inside has nothing to fold, and the rows are not copied or changed", () => {
+    expect(names(["h", "o"])).toEqual(["A1.1", "movies", "horror", "other"]);
+    expect(visibleRows(rows, new Set(["t"]))[0]).toBe(rows[0]);
   });
 });
 

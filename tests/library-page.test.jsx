@@ -79,6 +79,45 @@ describe("LibraryPage", () => {
     expect(row("Articles").querySelector(".lib-panel")).toBeTruthy();                           // the panel is inside its row
   });
 
+  it("the fold arrow: only on views with views inside, folds without opening, and keeps the open view and Practise", async () => {
+    const top = await api.create("Gateway"); const lvl = await api.create("A1.1", top); const s1 = await api.create("Articles", lvl); await api.create("Pronouns", lvl);
+    await api.add(s1, ["sense-0"]);
+    const onPractice = vi.fn();
+    await render({ onPractice }); await flush();
+    const row = (name) => $$(".lib-tree > li").find((li) => li.querySelector("b").textContent === name);
+    const names = () => $$(".lib-tree > li").map((li) => li.querySelector("b").textContent);
+    const arrow = (name) => row(name).querySelector(".lib-fold");
+    expect(arrow("Articles")).toBeNull();                                  // nothing inside: no arrow, only the gap that keeps names in line
+    expect(row("Articles").querySelector(".lib-fold-gap")).toBeTruthy();
+    expect(arrow("A1.1").getAttribute("type")).toBe("button");             // a real button: Enter and Space work
+    expect(arrow("A1.1").getAttribute("aria-label")).toBe("Hide the views inside A1.1");
+    expect(arrow("A1.1").getAttribute("aria-expanded")).toBe("true");
+
+    await click(arrow("A1.1"));                                            // folding opens nothing
+    expect(arrow("A1.1").getAttribute("aria-expanded")).toBe("false");
+    expect(arrow("A1.1").getAttribute("aria-label")).toBe("Show the views inside A1.1");
+    expect($(".lib-panel")).toBeNull();
+    expect(row("A1.1").querySelector(".lib-name").getAttribute("aria-pressed")).toBe("false");
+    await click(arrow("A1.1"));
+
+    await click(row("Articles").querySelector(".lib-name"));               // the name still opens the view
+    expect(row("Articles").querySelector(".lib-panel")).toBeTruthy();
+    await click(arrow("Gateway"));                                         // folding the view two levels up hides it...
+    expect(names()).toEqual(["Gateway"]);
+    await click(arrow("Gateway"));                                         // ...and it is still the open one afterwards
+    expect(row("Articles").querySelector(".lib-panel")).toBeTruthy();
+    expect(row("Articles").querySelector(".lib-name").getAttribute("aria-pressed")).toBe("true");
+
+    await click(arrow("A1.1")); await click(arrow("Gateway")); await click(arrow("Gateway"));
+    expect(names()).toEqual(["Gateway", "A1.1"]);                          // A1.1 stayed folded inside the folded Gateway
+    expect(arrow("A1.1").getAttribute("aria-expanded")).toBe("false");
+
+    await click(arrow("Gateway"));
+    await click(row("Gateway").querySelector(".lib-go"));                   // a folded view still practises everything inside it
+    expect(onPractice).toHaveBeenCalledWith(top, true, "Gateway");
+    expect((await api.tree()).length).toBe(4);                             // nothing saved changed
+  });
+
   it("puts words in by search and shows them by their text, while the API holds server ids", async () => {
     await render();
     await type($('input[aria-label="New view name"]'), "V"); await click(buttonWith("Create"));
