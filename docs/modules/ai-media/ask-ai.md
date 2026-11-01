@@ -135,8 +135,26 @@ The task name, permissions, cancelling, time limits, quota, model and drawer did
 - A word asked from a sentence (clicked in a question or story) does not send that sentence. Sending it, and
   showing other meanings in the drawer, would change the drawer and the round's interface, so they were left for a
   later decision.
-- The check that a sentence shows the word recognises regular forms (rain, rained, raining) but not irregular ones
-  (go, went).
+- The check that a gap or hint shows the word (`showsWord`) compares whole words, in order, and knows only the regular
+  forms of each word:
+  - **Recognised:**
+    - `-s`, or `-es` after s, x, z, ch, sh (both after o);
+    - `-ed` and `-ing`;
+    - a word ending in e: `-s`, `-d`, and `-ing` without the e (care: cares, cared, caring; but agreeing);
+    - a consonant + y: `-ies`, `-ied` and `-ing` (study: studies, studied, studying).
+  - **Doubled last letter:** a one-syllable word ending consonant, vowel, consonant takes only the doubled forms
+    (stop: stopped, stopping; hat: hatted, so "hated" does not count). A longer one takes both (visited,
+    travelled).
+  - **Not recognised:**
+    - irregular forms (go, went; run, ran);
+    - any form of a word of one or two letters (go, goes);
+    - words with an apostrophe or a digit, except an exact match;
+    - -ie to -ying (lie, lying);
+    - other words of the family (care, careful).
+    A gap or hint showing the word in one of these ways is kept.
+  - **Another word made by the rules:** when a regular form is really a different word ("singed" for "sing"), that
+    word counts as showing the word, and the gap or hint is dropped.
+  - **Words that only start the same way do not count** (care: cars, carer; corn: corner).
 
 ## Pronunciation
 

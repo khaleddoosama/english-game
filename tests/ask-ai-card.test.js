@@ -162,4 +162,38 @@ describe("whether a sentence shows the word", () => {
     expect(showsWord("Art", "We start at nine.")).toBe(false);
     expect(showsWord("Give up", "Give it up.")).toBe(false);
   });
+  it("the regular forms: -s, -es, -ies, -d, -ed, -ied, -ing, a doubled last letter, an e dropped before -ing", () => {
+    for (const [word, form] of [["Rain", "rains"], ["Watch", "watches"], ["Photo", "photos"], ["Echo", "echoes"], ["Go", "go"], ["Visit", "visited"], ["Travel", "travelled"], ["Study", "studies"], ["Study", "studied"], ["Study", "studying"], ["Care", "cares"], ["Care", "cared"], ["Care", "caring"], ["Stop", "stopped"], ["Stop", "stopping"], ["Stop", "stops"], ["Play", "played"], ["Play", "plays"], ["Agree", "agreeing"], ["Lantern", "lanterns"], ["Give up", "giving up"], ["Give up", "gives up"]]) {
+      expect(showsWord(word, `Yes, ${form} today.`), `${word} / ${form}`).toBe(true);
+    }
+  });
+  it("not another word that only starts the same way", () => {
+    for (const [word, other] of [["Care", "cars"], ["Care", "carer"], ["Corn", "corner"], ["Stop", "stoppage"], ["Study", "studs"], ["Play", "plaies"], ["Bank", "banker"], ["Art", "arts"], ["Hat", "hated"]]) {
+      expect(showsWord(word, `Yes, ${other} today.`), `${word} / ${other}`).toBe(other === "arts");
+    }
+  });
+  it("known limits: irregular forms, words of 2 letters, -ie to -ying, and other words of the family are not seen; a made form can be another word", () => {
+    expect(showsWord("Go", "She went home.")).toBe(false);
+    expect(showsWord("Go", "He goes home.")).toBe(false);
+    expect(showsWord("Run", "They ran fast.")).toBe(false);
+    expect(showsWord("Care", "Be careful.")).toBe(false);
+    expect(showsWord("Lie", "He is lying.")).toBe(false);
+    // A form the rules make that is really another word still counts ("singed" is not a form of "sing").
+    expect(showsWord("Sing", "The fire singed his coat.")).toBe(true);
+  });
+});
+
+describe("the effect on the gap and the hints", () => {
+  const card = (word, extra) => readAskAiAnswer(good({ word, ...extra }), { term: word });
+  it("a good gap whose other words only look like the word is kept", () => {
+    expect(card("care", { gap: "She takes good ______ of her cars." }).gap).toBe("She takes good ______ of her cars.");
+    expect(card("care", { hints: ["You do it for cars and pets."] }).hints).toEqual(["You do it for cars and pets."]);
+  });
+  it("a gap or a hint that shows a regular form of the word is dropped", () => {
+    expect(card("stop", { gap: "The bus stopped, so we had to ______ too." }).gap).toBe("");
+    expect(card("stop", { hints: ["The car stopped.", "Red means do this."] }).hints).toEqual(["Red means do this."]);
+    expect(card("study", { gap: "She studies every night, and tonight she will ______ again." }).gap).toBe("");
+    expect(card("study", { gap: "He studied hard, so he can ______ less now." }).gap).toBe("");
+    expect(card("study", { hints: ["Students do it; she studies a lot.", "You do it before a test."] }).hints).toEqual(["You do it before a test."]);
+  });
 });

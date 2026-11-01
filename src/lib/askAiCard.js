@@ -74,14 +74,40 @@ Field rules:
 - nearWords: 0-3 real words or phrases that learners confuse with this one, each with one short sentence on the difference. Use [] when there is none. Never add a word just to fill the list, and never call a word a synonym or an opposite unless it really is one.
 - commonMistake: a real, typical learner mistake with this word (its form, preposition, word choice or meaning), the corrected sentence, and a short reason. Use null when there is no typical mistake; never invent one.`;
 
-// Inflected forms count: "rain" shows in "rained", "rains", "raining".
+// The regular forms of one word, and nothing else: -s, -es (after s, x, z, ch, sh; both after o), -ies, -d, -ed, -ied, -ing,
+// a doubled last letter (stop, stopped), an e dropped before -ing (care, caring). A one-syllable word ending in
+// consonant, vowel, consonant takes only the doubled forms (hat: hatted, not "hated"); a longer one takes both
+// (visited, travelled). Irregular forms (went) and other words of the family (careful) are not made. Words of one
+// or two letters, and words with other characters (an apostrophe, a digit), match only exactly.
 const tokens = (s) => normalizeAnswerText(s).replace(/[^a-z0-9' -]/g, " ").split(/[\s-]+/).filter(Boolean);
-const formOf = (token, head) => token === head || (head.length > 2 && new RegExp(`^${head.replace(/e$/, "")}(s|es|d|ed|ing|er|est|e)$`).test(token));
+const VOWEL = /[aeiou]/;
+function formsOf(head) {
+  const out = new Set([head]);
+  if (head.length <= 2 || !/^[a-z]+$/.test(head)) return out;
+  const add = (...xs) => xs.forEach((x) => out.add(x));
+  const last = head.at(-1);
+  if (last === "e") {
+    add(`${head}s`, `${head}d`, head.endsWith("ee") ? `${head}ing` : `${head.slice(0, -1)}ing`);
+    return out;
+  }
+  if (last === "y" && !VOWEL.test(head.at(-2))) {
+    const stem = head.slice(0, -1);
+    add(`${stem}ies`, `${stem}ied`, `${head}ing`);
+    return out;
+  }
+  if (/o$/.test(head)) add(`${head}s`, `${head}es`);
+  else add(/(s|x|z|ch|sh)$/.test(head) ? `${head}es` : `${head}s`);
+  const cvc = /[^aeiou][aeiou][^aeiouwxy]$/.test(head);
+  const syllables = (head.match(/[aeiouy]+/g) || []).length;
+  if (cvc) add(`${head}${last}ed`, `${head}${last}ing`);
+  if (!cvc || syllables > 1) add(`${head}ed`, `${head}ing`);
+  return out;
+}
 // True when `sentence` contains the word (or an inflected form of each of its words, in order).
 export function showsWord(word, sentence) {
-  const head = tokens(V2.bareWord(word)), list = tokens(sentence);
+  const head = tokens(V2.bareWord(word)).map(formsOf), list = tokens(sentence);
   if (!head.length) return false;
-  for (let i = 0; i + head.length <= list.length; i++) if (head.every((h, j) => formOf(list[i + j], h))) return true;
+  for (let i = 0; i + head.length <= list.length; i++) if (head.every((forms, j) => forms.has(list[i + j]))) return true;
   return false;
 }
 
