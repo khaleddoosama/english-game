@@ -95,6 +95,28 @@ Behaviour:
 - The library is "off" (hidden) while the tables or the dictionary copy are missing.
 - A practice round from a view asks only the view's words and rules; wrong answers still come from the whole dictionary. A view with one new word introduces it and then asks it once (`initialTraining`).
 
+### Folding views inside views
+
+Status: **Planned** (this change).
+
+- Every view that has views inside it shows an arrow next to its name, wherever views are drawn as a tree: the library tree (`/library`, Views tab) and My views on Home. A view with nothing inside it has no arrow. Both places use one button and one fold state (`components/Fold.jsx`; which rows a fold hides is `visibleRows` in `libraryTree.js`).
+- The arrow only folds or unfolds. Tapping a view's name keeps its job (in the library it opens the view under its row). Folding saves nothing, does not change which view is open (a view inside a folded one stays open and shows again when unfolded), and does not change what Practise plays: a folded view still practises the views inside it.
+- Everything starts unfolded. The fold lasts while the screen is open and is not saved. Folding a view and then the one above it keeps the first one folded when the upper one opens again.
+- On Home, folding a heading hides the views inside it; its "All of <name>" card stays, so it can still be practised. The view of the open tab has no heading in the list (its tab is its name), so it has no arrow.
+- The arrow is a real button: Enter and Space work, its name is "Hide the views inside <name>" or "Show the views inside <name>", and `aria-expanded` says whether it is open. It is at least 40 px square on a phone.
+- Not trees, so no arrows: the "Add to view…" and "Move to…" lists and the Live list of views are plain select lists.
+
+### The units filter in the word and rule pickers
+
+Status: **Planned** (this change).
+
+- The picker ([WordPicker](../../../src/features/library/components/WordPicker.jsx)) behind My words and My grammar rules (Library tab) and behind Add words and Add grammar rules in an open view gets a Unit list next to Lesson and Course level: "All units", "Without unit" (no `units`, or an empty list), then each unit found in the list the picker shows, once, in natural order ("Unit 2" before "Unit 10"). It is the content's `units` field, not the lesson (`category`) or the level.
+- An item in several units shows under each of them. The unit narrows together with the search, the lesson, the course level and the chips already there (All / Not in a view; From my library / From the dictionary), and a change goes back to the first page of results ("Show more").
+- Like the picker's other filters it is kept in the screen's state, not in the address.
+- The options come only from the list the picker shows: in My library, only the units of the player's own words or rules. Filtering changes nothing saved and shows nothing the list did not already hold.
+- When a unit is picked and nothing matches, the picker says so and offers "Show all units".
+- The shared rules (units of an item, the options, the match) are pure and will live in `src/engine/units.js`; the admin's Words and Grammar lists use the same ones ([admin](../admin/README.md#4-business-rules-and-permissions)).
+
 ## 5. Data flow
 
 - **Start.** `useLibrary` checks `view_tree`; then `loadIds` pages through `senses` and `grammar_rules` for rows that have a `legacy_key` (1,000 per request), plus the player's own words, to build the key and id maps. If no rows map, the library is off.

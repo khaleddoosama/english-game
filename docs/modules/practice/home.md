@@ -36,7 +36,9 @@ announcement is hidden and whether the fresh-copy notice is up, and renders `MyV
   today"); the Speed Round card (locked with "Master n more word(s) to unlock" under 5 mastered words, else the pool
   and the bests); the Live Challenge card; the view tabs (when there are lessons or the library is ready) and the open
   view: Gateway (the admin's course levels), By lesson, or one of my views. While the library is still loading for a
-  player limited to it, a skeleton shows instead of Gateway or By lesson.
+  player limited to it, a skeleton shows instead of Gateway or By lesson. In one of my views, a heading with views
+  inside it has an arrow that folds them (Planned, this change; the rules are in the library page,
+  [Folding views inside views](../library/README.md#folding-views-inside-views)).
 - **Stories:** the admin's story builder; the stories, fewest new words first, each with its questions, "n new
   words: preview first" or "Ready for review", "Solved · best" and "Play again" or "Open story"; or "No authored
   stories loaded…" when there are none.
