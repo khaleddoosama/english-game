@@ -37,7 +37,7 @@ announcement is hidden and whether the fresh-copy notice is up, and renders `MyV
   and the bests); the Live Challenge card; the view tabs (when there are lessons or the library is ready) and the open
   view: Gateway (the admin's course levels), By lesson, or one of my views. While the library is still loading for a
   player limited to it, a skeleton shows instead of Gateway or By lesson. In one of my views, a heading with views
-  inside it has an arrow that folds them (Planned, this change; the rules are in the library page,
+  inside it has an arrow that folds them (Implemented, 2026-11-01; the rules are in the library page,
   [Folding views inside views](../library/README.md#folding-views-inside-views)).
 - **Stories:** the admin's story builder; the stories, fewest new words first, each with its questions, "n new
   words: preview first" or "Ready for review", "Solved · best" and "Play again" or "Open story"; or "No authored
@@ -49,6 +49,7 @@ announcement is hidden and whether the fresh-copy notice is up, and renders `MyV
 | --- | --- |
 | The fresh-copy notice, the announcement (tone, hidden, a new one), today's goal (and reached), the Speed Round and Live cards, the stories list, Resume (local mode) | `e2e/specs/home.cjs` |
 | The view tabs, Gateway, My views on Home | `e2e/specs/homeviews.cjs`, `e2e/specs/library.cjs` |
+| Folding a view's headings in My views (click and keyboard, phone and desktop) | `tests/my-views-home.test.jsx`, `e2e/specs/foldunits.cjs` |
 | The rules | `tests/home-state.test.js` |
 | The screen and its pieces (callbacks, which view shows) | `tests/home-components.test.jsx` |
 

@@ -39,7 +39,7 @@ The rules of learning: how a round is picked, how questions are built, how an an
 
 ## 3. Files and database objects
 
-- Files: [engine/v2.js](../../../src/engine/v2.js), [questions.js](../../../src/engine/questions.js), [progress.js](../../../src/engine/progress.js), [data.js](../../../src/engine/data.js), [constants.js](../../../src/engine/constants.js). Planned (this change): `units.js`, the course units of a word or rule and filtering a list by one (used by the admin's lists and the library's pickers, not by rounds).
+- Files: [engine/v2.js](../../../src/engine/v2.js), [questions.js](../../../src/engine/questions.js), [progress.js](../../../src/engine/progress.js), [data.js](../../../src/engine/data.js), [constants.js](../../../src/engine/constants.js). [units.js](../../../src/engine/units.js): the course units of a word or rule and filtering a list by one (used by the admin's lists and the library's pickers, not by rounds; tests: [units.test.js](../../../tests/units.test.js)).
 - Screens: none.
 - Database objects: none. The server never runs these rules (except the Live copy of the rules in SQL, see [live](../live/README.md)).
 

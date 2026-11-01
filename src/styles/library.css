@@ -24,7 +24,8 @@
 .lib-fold:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .lib-fold-gap { flex: none; width: 34px; }
 .wh-level-group-heading .lib-fold { vertical-align: middle; margin-right: 8px; }
-@media (max-width: 480px) { .lib-fold, .lib-fold-gap { width: 40px; } .lib-fold { height: 40px; } }
+/* On a phone: a taller arrow to tap, and names keep the room they had (narrow arrow, smaller gaps). */
+@media (max-width: 480px) { .lib-fold, .lib-fold-gap { width: 32px; } .lib-fold { height: 40px; } .lib-tree li { gap: 6px; } }
 .lib-inline-panel { flex: 1 1 100%; margin-top: 2px; }
 .lib-panel { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: 10px; }
 .lib-path { margin: 0; font-size: 15px; color: var(--gold); overflow-wrap: anywhere; }

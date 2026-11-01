@@ -97,25 +97,25 @@ Behaviour:
 
 ### Folding views inside views
 
-Status: **Planned** (this change).
+Status: **Implemented** (2026-11-01). Checked by `tests/library-tree.test.js` (folding), `tests/library-page.test.jsx`, `tests/my-views-home.test.jsx` and in a browser at 1280 and 390 px wide (`e2e/specs/foldunits.cjs`, including the keyboard).
 
-- Every view that has views inside it shows an arrow next to its name, wherever views are drawn as a tree: the library tree (`/library`, Views tab) and My views on Home. A view with nothing inside it has no arrow. Both places use one button and one fold state (`components/Fold.jsx`; which rows a fold hides is `visibleRows` in `libraryTree.js`).
+- Every view that has views inside it shows an arrow next to its name, wherever views are drawn as a tree: the library tree (`/library`, Views tab) and My views on Home. A view with nothing inside it has no arrow. Both places use one button and one fold state ([components/Fold.jsx](../../../src/features/library/components/Fold.jsx); which rows a fold hides is `visibleRows` in [libraryTree.js](../../../src/features/library/libraryTree.js)).
 - The arrow only folds or unfolds. Tapping a view's name keeps its job (in the library it opens the view under its row). Folding saves nothing, does not change which view is open (a view inside a folded one stays open and shows again when unfolded), and does not change what Practise plays: a folded view still practises the views inside it.
 - Everything starts unfolded. The fold lasts while the screen is open and is not saved. Folding a view and then the one above it keeps the first one folded when the upper one opens again.
-- On Home, folding a heading hides the views inside it; its "All of <name>" card stays, so it can still be practised. The view of the open tab has no heading in the list (its tab is its name), so it has no arrow.
-- The arrow is a real button: Enter and Space work, its name is "Hide the views inside <name>" or "Show the views inside <name>", and `aria-expanded` says whether it is open. It is at least 40 px square on a phone.
+- On Home, folding a heading hides the views inside it; its "All of <name>" card stays, so it can still be practised. The view of the open tab has no heading in the list (its tab is its name), so it has no arrow. Home's headings are drawn by a plain function (not a component made inside `MyViewsHome`), so a fold keeps the same elements and the arrow keeps keyboard focus.
+- The arrow is a real button: Enter and Space work, its name is "Hide the views inside <name>" or "Show the views inside <name>", and `aria-expanded` says whether it is open. It has a border and a focus ring; on a phone (480 px wide or less) it is 32 x 40 px and the row's gaps are smaller, so names keep the room they had before.
 - Not trees, so no arrows: the "Add to view…" and "Move to…" lists and the Live list of views are plain select lists.
 
 ### The units filter in the word and rule pickers
 
-Status: **Planned** (this change).
+Status: **Implemented** (2026-11-01). Checked by `tests/units.test.js`, `tests/word-picker.test.jsx`, `tests/library-page.test.jsx` and in a browser at two widths (`e2e/specs/foldunits.cjs`).
 
 - The picker ([WordPicker](../../../src/features/library/components/WordPicker.jsx)) behind My words and My grammar rules (Library tab) and behind Add words and Add grammar rules in an open view gets a Unit list next to Lesson and Course level: "All units", "Without unit" (no `units`, or an empty list), then each unit found in the list the picker shows, once, in natural order ("Unit 2" before "Unit 10"). It is the content's `units` field, not the lesson (`category`) or the level.
 - An item in several units shows under each of them. The unit narrows together with the search, the lesson, the course level and the chips already there (All / Not in a view; From my library / From the dictionary), and a change goes back to the first page of results ("Show more").
 - Like the picker's other filters it is kept in the screen's state, not in the address.
 - The options come only from the list the picker shows: in My library, only the units of the player's own words or rules. Filtering changes nothing saved and shows nothing the list did not already hold.
 - When a unit is picked and nothing matches, the picker says so and offers "Show all units".
-- The shared rules (units of an item, the options, the match) are pure and will live in `src/engine/units.js`; the admin's Words and Grammar lists use the same ones ([admin](../admin/README.md#4-business-rules-and-permissions)).
+- The shared rules (units of an item, the options, the match) are pure and live in [engine/units.js](../../../src/engine/units.js); the admin's Words and Grammar lists use the same ones ([admin](../admin/README.md#4-business-rules-and-permissions)).
 
 ## 5. Data flow
 
@@ -149,8 +149,9 @@ Status: **Planned** (this change).
 | Rounds from a view (options, scope, grading, mastery) | `tests/library-round-*.test.js`, [round-single-new-word.test.js](../../../tests/round-single-new-word.test.js) | `npm test` |
 | Hooks, glue and boundary | [library-hooks.test.jsx](../../../tests/library-hooks.test.jsx), [library-orchestration.test.jsx](../../../tests/library-orchestration.test.jsx), [library-boundary.test.js](../../../tests/library-boundary.test.js), [architecture.test.js](../../../tests/architecture.test.js) | `npm test` |
 | An admin's new words and rules join their library | [save-to-library.test.js](../../../tests/save-to-library.test.js), [repo-stores.test.js](../../../tests/repo-stores.test.js) | `npm test` |
+| Folding views, and the Unit list of the picker (also on the Library tab and in Add words / Add grammar rules) | [library-tree.test.js](../../../tests/library-tree.test.js), [my-views-home.test.jsx](../../../tests/my-views-home.test.jsx), [word-picker.test.jsx](../../../tests/word-picker.test.jsx), [library-page.test.jsx](../../../tests/library-page.test.jsx), [units.test.js](../../../tests/units.test.js) | `npm test` |
 | Screens | [library-page.test.jsx](../../../tests/library-page.test.jsx), [join-page.test.jsx](../../../tests/join-page.test.jsx), [catalog-page.test.jsx](../../../tests/catalog-page.test.jsx), [my-views-home.test.jsx](../../../tests/my-views-home.test.jsx), [word-picker.test.jsx](../../../tests/word-picker.test.jsx), [view-scope-hooks.test.jsx](../../../tests/view-scope-hooks.test.jsx), [profile-catalog.test.jsx](../../../tests/profile-catalog.test.jsx) | `npm test` |
-| Browser | `e2e/specs/lib*.cjs` (incl. `libshell.cjs`, the shell's use of the library, and `libsolo.cjs`), `library.cjs`, `grammar-lib.cjs`, `homeviews.cjs`, `catalog*.cjs`, `nested.cjs`, `wordrename.cjs`, `sweep.cjs` | `npx vite build && npm run e2e` |
+| Browser | `e2e/specs/lib*.cjs` (incl. `libshell.cjs`, the shell's use of the library, and `libsolo.cjs`), `library.cjs`, `grammar-lib.cjs`, `homeviews.cjs`, `catalog*.cjs`, `nested.cjs`, `wordrename.cjs`, `sweep.cjs`, `foldunits.cjs` (folding and the Unit lists at 1280 and 390 px) | `npx vite build && npm run e2e` |
 
 **Gaps.** The real Supabase stack is covered only for the changes of 0039-0042 (`tests/realstack`); the Vercel API routes and production data are not tested. The presentational pieces in `components/` are covered through `LibraryPage`, `MyViewsHome` and the browser specs, not one by one. `library_patch` and notes have no screen and no app-level test.
 
