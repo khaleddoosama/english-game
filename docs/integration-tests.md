@@ -51,6 +51,7 @@ clock), and cleanup.
 | `progress-ops.test.js` | a save with an operation id is applied once (two devices, a lost answer, a closed page, concurrent deliveries, other players, a refused write records nothing, old clients) |
 | `isolation.test.js` | every table has RLS; anon reads nothing; no player reads or writes another's rows through tables or functions |
 | `admin-denied.test.js` | every `admin_*` and admin-checking function refuses players and visitors; no way to become admin; the admin's own actions work, are audited, and delete a player who used the library |
+| `word-contract-sql.test.js` | the word contract's SQL check (`word_contract_errors`, migration 0044) gives, for every shared case in `tests/fixtures/word-contract-cases.json`, the same problems as `checkWord` in JavaScript; no app role may run it, and nothing uses it yet (ADR 0011 step 1) |
 
 ## Defects these tests found (fixed in migrations 0037 and 0038; later decisions in 0039 and 0040: `docs/migrations/review-0037-0042.md`)
 
@@ -198,8 +199,9 @@ checks data and behaviour, rolls them back and compares the whole schema with th
 and then does the same for **0043** on top of 0042: the schema changes as committed
 (`supabase/ci/expected/schema-after-0043.txt`), `supabase/rollback/0043_down.sql` gives back exactly the 0042 schema,
 the policy on `realtime.messages` (outside the fingerprint, which reads `public`) is there and then gone, and 0043
-applied again gives the same schema. The read-only comparison for a real project (`preflight-compare.sh`) still knows
-the 0037-0042 states only.
+applied again gives the same schema. Then the same for **0044** (the word contract's SQL check) on top of 0043
+(`supabase/ci/expected/schema-after-0044.txt`, `supabase/rollback/0044_down.sql`). The read-only comparison for a real
+project (`preflight-compare.sh`) still knows the 0037-0042 states only.
 
 The browser spec `e2e/specs/saveclose.cjs` (real Chromium tab closed during a save, the repo bundled for the browser, real
 IndexedDB, PostgreSQL behind the harness) needs `PGURL` and is skipped without it; CI runs it in the `database` job.

@@ -1,7 +1,8 @@
 # ADR 0011: One data contract for a word
 
-- Status: **Accepted** (2026-11-02), after the owner's reviews on 2026-11-01 and 2026-11-02. **Planned**: nothing is
-  built yet; each step in section 10 is a separate PR that needs its own approval.
+- Status: **Accepted** (2026-11-02), after the owner's reviews on 2026-11-01 and 2026-11-02. Each step in section 10 is
+  a separate PR that needs its own approval. **Step 1: Implemented** (see its row; nothing in the app uses it).
+  Steps 2-7: **Planned**.
 - Modules: [content](../modules/content/README.md), [ai-media](../modules/ai-media/README.md),
   [admin](../modules/admin/README.md), [learning-engine](../modules/learning-engine/README.md),
   [library](../modules/library/README.md)
@@ -487,7 +488,7 @@ one PR and follows the [workflow](../development-workflow.md).
 
 | Step | What | Type | When something changes for users |
 | --- | --- | --- | --- |
-| 1 | `wordContract.js`, the shared case file and its tests; `word_contract_errors` in SQL, created but not attached; the read-only dry-run report. Nothing calls them. | Feature (tooling) + Data (a function only) | Nothing |
+| 1 | **Implemented.** `src/engine/wordContract.js` (`checkWord`, `convertWord`, `updateWord`, `poolTexts`, no imports), `tests/fixtures/word-contract-cases.json` (31 shared cases), `tests/word-contract.test.js`; migration 0044 (`word_contract_errors` and its helper `word_contract_empty`, attached to nothing, runnable by no app role; rollback `supabase/rollback/0044_down.sql`), `supabase/tests/word_contract.sql`, `tests/integration/word-contract-sql.test.js` (SQL equals JavaScript on every shared case), and the upgrade check; the read-only dry run `scripts/word-contract-report.mjs` (reads a rows file, writes a report; never a database). Not applied to production. | Feature (tooling) + Data (functions only) | Nothing |
 | 2 | App readers pick their rules by the marker (6.1): the load view, the CSV and the admin screens. The differential tests of 6.1 include the conflicting rows. | Feature | Nothing, proven by the differential tests and not assumed. No row has the marker yet. |
 | 3 | Database readers pick their rules by the marker (6.1): `dictionary_sync`, `analytics.words` and `word_quality`. Rollback included. | Data or permissions (owner approval) | Nothing for unconverted rows, which are all rows at this point. For converted rows, the library-link differences are listed in the dry run and approved in step 6. |
 | 4 | Snapshot, archive and restore tables and functions, with the tests of section 8. | Data or permissions (owner approval) | Nothing |
