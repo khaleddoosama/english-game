@@ -1,6 +1,6 @@
 # Module: content
 
-The shared course that every player plays from: words, grammar rules, challenges, stories and combos, and the order of the lessons. Proposed boundary, see [module-map.md](../../architecture/module-map.md). Decision: [ADR 0004](../../adr/0004-text-keys-for-words-and-progress.md).
+The shared course that every player plays from: words, grammar rules, challenges, stories and combos, and the order of the lessons. Proposed boundary, see [module-map.md](../../architecture/module-map.md). Decision: [ADR 0004](../../adr/0004-text-keys-for-words-and-progress.md). The data contract of a word, step by step: [ADR 0011](../../adr/0011-word-data-contract.md) (step 1, the contract module and its SQL check, is built but not used by the app).
 
 ## 1. Purpose and scope
 

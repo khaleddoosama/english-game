@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Upgrade and rollback check for migrations 0037-0042, then 0043 on top of them. A database as it is before them (0001-0036, with
+# Upgrade and rollback check for migrations 0037-0042, then 0043 and 0044 on top of them. A database as it is before them (0001-0036, with
 # made-up data in it), then the six migrations, then what must have changed and what must not, then the
 # rollback script, then a comparison of the WHOLE schema (functions with their source hash and who may
 # execute them, tables with RLS and privileges, columns, constraints, indexes, policies, triggers) with the
@@ -104,6 +104,22 @@ if diff -q "$work/schema_after" "$work/schema_0043_down" >/dev/null; then echo "
 apply43 supabase/migrations/0043_realtime_signals.sql
 fingerprint "$work/schema_0043_again"
 if diff -q "$work/schema_0043" "$work/schema_0043_again" >/dev/null; then echo "0043 again: the same schema as the first time"; else echo "0043 again: DIFFERENT"; diff "$work/schema_0043" "$work/schema_0043_again" | head -20; exit 1; fi
+
+# 0044 (the word contract's SQL check, attached to nothing) on top of 0043, the same way. It ends rolled back, and
+# 0043 too, so the checks below still start from 0042.
+apply43 supabase/migrations/0044_word_contract_check.sql
+fingerprint "$work/schema_0044"
+changed=$(diff "$work/schema_0043" "$work/schema_0044" | grep -c '^[<>]' || true)
+[ "$changed" -gt 0 ] || { echo "0044: the fingerprint did not see the migration"; exit 1; }
+expect "$work/schema_0044" supabase/ci/expected/schema-after-0044.txt
+echo "0044: applied; the fingerprint sees $changed changed lines (2 functions)"
+apply43 supabase/rollback/0044_down.sql
+fingerprint "$work/schema_0044_down"
+if diff -q "$work/schema_0043" "$work/schema_0044_down" >/dev/null; then echo "0044 rollback: the whole schema is exactly as at 0043"; else echo "0044 rollback: the schema is DIFFERENT from 0043:"; diff "$work/schema_0043" "$work/schema_0044_down" | head -40; exit 1; fi
+apply43 supabase/migrations/0044_word_contract_check.sql
+fingerprint "$work/schema_0044_again"
+if diff -q "$work/schema_0044" "$work/schema_0044_again" >/dev/null; then echo "0044 again: the same schema as the first time"; else echo "0044 again: DIFFERENT"; diff "$work/schema_0044" "$work/schema_0044_again" | head -20; exit 1; fi
+apply43 supabase/rollback/0044_down.sql
 apply43 supabase/rollback/0043_down.sql
 
 # The comparison looks at the functions, not only at the table: Windows line endings in a body are the same
