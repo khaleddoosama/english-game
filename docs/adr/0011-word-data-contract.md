@@ -1,8 +1,7 @@
 # ADR 0011: One data contract for a word
 
-- Status: **Proposed** (revised twice on 2026-11-01 after the owner's reviews). The owner agreed with the direction
-  and answered the open decisions (see the end). This text waits for approval. Nothing here is built. No code and no
-  production data were changed for it.
+- Status: **Accepted** (2026-11-02), after the owner's reviews on 2026-11-01 and 2026-11-02. **Planned**: nothing is
+  built yet; each step in section 10 is a separate PR that needs its own approval.
 - Modules: [content](../modules/content/README.md), [ai-media](../modules/ai-media/README.md),
   [admin](../modules/admin/README.md), [learning-engine](../modules/learning-engine/README.md),
   [library](../modules/library/README.md)
@@ -283,6 +282,11 @@ Two ways of saving exist until the migration, chosen by the stored row's marker:
   - **A word with a conflict:**
     - A change to the conflicting list or its single field needs Choice A in the same request (the editor asks);
       without it, the save is refused.
+    - **Choice A only resolves the conflict.**
+      - It never removes a sentence: `situation: "B"` with `situations: ["A", "C"]` becomes `["B", "C", "A"]`.
+      - Any change the author makes to the sentences (removing "A", adding "D", reordering) is a separate edit,
+        applied after Choice A and shown as the author's own change in the save's diff and the audit log. It is never
+        part of Choice A.
     - Choice B is not offered until it has its own approval.
     - Other fields of that word can still be saved; the conflict stays listed.
 - **After the migration has converted a word,** every save of it is a contract save.
@@ -317,8 +321,8 @@ update.
 
 A write passes only when one of these holds:
 1. its `data` passes `word_contract_errors` and carries `contract: 1`;
-2. it is an update of an active word that changes none of `data`, `kind` or `deleted` (for example position or
-   `updated_at`), so an unconverted word can still be reordered;
+2. it is an update of an active word that changes none of `key`, `data`, `kind` or `deleted` (for example position
+   or `updated_at`), so an unconverted word can still be reordered;
 3. it is a restore of an original row (below).
 
 Deleting a word is not checked.
@@ -336,6 +340,8 @@ Deleting a word is not checked.
 - undeleting a row fails unless its `data` conforms;
 - a change of `kind` fails, both ways;
 - a position-only update of an unconverted word passes; once the trigger is on, any `data` change to it fails;
+- an update that changes only `key` (same `data`, same position) is checked like any other write, and fails when the
+  row does not conform;
 - a restore of a snapshot's original row passes, even if it does not conform;
 - within the same restore transaction, any other value for that key fails;
 - a snapshot row written under another key fails;
@@ -461,7 +467,8 @@ word has that name.
 | has `register`, `learningData.difficulty`, `relations` and `opposite`; no conflict | `level` → `"B1"` | Saved. Only `level` changes; everything else is kept; still unconverted. |
 | `situation: "B"`, `situations: ["A", "C"]` (a conflict) | `hints` changed | Saved. The conflict is still listed. |
 | the same | `situations` changed, no choice given | Refused: "this word has a conflict in situations; choose A". |
-| the same | `situations` → `["B", "C", "D"]` with Choice A | Saved. `situation` becomes "B"; the conflict is gone. |
+| the same | Choice A, and no other change to the sentences | Saved. `situations` becomes `["B", "C", "A"]` and `situation` stays "B". Nothing is removed; the conflict is gone. |
+| the same | Choice A, and the author also removes "A" and adds "D" | Saved in two recorded parts. Choice A gives `["B", "C", "A"]`. The author's edit then gives `["B", "C", "D"]`, and the diff and audit log show the removal of "A" as the author's change. |
 | `relations.antonyms: ["Calm"]` missing from `antonyms` | `antonyms` → `["Quiet", "Still"]` | Saved. `antonyms` changes and `opposite` is recomputed from it. "Calm" is neither read nor moved. |
 
 **Conflicting** (refused as a new write; reported, not converted, when already stored):
@@ -548,4 +555,5 @@ Not in this plan:
    conform (6.3). They are still read and played; saving them is refused until they are fixed. They are not counted
    as converted or valid.
 
-What is left is the owner's approval of this design as a whole, before step 1.
+The design was approved on 2026-11-02, with two corrections (6.4: `key` must not change in a position-only update;
+6.2: Choice A never removes a sentence). Step 1 is the next PR.

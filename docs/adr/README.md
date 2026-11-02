@@ -16,7 +16,7 @@ The reasons come from comments in the code, the README and the migrations. The r
 | [0008](0008-session-evidence-mastery.md) | Mastery changes from per-session evidence | Accepted (Implemented), rules differ for grammar (`LC-01`) |
 | [0009](0009-history-api-router.md) | A small History API router instead of a routing library | Accepted (Implemented) |
 | [0010](0010-ai-prompts-outside-the-engine.md) | The AI prompts live with the AI client, outside the engine (ends the `engine` <-> `lib` loop) | Accepted (Implemented) |
-| [0011](0011-word-data-contract.md) | One data contract for a word: final keys, one path for every writer with a server check, conflicts reported not guessed, archive and restore | Proposed (waiting for approval) |
+| [0011](0011-word-data-contract.md) | One data contract for a word: final keys, one path for every writer with a server check, conflicts reported not guessed, archive and restore | Accepted (Planned: step 1 next) |
 
 ## How to add or change a record
 
