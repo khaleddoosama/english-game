@@ -41,6 +41,7 @@ Ranked by impact on, in this order: **L** learning correctness, **D** data savin
 | 18 | `MT-05` | Library, Live, friends and admin each have a local and an online implementation. | - | - | - | Low | Accepted cost; guarded by contract tests for the library |
 | 19 | `LC-03` | Score and streaks change on every answer, mastery only when the session is finished. A player who stops on the summary screen sees the points but not the mastery change until they press a button. | Low | - | - | - | By reading (design note) |
 | 20 | `MT-06` | Documentation drift (for example the maintenance claim above). | - | - | - | Low | By reading |
+| 21 | `LC-04` | Word fields drift from what the game reads: some are stored but never read (`register`, `collocations`), some go stale or out of step (`categoryId`, `situations[0]` after Regenerate, `gap` without a blank while `gaps` is good), stub words can be played. List: [word-fields.md](../modules/content/word-fields.md#known-issues). | Low | Low | - | Low | By reading (2026-10-22) |
 
 ### Notes behind the top items
 

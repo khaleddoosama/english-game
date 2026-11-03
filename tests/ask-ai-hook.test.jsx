@@ -12,6 +12,7 @@ const cancelAiTasks = vi.fn();
 vi.mock("../src/lib/aiPrompts", async (original) => ({ ...(await original()), askAiForWord: (...a) => askAiForWord(...a) }));
 vi.mock("../src/lib/aiOperations", async (original) => ({ ...(await original()), cancelAiTasks: (...a) => cancelAiTasks(...a) }));
 const { AskAiDrawer, useAskAi } = await import("../src/features/ai-helpers");
+const { readAskAiAnswer } = await import("../src/lib/askAiCard.js");
 
 const ferry = { word: "Ferry", type: "vocab", category: "Travel", partsOfSpeech: ["noun"], meaning: "A boat that carries people.", situation: "We took the Ferry to the island.", gap: "We took the ______ to the island." };
 const answer = (extra = {}) => ({ word: "Lantern", type: "vocab", partsOfSpeech: ["noun"], category: "Camping", meaning: "A light you can carry.", situation: "We lit the Lantern at night.", gap: "We lit the ______ at night.", hints: ["It gives light."], pronunciation: "LAN-tern", ...extra });
@@ -48,11 +49,26 @@ describe("opening and asking", () => {
     await run(() => ask.openAskAi("  ferry  "));
     expect(drawer()).not.toBeNull();
     expect(ask.term).toBe("ferry");
-    expect(askAiForWord).toHaveBeenCalledWith("ferry", gameContent().words.find((w) => w.word === "Ferry"));
+    expect(askAiForWord).toHaveBeenCalledWith("ferry", gameContent().words.find((w) => w.word === "Ferry"), null);
     expect(cancelAiTasks).toHaveBeenCalledWith(["Ask AI about a word"]);
     expect(ask.result.alreadyInCollection).toBe(true);
     expect(drawer().textContent).toContain("Already in your collection");
     expect(ask.busy).toBe(false);
+  });
+  it("sends the lesson the player is on as the topic", async () => {
+    contextCategory = "Travel";
+    await act(async () => root.render(<Probe />));
+    askAiForWord.mockResolvedValue(answer());
+    await run(() => ask.openAskAi("lantern"));
+    expect(askAiForWord).toHaveBeenCalledWith("lantern", undefined, "Travel");
+  });
+  it("a reply with fields of the wrong shape still shows as a card (the answer's check cleans it)", async () => {
+    // Before the check, a near-words text or a pronunciation object made the drawer fail to render.
+    askAiForWord.mockImplementation(async (term) => readAskAiAnswer({ ...answer(), nearWords: "Torch, lamp", pronunciation: { ipa: "x" }, commonMistake: { sentence: "x" } }, { term }));
+    await run(() => ask.openAskAi("lantern"));
+    expect(drawer().textContent).toContain("A light you can carry.");
+    expect(drawer().textContent).not.toContain("Close words");
+    expect(drawer().textContent).not.toContain("Common mistake");
   });
   it("opening with no term only opens the drawer", async () => {
     await run(() => ask.openAskAi(""));

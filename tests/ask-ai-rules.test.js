@@ -49,6 +49,9 @@ describe("why an entry cannot be added", () => {
   it("any Arabic letter is refused", () => {
     expect(aiWordProblem(aiWordEntry(answer({ meaning: "A light (فانوس)." }), null), live)).toBe("The generated card contains non-English text. Regenerate it before adding.");
   });
+  it("a card whose gap was unusable (left empty by the answer's check) is refused before the content checks", () => {
+    expect(aiWordProblem(aiWordEntry(answer({ gap: "" }), null), live)).toBe("This card has no usable gap sentence. Ask again before adding.");
+  });
   it("a card that fails the content checks is refused with the first problem", () => {
     expect(aiWordProblem(aiWordEntry(answer({ type: "slang" }), null), live)).toBe("Cannot add this card: words[0].type: unsupported type");
     expect(aiWordProblem(aiWordEntry(answer({ situation: "" }), null), live)).toMatch(/^Cannot add this card: words\[0\]\.situation/);

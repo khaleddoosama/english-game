@@ -48,7 +48,7 @@ export function useAskAi({ isAdmin, gameContent, setGameContent, liveContent, co
     setBusy(true); setError(null); setResult(null);
     try {
       const existing = V2.findWord(gameContent().words, clean);
-      const answer = await askAiForWord(clean, existing);
+      const answer = await askAiForWord(clean, existing, contextCategory || null);
       if (mine !== epoch.current) return;
       setResult({ ...answer, alreadyInCollection: !!(existing || V2.findWord(gameContent().words, answer.word)) });
     } catch (e) {
