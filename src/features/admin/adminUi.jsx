@@ -1,7 +1,8 @@
 // Shared admin building blocks: data loading, KPI tiles, badges, drawer,
-// confirm dialog, and the date-range control.
+// confirm dialog, the date-range control and the unit filter.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
+import { NO_UNIT } from "../../engine/units";
 import { Sparkline, formatCompact } from "./charts";
 
 // Load data and keep the previous result on screen while refreshing
@@ -100,3 +101,21 @@ export function RangePicker({ value, onChange }) {
 export function Notice({ tone = "info", children }) {
   return <div className={`adm-notice ${tone}`} role={tone === "error" ? "alert" : "status"}>{children}</div>;
 }
+
+// The Unit filter of the Words and Grammar lists (rules in engine/units.js).
+// A unit from the address that no item has any more still shows as picked, so
+// the empty table below it makes sense and "Show all units" can clear it.
+export function UnitSelect({ value, units, onChange }) {
+  const stale = value && value !== NO_UNIT && !units.includes(value);
+  return (
+    <select className="adm-select" value={value} onChange={(e) => onChange(e.target.value)} aria-label="Unit">
+      <option value="">All units</option>
+      <option value={NO_UNIT}>Without unit</option>
+      {units.map((u) => <option key={u} value={u}>{u}</option>)}
+      {stale && <option value={value}>{value}</option>}
+    </select>
+  );
+}
+
+// "Show all units", for a table that shows nothing while a unit is picked.
+export const ClearUnit = ({ onClear }) => <> <button type="button" className="adm-link" onClick={onClear}>Show all units</button></>;

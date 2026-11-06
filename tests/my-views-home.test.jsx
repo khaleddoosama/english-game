@@ -75,6 +75,42 @@ describe("MyViewsHome", () => {
     expect(titles).toEqual(["All of Gateway", "All of A1.1", "Articles", "Pronouns"]);
   });
 
+  it("a heading with views inside has a fold arrow; folding hides those views, keeps All of …, and opens or plays nothing", async () => {
+    const g = await api.create("Gateway"); const a = await api.create("A1.1", g); const t = await api.create("Articles", a); await api.create("Pronouns", a);
+    await api.add(t, ["w1"]);
+    const onPractice = vi.fn();
+    await render({ onPractice });
+    const titles = () => $$(".lib-readonly .wh-level-title").map((x) => x.textContent);
+    expect($$(".lib-readonly .lib-fold").map((b) => b.getAttribute("aria-label"))).toEqual(["Hide the views inside Gateway", "Hide the views inside A1.1"]);   // cards (no views inside) have none
+    const arrow = $('button[aria-label="Hide the views inside A1.1"]');
+    expect(arrow.getAttribute("type")).toBe("button");
+    expect(arrow.getAttribute("aria-expanded")).toBe("true");
+    arrow.focus();
+    await click(arrow);
+    expect(titles()).toEqual(["All of Gateway", "All of A1.1"]);                  // Articles and Pronouns folded away
+    const shown = $('button[aria-label="Show the views inside A1.1"]');
+    expect(shown.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(shown);                                  // the same button, still focused
+    expect(window.location.pathname).toBe("/");                                   // the arrow opens nothing
+    expect(onPractice).not.toHaveBeenCalled();
+
+    await click($('button[aria-label="Hide the views inside Gateway"]'));
+    expect(titles()).toEqual(["All of Gateway"]);
+    await click($('button[aria-label="Show the views inside Gateway"]'));
+    expect(titles()).toEqual(["All of Gateway", "All of A1.1"]);                  // A1.1 is still folded
+
+    await click($$(".lib-readonly .wh-level-card").find((c) => c.querySelector(".wh-level-title").textContent === "All of A1.1").querySelector(".lib-go"));
+    expect(onPractice).toHaveBeenCalledWith(a, true, "A1.1");                     // a folded view still plays what is inside it
+  });
+
+  it("with a biggest view open, its headings fold the same way", async () => {
+    const g = await api.create("Gateway"); const a = await api.create("A1.1", g); await api.create("Articles", a);
+    await render({ rootId: g });
+    expect($$(".lib-readonly .lib-fold").map((b) => b.getAttribute("aria-label"))).toEqual(["Hide the views inside A1.1"]);
+    await click($('button[aria-label="Hide the views inside A1.1"]'));
+    expect($$(".lib-readonly .wh-level-title").map((x) => x.textContent)).toEqual(["All of Gateway", "All of A1.1"]);
+  });
+
   it("opens the catalog", async () => {
     await render();
     await click($$("button").find((b) => b.textContent === "Catalog"));

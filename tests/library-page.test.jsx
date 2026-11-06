@@ -79,6 +79,45 @@ describe("LibraryPage", () => {
     expect(row("Articles").querySelector(".lib-panel")).toBeTruthy();                           // the panel is inside its row
   });
 
+  it("the fold arrow: only on views with views inside, folds without opening, and keeps the open view and Practise", async () => {
+    const top = await api.create("Gateway"); const lvl = await api.create("A1.1", top); const s1 = await api.create("Articles", lvl); await api.create("Pronouns", lvl);
+    await api.add(s1, ["sense-0"]);
+    const onPractice = vi.fn();
+    await render({ onPractice }); await flush();
+    const row = (name) => $$(".lib-tree > li").find((li) => li.querySelector("b").textContent === name);
+    const names = () => $$(".lib-tree > li").map((li) => li.querySelector("b").textContent);
+    const arrow = (name) => row(name).querySelector(".lib-fold");
+    expect(arrow("Articles")).toBeNull();                                  // nothing inside: no arrow, only the gap that keeps names in line
+    expect(row("Articles").querySelector(".lib-fold-gap")).toBeTruthy();
+    expect(arrow("A1.1").getAttribute("type")).toBe("button");             // a real button: Enter and Space work
+    expect(arrow("A1.1").getAttribute("aria-label")).toBe("Hide the views inside A1.1");
+    expect(arrow("A1.1").getAttribute("aria-expanded")).toBe("true");
+
+    await click(arrow("A1.1"));                                            // folding opens nothing
+    expect(arrow("A1.1").getAttribute("aria-expanded")).toBe("false");
+    expect(arrow("A1.1").getAttribute("aria-label")).toBe("Show the views inside A1.1");
+    expect($(".lib-panel")).toBeNull();
+    expect(row("A1.1").querySelector(".lib-name").getAttribute("aria-pressed")).toBe("false");
+    await click(arrow("A1.1"));
+
+    await click(row("Articles").querySelector(".lib-name"));               // the name still opens the view
+    expect(row("Articles").querySelector(".lib-panel")).toBeTruthy();
+    await click(arrow("Gateway"));                                         // folding the view two levels up hides it...
+    expect(names()).toEqual(["Gateway"]);
+    await click(arrow("Gateway"));                                         // ...and it is still the open one afterwards
+    expect(row("Articles").querySelector(".lib-panel")).toBeTruthy();
+    expect(row("Articles").querySelector(".lib-name").getAttribute("aria-pressed")).toBe("true");
+
+    await click(arrow("A1.1")); await click(arrow("Gateway")); await click(arrow("Gateway"));
+    expect(names()).toEqual(["Gateway", "A1.1"]);                          // A1.1 stayed folded inside the folded Gateway
+    expect(arrow("A1.1").getAttribute("aria-expanded")).toBe("false");
+
+    await click(arrow("Gateway"));
+    await click(row("Gateway").querySelector(".lib-go"));                   // a folded view still practises everything inside it
+    expect(onPractice).toHaveBeenCalledWith(top, true, "Gateway");
+    expect((await api.tree()).length).toBe(4);                             // nothing saved changed
+  });
+
   it("puts words in by search and shows them by their text, while the API holds server ids", async () => {
     await render();
     await type($('input[aria-label="New view name"]'), "V"); await click(buttonWith("Create"));
@@ -435,5 +474,72 @@ describe("grammar rules in a view and in the library", () => {
     await click($$(".lib-rules .lib-actionbar button").find((b) => b.textContent.includes("Edit rule")));
     expect(window.location.pathname).toBe("/admin/grammar/g1");
     window.history.replaceState({}, "", "/");
+  });
+});
+
+describe("the Unit list in My library and in an open view", () => {
+  // Made-up words and rules with course units. Moor (Unit 3) is only in the dictionary, Gerunds only in the course.
+  const UW = [
+    { word: "Dream", meaning: "Something you hope for", units: ["Unit 2", "Unit 10"] },
+    { word: "Goal", meaning: "An aim", units: ["Unit 2"] },
+    { word: "Hope", meaning: "To want something good", units: [] },
+    { word: "Moor", meaning: "Open wild land", units: ["Unit 3"] },
+  ];
+  const UG = [
+    { id: "u1", rule: "Past simple", explanation: "For finished actions", units: ["Unit 2"] },
+    { id: "u2", rule: "Articles", explanation: "a, an, the" },
+    { id: "u3", rule: "Gerunds", explanation: "Verb + ing", units: ["Unit 7"] },
+  ];
+  const uids = idsFromMaps(new Map(UW.map((w, i) => [w.word, `us-${i}`])), new Map(UG.map((g, i) => [g.id, `ur-${i}`])));
+  const unitsIn = (box) => [...box.querySelector('select[aria-label="Unit"]').options].map((o) => o.textContent);
+  const pick = async (box, value) => { await act(async () => {
+    const el = box.querySelector('select[aria-label="Unit"]');
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(el, value);
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  }); };
+  const listed = (box) => [...box.querySelectorAll(".lib-results li b")].map((b) => b.textContent);
+  const libraryTab = () => $$('[role="tab"]').find((t) => t.textContent.startsWith("Library"));
+
+  it("My words and My grammar rules offer only the units of what is in my library, and narrow with the chips", async () => {
+    const v = await api.create("V");
+    await api.add(v, ["us-0"]);                       // Dream: in a view
+    await api.libraryAdd(["us-1", "us-2"]);           // Goal, Hope: in no view
+    await api.addRules(v, ["ur-0", "ur-1"]);          // Past simple, Articles
+    await render({ words: UW, grammar: UG, ids: uids }); await flush();
+    await click(libraryTab());
+    const words = $(".lib-words > .lib-picker"), rules = $(".lib-rules .lib-picker");
+    expect(unitsIn(words)).toEqual(["All units", "Without unit", "Unit 2", "Unit 10"]);    // no Unit 3: Moor is not mine
+    expect(unitsIn(rules)).toEqual(["All units", "Without unit", "Unit 2"]);                // no Unit 7: Gerunds is not mine
+    await pick(words, "Unit 2");
+    expect(listed(words).sort()).toEqual(["Dream", "Goal"]);
+    await click($$(".lib-words .chip").find((b) => b.textContent.startsWith("Not in a view")));
+    expect(listed(words)).toEqual(["Goal"]);                                                 // with the chip: in Unit 2 and in no view
+    await pick(words, "__none__");
+    expect(listed(words)).toEqual(["Hope"]);
+    await pick(rules, "__none__");
+    expect(listed(rules)).toEqual(["Articles"]);
+    const before = JSON.stringify([await api.libraryList(), await api.tree()]);
+    await pick(rules, "Unit 2"); await pick(words, "");
+    expect(JSON.stringify([await api.libraryList(), await api.tree()])).toBe(before);        // filtering saves nothing
+  });
+
+  it("Add words and Add grammar rules: the units of the list shown, my library or the whole dictionary", async () => {
+    const v = await api.create("V");
+    await api.libraryAdd(["us-1"]);                   // Goal
+    await render({ words: UW, grammar: UG, ids: uids }); await flush();
+    await click($$(".lib-tree .lib-name").find((b) => b.textContent.includes("V")));
+    const panel = $(".lib-panel");
+    const addWords = panel.querySelector(".lib-picker");
+    expect(unitsIn(addWords)).toEqual(["All units", "Without unit", "Unit 2"]);              // from my library: Goal only
+    await click($$(".lib-panel .chip").find((b) => b.textContent === "From the dictionary"));
+    expect(unitsIn(panel.querySelector(".lib-picker"))).toEqual(["All units", "Without unit", "Unit 2", "Unit 3", "Unit 10"]);
+    await pick(panel.querySelector(".lib-picker"), "Unit 3");
+    expect(listed(panel.querySelector(".lib-picker"))).toEqual(["Moor"]);
+    await act(async () => { $(".lib-add-rules").open = true; $(".lib-add-rules").dispatchEvent(new Event("toggle")); });
+    const addRules = $(".lib-add-rules .lib-picker");
+    expect(unitsIn(addRules)).toEqual(["All units", "Without unit", "Unit 2", "Unit 7"]);    // no rule in my library yet: all rules
+    await pick(addRules, "Unit 7");
+    expect(listed(addRules)).toEqual(["Gerunds"]);
+    expect((await api.contents(v, false)).length).toBe(0);                                    // nothing added by filtering
   });
 });

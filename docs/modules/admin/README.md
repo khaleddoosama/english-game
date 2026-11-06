@@ -61,6 +61,7 @@ The admin API ([adminApi.js](../../../src/features/admin/adminApi.js)); online e
 - Reports: the admin alone decides "resolved"; a player's later edit keeps that decision; a deleted report cannot come back.
 - The report AI review and fix suggestions are admin tools; the player-side review is a separate task.
 - The panel remembers the last admin page (`wh-admin-path`) so the tab reopens it.
+- **Unit filter on Words and Grammar** (Implemented, 2026-11-01). Next to the other filters, a Unit list: "All units", "Without unit" (no `units`, or an empty list), then every unit used by the words (or the rules), once, in natural order ("Unit 2" before "Unit 10"). It is the content's `units` field, not the lesson (`category`) or the level. A word or rule in several units shows under each of them. It lives in the address like the other filters (`/admin/words?unit=Unit%201`; Without unit is `?unit=__none__`), combines with the search and the other filters, and a change goes back to page 1. It only filters what is shown: nothing is saved. When a unit is picked and no row matches (through the filters or the search), the table says so and offers "Show all units", which clears only the unit. A unit in the address that no item has any more still shows as picked. With filters that leave nothing, Words now says "No words match these filters." (before: "No words yet"). The rules are shared with the library's pickers ([engine/units.js](../../../src/engine/units.js), [library](../library/README.md#the-units-filter-in-the-word-and-rule-pickers)).
 
 ## 5. Data flow
 
@@ -90,6 +91,7 @@ The admin API ([adminApi.js](../../../src/features/admin/adminApi.js)); online e
 | Settings, sign-up limits, rank visibility | [supabase/tests/app_settings.sql](../../../supabase/tests/app_settings.sql), [signup_limits.sql](../../../supabase/tests/signup_limits.sql), [ranks.sql](../../../supabase/tests/ranks.sql) |
 | Daily history behind the charts | [supabase/tests/daily_history.sql](../../../supabase/tests/daily_history.sql) |
 | Panel opens with a course loaded, at two widths | [e2e/specs/sweep.cjs](../../../e2e/specs/sweep.cjs) |
+| The Unit filter of Words and Grammar (options, several units, Without unit, the address, other filters, search, page 1, the empty state) | [tests/admin-units-filter.test.jsx](../../../tests/admin-units-filter.test.jsx), [tests/units.test.js](../../../tests/units.test.js); in a browser at two widths: [e2e/specs/foldunits.cjs](../../../e2e/specs/foldunits.cjs) |
 | Content admin rules and hook | [content-admin-rules.test.js](../../../tests/content-admin-rules.test.js), [content-admin-hook.test.jsx](../../../tests/content-admin-hook.test.jsx) |
 | Merge, delete and remove empty categories in a browser | [e2e/specs/catadmin.cjs](../../../e2e/specs/catadmin.cjs) |
 | Import and export rules and hook | [import-plan.test.js](../../../tests/import-plan.test.js), [data-transfer-hook.test.jsx](../../../tests/data-transfer-hook.test.jsx), [import-export.test.js](../../../tests/import-export.test.js) |

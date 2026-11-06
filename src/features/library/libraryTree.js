@@ -26,6 +26,15 @@ export function flattenTree(roots) {
   return out;
 }
 
+// The rows still drawn when some views are folded (`folded`: a Set of ids):
+// everything inside a folded view, at any depth, is left out. Rows come in
+// flattenTree order, so a parent is always seen before what is inside it.
+export function visibleRows(rows, folded) {
+  const hidden = new Set();
+  for (const r of rows) if (r.parent && (hidden.has(r.parent) || folded.has(r.parent))) hidden.add(r.id);
+  return rows.filter((r) => !hidden.has(r.id));
+}
+
 // Views a view can be moved into: not itself, not anything inside it, and not
 // so deep that what is inside it would pass 4 levels.
 export function moveTargets(roots, id, maxDepth = 4) {

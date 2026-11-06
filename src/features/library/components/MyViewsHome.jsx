@@ -4,6 +4,7 @@ import { StageCard, describeItems } from "../../home";
 import { scopeFromContents } from "../scope";
 import { navigate } from "../../../lib/router";
 import { buildTree, flattenTree } from "../libraryTree";
+import { FoldButton, useFolded } from "./Fold";
 import { count } from "./format";
 import "../../../styles/library.css";
 
@@ -30,6 +31,7 @@ export default function MyViewsHome({ api, rootId = null, offers = 0, onPractice
   const describe = (items) => describeItems(items) || "Empty";
 
   const tree = useMemo(() => buildTree(flat || []), [flat]);
+  const { folded, toggle } = useFolded();
   const root = rootId ? tree.find((v) => v.id === rootId) || null : null;
   const edit = (v) => <button className="lib-icon" aria-label={`Edit ${v.name}`} title="Edit in my library" onClick={() => navigate(`/library?view=${encodeURIComponent(v.id)}`)}><Pencil size={14} /></button>;
   const add = (v) => <button className="lib-plus lib-plus-sm" aria-label={`New view inside ${v.name}`} title={`New view inside ${v.name}`} onClick={() => navigate(`/library?new=1&parent=${encodeURIComponent(v.id)}`)}><Plus size={14} /></button>;
@@ -43,18 +45,22 @@ export default function MyViewsHome({ api, rootId = null, offers = 0, onPractice
     );
   };
   // Like Gateway > A1.1 > Articles, at any depth: a view with views inside is a
-  // heading (its name, a + to add a view inside it, a pencil), with "All of …"
-  // and one block for each view inside it; a view with none is a card.
-  function Group({ v, depth }) {
+  // heading (the arrow that folds what is inside, its name, a pencil, a + to
+  // add a view inside it), with "All of …" and one block for each view inside
+  // it; a view with none is a card. Folded, only the heading and "All of …"
+  // stay, so the view can still be practised whole. A plain function, not a
+  // component, so a fold keeps the same elements (and the arrow keeps focus).
+  const group = (v, depth) => {
     if (!v.children.length) return card(v, v.name);
+    const open = !folded.has(v.id);
     return (
-      <div className={`wh-level-group-block lib-depth-${Math.min(depth, 3)}`}>
-        <h3 className="wh-level-group-heading">{v.name} <small>{describe(itemsOf(v.id))}</small> {edit(v)} {add(v)}</h3>
+      <div key={v.id} className={`wh-level-group-block lib-depth-${Math.min(depth, 3)}`}>
+        <h3 className="wh-level-group-heading"><FoldButton name={v.name} open={open} onToggle={() => toggle(v.id)} />{v.name} <small>{describe(itemsOf(v.id))}</small> {edit(v)} {add(v)}</h3>
         {card(v, `All of ${v.name}`, `${v.id}-all`)}
-        {v.children.map((c) => <Group key={c.id} v={c} depth={depth + 1} />)}
+        {open && v.children.map((c) => group(c, depth + 1))}
       </div>
     );
-  }
+  };
 
   return (
     <div className="lib-home">
@@ -78,9 +84,9 @@ export default function MyViewsHome({ api, rootId = null, offers = 0, onPractice
           ? null
           : root
           ? (root.children.length
-            ? <>{card(root, `All of ${root.name}`, `${root.id}-all`)}{root.children.map((c) => <Group key={c.id} v={c} depth={1} />)}</>
+            ? <>{card(root, `All of ${root.name}`, `${root.id}-all`)}{root.children.map((c) => group(c, 1))}</>
             : card(root, root.name))
-          : tree.map((v) => <Group key={v.id} v={v} depth={0} />)}
+          : tree.map((v) => group(v, 0))}
       </div>
     </div>
   );

@@ -1,0 +1,190 @@
+{
+ "schemaVersion": 2,
+ "kind": "content",
+ "note": "Made-up content for the fold and units browser spec: words and rules in one unit, two units, an empty list and none.",
+ "words": [
+  {
+   "word": "Passport",
+   "type": "vocab",
+   "category": "Travel",
+   "meaning": "An official book that lets you travel to other countries.",
+   "situation": "Show your Passport at the border.",
+   "gap": "Show your ______ at the border.",
+   "partsOfSpeech": [
+    "noun"
+   ],
+   "hints": [
+    "It is about travel."
+   ],
+   "units": [
+    "Unit 1"
+   ]
+  },
+  {
+   "word": "Luggage",
+   "type": "vocab",
+   "category": "Travel",
+   "meaning": "The bags you carry when you travel.",
+   "situation": "Our Luggage did not arrive with the plane.",
+   "gap": "Our ______ did not arrive with the plane.",
+   "partsOfSpeech": [
+    "noun"
+   ],
+   "hints": [
+    "It is about travel."
+   ],
+   "units": [
+    "Unit 1",
+    "Unit 2"
+   ]
+  },
+  {
+   "word": "Ticket",
+   "type": "vocab",
+   "category": "Travel",
+   "meaning": "A paper or code that lets you get on a train or plane.",
+   "situation": "I bought a Ticket for the early train.",
+   "gap": "I bought a ______ for the early train.",
+   "partsOfSpeech": [
+    "noun"
+   ],
+   "hints": [
+    "It is about travel."
+   ],
+   "units": [
+    "Unit 2"
+   ]
+  },
+  {
+   "word": "Platform",
+   "type": "vocab",
+   "category": "Travel",
+   "meaning": "The place in a station where you get on the train.",
+   "situation": "The train leaves from Platform four.",
+   "gap": "The train leaves from ______ four.",
+   "partsOfSpeech": [
+    "noun"
+   ],
+   "hints": [
+    "It is about travel."
+   ],
+   "units": [
+    "Unit 10"
+   ]
+  },
+  {
+   "word": "Delay",
+   "type": "vocab",
+   "category": "Travel",
+   "meaning": "Time you wait because something is late.",
+   "situation": "There was a long Delay because of the snow.",
+   "gap": "There was a long ______ because of the snow.",
+   "partsOfSpeech": [
+    "noun"
+   ],
+   "hints": [
+    "It is about travel."
+   ],
+   "units": []
+  },
+  {
+   "word": "Journey",
+   "type": "vocab",
+   "category": "Travel",
+   "meaning": "A trip from one place to another.",
+   "situation": "The Journey to the coast took six hours.",
+   "gap": "The ______ to the coast took six hours.",
+   "partsOfSpeech": [
+    "noun"
+   ],
+   "hints": [
+    "It is about travel."
+   ]
+  },
+  {
+   "word": "Recipe",
+   "type": "vocab",
+   "category": "Food",
+   "meaning": "Instructions for cooking a dish.",
+   "situation": "My grandmother wrote the Recipe on a card.",
+   "gap": "My grandmother wrote the ______ on a card.",
+   "partsOfSpeech": [
+    "noun"
+   ],
+   "hints": [
+    "It is about food."
+   ],
+   "units": [
+    "Unit 2"
+   ]
+  },
+  {
+   "word": "Flavour",
+   "type": "vocab",
+   "category": "Food",
+   "meaning": "The taste of a food or drink.",
+   "situation": "This soup has a strong Flavour of garlic.",
+   "gap": "This soup has a strong ______ of garlic.",
+   "partsOfSpeech": [
+    "noun"
+   ],
+   "hints": [
+    "It is about food."
+   ],
+   "units": [
+    "Unit 10"
+   ]
+  }
+ ],
+ "grammar": [
+  {
+   "id": "g-units-1",
+   "rule": "Use the past simple for finished actions",
+   "prompt": "Last year we ______ to Spain.",
+   "options": [
+    "travelled",
+    "travel",
+    "travelling"
+   ],
+   "answer": "travelled",
+   "explanation": "The action is finished, so use the past simple.",
+   "category": "Travel",
+   "units": [
+    "Unit 1",
+    "Unit 2"
+   ],
+   "level": "A1.1"
+  },
+  {
+   "id": "g-units-2",
+   "rule": "Use an before a vowel sound",
+   "prompt": "I need ______ umbrella.",
+   "options": [
+    "an",
+    "a",
+    "the"
+   ],
+   "answer": "an",
+   "explanation": "Umbrella starts with a vowel sound.",
+   "category": "Travel",
+   "level": "A1.1"
+  },
+  {
+   "id": "g-units-3",
+   "rule": "Countable nouns take many",
+   "prompt": "How ______ bags do you have?",
+   "options": [
+    "many",
+    "much",
+    "lot"
+   ],
+   "answer": "many",
+   "explanation": "Bags are countable.",
+   "category": "Food",
+   "units": [
+    "Unit 10"
+   ],
+   "level": "A1.1"
+  }
+ ]
+}

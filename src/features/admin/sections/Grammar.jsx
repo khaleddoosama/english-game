@@ -1,13 +1,14 @@
 // Grammar rules: every rule with its lesson, level, questions and how the
 // class does on it; filters in the address (/admin/grammar?lesson=Media&
-// issue=any); a rule opens in the editor at /admin/grammar/<id>.
+// issue=any&unit=Unit%201); a rule opens in the editor at /admin/grammar/<id>.
 import { useMemo, useState } from "react";
 import { FileJson, FolderInput, Plus, Trash2 } from "lucide-react";
 import { useQuery } from "../../../lib/router";
 import { V2 } from "../../../engine/v2";
+import { inUnit, unitOptions } from "../../../engine/units";
 import { DataTable, downloadText } from "../DataTable";
 import { formatNumber, formatPercent } from "../charts";
-import { Badge, ConfirmDialog, Drawer, Kpi, Notice } from "../adminUi";
+import { Badge, ClearUnit, ConfirmDialog, Drawer, Kpi, Notice, UnitSelect } from "../adminUi";
 import { GrammarEditor } from "../editors/GrammarEditor";
 import { GRAMMAR_LEVELS, GRAMMAR_TYPES, blankGrammarRule, grammarIssues, grammarPreview, isSingleQuestionRule, questionCount, questionTypes } from "../editors/grammarRules";
 
@@ -24,8 +25,9 @@ const TYPE_SHORT = { choose: "choose", judge: "right/wrong", fix: "fix" };
 
 export function Grammar({ content, wordStats, onUpdate, openId, onOpen }) {
   const rules = content.grammar || [];
-  const [filters, setFilters] = useQuery({ lesson: "", level: "", type: "", issue: "" });
-  const { lesson, level, type, issue } = filters;
+  const [filters, setFilters] = useQuery({ lesson: "", level: "", type: "", issue: "", unit: "" });
+  const { lesson, level, type, issue, unit } = filters;
+  const setUnit = (v) => setFilters({ unit: v, page: null });
   const [confirm, setConfirm] = useState(null);
   const [moveTo, setMoveTo] = useState(null);
   const [moveInput, setMoveInput] = useState("");
@@ -33,13 +35,14 @@ export function Grammar({ content, wordStats, onUpdate, openId, onOpen }) {
   const stats = useMemo(() => new Map((wordStats.data || []).filter((s) => s.item_key.startsWith("grammar:")).map((s) => [s.item_key.slice(8), s])), [wordStats.data]);
   const lessonsUsed = useMemo(() => [...new Set(rules.map((g) => g.category).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [rules]);
   const allLessons = useMemo(() => (content.levels || []).map((l) => l.title), [content.levels]);
+  const units = useMemo(() => unitOptions(rules), [rules]);
   const enriched = useMemo(() => rules.map((g) => {
     const s = stats.get(g.id);
     return { g, id: g.id, rule: g.rule || "", lesson: g.category || "", level: g.level || "", count: questionCount(g), types: questionTypes(g), preview: grammarPreview(g), single: isSingleQuestionRule(g), issues: grammarIssues(g), attempts: s?.attempts || 0, players: s?.players || 0, accuracy: s?.attempts ? s.correct / s.attempts : null };
   }), [rules, stats]);
-  const rows = useMemo(() => enriched.filter((r) => (!lesson || r.lesson === lesson) && (!level || r.level === level) && (!type || r.types[type])
+  const rows = useMemo(() => enriched.filter((r) => (!lesson || r.lesson === lesson) && (!level || r.level === level) && (!type || r.types[type]) && inUnit(r.g, unit)
     && (!issue || (issue === "any" && r.issues.length) || r.issues.some((i) => i.id === issue) || (issue === "single" && r.single)
-      || (issue === "hard" && r.accuracy != null && r.accuracy < 0.5 && r.attempts >= 5) || (issue === "unplayed" && !r.attempts))), [enriched, lesson, level, type, issue]);
+      || (issue === "hard" && r.accuracy != null && r.accuracy < 0.5 && r.attempts >= 5) || (issue === "unplayed" && !r.attempts))), [enriched, lesson, level, type, issue, unit]);
 
   const columns = [
     { key: "rule", label: "Rule", render: (r) => <span className="adm-word"><b>{r.rule || <span className="adm-muted">(no rule)</span>}</b><small>{r.preview}</small></span> },
@@ -86,12 +89,13 @@ export function Grammar({ content, wordStats, onUpdate, openId, onOpen }) {
       </div>
       <DataTable id="grammar" syncUrl columns={columns} rows={rows} rowKey={(r) => r.id} csvName="word-hunter-grammar"
         searchText={(r) => `${r.rule} ${r.id} ${r.lesson} ${r.g.explanation || ""} ${JSON.stringify(r.g.questions || [r.g.prompt, r.g.options])}`} searchPlaceholder="Search rules, sentences, lessons…"
-        resetKey={`${lesson}|${level}|${type}|${issue}`} selectable onRowClick={(r) => onOpen(r.id)}
+        resetKey={`${lesson}|${level}|${type}|${issue}|${unit}`} selectable onRowClick={(r) => onOpen(r.id)}
         filters={<>
           <select className="adm-select" value={lesson} onChange={(e) => setFilters({ lesson: e.target.value, page: null })} aria-label="Lesson"><option value="">All lessons</option>{lessonsUsed.map((c) => <option key={c} value={c}>{c}</option>)}</select>
           <select className="adm-select" value={level} onChange={(e) => setFilters({ level: e.target.value, page: null })} aria-label="Level"><option value="">Any level</option>{GRAMMAR_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}</select>
           <select className="adm-select" value={type} onChange={(e) => setFilters({ type: e.target.value, page: null })} aria-label="Question type"><option value="">Any question type</option>{Object.entries(GRAMMAR_TYPES).map(([t, l]) => <option key={t} value={t}>{l}</option>)}</select>
           <select className="adm-select" value={issue} onChange={(e) => setFilters({ issue: e.target.value, page: null })} aria-label="Status">{ISSUE_FILTERS.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}</select>
+          <UnitSelect value={unit} units={units} onChange={setUnit} />
         </>}
         toolbar={<button className="adm-btn primary" onClick={() => onOpen("new")}><Plus size={15} /> New rule</button>}
         bulkActions={(sel, clear) => <>
@@ -99,7 +103,8 @@ export function Grammar({ content, wordStats, onUpdate, openId, onOpen }) {
           <button className="adm-btn ghost" onClick={() => downloadText(`word-hunter-grammar-${sel.length}.json`, JSON.stringify({ schemaVersion: 2, kind: "content", grammar: sel.map((r) => r.g) }, null, 2), "application/json")}><FileJson size={15} /> Export JSON</button>
           <button className="adm-btn danger" onClick={() => setConfirm({ ids: sel.map((r) => r.id), clear })}><Trash2 size={15} /> Delete</button>
         </>}
-        emptyText={rules.length ? "No rules match these filters." : "No grammar rules yet. Add one, or import a content file with a grammar list."} />
+        emptyText={rules.length ? <>No rules match these filters.{unit && <ClearUnit onClear={() => setUnit("")} />}</> : "No grammar rules yet. Add one, or import a content file with a grammar list."}
+        noMatchText={<>No rows match your search.{unit && <ClearUnit onClear={() => setUnit("")} />}</>} />
       {(editing || openId === "new") && <GrammarEditor key={openId} rule={editing || blank} isNew={!editing} content={content} stats={editing ? stats.get(editing.id) : null}
         onSave={save} onDuplicate={duplicate} onClose={() => onOpen(null)}
         onDelete={(g) => { onUpdate("grammar", rules.filter((x) => x !== g)); setNotice(`Deleted “${g.rule || g.id}”.`); onOpen(null); }} />}

@@ -154,6 +154,7 @@ refresh or a shared link opens the same view:
 `/`, `/stories`, `/play`, `/stats?show=started`, `/badges`, `/live`,
 `/live/<code>`, `/live?invite=<friend id>`, `/leaderboard`, `/friends`, `/library`, `/join/<token>`, `/profile`, `/settings`, `/data`, and
 `/admin/<section>/<item>?filters`, e.g. `/admin/words?hasPicture=false`,
+`/admin/words?unit=Memories-and-Fear` (a course unit; `?unit=__none__` for words without one),
 `/admin/grammar/g5`, `/admin/ai?status=error`.
 
 ## Course levels
@@ -211,7 +212,7 @@ Home shows three views: **By lesson** (each lesson, with its units; the default 
 player), **one tab for each of the player's biggest views** (Gateway, Unit …, with a **+** tab for a new one; inside, the views in it as headings and cards with their progress), and
 **Gateway** (the course levels and their sessions; the owner's own view, shown to
 the admin only). Gateway and By lesson are built from the content for everyone;
-nothing is copied per player. On Home a player sees only the words and rules in their own library (the admin sees all of the course). My views on Home is read only (browse and practise), grouped like Gateway: a view with views inside is a heading with an *All of …* card and a card for each view;
+nothing is copied per player. On Home a player sees only the words and rules in their own library (the admin sees all of the course). My views on Home is read only (browse and practise), grouped like Gateway: a view with views inside is a heading (with an arrow that folds the views inside it, here and in the library's tree) with an *All of …* card and a card for each view;
 the pencil on a view and the **+** open the library page to edit, delete or make
 one. There, words are picked from lists with search, lesson and level filters,
 *Select all shown*, and bulk actions (add to a view, make a new view, remove).
