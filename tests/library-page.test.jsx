@@ -72,7 +72,8 @@ describe("LibraryPage", () => {
     expect(row("Articles").querySelector("small").textContent).toBe("2 words · 0 rules");
     expect($$(".lib-tree > li").length).toBe(4);
     await click(row("A1.1").querySelector(".lib-fold"));
-    expect($$(".lib-tree > li").map((li) => li.querySelector("b").textContent)).toEqual(["Gateway", "A1.1"]);   // Articles and Pronouns are folded away
+    expect($$(".lib-tree > li:not([hidden])").map((li) => li.querySelector("b").textContent)).toEqual(["Gateway", "A1.1"]);
+    expect($$(".lib-tree > li[hidden]")).toHaveLength(2);   // Articles and Pronouns are folded away
     await click(row("A1.1").querySelector(".lib-fold"));
     expect($$(".lib-tree > li").length).toBe(4);
     await click(row("Articles").querySelector(".lib-name"));

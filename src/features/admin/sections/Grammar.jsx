@@ -1,3 +1,5 @@
+import UnitFilter from "../../../lib/UnitFilter";
+import { matchesUnit } from "../../../lib/unitFilter";
 // Grammar rules: every rule with its lesson, level, questions and how the
 // class does on it; filters in the address (/admin/grammar?lesson=Media&
 // issue=any); a rule opens in the editor at /admin/grammar/<id>.
@@ -24,8 +26,8 @@ const TYPE_SHORT = { choose: "choose", judge: "right/wrong", fix: "fix" };
 
 export function Grammar({ content, wordStats, onUpdate, openId, onOpen }) {
   const rules = content.grammar || [];
-  const [filters, setFilters] = useQuery({ lesson: "", level: "", type: "", issue: "" });
-  const { lesson, level, type, issue } = filters;
+  const [filters, setFilters] = useQuery({ unit: "", lesson: "", level: "", type: "", issue: "" });
+  const { unit, lesson, level, type, issue } = filters;
   const [confirm, setConfirm] = useState(null);
   const [moveTo, setMoveTo] = useState(null);
   const [moveInput, setMoveInput] = useState("");
@@ -37,9 +39,9 @@ export function Grammar({ content, wordStats, onUpdate, openId, onOpen }) {
     const s = stats.get(g.id);
     return { g, id: g.id, rule: g.rule || "", lesson: g.category || "", level: g.level || "", count: questionCount(g), types: questionTypes(g), preview: grammarPreview(g), single: isSingleQuestionRule(g), issues: grammarIssues(g), attempts: s?.attempts || 0, players: s?.players || 0, accuracy: s?.attempts ? s.correct / s.attempts : null };
   }), [rules, stats]);
-  const rows = useMemo(() => enriched.filter((r) => (!lesson || r.lesson === lesson) && (!level || r.level === level) && (!type || r.types[type])
+  const rows = useMemo(() => enriched.filter((r) => matchesUnit(r.g, unit) && (!lesson || r.lesson === lesson) && (!level || r.level === level) && (!type || r.types[type])
     && (!issue || (issue === "any" && r.issues.length) || r.issues.some((i) => i.id === issue) || (issue === "single" && r.single)
-      || (issue === "hard" && r.accuracy != null && r.accuracy < 0.5 && r.attempts >= 5) || (issue === "unplayed" && !r.attempts))), [enriched, lesson, level, type, issue]);
+      || (issue === "hard" && r.accuracy != null && r.accuracy < 0.5 && r.attempts >= 5) || (issue === "unplayed" && !r.attempts))), [enriched, unit, lesson, level, type, issue]);
 
   const columns = [
     { key: "rule", label: "Rule", render: (r) => <span className="adm-word"><b>{r.rule || <span className="adm-muted">(no rule)</span>}</b><small>{r.preview}</small></span> },
@@ -86,8 +88,9 @@ export function Grammar({ content, wordStats, onUpdate, openId, onOpen }) {
       </div>
       <DataTable id="grammar" syncUrl columns={columns} rows={rows} rowKey={(r) => r.id} csvName="word-hunter-grammar"
         searchText={(r) => `${r.rule} ${r.id} ${r.lesson} ${r.g.explanation || ""} ${JSON.stringify(r.g.questions || [r.g.prompt, r.g.options])}`} searchPlaceholder="Search rules, sentences, lessons…"
-        resetKey={`${lesson}|${level}|${type}|${issue}`} selectable onRowClick={(r) => onOpen(r.id)}
+        resetKey={`${unit}|${lesson}|${level}|${type}|${issue}`} selectable onRowClick={(r) => onOpen(r.id)}
         filters={<>
+          <UnitFilter items={rules} value={unit} onChange={(v) => setFilters({ unit: v, page: null })} className="adm-select" />
           <select className="adm-select" value={lesson} onChange={(e) => setFilters({ lesson: e.target.value, page: null })} aria-label="Lesson"><option value="">All lessons</option>{lessonsUsed.map((c) => <option key={c} value={c}>{c}</option>)}</select>
           <select className="adm-select" value={level} onChange={(e) => setFilters({ level: e.target.value, page: null })} aria-label="Level"><option value="">Any level</option>{GRAMMAR_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}</select>
           <select className="adm-select" value={type} onChange={(e) => setFilters({ type: e.target.value, page: null })} aria-label="Question type"><option value="">Any question type</option>{Object.entries(GRAMMAR_TYPES).map(([t, l]) => <option key={t} value={t}>{l}</option>)}</select>

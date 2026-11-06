@@ -1,3 +1,5 @@
+import UnitFilter from "../../../lib/UnitFilter";
+import { matchesUnit } from "../../../lib/unitFilter";
 import { useMemo, useState } from "react";
 import { Plus, Play, Trash2, X } from "lucide-react";
 import { moveTargets } from "../libraryTree";
@@ -12,7 +14,13 @@ export default function ViewPanel({ view, roots, inside, libraryKeys, libraryRul
   const [rename, setRename] = useState(null);
   const [sub, setSub] = useState("");
   const [sure, setSure] = useState(false);
+  const [wordUnit, setWordUnit] = useState("");
+  const [ruleUnit, setRuleUnit] = useState("");
   const [showAll, setShowAll] = useState(false);
+  const viewWords = inside.words.map((k) => wordByKey.get(k)).filter(Boolean);
+  const viewRules = inside.rules.map((k) => ruleByKey.get(k)).filter(Boolean);
+  const filteredWords = inside.words.filter((k) => matchesUnit(wordByKey.get(k), wordUnit));
+  const filteredRules = inside.rules.filter((k) => matchesUnit(ruleByKey.get(k), ruleUnit));
   const total = view.words + view.rules;
   const inViewKeys = useMemo(() => new Set(inside.words), [inside.words]);
 
@@ -62,11 +70,17 @@ export default function ViewPanel({ view, roots, inside, libraryKeys, libraryRul
 
       <h4 className="lib-sub">In this view</h4>
       {!inside.words.length && !inside.rules.length && <p className="ui-muted">Nothing yet. Add words or grammar rules below.</p>}
+      {inside.words.length > 0 && <div className="lib-filters"><span>Words</span><UnitFilter items={viewWords} value={wordUnit} label="Word units" onChange={(v) => { setWordUnit(v); setShowAll(false); }} /></div>}
+      {inside.words.length > 0 && !filteredWords.length && <p className="ui-muted">No words match this unit.</p>}
       <ul className="lib-chips">
-        {(showAll ? inside.words : inside.words.slice(0, SHOWN)).map((k) => <li key={k}><span>{k}</span><button aria-label={`Take ${k} out`} onClick={() => act(() => api.drop(view.id, ids.senseOf(k)))}><X size={12} /></button></li>)}
-        {inside.rules.map((k) => { const name = ruleByKey.get(k)?.rule || k; return <li key={k} className="rule"><span>{name}</span><button aria-label={`Take ${name} out`} onClick={() => act(() => api.dropRule(view.id, ids.ruleOf(k)))}><X size={12} /></button></li>; })}
+        {(showAll ? filteredWords : filteredWords.slice(0, SHOWN)).map((k) => <li key={k}><span>{k}</span><button aria-label={`Take ${k} out`} onClick={() => act(() => api.drop(view.id, ids.senseOf(k)))}><X size={12} /></button></li>)}
       </ul>
-      {inside.words.length > SHOWN && <button className="lib-link" onClick={() => setShowAll((v) => !v)}>{showAll ? "Show fewer" : `Show all ${inside.words.length} words`}</button>}
+      {filteredWords.length > SHOWN && <button className="lib-link" onClick={() => setShowAll((v) => !v)}>{showAll ? "Show fewer" : `Show all ${filteredWords.length} words`}</button>}
+      {inside.rules.length > 0 && <div className="lib-filters"><span>Grammar</span><UnitFilter items={viewRules} value={ruleUnit} label="Grammar units" onChange={setRuleUnit} /></div>}
+      {inside.rules.length > 0 && !filteredRules.length && <p className="ui-muted">No rules match this unit.</p>}
+      <ul className="lib-chips">
+        {filteredRules.map((k) => { const name = ruleByKey.get(k)?.rule || k; return <li key={k} className="rule"><span>{name}</span><button aria-label={`Take ${name} out`} onClick={() => act(() => api.dropRule(view.id, ids.ruleOf(k)))}><X size={12} /></button></li>; })}
+      </ul>
 
       <AddWords words={words} libraryKeys={libraryKeys} inView={inViewKeys} wordByKey={wordByKey} ids={ids} busy={busy} setNotice={setNotice} onAskWord={onAskWord} onRefreshIds={onRefreshIds}
         onAdd={(senseIds, okText) => act(() => (senseIds.length ? api.add(view.id, senseIds) : 0), okText)} />
